@@ -1,0 +1,113 @@
+import SwiftUI
+import WebKit
+
+/// A diagram the user tapped, ready to be shown full-screen.
+struct TappedDiagram: Identifiable, Equatable {
+    let id = UUID()
+    let svg: String
+    let title: String
+}
+
+/// Wraps a WKWebView that renders Markdown + Mermaid via the bundled offline pipeline.
+/// Markdown is injected through a script message / JSON-encoded literal — never concatenated
+/// into HTML — so arbitrary document content cannot break out into markup.
+struct MarkdownWebView: UIViewRepresentable {
+    let document: MarkdownDocument
+    @Binding var tapped: TappedDiagram?
+    var onTitle: (String) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let controller = WKUserContentController()
+        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped"] {
+            controller.add(context.coordinator, name: name)
+        }
+
+        let config = WKWebViewConfiguration()
+        config.userContentController = controller
+        config.defaultWebpagePreferences.allowsContentJavaScript = true
+
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+        webView.scrollView.contentInsetAdjustmentBehavior = .always
+
+        context.coordinator.webView = webView
+        loadRenderer(into: webView)
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        // Re-render only when the document actually changes.
+        if context.coordinator.loadedDocumentID != document.id {
+            context.coordinator.parent = self
+            if context.coordinator.pageReady {
+                context.coordinator.renderCurrentDocument()
+            }
+        }
+        context.coordinator.parent = self
+    }
+
+    private func loadRenderer(into webView: WKWebView) {
+        guard let webDir = Bundle.main.url(forResource: "renderer", withExtension: "html", subdirectory: "Web")
+                ?? Bundle.main.url(forResource: "renderer", withExtension: "html") else {
+            return
+        }
+        let baseDir = webDir.deletingLastPathComponent()
+        webView.loadFileURL(webDir, allowingReadAccessTo: baseDir)
+    }
+
+    // MARK: - Coordinator
+
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var parent: MarkdownWebView
+        weak var webView: WKWebView?
+        var pageReady = false
+        var loadedDocumentID: UUID?
+
+        init(_ parent: MarkdownWebView) { self.parent = parent }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            pageReady = true
+            renderCurrentDocument()
+        }
+
+        func renderCurrentDocument() {
+            guard let webView else { return }
+            let doc = parent.document
+            guard let mdJSON = jsonString(doc.text),
+                  let nameJSON = jsonString(doc.filename) else { return }
+            loadedDocumentID = doc.id
+            let js = "window.OKIA && window.OKIA.render(\(mdJSON), \(nameJSON));"
+            webView.evaluateJavaScript(js, completionHandler: nil)
+        }
+
+        private func jsonString(_ value: String) -> String? {
+            guard let data = try? JSONEncoder().encode(value) else { return nil }
+            return String(data: data, encoding: .utf8)
+        }
+
+        // MARK: WKScriptMessageHandler
+        func userContentController(_ controller: WKUserContentController,
+                                   didReceive message: WKScriptMessage) {
+            switch message.name {
+            case "docMeta":
+                if let dict = message.body as? [String: Any], let title = dict["title"] as? String {
+                    parent.onTitle(title)
+                }
+            case "diagramTapped":
+                if let dict = message.body as? [String: Any], let svg = dict["svg"] as? String {
+                    let title = (dict["title"] as? String) ?? ""
+                    parent.tapped = TappedDiagram(svg: svg, title: title)
+                }
+            case "renderError":
+                break
+            default:
+                break
+            }
+        }
+    }
+}
