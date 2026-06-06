@@ -1,0 +1,274 @@
+/* ===========================================================================
+   OK-ia Markdown Viewer — styles (charte ok-ia.ch)
+   noir #111111 · gris #9A9A90 · gris clair #E8E6E0 · blanc cassé #FAFAF8 · orange #E8972E
+   =========================================================================== */
+
+@font-face {
+  font-family: 'Nunito';
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/Nunito-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('fonts/Nunito-Regular.woff2') format('woff2');
+}
+
+:root {
+  --noir: #111111;
+  --gris: #9A9A90;
+  --gris-clair: #E8E6E0;
+  --blanc-casse: #FAFAF8;
+  --blanc: #FFFFFF;
+  --orange: #E8972E;
+  --orange-clair: #F0A840;
+  --orange-pale: #FBEFD9;
+
+  --bg: var(--blanc-casse);
+  --fg: var(--noir);
+  --muted: #6b6b63;
+  --rule: var(--gris-clair);
+  --card-bg: var(--blanc);
+  --code-bg: #f3f1ec;
+  --diagram-frame: var(--blanc-casse);
+
+  --reading-max: 720px;
+  --reading-pad: 20px;
+
+  font-size: 17px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.65;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.markdown-body {
+  max-width: var(--reading-max);
+  margin: 0 auto;
+  padding: 28px var(--reading-pad) 64px;
+}
+
+/* Landscape: widen the reading column and reduce side padding for wide diagrams */
+@media (orientation: landscape) {
+  :root { --reading-max: 1040px; --reading-pad: 32px; }
+}
+
+.loading { color: var(--muted); text-align: center; padding: 40vh 0; font-size: 1.2rem; }
+
+/* ---- Typography ---------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--noir);
+  margin: 1.6em 0 0.5em;
+}
+.markdown-body > h1:first-child { margin-top: 0.1em; }
+h1 { font-size: 2.05rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; padding-bottom: 0.25em; border-bottom: 2px solid var(--rule); }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.08rem; }
+
+p { margin: 0.85em 0; }
+a { color: var(--orange); text-decoration: none; border-bottom: 1px solid rgba(232,151,46,.4); }
+a:hover { border-bottom-color: var(--orange); }
+
+strong { font-weight: 700; }
+hr { border: none; border-top: 1px solid var(--rule); margin: 2em 0; }
+
+ul, ol { padding-left: 1.4em; margin: 0.7em 0; }
+li { margin: 0.3em 0; }
+
+blockquote {
+  margin: 1em 0;
+  padding: 0.4em 1.1em;
+  border-left: 4px solid var(--gris);
+  color: var(--muted);
+  background: rgba(154,154,144,.07);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+pre {
+  background: var(--code-bg);
+  padding: 14px 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+}
+pre code { background: none; padding: 0; }
+
+img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 1em auto; }
+
+table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 0.95em; }
+th, td { border: 1px solid var(--rule); padding: 8px 12px; text-align: left; }
+th { background: var(--gris-clair); font-weight: 700; }
+tr:nth-child(even) td { background: rgba(232,230,224,.35); }
+
+/* ---- Title + meta bar ---------------------------------------------------- */
+.okia-title {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 2.2rem;
+  line-height: 1.15;
+  margin: 0 0 0.35em;
+  letter-spacing: -0.015em;
+}
+.okia-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--rule);
+}
+.okia-meta .sep { color: var(--gris); }
+.okia-meta a { color: var(--orange); border: none; font-weight: 700; }
+
+/* ---- Callouts (Obsidian) ------------------------------------------------- */
+.callout {
+  margin: 1.2em 0;
+  border-radius: 10px;
+  border-left: 4px solid var(--callout-color, var(--orange));
+  background: color-mix(in srgb, var(--callout-color, var(--orange)) 9%, var(--card-bg));
+  overflow: hidden;
+}
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  padding: 10px 14px;
+  color: var(--callout-color, var(--orange));
+}
+.callout-title .callout-icon { font-size: 1.05em; }
+.callout-content { padding: 0 14px 10px 14px; }
+.callout-content > :first-child { margin-top: 0; }
+.callout-content > :last-child { margin-bottom: 0; }
+
+/* ---- Wiki-links ---------------------------------------------------------- */
+.wiki-link {
+  color: var(--orange);
+  background: var(--orange-pale);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- NER tags ------------------------------------------------------------ */
+mark.ner-tag {
+  background: rgba(var(--ner-rgb, 232,151,46), 0.18);
+  color: inherit;
+  border-bottom: 2px solid rgba(var(--ner-rgb, 232,151,46), 0.9);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.ner-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0 0 22px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.ner-legend .ner-chip { display: inline-flex; align-items: center; gap: 6px; }
+.ner-legend .ner-dot {
+  width: 11px; height: 11px; border-radius: 3px;
+  background: rgb(var(--ner-rgb, 232,151,46));
+  display: inline-block;
+}
+
+/* ---- Mermaid diagrams ---------------------------------------------------- */
+pre.mermaid {
+  background: var(--diagram-frame);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 1.4em 0;
+  text-align: center;
+  overflow: hidden;
+  cursor: zoom-in;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+pre.mermaid svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: auto;
+}
+/* Subtle "tap to zoom" affordance, like the ok-ia.ch lightbox cue */
+pre.mermaid[data-rendered="1"]::after {
+  content: "⤢";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.95rem;
+  color: var(--gris);
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  line-height: 24px;
+  text-align: center;
+  opacity: 0.85;
+}
+pre.mermaid.mermaid-error {
+  cursor: default;
+  text-align: left;
+  color: #b00020;
+  background: #fff3f3;
+  border-color: #f2c0c0;
+}
+pre.mermaid.mermaid-error::after { content: none; }
+
+/* ---- Dark mode: page goes dark, diagrams keep a light framed canvas ------ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a;
+    --fg: #ECEAE3;
+    --muted: #a7a79c;
+    --rule: #34343a;
+    --card-bg: #1f1f24;
+    --code-bg: #23232a;
+    /* Diagrams stay on a light frame so the OK-ia mermaid palette renders true */
+    --diagram-frame: var(--blanc-casse);
+  }
+  h1, h2, h3, h4, h5, h6 { color: var(--fg); }
+  .okia-title { color: var(--fg); }
+  th { background: #2a2a31; }
+  tr:nth-child(even) td { background: rgba(255,255,255,.03); }
+  /* The mermaid SVG itself is rendered with light OK-ia colors; keep it on a light card. */
+  pre.mermaid { color: var(--noir); }
+}
