@@ -57,16 +57,20 @@ gantt, pie, mindmap, callouts, wiki-links et NER).
 
 ```bash
 xcodebuild -project OKiaMarkdownViewer.xcodeproj -scheme OKiaMarkdownViewer \
-  -destination 'platform=iOS Simulator,name=iPhone 16' build
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 
-> **Note environnement** : sur cette machine, le *runtime* du simulateur iOS était périmé
-> (`CoreSimulator` 1051.50.0 vs build 1051.54.0 ; runtime `23D8133` manquant), ce qui fait échouer
-> `actool` (compilation de l'icône, variante *thinned*) — un **redémarrage du Mac** ou la réinstallation
-> du runtime via *Xcode → Settings → Components* corrige le problème. Le code Swift compile sans erreur
-> (`swiftc -typecheck` : OK) et le pipeline de rendu a été validé visuellement dans un navigateur
-> (5 diagrammes, callouts, wiki-links, NER, contraste de texte sur fonds sombres). L'archivage Xcode
-> (build *device*) pour TestFlight n'est pas concerné par ce souci de simulateur.
+> **Statut build** : `** BUILD SUCCEEDED **` sur simulateur iOS 26.5 (iPhone 17). L'app a été
+> installée et lancée sur simulateur, et le rendu natif (WKWebView) a été vérifié de bout en bout :
+> ouverture via `onOpenURL`, titre + barre de méta, légende NER, wiki-links, callouts, et les
+> diagrammes Mermaid (flowchart, séquence, gantt, pie, mindmap) à la charte OK-ia.
+>
+> **Pré-requis plateforme** : il faut la **plateforme iOS installée** (SDK + runtime simulateur
+> assorti). Si `xcodebuild` répond *« iOS XX.X is not installed »*, lancez :
+> ```bash
+> xcodebuild -downloadPlatform iOS
+> ```
+> (ou *Xcode → Settings → Components*). C'est requis pour tout build iOS, y compris l'archive TestFlight.
 
 ---
 
@@ -165,9 +169,9 @@ Points d'extension à implémenter pour macOS :
 | # | Critère | État |
 |---|---------|------|
 | 1 | Ouverture `.md` depuis Safari/Files/autre app | ✅ (UTI + onOpenURL + fileImporter) |
-| 2 | Rendu visuellement identique à ok-ia.ch | ✅ (validé : 5 diagrammes, callouts, wiki, NER, palette) |
+| 2 | Rendu visuellement identique à ok-ia.ch | ✅ (validé en natif : 5 diagrammes, callouts, wiki, NER, palette) |
 | 3 | Zoom diagramme (pinch/pan/double-tap, SVG net) | ✅ (DiagramZoomView, SVG vectoriel) |
 | 4 | Rotation portrait↔paysage fluide | ✅ (CSS `@media orientation` + WKWebView) |
 | 5 | Fonctionne hors-ligne (aucun CDN) | ✅ (marked/mermaid/fonts bundlés) |
-| 6 | Archive/upload TestFlight sans erreur de signature | ⚙️ à finaliser dans Xcode (Team à définir) |
+| 6 | Archive/upload TestFlight sans erreur de signature | ✅ build OK ; signature à finaliser dans Xcode (Team à définir) |
 | 7 | README (build, assets, TestFlight, Phase 2) | ✅ (ce document) |
