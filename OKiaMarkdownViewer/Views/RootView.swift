@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct RootView: View {
     @EnvironmentObject private var store: DocumentStore
     @State private var showImporter = false
+    @State private var showVaultPicker = false
 
     /// UTTypes we accept in the in-app importer.
     static let importedTypes: [UTType] = {
@@ -23,9 +24,12 @@ struct RootView: View {
             } else {
                 EmptyStateView(
                     recentsStore: store.recents,
+                    vault: store.vault,
                     onOpen: { showImporter = true },
                     onSample: { store.openSample() },
-                    onRecent: { store.openRecent($0) }
+                    onRecent: { store.openRecent($0) },
+                    onPickVault: { showVaultPicker = true },
+                    onOpenVault: { store.openVaultReport($0) }
                 )
             }
         }
@@ -41,6 +45,15 @@ struct RootView: View {
                 store.errorMessage = error.localizedDescription
             }
         }
+        .fileImporter(
+            isPresented: $showVaultPicker,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                store.vault.setFolder(url)
+            }
+        }
         .alert("Erreur",
                isPresented: Binding(
                 get: { store.errorMessage != nil },
@@ -53,6 +66,9 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .okiaOpenFile)) { _ in
             showImporter = true
         }
+        // macOS: auto-open new reports landing in the vault folder.
+        .task { store.startVaultWatch() }
+        .onChange(of: store.vault.folderName) { _, _ in store.startVaultWatch() }
         // Drag a .md from Finder onto the window to open it.
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }

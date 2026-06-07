@@ -4,9 +4,12 @@ import SwiftUI
 /// actions and a list of recently opened files.
 struct EmptyStateView: View {
     @ObservedObject var recentsStore: RecentFilesStore
+    @ObservedObject var vault: VaultStore
     var onOpen: () -> Void
     var onSample: () -> Void
     var onRecent: (RecentFile) -> Void
+    var onPickVault: () -> Void
+    var onOpenVault: (VaultReport) -> Void
 
     private var recents: [RecentFile] { recentsStore.items }
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
@@ -49,6 +52,8 @@ struct EmptyStateView: View {
                     .tint(orange)
                 }
 
+                VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault)
+
                 if !recents.isEmpty {
                     recentsSection
                 }
@@ -65,6 +70,7 @@ struct EmptyStateView: View {
             .padding(.horizontal)
             .frame(maxWidth: .infinity)
         }
+        .onAppear { vault.refresh() }
     }
 
     private var recentsSection: some View {
