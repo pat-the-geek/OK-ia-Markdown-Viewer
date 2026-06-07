@@ -16,6 +16,7 @@ struct MarkdownWebView: UIViewRepresentable {
     @Binding var tapped: TappedDiagram?
     var onTitle: (String) -> Void
     var webController: ReaderWebController
+    var onExternalLink: (URL) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -31,6 +32,7 @@ struct MarkdownWebView: UIViewRepresentable {
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
@@ -64,7 +66,7 @@ struct MarkdownWebView: UIViewRepresentable {
 
     // MARK: - Coordinator
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: MarkdownWebView
         weak var webView: WKWebView?
         var pageReady = false
@@ -75,6 +77,40 @@ struct MarkdownWebView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             pageReady = true
             renderCurrentDocument()
+        }
+
+        /// Intercept link taps: open web/mail/tel links externally instead of replacing the
+        /// rendered document. Allow the initial file:// load and same-page (#anchor) fragments.
+        func webView(_ webView: WKWebView,
+                     decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            guard navigationAction.navigationType == .linkActivated,
+                  let url = navigationAction.request.url else {
+                decisionHandler(.allow)
+                return
+            }
+            let scheme = url.scheme?.lowercased() ?? ""
+            // Same document fragment (#heading) → let it scroll in place.
+            if scheme == "file" {
+                decisionHandler(.allow)
+                return
+            }
+            if ["http", "https", "mailto", "tel"].contains(scheme) {
+                decisionHandler(.cancel)
+                parent.onExternalLink(url)
+                return
+            }
+            decisionHandler(.cancel)
+        }
+
+        /// Handle target="_blank" links (which would otherwise open a blank view or replace content).
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if let url = navigationAction.request.url, let scheme = url.scheme?.lowercased(),
+               ["http", "https", "mailto", "tel"].contains(scheme) {
+                parent.onExternalLink(url)
+            }
+            return nil
         }
 
         func renderCurrentDocument() {

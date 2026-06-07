@@ -15,13 +15,15 @@ struct ReaderView: View {
     @State private var searchText = ""
     @State private var showShareOptions = false
     @State private var sharePayload: SharePayload?
+    @State private var externalLink: ExternalLink?
     @FocusState private var searchFocused: Bool
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
         ZStack(alignment: .top) {
-            MarkdownWebView(document: document, tapped: $tapped, onTitle: { title = $0 }, webController: web)
+            MarkdownWebView(document: document, tapped: $tapped, onTitle: { title = $0 },
+                            webController: web, onExternalLink: handleExternalLink)
                 .ignoresSafeArea(edges: .bottom)
 
             VStack(spacing: 0) {
@@ -37,6 +39,9 @@ struct ReaderView: View {
         }
         .sheet(item: $sharePayload) { payload in
             ShareSheet(items: [payload.url])
+        }
+        .sheet(item: $externalLink) { link in
+            SafariView(url: link.url).ignoresSafeArea()
         }
         .confirmationDialog("Partager", isPresented: $showShareOptions, titleVisibility: .visible) {
             Button("Exporter en PDF") { exportPDF() }
@@ -120,6 +125,17 @@ struct ReaderView: View {
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+    }
+
+    // MARK: External links
+
+    private func handleExternalLink(_ url: URL) {
+        let scheme = url.scheme?.lowercased() ?? ""
+        if scheme == "http" || scheme == "https" {
+            externalLink = ExternalLink(url: url)          // in-app Safari with "Done"
+        } else {
+            UIApplication.shared.open(url)                 // mailto:, tel: → system handler
+        }
     }
 
     // MARK: Share actions
