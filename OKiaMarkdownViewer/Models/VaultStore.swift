@@ -1,25 +1,32 @@
 import Foundation
 
-/// A Markdown report found inside the watched vault folder.
+/// A Markdown report found inside a matching subfolder of the vault root.
 struct VaultReport: Identifiable, Equatable {
-    let name: String          // e.g. "2026-06-07 rapport.md"
+    let subfolder: String     // matching "rapports-*" directory, relative to the vault root
+    let name: String          // file name, e.g. "2026-06-07 rapport.md"
     let modified: Date
-    let downloaded: Bool      // false = iCloud placeholder not yet downloaded
-    var id: String { name }
+    let downloaded: Bool       // false = iCloud placeholder not yet downloaded
+    var id: String { subfolder + "/" + name }
 }
 
-/// Remembers a folder (typically an Obsidian vault / "Rapports" subfolder in iCloud Drive)
-/// via a security-scoped bookmark, and lists the Markdown reports inside it (newest first).
+/// Remembers the vault **root** folder (security-scoped bookmark) and lists Markdown reports
+/// from its immediate subfolders whose name matches a glob pattern (default "rapports-*").
+/// Only matching folders are read — the rest of the vault is ignored.
 @MainActor
 final class VaultStore: ObservableObject {
     @Published private(set) var folderName: String?
     @Published private(set) var reports: [VaultReport] = []
+    @Published private(set) var pattern: String
 
-    private let key = "okia.vaultFolder"
+    private let folderKey = "okia.vaultFolder"
+    private let patternKey = "okia.vaultPattern"
+    static let defaultPattern = "rapports-*"
+
     private var bookmark: Data?
 
     init() {
-        bookmark = UserDefaults.standard.data(forKey: key)
+        bookmark = UserDefaults.standard.data(forKey: folderKey)
+        pattern = UserDefaults.standard.string(forKey: patternKey) ?? VaultStore.defaultPattern
         folderName = resolveFolder()?.lastPathComponent
     }
 
@@ -31,19 +38,26 @@ final class VaultStore: ObservableObject {
         guard let data = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         else { return }
         bookmark = data
-        UserDefaults.standard.set(data, forKey: key)
+        UserDefaults.standard.set(data, forKey: folderKey)
         folderName = url.lastPathComponent
+        refresh()
+    }
+
+    func setPattern(_ newValue: String) {
+        let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+        pattern = trimmed.isEmpty ? VaultStore.defaultPattern : trimmed
+        UserDefaults.standard.set(pattern, forKey: patternKey)
         refresh()
     }
 
     func clearFolder() {
         bookmark = nil
-        UserDefaults.standard.removeObject(forKey: key)
+        UserDefaults.standard.removeObject(forKey: folderKey)
         folderName = nil
         reports = []
     }
 
-    /// Resolve the stored bookmark to the folder URL. Caller must manage security scope when reading.
+    /// Resolve the stored bookmark to the vault root URL. Caller manages security scope when reading.
     func resolveFolder() -> URL? {
         guard let bookmark else { return nil }
         var stale = false
@@ -54,47 +68,55 @@ final class VaultStore: ObservableObject {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             if let fresh = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil) {
                 self.bookmark = fresh
-                UserDefaults.standard.set(fresh, forKey: key)
+                UserDefaults.standard.set(fresh, forKey: folderKey)
             }
         }
         return url
     }
 
-    /// Resolve the file URL of a report inside the vault folder.
     func reportURL(_ report: VaultReport) -> URL? {
-        resolveFolder()?.appendingPathComponent(report.name)
+        resolveFolder()?.appendingPathComponent(report.subfolder).appendingPathComponent(report.name)
     }
 
-    /// List `.md` reports (including not-yet-downloaded iCloud placeholders), newest first.
+    /// Scan immediate subfolders matching `pattern` and collect their `.md` reports, newest first.
     func refresh() {
-        guard let folder = resolveFolder() else { reports = []; return }
-        let scoped = folder.startAccessingSecurityScopedResource()
-        defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
+        guard let root = resolveFolder() else { reports = []; return }
+        let scoped = root.startAccessingSecurityScopedResource()
+        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
 
-        let keys: [URLResourceKey] = [.contentModificationDateKey]
-        guard let items = try? FileManager.default.contentsOfDirectory(
-            at: folder, includingPropertiesForKeys: keys, options: []) else {
+        let fm = FileManager.default
+        guard let children = try? fm.contentsOfDirectory(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey], options: []) else {
             reports = []; return
         }
+        let predicate = NSPredicate(format: "SELF LIKE[c] %@", pattern)
 
         var found: [VaultReport] = []
-        for item in items {
-            let last = item.lastPathComponent
-            let name: String
-            let downloaded: Bool
-            if last.hasSuffix(".md") && !last.hasPrefix(".") {
-                name = last; downloaded = true
-            } else if last.hasPrefix(".") && last.hasSuffix(".icloud") {
-                // iCloud placeholder ".<real name>.icloud" -> "<real name>"
-                let inner = String(last.dropFirst().dropLast(".icloud".count))
-                guard inner.hasSuffix(".md") else { continue }
-                name = inner; downloaded = false
-            } else {
-                continue
+        for child in children {
+            let isDir = (try? child.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            guard isDir else { continue }
+            let dirName = child.lastPathComponent
+            guard predicate.evaluate(with: dirName) else { continue }
+
+            guard let files = try? fm.contentsOfDirectory(
+                at: child, includingPropertiesForKeys: [.contentModificationDateKey], options: []) else { continue }
+            for file in files {
+                let last = file.lastPathComponent
+                let name: String
+                let downloaded: Bool
+                if last.hasSuffix(".md") && !last.hasPrefix(".") {
+                    name = last; downloaded = true
+                } else if last.hasPrefix(".") && last.hasSuffix(".icloud") {
+                    let inner = String(last.dropFirst().dropLast(".icloud".count))
+                    guard inner.hasSuffix(".md") else { continue }
+                    name = inner; downloaded = false
+                } else {
+                    continue
+                }
+                let mod = (try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+                    ?? .distantPast
+                found.append(VaultReport(subfolder: dirName, name: name, modified: mod, downloaded: downloaded))
             }
-            let mod = (try? item.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
-                ?? .distantPast
-            found.append(VaultReport(name: name, modified: mod, downloaded: downloaded))
         }
         reports = found.sorted { $0.modified > $1.modified }
     }

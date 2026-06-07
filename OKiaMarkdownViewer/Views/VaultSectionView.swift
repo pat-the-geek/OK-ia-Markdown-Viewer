@@ -6,15 +6,26 @@ struct VaultSectionView: View {
     var onPick: () -> Void
     var onOpen: (VaultReport) -> Void
 
+    @State private var showSettings = false
+    @State private var patternDraft = ""
+
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
                 Text("Coffre")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button { patternDraft = vault.pattern; showSettings = true } label: {
+                    Image(systemName: "slider.horizontal.3")
+                }
+                .tint(orange)
+                .accessibilityLabel("Réglages du coffre")
+                .popover(isPresented: $showSettings) {
+                    settingsControls.presentationCompactAdaptation(.popover)
+                }
                 Button(vault.hasFolder ? "Changer" : "Choisir…", action: onPick)
                     .font(.caption.weight(.semibold))
                     .tint(orange)
@@ -31,7 +42,7 @@ struct VaultSectionView: View {
                 .buttonStyle(.bordered)
                 .tint(orange)
             } else if vault.reports.isEmpty {
-                Text("Aucun rapport dans « \(vault.folderName ?? "") ».")
+                Text("Aucun rapport trouvé dans les dossiers « \(vault.pattern) » de « \(vault.folderName ?? "") ».")
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -49,9 +60,10 @@ struct VaultSectionView: View {
                                         .font(.callout.weight(.medium))
                                         .foregroundStyle(.primary)
                                         .lineLimit(1)
-                                    Text(report.modified, format: .relative(presentation: .named))
+                                    Text("\(report.subfolder) · \(report.modified.formatted(.relative(presentation: .named)))")
                                         .font(.caption2)
                                         .foregroundStyle(.tertiary)
+                                        .lineLimit(1)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -75,5 +87,36 @@ struct VaultSectionView: View {
         }
         .frame(maxWidth: 480)
         .padding(.top, 8)
+    }
+
+    private var settingsControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Dossiers à inclure")
+                .font(.headline)
+            Text("Motif des sous-dossiers du coffre à lire (jokers * et ?). Les autres dossiers sont ignorés.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField(VaultStore.defaultPattern, text: $patternDraft)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
+                .frame(minWidth: 220)
+                .onSubmit { apply() }
+            HStack {
+                Button("Par défaut") { patternDraft = VaultStore.defaultPattern }
+                    .font(.caption)
+                Spacer()
+                Button("Appliquer") { apply() }
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+        .tint(orange)
+        .padding(16)
+        .frame(maxWidth: 320)
+    }
+
+    private func apply() {
+        vault.setPattern(patternDraft)
+        showSettings = false
     }
 }

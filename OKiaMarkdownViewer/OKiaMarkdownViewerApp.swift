@@ -127,7 +127,7 @@ final class DocumentStore: ObservableObject {
         }
         let scoped = folder.startAccessingSecurityScopedResource()
         defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
-        let fileURL = folder.appendingPathComponent(report.name)
+        let fileURL = folder.appendingPathComponent(report.subfolder).appendingPathComponent(report.name)
         // Materialise an iCloud placeholder if needed (NSFileCoordinator in the loader also handles this).
         if !FileManager.default.fileExists(atPath: fileURL.path) {
             try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
