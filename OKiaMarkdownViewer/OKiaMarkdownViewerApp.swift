@@ -64,9 +64,11 @@ final class DocumentStore: ObservableObject {
                     return
                 }
                 if let data, error == nil {
-                    self.document = MarkdownDocument(filename: self.sanitize(name),
+                    let safeName = self.sanitize(name)
+                    self.document = MarkdownDocument(filename: safeName,
                                                      text: MarkdownLoader.decode(data),
                                                      sourceURL: url)
+                    self.recents.addRemote(url: url, name: safeName)
                     self.errorMessage = nil
                 } else {
                     self.errorMessage = "Impossible de télécharger le rapport (\(error?.localizedDescription ?? "réseau"))."
@@ -93,8 +95,12 @@ final class DocumentStore: ObservableObject {
         }
     }
 
-    /// Reopens a previously stored recent file.
+    /// Reopens a previously stored recent entry (local file or remote report).
     func openRecent(_ item: RecentFile) {
+        if let remote = item.remoteURLString, let url = URL(string: remote) {
+            openRemote(url)
+            return
+        }
         guard let url = recents.resolve(item) else {
             errorMessage = "Ce fichier n’est plus accessible."
             recents.remove(item)
