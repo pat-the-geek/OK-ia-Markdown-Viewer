@@ -52,11 +52,11 @@ struct EmptyStateView: View {
                     .tint(orange)
                 }
 
-                VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault)
-
                 if !recents.isEmpty {
                     recentsSection
                 }
+
+                VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault)
 
                 Spacer(minLength: 24)
                 Image("OKiaWideLogo")
