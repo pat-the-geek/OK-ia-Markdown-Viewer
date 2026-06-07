@@ -41,9 +41,11 @@ struct ReaderView: View {
         .sheet(item: $sharePayload) { payload in
             ShareSheet(items: [payload.url])
         }
+#if !targetEnvironment(macCatalyst)
         .sheet(item: $externalLink) { link in
             SafariView(url: link.url).ignoresSafeArea()
         }
+#endif
         .confirmationDialog("Partager", isPresented: $showShareOptions, titleVisibility: .visible) {
             Button("Exporter en PDF") { exportPDF() }
             Button("Partager le Markdown (.md)") { shareMarkdown() }
@@ -135,11 +137,15 @@ struct ReaderView: View {
 
     private func handleExternalLink(_ url: URL) {
         let scheme = url.scheme?.lowercased() ?? ""
+        #if targetEnvironment(macCatalyst)
+        UIApplication.shared.open(url)                      // open in the default macOS browser
+        #else
         if scheme == "http" || scheme == "https" {
             externalLink = ExternalLink(url: url)          // in-app Safari with "Done"
         } else {
             UIApplication.shared.open(url)                 // mailto:, tel: → system handler
         }
+        #endif
     }
 
     // MARK: Share actions

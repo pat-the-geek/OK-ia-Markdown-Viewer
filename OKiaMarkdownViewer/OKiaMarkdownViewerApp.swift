@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension Notification.Name {
+    /// Posted by the macOS File ▸ Open menu command; observed by RootView.
+    static let okiaOpenFile = Notification.Name("okia.openFile")
+}
+
 /// Holds the currently displayed document and any load error.
 @MainActor
 final class DocumentStore: ObservableObject {
@@ -59,6 +64,15 @@ struct OKiaMarkdownViewerApp: App {
                 .onOpenURL { url in
                     store.open(url: url)
                 }
+        }
+        .commands {
+            // macOS: replace the default "New" with "Ouvrir…" (⌘O).
+            CommandGroup(replacing: .newItem) {
+                Button("Ouvrir…") {
+                    NotificationCenter.default.post(name: .okiaOpenFile, object: nil)
+                }
+                .keyboardShortcut("o", modifiers: .command)
+            }
         }
     }
 }

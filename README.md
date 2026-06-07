@@ -153,19 +153,27 @@ aucun appel réseau pour le rendu.
 
 ---
 
-## Phase 2 — macOS (préparé, non livré)
+## macOS (Mac Catalyst) — livré ✅
 
-L'architecture est volontairement compatible avec une future cible **Mac Catalyst** :
+L'app tourne aussi sur **macOS via Mac Catalyst** (même base de code) :
 
-- `MarkdownDocument` / `MarkdownLoader` sont **sans UIKit** (réutilisables tels quels).
-- Les vues UIKit (`WKWebView`) sont isolées dans des `UIViewRepresentable` (compatibles Catalyst).
-- `project.yml` : passer `SUPPORTS_MACCATALYST: YES` et ajouter `macCatalyst` à la cible.
+- `SUPPORTS_MACCATALYST: YES` dans `project.yml` (bundle id identique, `MACOSX_DEPLOYMENT_TARGET 14.0`).
+- Exécution locale signée « Sign to Run Locally » (compte personnel) — aucune config supplémentaire.
+- Menu **Fichier ▸ Ouvrir…** (**⌘O**), **glisser-déposer** d'un `.md` sur la fenêtre, **taille de fenêtre minimale** (480×600), fenêtre redimensionnable.
+- Liens externes : ouverts dans le **navigateur par défaut** du Mac (SFSafariViewController étant indisponible sur Catalyst — voir le `#if targetEnvironment(macCatalyst)` dans `ReaderView` / `SafariView`).
+- Zoom diagramme, recherche, sommaire, export PDF, fichiers récents : identiques à iOS.
 
-Points d'extension à implémenter pour macOS :
+### Builder / lancer sur Mac
 
-- Menu **Fichier** (Ouvrir / Ouvrir récent) via `Commands`.
-- **Glisser-déposer** d'un `.md` sur la fenêtre (`onDrop`).
-- Fenêtres redimensionnables, **zoom trackpad** (pinch) et **⌘+molette**.
+```bash
+xcodegen generate
+xcodebuild -project OKiaMarkdownViewer.xcodeproj -scheme OKiaMarkdownViewer \
+  -destination 'platform=macOS,variant=Mac Catalyst' build
+# puis : open ~/Library/Developer/Xcode/DerivedData/OKiaMarkdownViewer-*/Build/Products/Debug-maccatalyst/OKiaMarkdownViewer.app
+```
+ou, dans Xcode, choisir la destination **« Mac (Mac Catalyst) »** puis **Run** (⌘R).
+
+> Distribution macOS : possible via **TestFlight pour Mac** (mêmes étapes Archive → App Store Connect, une fois le compte payant actif) ou un export *Developer ID* notarisé pour diffusion directe.
 
 ---
 
@@ -179,4 +187,5 @@ Points d'extension à implémenter pour macOS :
 | 4 | Rotation portrait↔paysage fluide | ✅ (CSS `@media orientation` + WKWebView) |
 | 5 | Fonctionne hors-ligne (aucun CDN) | ✅ (marked/mermaid/fonts bundlés) |
 | 6 | Archive/upload TestFlight sans erreur de signature | ✅ build OK ; signature à finaliser dans Xcode (Team à définir) |
-| 7 | README (build, assets, TestFlight, Phase 2) | ✅ (ce document) |
+| 7 | README (build, assets, TestFlight, macOS) | ✅ (ce document) |
+| 8 | macOS (Mac Catalyst) | ✅ build + lancement OK ; menu ⌘O, drag&drop, fenêtre redimensionnable |
