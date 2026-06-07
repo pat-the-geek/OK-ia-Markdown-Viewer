@@ -10,6 +10,15 @@ final class ZoomController: ObservableObject {
         sv.setZoomScale(sv.minimumZoomScale, animated: animated)
     }
 
+    func zoomIn()  { zoomBy(1.4) }
+    func zoomOut() { zoomBy(1 / 1.4) }
+
+    private func zoomBy(_ factor: CGFloat) {
+        guard let sv = scrollView else { return }
+        let target = min(sv.maximumZoomScale, max(sv.minimumZoomScale, sv.zoomScale * factor))
+        sv.setZoomScale(target, animated: true)
+    }
+
     func toggleZoom(at point: CGPoint) {
         guard let sv = scrollView else { return }
         if sv.zoomScale > sv.minimumZoomScale * 1.05 {
@@ -45,7 +54,33 @@ struct DiagramZoomView: View {
 
             chrome
         }
+        .overlay(alignment: .bottom) { zoomBar }
         .statusBarHidden(true)
+    }
+
+    private var zoomBar: some View {
+        HStack(spacing: 0) {
+            Button { controller.zoomOut() } label: {
+                Image(systemName: "minus.magnifyingglass")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 56, height: 44)
+            }
+            .accessibilityLabel("Dézoomer")
+
+            Divider().frame(height: 24).overlay(Color.white.opacity(0.25))
+
+            Button { controller.zoomIn() } label: {
+                Image(systemName: "plus.magnifyingglass")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 56, height: 44)
+            }
+            .accessibilityLabel("Zoomer")
+        }
+        .tint(orange)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(.white.opacity(0.15)))
+        .padding(.bottom, 28)
+        .offset(y: dragOffset)
     }
 
     private var chrome: some View {

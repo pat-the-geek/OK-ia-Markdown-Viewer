@@ -394,6 +394,7 @@
         highlightEntities(container, ner.entities, ner.subtypes);   // 6 (DOM-safe)
         hideRedundantSecondImage(container);
         clearSearch();
+        applyFontScale();                                           // keep chosen size across renders
         buildTOC(container);                                        // headings -> ids + TOC
 
         post('docMeta', { title: header.title });
@@ -410,6 +411,25 @@
       post('renderError', { message: String(err && err.message || err) });
       return Promise.reject(err);
     }
+  }
+
+  /* =========================================================================
+     FONT SIZE — scale the whole document by adjusting the root font size.
+     Most typography is expressed in rem, so it scales proportionally.
+     ========================================================================= */
+  var BASE_FONT_PX = 17;          // must match :root font-size in style.css
+  var currentFontScale = 1;
+
+  function applyFontScale() {
+    document.documentElement.style.fontSize = (BASE_FONT_PX * currentFontScale).toFixed(2) + 'px';
+  }
+
+  function setFontScale(scale) {
+    if (typeof scale === 'number' && isFinite(scale) && scale > 0) {
+      currentFontScale = Math.max(0.6, Math.min(2.2, scale));
+      applyFontScale();
+    }
+    return currentFontScale;
   }
 
   /* =========================================================================
@@ -512,6 +532,7 @@
 
   window.OKIA = {
     render: render,
+    setFontScale: setFontScale,
     scrollToHeading: scrollToHeading,
     search: search,
     searchNext: searchNext,
