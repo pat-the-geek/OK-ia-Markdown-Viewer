@@ -22,6 +22,19 @@ final class ReaderWebController: ObservableObject {
     @Published var toc: [TOCItem] = []
     @Published var searchResult = SearchResult(count: 0, index: 0)
 
+    // MARK: Font size
+    private(set) var fontScale: Double = 1.0
+
+    func setFontScale(_ scale: Double) {
+        fontScale = min(2.2, max(0.6, scale))
+        eval("window.OKIA && window.OKIA.setFontScale(\(fontScale))")
+    }
+
+    /// Re-apply the stored scale (e.g. after a fresh render).
+    func reapplyFontScale() {
+        eval("window.OKIA && window.OKIA.setFontScale(\(fontScale))")
+    }
+
     // MARK: TOC
     func scrollToHeading(_ id: String) {
         eval("window.OKIA && window.OKIA.scrollToHeading(\(jsString(id)))")

@@ -17,7 +17,11 @@ struct ReaderView: View {
     @State private var showShareOptions = false
     @State private var sharePayload: SharePayload?
     @State private var externalLink: ExternalLink?
+    @State private var showTextSize = false
+    @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     @FocusState private var searchFocused: Bool
+
+    private let minScale = 0.7, maxScale = 2.0, scaleStep = 0.1
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -55,6 +59,8 @@ struct ReaderView: View {
         .onChange(of: document.id) { _, _ in
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
         }
+        .onChange(of: fontScale) { _, v in web.setFontScale(v) }
+        .task { web.setFontScale(fontScale) }
     }
 
     // MARK: Title bar
@@ -70,6 +76,13 @@ struct ReaderView: View {
                 .truncationMode(.tail)
 
             Spacer(minLength: 4)
+
+            Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
+                .accessibilityLabel("Taille du texte")
+                .popover(isPresented: $showTextSize) {
+                    textSizeControls
+                        .presentationCompactAdaptation(.popover)
+                }
 
             Button { showTOC = true } label: { Image(systemName: "list.bullet") }
                 .disabled(web.toc.isEmpty)
@@ -131,6 +144,39 @@ struct ReaderView: View {
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+    }
+
+    // MARK: Text size
+
+    private var textSizeControls: some View {
+        HStack(spacing: 16) {
+            Button { setScale(fontScale - scaleStep) } label: {
+                Image(systemName: "minus").font(.headline).frame(width: 34, height: 34)
+            }
+            .buttonStyle(.bordered)
+            .disabled(fontScale <= minScale + 0.001)
+
+            VStack(spacing: 2) {
+                Text("\(Int((fontScale * 100).rounded()))%")
+                    .font(.headline.monospacedDigit())
+                Button("Réinitialiser") { setScale(1.0) }
+                    .font(.caption)
+                    .disabled(abs(fontScale - 1.0) < 0.001)
+            }
+            .frame(minWidth: 72)
+
+            Button { setScale(fontScale + scaleStep) } label: {
+                Image(systemName: "plus").font(.headline).frame(width: 34, height: 34)
+            }
+            .buttonStyle(.bordered)
+            .disabled(fontScale >= maxScale - 0.001)
+        }
+        .tint(orange)
+        .padding(16)
+    }
+
+    private func setScale(_ value: Double) {
+        fontScale = (min(maxScale, max(minScale, value)) * 100).rounded() / 100
     }
 
     // MARK: External links
