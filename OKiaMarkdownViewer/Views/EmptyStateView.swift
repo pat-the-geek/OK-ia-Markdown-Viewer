@@ -54,9 +54,12 @@ struct EmptyStateView: View {
                 }
 
                 Spacer(minLength: 24)
-                Text("ok-ia.ch")
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
+                Image("OKiaWideLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 200)
+                    .frame(height: 50)
+                    .accessibilityLabel("OK-ia")
                     .padding(.bottom, 16)
             }
             .padding(.horizontal)
