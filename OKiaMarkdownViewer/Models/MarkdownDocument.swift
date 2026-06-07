@@ -5,6 +5,8 @@ struct MarkdownDocument: Identifiable, Equatable {
     let id = UUID()
     let filename: String
     let text: String
+    /// Original file URL when opened from disk (nil for the bundled sample); used for sharing.
+    var sourceURL: URL?
 
     static func == (lhs: MarkdownDocument, rhs: MarkdownDocument) -> Bool {
         lhs.id == rhs.id
@@ -43,7 +45,7 @@ enum MarkdownLoader {
         }
 
         let text = decode(data)
-        return MarkdownDocument(filename: url.lastPathComponent, text: text)
+        return MarkdownDocument(filename: url.lastPathComponent, text: text, sourceURL: url)
     }
 
     /// UTF-8 first, then Latin-1 fallback, then a lossy last resort.

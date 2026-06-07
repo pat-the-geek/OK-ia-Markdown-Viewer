@@ -393,6 +393,8 @@
         dedupeTitle(container, header.title);                       // remove duplicate H1
         highlightEntities(container, ner.entities, ner.subtypes);   // 6 (DOM-safe)
         hideRedundantSecondImage(container);
+        clearSearch();
+        buildTOC(container);                                        // headings -> ids + TOC
 
         post('docMeta', { title: header.title });
 
@@ -410,6 +412,111 @@
     }
   }
 
-  window.OKIA = { render: render };
+  /* =========================================================================
+     TABLE OF CONTENTS — assign ids to headings, post the outline to native
+     ========================================================================= */
+  function slugify(text) {
+    return text.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
+  }
+
+  function buildTOC(container) {
+    var heads = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    var items = [], used = {};
+    heads.forEach(function (h) {
+      if (h.offsetParent === null && h.getClientRects().length === 0) { /* hidden */ }
+      var base = 'h-' + slugify(h.textContent);
+      var slug = base;
+      while (used[slug]) { used[base] = (used[base] || 1) + 1; slug = base + '-' + used[base]; }
+      used[slug] = 1;
+      h.id = slug;
+      items.push({ id: slug, level: parseInt(h.tagName.slice(1), 10), text: h.textContent.trim() });
+    });
+    post('toc', { items: items });
+  }
+
+  function scrollToHeading(id) {
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* =========================================================================
+     IN-DOCUMENT SEARCH — highlight matches, navigate between them
+     ========================================================================= */
+  var searchState = { hits: [], idx: -1 };
+
+  function clearSearch() {
+    var container = document.getElementById('content');
+    if (!container) return;
+    container.querySelectorAll('mark.search-hit').forEach(function (m) {
+      var parent = m.parentNode;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    });
+    searchState = { hits: [], idx: -1 };
+  }
+
+  function isSearchable(node) {
+    var p = node.parentNode;
+    while (p && p !== document.body) {
+      var n = p.nodeName;
+      if (n === 'SCRIPT' || n === 'STYLE' || n === 'SVG' || n === 'svg') return false;
+      if (p.classList && p.classList.contains('mermaid')) return false;
+      p = p.parentNode;
+    }
+    return true;
+  }
+
+  function search(query) {
+    clearSearch();
+    var container = document.getElementById('content');
+    if (!container || !query) return { count: 0, index: 0 };
+    var needle = query.toLowerCase();
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    var targets = [], node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue.toLowerCase().indexOf(needle) !== -1 && isSearchable(node)) targets.push(node);
+    }
+    targets.forEach(function (textNode) {
+      var text = textNode.nodeValue, low = text.toLowerCase();
+      var frag = document.createDocumentFragment(), last = 0, i;
+      while ((i = low.indexOf(needle, last)) !== -1) {
+        if (i > last) frag.appendChild(document.createTextNode(text.slice(last, i)));
+        var mark = document.createElement('mark');
+        mark.className = 'search-hit';
+        mark.textContent = text.slice(i, i + needle.length);
+        frag.appendChild(mark);
+        last = i + needle.length;
+      }
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      textNode.parentNode.replaceChild(frag, textNode);
+    });
+    searchState.hits = Array.prototype.slice.call(container.querySelectorAll('mark.search-hit'));
+    if (searchState.hits.length) { setCurrent(0); }
+    return { count: searchState.hits.length, index: searchState.hits.length ? 1 : 0 };
+  }
+
+  function setCurrent(idx) {
+    if (!searchState.hits.length) return 0;
+    searchState.hits.forEach(function (h) { h.classList.remove('search-current'); });
+    searchState.idx = (idx + searchState.hits.length) % searchState.hits.length;
+    var cur = searchState.hits[searchState.idx];
+    cur.classList.add('search-current');
+    cur.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return searchState.idx + 1;
+  }
+
+  function searchNext() { return { count: searchState.hits.length, index: setCurrent(searchState.idx + 1) }; }
+  function searchPrev() { return { count: searchState.hits.length, index: setCurrent(searchState.idx - 1) }; }
+
+  window.OKIA = {
+    render: render,
+    scrollToHeading: scrollToHeading,
+    search: search,
+    searchNext: searchNext,
+    searchPrev: searchPrev,
+    clearSearch: clearSearch
+  };
   post('ready', {});
 })();

@@ -20,8 +20,11 @@ struct RootView: View {
                 ReaderView(document: doc, onOpen: { showImporter = true })
             } else {
                 EmptyStateView(
+                    recents: store.recents.items,
                     onOpen: { showImporter = true },
-                    onSample: { store.openSample() }
+                    onSample: { store.openSample() },
+                    onRecent: { store.openRecent($0) },
+                    onRemoveRecent: { store.recents.remove($0) }
                 )
             }
         }
