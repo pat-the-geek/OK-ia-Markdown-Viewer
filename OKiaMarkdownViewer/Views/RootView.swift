@@ -67,7 +67,7 @@ struct RootView: View {
         for scene in UIApplication.shared.connectedScenes {
             if let windowScene = scene as? UIWindowScene {
                 windowScene.sizeRestrictions?.minimumSize = CGSize(width: 480, height: 600)
-                windowScene.title = "OK-ia - Markdown Viewer"
+                windowScene.title = "md Viewer"
             }
         }
         #endif
