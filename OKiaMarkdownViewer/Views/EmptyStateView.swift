@@ -57,8 +57,8 @@ struct EmptyStateView: View {
                 Image("OKiaWideLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 96)
-                    .opacity(0.35)
+                    .frame(width: 72)
+                    .opacity(0.7)
                     .accessibilityLabel("OK-ia")
                     .padding(.bottom, 16)
             }
