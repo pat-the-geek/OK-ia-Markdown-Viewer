@@ -12,6 +12,17 @@ final class DocumentStore: ObservableObject {
     @Published var errorMessage: String?
 
     let recents = RecentFilesStore()
+    let vault = VaultStore()
+
+    #if targetEnvironment(macCatalyst)
+    private lazy var vaultWatcher = VaultWatcher(vault: vault) { [weak self] report in
+        self?.openVaultReport(report)
+    }
+    /// macOS: begin (or restart) watching the vault folder for newly arrived reports.
+    func startVaultWatch() { vaultWatcher.start() }
+    #else
+    func startVaultWatch() {}
+    #endif
 
     /// Entry point for every incoming URL: custom scheme (mdviewer://) or a file URL.
     func handleIncoming(_ url: URL) {
@@ -107,6 +118,27 @@ final class DocumentStore: ObservableObject {
             return
         }
         open(url: url)
+    }
+
+    /// Opens a report from the watched vault folder (downloading from iCloud if needed).
+    func openVaultReport(_ report: VaultReport) {
+        guard let folder = vault.resolveFolder() else {
+            errorMessage = "Le dossier du coffre n’est plus accessible."; return
+        }
+        let scoped = folder.startAccessingSecurityScopedResource()
+        defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
+        let fileURL = folder.appendingPathComponent(report.name)
+        // Materialise an iCloud placeholder if needed (NSFileCoordinator in the loader also handles this).
+        if !FileManager.default.fileExists(atPath: fileURL.path) {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: fileURL)
+        }
+        do {
+            document = try MarkdownLoader.load(from: fileURL)
+            recents.add(url: fileURL)
+            errorMessage = nil
+        } catch {
+            errorMessage = "Impossible d’ouvrir « \(report.name) » (synchronisation iCloud en cours ?)."
+        }
     }
 
     func openSample() {
