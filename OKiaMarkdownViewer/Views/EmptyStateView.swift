@@ -78,7 +78,7 @@ struct EmptyStateView: View {
                 ForEach(recents) { item in
                     Button { onRecent(item) } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: "doc.richtext")
+                            Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")
                                 .foregroundStyle(orange)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(item.name)
