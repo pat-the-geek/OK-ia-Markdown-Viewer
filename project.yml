@@ -37,6 +37,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: ch.ok-ia.markdownviewer
         INFOPLIST_FILE: OKiaMarkdownViewer/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        TARGETED_DEVICE_FAMILY: "1,2"   # iPhone + iPad (Catalyst-friendly for Phase 2)
-        SUPPORTS_MACCATALYST: NO        # Phase 2: flip to YES
+        TARGETED_DEVICE_FAMILY: "1,2"   # iPhone + iPad
+        SUPPORTS_MACCATALYST: YES                    # macOS via Mac Catalyst
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO    # true Catalyst app (not "Designed for iPad")
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO  # same bundle id on Mac
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        # Run locally on Mac without a Mac provisioning profile (personal team)
+        CODE_SIGN_IDENTITY[sdk=macosx*]: "-"
         GENERATE_INFOPLIST_FILE: NO

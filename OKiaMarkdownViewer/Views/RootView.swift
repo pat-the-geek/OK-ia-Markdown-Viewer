@@ -49,5 +49,27 @@ struct RootView: View {
         } message: {
             Text(store.errorMessage ?? "")
         }
+        // macOS: File ▸ Open (⌘O) menu command.
+        .onReceive(NotificationCenter.default.publisher(for: .okiaOpenFile)) { _ in
+            showImporter = true
+        }
+        // Drag a .md from Finder onto the window to open it.
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let url = urls.first else { return false }
+            store.open(url: url)
+            return true
+        }
+        .onAppear(perform: configureMacWindow)
+    }
+
+    private func configureMacWindow() {
+        #if targetEnvironment(macCatalyst)
+        for scene in UIApplication.shared.connectedScenes {
+            if let windowScene = scene as? UIWindowScene {
+                windowScene.sizeRestrictions?.minimumSize = CGSize(width: 480, height: 600)
+                windowScene.title = "OK-ia Viewer"
+            }
+        }
+        #endif
     }
 }

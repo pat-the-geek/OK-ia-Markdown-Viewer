@@ -1,8 +1,16 @@
 import SwiftUI
+
+/// Identifiable URL wrapper to drive `.sheet(item:)`. Available on all platforms.
+struct ExternalLink: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+#if !targetEnvironment(macCatalyst)
 import SafariServices
 
-/// In-app Safari browser (SFSafariViewController) presented over the reader.
-/// The user taps "Done" to return to the Markdown document, which stays loaded behind.
+/// In-app Safari browser (SFSafariViewController) presented over the reader — iOS/iPadOS only.
+/// On Mac Catalyst, external links open in the default browser instead (see ReaderView).
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
 
@@ -16,9 +24,4 @@ struct SafariView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }
-
-/// Identifiable URL wrapper to drive `.sheet(item:)`.
-struct ExternalLink: Identifiable {
-    let id = UUID()
-    let url: URL
-}
+#endif
