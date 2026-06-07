@@ -5,9 +5,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>fr</string>
 	<key>CFBundleDisplayName</key>
-	<string>OK-ia Viewer</string>
+	<string>OK-ia - Markdown Viewer</string>
 	<key>CFBundleName</key>
-	<string>OK-ia Viewer</string>
+	<string>OK-ia - Markdown Viewer</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleExecutable</key>
