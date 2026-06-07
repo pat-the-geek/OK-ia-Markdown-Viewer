@@ -13,6 +13,73 @@ final class DocumentStore: ObservableObject {
 
     let recents = RecentFilesStore()
 
+    /// Entry point for every incoming URL: custom scheme (mdviewer://) or a file URL.
+    func handleIncoming(_ url: URL) {
+        if url.scheme?.lowercased() == "mdviewer" {
+            handleScheme(url)
+        } else {
+            open(url: url)
+        }
+    }
+
+    /// mdviewer://open?url=<https .md>   — fetch a remote report and render it
+    /// mdviewer://render?name=<f>&content=<percent-encoded markdown>  — render inline
+    private func handleScheme(_ url: URL) {
+        guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            errorMessage = "Lien invalide."; return
+        }
+        let action = (comps.host ?? "").lowercased()
+        func value(_ names: String...) -> String? {
+            for n in names { if let v = comps.queryItems?.first(where: { $0.name == n })?.value { return v } }
+            return nil
+        }
+        switch action {
+        case "open", "url":
+            if let s = value("url", "u"), let remote = URL(string: s), remote.scheme?.hasPrefix("http") == true {
+                openRemote(remote)
+            } else {
+                errorMessage = "URL du rapport manquante ou invalide (https requis)."
+            }
+        case "render", "content":
+            let name = value("name", "title") ?? "Rapport.md"
+            if let content = value("content", "text"), !content.isEmpty {
+                document = MarkdownDocument(filename: sanitize(name), text: content)
+                errorMessage = nil
+            } else {
+                errorMessage = "Contenu du rapport manquant."
+            }
+        default:
+            errorMessage = "Action inconnue : « \(action) »."
+        }
+    }
+
+    /// Downloads a remote Markdown report (HTTPS) and renders it.
+    func openRemote(_ url: URL) {
+        let name = url.lastPathComponent.isEmpty ? "Rapport.md" : url.lastPathComponent
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                    self.errorMessage = "Le serveur a répondu \(http.statusCode) pour le rapport."
+                    return
+                }
+                if let data, error == nil {
+                    self.document = MarkdownDocument(filename: self.sanitize(name),
+                                                     text: MarkdownLoader.decode(data),
+                                                     sourceURL: url)
+                    self.errorMessage = nil
+                } else {
+                    self.errorMessage = "Impossible de télécharger le rapport (\(error?.localizedDescription ?? "réseau"))."
+                }
+            }
+        }.resume()
+    }
+
+    private func sanitize(_ name: String) -> String {
+        let cleaned = name.replacingOccurrences(of: "/", with: "-")
+        return cleaned.isEmpty ? "Rapport.md" : cleaned
+    }
+
     /// Opens a user-selected file (importer / open-in / cold launch) and remembers it.
     func open(url: URL) {
         let scoped = url.startAccessingSecurityScopedResource()
@@ -60,9 +127,9 @@ struct OKiaMarkdownViewerApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(store)
-                // Handles both cold launch (file passed at startup) and warm "Open in…".
+                // Handles file URLs (cold + warm "Open in…") and the mdviewer:// scheme.
                 .onOpenURL { url in
-                    store.open(url: url)
+                    store.handleIncoming(url)
                 }
         }
         .commands {
