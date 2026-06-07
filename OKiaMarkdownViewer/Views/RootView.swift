@@ -17,14 +17,15 @@ struct RootView: View {
     var body: some View {
         Group {
             if let doc = store.document {
-                ReaderView(document: doc, onOpen: { showImporter = true })
+                ReaderView(document: doc,
+                           onOpen: { showImporter = true },
+                           onHome: { store.document = nil })
             } else {
                 EmptyStateView(
-                    recents: store.recents.items,
+                    recentsStore: store.recents,
                     onOpen: { showImporter = true },
                     onSample: { store.openSample() },
-                    onRecent: { store.openRecent($0) },
-                    onRemoveRecent: { store.recents.remove($0) }
+                    onRecent: { store.openRecent($0) }
                 )
             }
         }
