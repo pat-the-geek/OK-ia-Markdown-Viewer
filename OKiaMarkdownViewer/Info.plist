@@ -25,6 +25,20 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 
+	<!-- Custom URL scheme so other apps/sites can open a report directly:
+	     mdviewer://open?url=<https md>  or  mdviewer://render?name=..&content=<md> -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>ch.ok-ia.markdownviewer</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>mdviewer</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- Launch screen (required even for TestFlight); simple branded background -->
 	<key>UILaunchScreen</key>
 	<dict>
