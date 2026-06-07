@@ -1,20 +1,18 @@
 #if targetEnvironment(macCatalyst)
 import Foundation
 
-/// macOS only: watches the vault folder and reports newly arrived reports so the app can
-/// auto-open them. Runs only while the app is active (iOS suspends background apps, so this
-/// is intentionally Catalyst-only).
+/// macOS only: periodically polls the vault's matching subfolders and reports newly arrived
+/// reports so the app can auto-open them. Polling (vs. a single FS event source) is used because
+/// reports may land in several "rapports-*" subfolders, and iCLoud sync itself isn't instant.
+/// Runs only while the app is active (iOS suspends background apps, so this is Catalyst-only).
 @MainActor
 final class VaultWatcher {
     private let vault: VaultStore
     private let onNew: (VaultReport) -> Void
 
-    private var source: DispatchSourceFileSystemObject?
-    private var fd: Int32 = -1
-    private var folderURL: URL?
-    private var scoped = false
+    private var timer: Timer?
     private var lastNewest: Date = .distantPast
-    private var debounce: DispatchWorkItem?
+    private let interval: TimeInterval = 5
 
     init(vault: VaultStore, onNew: @escaping (VaultReport) -> Void) {
         self.vault = vault
@@ -23,42 +21,23 @@ final class VaultWatcher {
 
     func start() {
         stop()
-        guard let folder = vault.resolveFolder() else { return }
-        scoped = folder.startAccessingSecurityScopedResource()
-        folderURL = folder
-
+        guard vault.hasFolder else { return }
         // Baseline: don't auto-open an existing report at startup, only future arrivals.
         vault.refresh()
         lastNewest = vault.reports.first?.modified ?? .distantPast
 
-        fd = open(folder.path, O_EVTONLY)
-        guard fd >= 0 else { stop(); return }
-        let src = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: fd, eventMask: [.write, .extend, .rename, .delete], queue: .main)
-        src.setEventHandler { [weak self] in self?.handleChange() }
-        src.setCancelHandler { [weak self] in
-            if let fd = self?.fd, fd >= 0 { close(fd) }
-            self?.fd = -1
+        let t = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
         }
-        source = src
-        src.resume()
+        timer = t
     }
 
     func stop() {
-        source?.cancel(); source = nil
-        if scoped, let folderURL { folderURL.stopAccessingSecurityScopedResource() }
-        scoped = false
-        folderURL = nil
+        timer?.invalidate()
+        timer = nil
     }
 
-    private func handleChange() {
-        debounce?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.evaluate() }
-        debounce = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: work)
-    }
-
-    private func evaluate() {
+    private func tick() {
         vault.refresh()
         guard let newest = vault.reports.first else { return }
         if newest.modified > lastNewest {
