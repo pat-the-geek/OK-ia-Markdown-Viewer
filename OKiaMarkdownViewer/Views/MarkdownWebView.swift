@@ -15,12 +15,13 @@ struct MarkdownWebView: UIViewRepresentable {
     let document: MarkdownDocument
     @Binding var tapped: TappedDiagram?
     var onTitle: (String) -> Void
+    var webController: ReaderWebController
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped"] {
+        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "toc"] {
             controller.add(context.coordinator, name: name)
         }
 
@@ -36,6 +37,7 @@ struct MarkdownWebView: UIViewRepresentable {
         webView.scrollView.contentInsetAdjustmentBehavior = .always
 
         context.coordinator.webView = webView
+        webController.webView = webView
         loadRenderer(into: webView)
         return webView
     }
@@ -102,6 +104,15 @@ struct MarkdownWebView: UIViewRepresentable {
                 if let dict = message.body as? [String: Any], let svg = dict["svg"] as? String {
                     let title = (dict["title"] as? String) ?? ""
                     parent.tapped = TappedDiagram(svg: svg, title: title)
+                }
+            case "toc":
+                if let dict = message.body as? [String: Any], let raw = dict["items"] as? [[String: Any]] {
+                    let items: [TOCItem] = raw.compactMap { entry in
+                        guard let id = entry["id"] as? String, let text = entry["text"] as? String else { return nil }
+                        let level = (entry["level"] as? Int) ?? (entry["level"] as? Double).map(Int.init) ?? 1
+                        return TOCItem(id: id, level: level, text: text)
+                    }
+                    parent.webController.toc = items
                 }
             case "renderError":
                 break

@@ -25,6 +25,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
+- **Fichiers récents** : les derniers `.md` ouverts sont mémorisés (bookmarks security-scoped) et
+  proposés sur l'écran d'accueil.
+- **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.
+- **Recherche dans le document** : surlignage des occurrences + navigation précédent/suivant.
+- **Partage / export** : export du rendu en **PDF** ou partage du fichier `.md` via la share sheet iOS.
 
 ---
 
