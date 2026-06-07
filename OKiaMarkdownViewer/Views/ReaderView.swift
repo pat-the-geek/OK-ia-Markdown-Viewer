@@ -5,6 +5,7 @@ import SwiftUI
 struct ReaderView: View {
     let document: MarkdownDocument
     var onOpen: () -> Void
+    var onHome: () -> Void
 
     @StateObject private var web = ReaderWebController()
     @State private var tapped: TappedDiagram?
@@ -58,6 +59,9 @@ struct ReaderView: View {
 
     private var titleBar: some View {
         HStack(spacing: 14) {
+            Button(action: onHome) { Image(systemName: "house") }
+                .accessibilityLabel("Écran d’accueil")
+
             Text(title.isEmpty ? document.filename : title)
                 .font(.system(size: 16, weight: .heavy))
                 .lineLimit(1)

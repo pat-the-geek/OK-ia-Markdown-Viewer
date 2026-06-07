@@ -3,12 +3,12 @@ import SwiftUI
 /// Shown when no document is loaded: OK-ia branded landing with open + sample
 /// actions and a list of recently opened files.
 struct EmptyStateView: View {
-    var recents: [RecentFile]
+    @ObservedObject var recentsStore: RecentFilesStore
     var onOpen: () -> Void
     var onSample: () -> Void
     var onRecent: (RecentFile) -> Void
-    var onRemoveRecent: (RecentFile) -> Void
 
+    private var recents: [RecentFile] { recentsStore.items }
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
@@ -97,7 +97,7 @@ struct EmptyStateView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
-                        Button(role: .destructive) { onRemoveRecent(item) } label: {
+                        Button(role: .destructive) { recentsStore.remove(item) } label: {
                             Label("Retirer de la liste", systemImage: "trash")
                         }
                     }
