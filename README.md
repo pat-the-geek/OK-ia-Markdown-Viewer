@@ -27,6 +27,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
   cadrage auto sur les points. Bouton **plein écran ⛶** pour panner/zoomer en portrait ou paysage.
   Leaflet est **bundlé offline** (`Web/vendor/leaflet.{js,css}` + `images/`) ; seules les tuiles
   nécessitent le réseau.
+- **Résumé du document par Apple Intelligence** : quand Apple Intelligence est disponible
+  (iOS 26 / macOS 26+), un bouton ✦ apparaît dans la barre du lecteur. Le **modèle on-device**
+  (framework *Foundation Models*) génère un résumé **structuré en Markdown** (chapitres, **gras**,
+  listes), rendu avec la charte de l'app. Gardé par `@available` + `#if canImport(FoundationModels)`
+  → invisible sur les appareils sans Apple Intelligence. Voir `DocumentSummarizer` dans `ReaderView.swift`.
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
