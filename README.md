@@ -139,6 +139,35 @@ aucun appel réseau pour le rendu.
 - Le Markdown est passé à la WKWebView via `evaluateJavaScript` avec une **chaîne JSON encodée**
   (jamais concaténée dans du HTML) → aucune injection possible.
 
+### Ouvrir un fichier depuis un site web — schéma `mdviewer://`
+
+L'app enregistre le schéma d'URL `mdviewer://` (`CFBundleURLTypes` dans `Info.plist`, géré par
+`DocumentStore.handleScheme`). Un site web peut donc ouvrir un rapport **directement dans l'app**
+(si elle est installée) :
+
+- **Fichier `.md` hébergé** — l'app le télécharge (https) et l'affiche :
+  ```
+  mdviewer://open?url=<URL https du .md, encodée>
+  ```
+  ```html
+  <a href="mdviewer://open?url=https%3A%2F%2Fok-ia.ch%2Frapports%2Fmon-rapport.md">
+    Ouvrir dans md Viewer
+  </a>
+  ```
+  ```js
+  location.href = 'mdviewer://open?url=' + encodeURIComponent(urlDuMd);
+  ```
+- **Contenu inline** (petits documents ; une URL reste limitée à quelques Ko) :
+  ```js
+  location.href = 'mdviewer://render?name=' + encodeURIComponent('Rapport.md')
+               + '&content=' + encodeURIComponent(markdown);
+  ```
+
+> Limite : un schéma personnalisé ne fonctionne **que si l'app est installée** (pas de repli web
+> automatique). Pour des liens `https` normaux qui retombent sur le site quand l'app est absente,
+> il faudrait des **Universal Links** (entitlement *Associated Domains* + fichier
+> `apple-app-site-association` hébergé sur le domaine) — non implémenté.
+
 ---
 
 ## Livraison TestFlight
