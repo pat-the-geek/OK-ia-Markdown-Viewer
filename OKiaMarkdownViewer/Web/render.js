@@ -107,6 +107,74 @@
   }
 
   /* =========================================================================
+     2b. OBSIDIAN LEAFLET MAPS  ```leaflet ... ```  ->  <div class="okia-map">
+         Parses the Obsidian Leaflet plugin block into a config object, which is
+         base64-encoded onto the placeholder and consumed after marked.parse.
+     ========================================================================= */
+  function b64encode(str) {
+    try { return btoa(unescape(encodeURIComponent(str))); } catch (e) { return ''; }
+  }
+  function b64decode(str) {
+    try { return decodeURIComponent(escape(atob(str))); } catch (e) { return ''; }
+  }
+
+  // Pull the two coordinates + an optional [[link]] / free-text label out of a marker line.
+  function parseMarkerLine(value) {
+    var link = null;
+    var wl = value.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/);
+    if (wl) { link = { target: wl[1].trim(), label: (wl[2] || wl[1]).trim() }; }
+    var cleaned = value.replace(/\[\[[^\]]*\]\]/g, '').replace(/[\[\]]/g, ' ');
+    var nums = cleaned.match(/-?\d+(?:\.\d+)?/g);
+    if (!nums || nums.length < 2) return null;
+    var lat = parseFloat(nums[0]), lng = parseFloat(nums[1]);
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    // Any trailing free text (after the coords, not a wiki-link) becomes the label.
+    var rest = cleaned.replace(nums[0], '').replace(nums[1], '')
+                      .replace(/^[\s,]+|[\s,]+$/g, '').trim();
+    var label = link ? link.label : (rest || null);
+    return { lat: lat, lng: lng, label: label, link: link ? link.target : null };
+  }
+
+  function parseLeafletBlock(code) {
+    var cfg = { markers: [], lat: null, lng: null, zoom: null,
+                minZoom: 0, maxZoom: 19, height: '420px', defaultTiles: null };
+    code.split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim();
+      if (!line) return;
+      var kv = line.match(/^([A-Za-z_]+)\s*:\s*(.*)$/);
+      if (!kv) return;
+      var key = kv[1].toLowerCase(), val = kv[2].trim();
+      switch (key) {
+        case 'lat':      cfg.lat = parseFloat(val); break;
+        case 'long':     cfg.lng = parseFloat(val); break;
+        case 'minzoom':  cfg.minZoom = parseInt(val, 10); break;
+        case 'maxzoom':  cfg.maxZoom = parseInt(val, 10); break;
+        case 'defaultzoom':
+        case 'zoom':     cfg.zoom = parseFloat(val); break;
+        case 'height':   cfg.height = /^\d+$/.test(val) ? val + 'px' : val; break;
+        case 'tileserver':
+        case 'tiles':    cfg.defaultTiles = val; break;
+        case 'marker':
+        case 'markers': {
+          var m = parseMarkerLine(val);
+          if (m) cfg.markers.push(m);
+          break;
+        }
+        default: break;
+      }
+    });
+    return cfg;
+  }
+
+  function transformLeaflet(md) {
+    return md.replace(/```leaflet[ \t]*\r?\n([\s\S]*?)```/g, function (_, code) {
+      var cfg = parseLeafletBlock(code);
+      return '\n<div class="okia-map" data-okia-map="' +
+             b64encode(JSON.stringify(cfg)) + '"></div>\n';
+    });
+  }
+
+  /* =========================================================================
      3. OBSIDIAN CALLOUTS  > [!type] Title
      ========================================================================= */
   var CALLOUTS = {
@@ -346,6 +414,114 @@
   }
 
   /* =========================================================================
+     LEAFLET rendering — instantiate one interactive map per .okia-map div.
+     Tiles come from CARTO (light/dark) so the look matches the screenshot; an
+     OpenStreetMap base layer is offered too. A fullscreen control expands the
+     map to fill the viewport so it can be panned/zoomed in portrait or landscape.
+     ========================================================================= */
+  function leafletMarkerIcon() {
+    return L.icon({
+      iconUrl:       'vendor/images/marker-icon.png',
+      iconRetinaUrl: 'vendor/images/marker-icon-2x.png',
+      shadowUrl:     'vendor/images/marker-shadow.png',
+      iconSize:    [25, 41], iconAnchor: [12, 41],
+      popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+  }
+
+  function makeFullscreenControl(mapEl) {
+    var Ctl = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd: function (map) {
+        var box = L.DomUtil.create('div', 'leaflet-bar leaflet-control okia-fs-control');
+        var a = L.DomUtil.create('a', '', box);
+        a.href = '#';
+        a.title = 'Plein écran';
+        a.setAttribute('role', 'button');
+        a.innerHTML = '⛶';
+        L.DomEvent.disableClickPropagation(box);
+        L.DomEvent.on(a, 'click', function (e) {
+          L.DomEvent.preventDefault(e);
+          var full = mapEl.classList.toggle('okia-map-fullscreen');
+          document.body.classList.toggle('okia-map-has-fullscreen', full);
+          a.innerHTML = full ? '✕' : '⛶';
+          a.title = full ? 'Quitter le plein écran' : 'Plein écran';
+          // Let the layout settle, then tell Leaflet its size changed.
+          setTimeout(function () { map.invalidateSize(); }, 60);
+        });
+        return box;
+      }
+    });
+    return new Ctl();
+  }
+
+  function renderLeafletMaps(container) {
+    if (typeof L === 'undefined') return;
+    var maps = Array.prototype.slice.call(container.querySelectorAll('.okia-map'));
+    maps.forEach(function (el) {
+      if (el.getAttribute('data-rendered') === '1') return;
+      var cfg;
+      try { cfg = JSON.parse(b64decode(el.getAttribute('data-okia-map') || '')); }
+      catch (e) { cfg = null; }
+      if (!cfg) return;
+      el.setAttribute('data-rendered', '1');
+      el.style.height = cfg.height || '420px';
+
+      var map = L.map(el, {
+        minZoom: cfg.minZoom || 0,
+        maxZoom: cfg.maxZoom || 19,
+        scrollWheelZoom: true
+      });
+
+      var attribution = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>';
+      var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        { subdomains: 'abcd', maxZoom: 20, attribution: attribution });
+      var dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        { subdomains: 'abcd', maxZoom: 20, attribution: attribution });
+      var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var base = prefersDark ? dark : light;
+      if (cfg.defaultTiles) base = L.tileLayer(cfg.defaultTiles, { maxZoom: 20, attribution: attribution });
+      base.addTo(map);
+
+      if (!cfg.defaultTiles) {
+        L.control.layers({ 'Clair': light, 'Sombre': dark, 'OpenStreetMap': osm },
+                         null, { position: 'topright' }).addTo(map);
+      }
+
+      var icon = leafletMarkerIcon();
+      var pts = [];
+      (cfg.markers || []).forEach(function (mk) {
+        var marker = L.marker([mk.lat, mk.lng], { icon: icon }).addTo(map);
+        if (mk.label) {
+          marker.bindPopup('<strong>' + escapeHtml(mk.label) + '</strong>');
+        }
+        if (mk.link) {
+          marker.on('click', function () { post('wikiTapped', { target: mk.link }); });
+        }
+        pts.push([mk.lat, mk.lng]);
+      });
+
+      // View: explicit center/zoom wins; otherwise fit to the markers; else world.
+      if (cfg.lat != null && cfg.lng != null && isFinite(cfg.lat) && isFinite(cfg.lng)) {
+        map.setView([cfg.lat, cfg.lng], cfg.zoom != null ? cfg.zoom : 5);
+      } else if (pts.length === 1) {
+        map.setView(pts[0], cfg.zoom != null ? cfg.zoom : 6);
+      } else if (pts.length > 1) {
+        map.fitBounds(pts, { padding: [40, 40] });
+        if (cfg.zoom != null) map.setZoom(cfg.zoom);
+      } else {
+        map.setView([20, 0], cfg.zoom != null ? cfg.zoom : 2);
+      }
+
+      map.addControl(makeFullscreenControl(el));
+      setTimeout(function () { map.invalidateSize(); }, 80);
+    });
+  }
+
+  /* =========================================================================
      POST-PROCESS helpers
      ========================================================================= */
   function dedupeTitle(container, title) {
@@ -380,8 +556,9 @@
       var ner = extractEntities(body);
       var legend = buildLegend(ner.subtypes);
 
-      // 2 → 3 → 4 (string transforms before parse)
+      // 2 → 2b → 3 → 4 (string transforms before parse)
       body = transformMermaid(body);
+      body = transformLeaflet(body);
 
       return removeBrokenImages(body).then(function (cleaned) {     // 5
         body = transformCallouts(cleaned);                          // 3
@@ -396,6 +573,7 @@
         clearSearch();
         applyFontScale();                                           // keep chosen size across renders
         buildTOC(container);                                        // headings -> ids + TOC
+        renderLeafletMaps(container);                               // 2b interactive maps
 
         post('docMeta', { title: header.title });
 

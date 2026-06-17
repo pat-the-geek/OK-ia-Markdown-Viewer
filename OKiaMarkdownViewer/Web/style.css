@@ -285,3 +285,82 @@ pre.mermaid.mermaid-error::after { content: none; }
   /* The mermaid SVG itself is rendered with light OK-ia colors; keep it on a light card. */
   pre.mermaid { color: var(--noir); }
 }
+
+/* ===========================================================================
+   LEAFLET MAPS — Obsidian-style geographic blocks (```leaflet … ```)
+   =========================================================================== */
+.okia-map {
+  width: 100%;
+  height: 420px;
+  margin: 1.4em 0;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg);
+  z-index: 0;                 /* keep panes below the app chrome until fullscreen */
+}
+
+/* Fullscreen: lift the map out of the reading column to cover the viewport.
+   position:fixed follows the device orientation, so portrait/landscape just work. */
+.okia-map.okia-map-fullscreen {
+  /* !important overrides the inline position/height Leaflet writes on the container */
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;  /* avoid the iOS toolbar gap when available */
+  margin: 0 !important;
+  border: 0;
+  border-radius: 0;
+  z-index: 9999;
+  /* clear the status bar / notch and the home indicator */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: var(--bg);
+}
+.okia-map.okia-map-fullscreen .leaflet-container {
+  height: 100%;
+}
+/* Lock page scrolling behind a fullscreen map. */
+body.okia-map-has-fullscreen { overflow: hidden; }
+
+.okia-map .leaflet-container {
+  height: 100%;
+  font: inherit;
+  background: var(--gris-clair);
+}
+
+/* Match the rounded card + OK-ia control styling shown in the reference UI. */
+.okia-map .leaflet-bar a,
+.okia-map .leaflet-control-layers-toggle {
+  background-color: var(--card-bg);
+  color: var(--fg);
+  border-bottom-color: var(--rule);
+}
+.okia-map .leaflet-bar a:hover { background-color: var(--orange-pale); }
+.okia-map .okia-fs-control a {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+}
+.okia-map .leaflet-control-layers {
+  background: var(--card-bg);
+  color: var(--fg);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+.okia-map .leaflet-popup-content { font: inherit; }
+
+@media (prefers-color-scheme: dark) {
+  .okia-map .leaflet-container { background: #23232a; }
+  .okia-map .leaflet-bar a,
+  .okia-map .leaflet-control-layers {
+    background-color: var(--card-bg);
+    color: var(--fg);
+  }
+  .okia-map .leaflet-popup-content-wrapper,
+  .okia-map .leaflet-popup-tip {
+    background: var(--card-bg);
+    color: var(--fg);
+  }
+}

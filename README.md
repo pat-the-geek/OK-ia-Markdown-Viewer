@@ -22,6 +22,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
   `marked.parse` → normalisation/recoloration du thème Mermaid.
 - **Zoom diagramme plein écran** : tap → overlay ; pincer (0.5×–6×), glisser, double-tap
   (ajuster ↔ zoom), bouton « ajuster à l'écran », fermer ✕ + swipe-down. SVG **vectoriel**, net à fort zoom.
+- **Cartes géographiques Leaflet** (à la façon du plugin Obsidian Leaflet) : bloc <code>```leaflet</code>
+  avec `marker: lat, long, [[Lien]]`, fonds de carte CARTO clair/sombre + OpenStreetMap, popups,
+  cadrage auto sur les points. Bouton **plein écran ⛶** pour panner/zoomer en portrait ou paysage.
+  Leaflet est **bundlé offline** (`Web/vendor/leaflet.{js,css}` + `images/`) ; seules les tuiles
+  nécessitent le réseau.
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
@@ -113,6 +118,7 @@ aucun appel réseau pour le rendu.
 |-----|---------|---------|--------|
 | marked | **18.0.5** | `Web/vendor/marked.min.js` (UMD `lib/marked.umd.js`) | jsDelivr |
 | mermaid | **11.15.0** | `Web/vendor/mermaid.min.js` (UMD `dist/mermaid.min.js`, expose `globalThis.mermaid`) | jsDelivr |
+| leaflet | **1.9.4** | `Web/vendor/leaflet.{js,css}` + `Web/vendor/images/` (marqueurs) | unpkg |
 | Nunito | 5.x | `Web/fonts/Nunito-{Black,Regular}.woff2` | Fontsource |
 
 > Le build **UMD** de Mermaid est requis : le build ESM (`.mjs`) ne se charge pas sous `file://`
@@ -137,11 +143,15 @@ aucun appel réseau pour le rendu.
 
 ## Livraison TestFlight
 
-1. **Signature** : dans Xcode, cible *OKiaMarkdownViewer* → **Signing & Capabilities** →
-   cocher **Automatically manage signing**, choisir votre **Team** Apple Developer.
-   Le **Bundle Identifier** est `ch.ok-ia.markdownviewer` (modifiable dans `project.yml`).
-2. **Versions** : `MARKETING_VERSION` = 1.0.0, `CURRENT_PROJECT_VERSION` = 1 (incrémentez le build
-   à chaque upload, dans `project.yml` puis `xcodegen generate`, ou via *Xcode → General*).
+1. **Signature** : la **Team** payante (`72NVM63N83`) et le **Bundle Identifier**
+   `ch.ok-ia.markdownviewer` sont déjà configurés (signature **automatique**). Vérifiez dans Xcode →
+   cible *OKiaMarkdownViewer* → **Signing & Capabilities** que **Automatically manage signing** est
+   coché, la Team sélectionnée, et qu'aucune erreur de provisioning ne s'affiche (Xcode crée au besoin
+   le certificat *Apple Distribution* et le profil App Store à la première archive).
+2. **Versions** : `MARKETING_VERSION` = 1.0.0, `CURRENT_PROJECT_VERSION` = 1. App Store Connect refuse
+   un build dont le numéro existe déjà : si l'upload signale « build already exists », **incrémentez
+   `CURRENT_PROJECT_VERSION`** (le `.xcodeproj` étant commité et XcodeGen non requis, modifiez-le via
+   *Xcode → General → Build*, ou `project.yml` + `xcodegen generate` si XcodeGen est installé).
 3. **Archive** : sélectionnez la destination **Any iOS Device (arm64)** →
    **Product → Archive**.
 4. **Upload** : dans l'Organizer → **Distribute App → App Store Connect → Upload**.

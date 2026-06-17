@@ -94,6 +94,23 @@ mindmap
       Double-tap
 ```
 
+## Carte géographique
+
+Bloc `leaflet` à la façon d'Obsidian — points positionnés, fond de carte CARTO,
+bouton plein écran (⛶) pour naviguer en portrait ou paysage.
+
+```leaflet
+id: demo-afrique-est
+minZoom: 2
+maxZoom: 12
+height: 460px
+marker: 0.347, 32.582, [[Kampala]]
+marker: -1.943, 30.059, [[Kigali]]
+marker: -3.373, 29.360, [[Bujumbura]]
+marker: 7.862, 29.694, [[Soudan du Sud]]
+marker: -4.322, 15.307, [[Kinshasa]]
+```
+
 ## Tableau
 
 | Fonction        | État    |
