@@ -4,7 +4,10 @@ import UniformTypeIdentifiers
 struct RootView: View {
     @EnvironmentObject private var store: DocumentStore
     @State private var showImporter = false
-    @State private var showVaultPicker = false
+    /// Which kind of item the single importer is currently picking.
+    /// SwiftUI does not reliably support two `.fileImporter`s on one view, so we
+    /// drive both the file-open and the vault-folder pickers through one importer.
+    @State private var importFolder = false
 
     /// UTTypes we accept in the in-app importer.
     static let importedTypes: [UTType] = {
@@ -19,39 +22,32 @@ struct RootView: View {
         Group {
             if let doc = store.document {
                 ReaderView(document: doc,
-                           onOpen: { showImporter = true },
+                           onOpen: { importFolder = false; showImporter = true },
                            onHome: { store.document = nil })
             } else {
                 EmptyStateView(
                     recentsStore: store.recents,
                     vault: store.vault,
-                    onOpen: { showImporter = true },
+                    onOpen: { importFolder = false; showImporter = true },
                     onSample: { store.openSample() },
                     onRecent: { store.openRecent($0) },
-                    onPickVault: { showVaultPicker = true },
+                    onPickVault: { importFolder = true; showImporter = true },
                     onOpenVault: { store.openVaultReport($0) }
                 )
             }
         }
+        // One importer for both modes — `importFolder` selects file vs. vault folder.
         .fileImporter(
             isPresented: $showImporter,
-            allowedContentTypes: RootView.importedTypes,
+            allowedContentTypes: importFolder ? [.folder] : RootView.importedTypes,
             allowsMultipleSelection: false
         ) { result in
             switch result {
             case .success(let urls):
-                if let url = urls.first { store.open(url: url) }
+                guard let url = urls.first else { return }
+                if importFolder { store.vault.setFolder(url) } else { store.open(url: url) }
             case .failure(let error):
                 store.errorMessage = error.localizedDescription
-            }
-        }
-        .fileImporter(
-            isPresented: $showVaultPicker,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
-        ) { result in
-            if case .success(let urls) = result, let url = urls.first {
-                store.vault.setFolder(url)
             }
         }
         .alert("Erreur",
@@ -64,6 +60,7 @@ struct RootView: View {
         }
         // macOS: File ▸ Open (⌘O) menu command.
         .onReceive(NotificationCenter.default.publisher(for: .okiaOpenFile)) { _ in
+            importFolder = false
             showImporter = true
         }
         // macOS: auto-open new reports landing in the vault folder.
