@@ -134,6 +134,10 @@ aucun appel réseau pour le rendu.
   `LSHandlerRank = Alternate`) et `UTImportedTypeDeclarations` pour `md`/`markdown`/`mdown`/`mkd`/`markdn`.
 - `LSSupportsOpeningDocumentsInPlace` + `UIFileSharingEnabled` → visible dans Fichiers et le partage.
 - `OKiaMarkdownViewerApp` gère `.onOpenURL` (lancement à froid **et** à chaud).
+- Le bouton **« Ouvrir un fichier »** (et **⌘O** sur Mac) ouvre le sélecteur via **un seul**
+  `.fileImporter` dans `RootView`, dont les types autorisés basculent fichier ↔ dossier-coffre
+  selon un drapeau `importFolder`. (SwiftUI ne supporte pas deux `.fileImporter` sur la même vue :
+  empilés, le sélecteur ne s'affiche pas — d'où ce pilotage unique.)
 - `MarkdownLoader` gère `startAccessingSecurityScopedResource`, une copie coordonnée en repli,
   et le décodage UTF-8 → ISO Latin-1.
 - Le Markdown est passé à la WKWebView via `evaluateJavaScript` avec une **chaîne JSON encodée**
