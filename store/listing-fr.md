@@ -53,8 +53,8 @@ markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pd
 ## URLs
 - **URL d'assistance** (obligatoire) : `https://ok-ia.ch` ✅
 - **URL marketing** (facultative) : `https://ok-ia.ch`
-- **URL politique de confidentialité** (obligatoire) : `https://ok-ia.ch/confidentialite` ✅
-  → héberger le fichier [`confidentialite.html`](confidentialite.html) à cette adresse.
+- **URL politique de confidentialité** (obligatoire) : `https://ok-ia.ch/mdviewer-confidentialite.html` ✅
+  → héberger le fichier [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) à cette adresse.
 
 ## Catégorie
 - Principale : **`Productivité`** ✅

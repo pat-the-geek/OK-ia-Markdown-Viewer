@@ -10,7 +10,7 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 |---|---|
 | [`listing-fr.md`](listing-fr.md) | Fiche produit : nom, sous-titre, description, mots-clés, nouveautés, URLs, catégorie, copyright |
 | [`app-privacy.md`](app-privacy.md) | Réponses au questionnaire « App Privacy » |
-| [`confidentialite.html`](confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/confidentialite` |
+| [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/mdviewer-confidentialite.html` |
 | [`screenshots.md`](screenshots.md) | Tailles de captures requises (iPhone/iPad/Mac) + plan de capture |
 | [`review-notes.md`](review-notes.md) | Notes pour l'équipe App Review (comment tester, contenu de démo, pas de login) |
 
@@ -18,7 +18,7 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 
 - **Nom** : OK-ia Markdown Viewer · **Catégorie** : Productivité · **Prix** : Gratuit
 - **Âge** : 4+ (répondre « Non » à « accès web sans restriction »)
-- **URLs** : assistance & marketing `https://ok-ia.ch` · confidentialité `https://ok-ia.ch/confidentialite`
+- **URLs** : assistance & marketing `https://ok-ia.ch` · confidentialité `https://ok-ia.ch/mdviewer-confidentialite.html`
 - **Copyright** : © 2026 OK-ia
 
 ## Portée des plateformes
@@ -44,7 +44,7 @@ exactement quoi saisir.
 ## Ordre conseillé
 
 1. ~~Décider les points (nom, catégorie, prix, URLs)~~ ✅ fait — voir *Décisions actées*.
-2. Héberger [`confidentialite.html`](confidentialite.html) sur `ok-ia.ch/confidentialite` (URL requise).
+2. Héberger [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) sur `ok-ia.ch/mdviewer-confidentialite.html` (URL requise).
 3. Capturer les **screenshots** (iPhone, iPad, Mac) — voir `screenshots.md`.
 4. Remplir la fiche dans App Store Connect — voir `listing-fr.md`.
 5. Renseigner **App Privacy** — voir `app-privacy.md`.
