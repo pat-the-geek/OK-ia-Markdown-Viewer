@@ -10,6 +10,8 @@ struct ReaderView: View {
     var onOpen: () -> Void
     var onHome: () -> Void
 
+    @EnvironmentObject private var store: DocumentStore
+
     @StateObject private var web = ReaderWebController()
     @State private var tapped: TappedDiagram?
     @State private var title: String = ""
@@ -79,6 +81,13 @@ struct ReaderView: View {
         }
         .onChange(of: fontScale) { _, v in web.setFontScale(v) }
         .task { web.setFontScale(fontScale) }
+        // An App Intent (Siri/Shortcuts) asked to summarise the opened report.
+        .onAppear {
+            if store.summaryRequested { showSummary = true; store.summaryRequested = false }
+        }
+        .onChange(of: store.summaryRequested) { _, requested in
+            if requested { showSummary = true; store.summaryRequested = false }
+        }
     }
 
     // MARK: Title bar

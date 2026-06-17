@@ -1,4 +1,5 @@
 import SwiftUI
+import AppIntents
 
 extension Notification.Name {
     /// Posted by the macOS File ▸ Open menu command; observed by RootView.
@@ -10,6 +11,8 @@ extension Notification.Name {
 final class DocumentStore: ObservableObject {
     @Published var document: MarkdownDocument?
     @Published var errorMessage: String?
+    /// Set by an App Intent to ask the reader to present the Apple Intelligence summary.
+    @Published var summaryRequested = false
 
     let recents = RecentFilesStore()
     let vault = VaultStore()
@@ -141,6 +144,34 @@ final class DocumentStore: ObservableObject {
         }
     }
 
+    // MARK: - App Intents support
+
+    /// Open a vault report by its entity id ("subfolder/name").
+    func openReport(id: String) {
+        vault.refresh()
+        if let report = vault.reports.first(where: { $0.id == id }) {
+            openVaultReport(report)
+        } else {
+            errorMessage = "Rapport introuvable dans le coffre."
+        }
+    }
+
+    /// Open the most recent vault report.
+    func openLatestReport() {
+        vault.refresh()
+        if let report = vault.reports.first {
+            openVaultReport(report)
+        } else {
+            errorMessage = "Aucun rapport dans le coffre."
+        }
+    }
+
+    /// Open a report then ask the reader to summarise it with Apple Intelligence.
+    func openReportAndSummarize(id: String) {
+        openReport(id: id)
+        if document != nil { summaryRequested = true }
+    }
+
     func openSample() {
         guard let url = Bundle.main.url(forResource: "Demo", withExtension: "md", subdirectory: "Samples")
             ?? Bundle.main.url(forResource: "Demo", withExtension: "md") else {
@@ -159,7 +190,14 @@ final class DocumentStore: ObservableObject {
 
 @main
 struct OKiaMarkdownViewerApp: App {
-    @StateObject private var store = DocumentStore()
+    @StateObject private var store: DocumentStore
+
+    init() {
+        let store = DocumentStore()
+        _store = StateObject(wrappedValue: store)
+        // Share the running store with App Intents (Siri / Spotlight / Shortcuts).
+        AppDependencyManager.shared.add(dependency: store)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -179,5 +217,124 @@ struct OKiaMarkdownViewerApp: App {
                 .keyboardShortcut("o", modifiers: .command)
             }
         }
+    }
+}
+
+// MARK: - App Intents (Siri · Spotlight · Raccourcis · Apple Intelligence)
+
+/// A vault report exposed to Shortcuts/Siri so it can be picked as a parameter.
+struct VaultReportEntity: AppEntity, Identifiable {
+    let id: String          // "subfolder/name"
+    let name: String
+    let subfolder: String
+
+    init(_ r: VaultReport) { id = r.id; name = r.name; subfolder = r.subfolder }
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation { "Rapport" }
+    static var defaultQuery = VaultReportQuery()
+
+    var displayRepresentation: DisplayRepresentation {
+        let title = name.hasSuffix(".md") ? String(name.dropLast(3)) : name
+        return DisplayRepresentation(title: "\(title)", subtitle: "\(subfolder)")
+    }
+}
+
+/// Lists/searches vault reports for the entity picker. Reads the vault directly
+/// (from the shared bookmark) so it also works while configuring a shortcut.
+struct VaultReportQuery: EntityQuery, EntityStringQuery {
+    @MainActor private func allReports() -> [VaultReport] {
+        let vault = VaultStore()
+        vault.refresh()
+        return vault.reports
+    }
+
+    func entities(for identifiers: [String]) async throws -> [VaultReportEntity] {
+        let reports = await allReports()
+        return reports.filter { identifiers.contains($0.id) }.map(VaultReportEntity.init)
+    }
+
+    func suggestedEntities() async throws -> [VaultReportEntity] {
+        let reports = await allReports()
+        return reports.prefix(30).map(VaultReportEntity.init)
+    }
+
+    func entities(matching string: String) async throws -> [VaultReportEntity] {
+        let needle = string.lowercased()
+        let reports = await allReports()
+        return reports.filter { $0.name.lowercased().contains(needle) }.map(VaultReportEntity.init)
+    }
+}
+
+/// Open a chosen report in md Viewer.
+struct OpenReportIntent: AppIntent {
+    static var title: LocalizedStringResource = "Ouvrir un rapport"
+    static var description = IntentDescription("Ouvre un rapport du coffre dans md Viewer.")
+    static var openAppWhenRun = true
+
+    @Parameter(title: "Rapport") var report: VaultReportEntity
+    @Dependency var store: DocumentStore
+
+    static var parameterSummary: some ParameterSummary { Summary("Ouvrir \(\.$report)") }
+
+    @MainActor func perform() async throws -> some IntentResult {
+        store.openReport(id: report.id)
+        return .result()
+    }
+}
+
+/// Open the most recent report.
+struct OpenLatestReportIntent: AppIntent {
+    static var title: LocalizedStringResource = "Ouvrir le dernier rapport"
+    static var description = IntentDescription("Ouvre le rapport le plus récent du coffre.")
+    static var openAppWhenRun = true
+
+    @Dependency var store: DocumentStore
+
+    @MainActor func perform() async throws -> some IntentResult {
+        store.openLatestReport()
+        return .result()
+    }
+}
+
+/// Open a report and present its Apple Intelligence summary (gracefully degrades
+/// when Apple Intelligence is unavailable).
+struct SummarizeReportIntent: AppIntent {
+    static var title: LocalizedStringResource = "Résumer un rapport"
+    static var description = IntentDescription("Ouvre un rapport et génère son résumé par Apple Intelligence.")
+    static var openAppWhenRun = true
+
+    @Parameter(title: "Rapport") var report: VaultReportEntity
+    @Dependency var store: DocumentStore
+
+    static var parameterSummary: some ParameterSummary { Summary("Résumer \(\.$report)") }
+
+    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
+        if DocumentSummarizer.isAvailable {
+            store.openReportAndSummarize(id: report.id)
+            return .result(dialog: "Résumé de « \(report.name) » dans md Viewer.")
+        } else {
+            store.openReport(id: report.id)
+            return .result(dialog: "Apple Intelligence n’est pas disponible ici ; j’ouvre le rapport.")
+        }
+    }
+}
+
+/// Auto-registers spoken phrases in Siri / Spotlight / the Shortcuts app.
+struct MdViewerShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(intent: OpenLatestReportIntent(),
+                    phrases: ["Ouvre le dernier rapport dans \(.applicationName)",
+                              "Dernier rapport \(.applicationName)"],
+                    shortTitle: "Dernier rapport",
+                    systemImageName: "doc.text")
+        AppShortcut(intent: SummarizeReportIntent(),
+                    phrases: ["Résume un rapport dans \(.applicationName)",
+                              "Résumé \(.applicationName)"],
+                    shortTitle: "Résumer un rapport",
+                    systemImageName: "sparkles")
+        AppShortcut(intent: OpenReportIntent(),
+                    phrases: ["Ouvre un rapport dans \(.applicationName)"],
+                    shortTitle: "Ouvrir un rapport",
+                    systemImageName: "folder")
     }
 }

@@ -32,6 +32,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
   (framework *Foundation Models*) génère un résumé **structuré en Markdown** (chapitres, **gras**,
   listes), rendu avec la charte de l'app. Gardé par `@available` + `#if canImport(FoundationModels)`
   → invisible sur les appareils sans Apple Intelligence. Voir `DocumentSummarizer` dans `ReaderView.swift`.
+- **Siri / Spotlight / Raccourcis (App Intents)** : actions exposées au système — **Ouvrir un
+  rapport** (paramètre = rapport du coffre), **Ouvrir le dernier rapport**, **Résumer un rapport**
+  (réutilise Apple Intelligence). Phrases FR auto-enregistrées via `AppShortcutsProvider`. Le store
+  est partagé avec les intents par `AppDependencyManager`. Dispo iOS 17 / macOS 14+ (le résumé
+  nécessite Apple Intelligence). Voir les types `…Intent` dans `OKiaMarkdownViewerApp.swift`.
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
