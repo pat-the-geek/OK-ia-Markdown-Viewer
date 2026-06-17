@@ -18,6 +18,7 @@ struct ReaderView: View {
     @State private var sharePayload: SharePayload?
     @State private var externalLink: ExternalLink?
     @State private var showTextSize = false
+    @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     @FocusState private var searchFocused: Bool
 
@@ -28,13 +29,22 @@ struct ReaderView: View {
     var body: some View {
         ZStack(alignment: .top) {
             MarkdownWebView(document: document, tapped: $tapped, onTitle: { title = $0 },
-                            webController: web, onExternalLink: handleExternalLink)
+                            webController: web, onExternalLink: handleExternalLink,
+                            topInset: barHeight)
                 .ignoresSafeArea(edges: .bottom)
 
             VStack(spacing: 0) {
                 titleBar
                 if isSearching { searchBar }
             }
+            // Measure the floating bar so the web content can inset below it.
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { barHeight = proxy.size.height }
+                        .onChange(of: proxy.size.height) { _, h in barHeight = h }
+                }
+            )
         }
         .fullScreenCover(item: $tapped) { diagram in
             DiagramZoomView(diagram: diagram)

@@ -17,6 +17,8 @@ struct MarkdownWebView: UIViewRepresentable {
     var onTitle: (String) -> Void
     var webController: ReaderWebController
     var onExternalLink: (URL) -> Void
+    /// Height of the floating title/search bar overlay, so content scrolls clear of it.
+    var topInset: CGFloat = 0
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -45,6 +47,18 @@ struct MarkdownWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
+        // Inset the scroll content below the floating title/search bar overlay.
+        let inset = max(0, topInset)
+        if abs(webView.scrollView.contentInset.top - inset) > 0.5 {
+            let wasAtTop = webView.scrollView.contentOffset.y <= -webView.scrollView.adjustedContentInset.top + 1
+            webView.scrollView.contentInset.top = inset
+            webView.scrollView.verticalScrollIndicatorInsets.top = inset
+            // Keep the very top of the document visible when the inset first applies.
+            if wasAtTop {
+                webView.scrollView.contentOffset.y = -webView.scrollView.adjustedContentInset.top
+            }
+        }
+
         // Re-render only when the document actually changes.
         if context.coordinator.loadedDocumentID != document.id {
             context.coordinator.parent = self
