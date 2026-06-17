@@ -1,8 +1,8 @@
 # Publication App Store — OK-ia Markdown Viewer
 
 Dossier de préparation à la soumission **App Store** (iOS/iPadOS **et** macOS).
-Ces documents sont des **brouillons prêts à copier-coller** dans App Store Connect.
-Tout ce qui demande une décision de ta part est marqué **⚠️ À DÉCIDER**.
+Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix éditoriaux
+(nom, catégorie, prix, URLs…) sont **actés** — voir *Décisions actées* ci-dessous.
 
 ## Fichiers
 
