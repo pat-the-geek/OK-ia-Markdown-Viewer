@@ -13,6 +13,7 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 | [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/mdviewer-confidentialite.html` |
 | [`screenshots.md`](screenshots.md) | Tailles de captures requises (iPhone/iPad/Mac) + plan de capture |
 | [`review-notes.md`](review-notes.md) | Notes pour l'équipe App Review (comment tester, contenu de démo, pas de login) |
+| [`testflight.md`](testflight.md) | Infos TestFlight : description bêta, « Que tester », notes review externe, feedback |
 
 ## Décisions actées
 
