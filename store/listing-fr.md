@@ -6,9 +6,8 @@ Copier-coller dans App Store Connect → *Informations sur l'app* et *Version*.
 ---
 
 ## Nom de l'app (30 car. max)
-⚠️ **À DÉCIDER** — doit être **unique** sur tout l'App Store. Propositions :
-- `OK-ia Markdown Viewer` (24) ✅ recommandé
-- repli si pris : `OK-ia — Markdown` / `md Viewer OK-ia`
+**`OK-ia Markdown Viewer`** (24) ✅ retenu — doit être **unique** sur l'App Store.
+Replis si déjà pris : `OK-ia — Markdown` / `md Viewer OK-ia`.
 
 > Le nom d'affichage sur l'appareil reste **« md Viewer »** (`CFBundleDisplayName`), indépendant du nom store.
 
@@ -52,13 +51,13 @@ markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pd
 (~95 car. — ajuster si besoin ; « siri/raccourcis » sont indexés via les phrases App Shortcuts)
 
 ## URLs
-- **URL d'assistance** (obligatoire) : ⚠️ **À DÉCIDER** — proposé `https://ok-ia.ch` (ou page support dédiée)
+- **URL d'assistance** (obligatoire) : `https://ok-ia.ch` ✅
 - **URL marketing** (facultative) : `https://ok-ia.ch`
-- **URL politique de confidentialité** (obligatoire) : ⚠️ à héberger — voir [`app-privacy.md`](app-privacy.md)
-  (proposé `https://ok-ia.ch/confidentialite`)
+- **URL politique de confidentialité** (obligatoire) : `https://ok-ia.ch/confidentialite` ✅
+  → héberger le fichier [`confidentialite.html`](confidentialite.html) à cette adresse.
 
 ## Catégorie
-- Principale : ⚠️ **À DÉCIDER** — `Productivité` ✅ recommandé (alt : `Utilitaires`)
+- Principale : **`Productivité`** ✅
 - Secondaire (facultative) : `Utilitaires`
 
 ## Classification par âge
@@ -68,10 +67,10 @@ markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pd
   dans Safari/le navigateur système, ce qui n'est pas un accès web intégré sans restriction.
 
 ## Copyright
-- `© 2026 OK-ia` ⚠️ (ajuster le titulaire : OK-ia / Patrick Ostertag selon le compte)
+- **`© 2026 OK-ia`** ✅
 
 ## Prix
-- ⚠️ **À DÉCIDER** — proposé **Gratuit**, aucune disponibilité limitée.
+- **Gratuit** ✅ — aucune disponibilité limitée, disponible dans tous les pays.
 
 ## Nouveautés de cette version (release notes 1.0.0)
 ```

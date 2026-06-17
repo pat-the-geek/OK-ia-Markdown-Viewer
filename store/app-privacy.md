@@ -35,10 +35,14 @@ par transparence.
 
 ---
 
-## 2. Politique de confidentialité (brouillon à héberger)
+## 2. Politique de confidentialité
 
-À publier à une URL stable, p.ex. `https://ok-ia.ch/confidentialite`, puis renseigner cette URL
-dans App Store Connect (champ **obligatoire**). ⚠️ Adapter le nom de l'éditeur / contact.
+✅ **Version finalisée, prête à héberger : [`confidentialite.html`](confidentialite.html)**
+(page HTML autonome). Publie-la à `https://ok-ia.ch/confidentialite`, puis renseigne cette URL
+dans App Store Connect (champ **obligatoire**). Contact dans la page : `contact@ok-ia.ch`
+(à ajuster si une autre adresse est préférée).
+
+La source Markdown ci-dessous reste disponible si tu veux l'intégrer à un autre gabarit de site :
 
 ```markdown
 # Politique de confidentialité — md Viewer (OK-ia Markdown Viewer)
