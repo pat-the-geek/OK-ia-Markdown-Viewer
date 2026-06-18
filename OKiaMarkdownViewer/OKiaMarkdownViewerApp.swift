@@ -300,7 +300,7 @@ struct OpenLatestReportIntent: AppIntent {
 /// when Apple Intelligence is unavailable).
 struct SummarizeReportIntent: AppIntent {
     static var title: LocalizedStringResource = "Résumer un rapport"
-    static var description = IntentDescription("Ouvre un rapport et génère son résumé par Apple Intelligence.")
+    static var description = IntentDescription("Ouvre un rapport et génère son résumé sur l’appareil.")
     static var openAppWhenRun = true
 
     @Parameter(title: "Rapport") var report: VaultReportEntity
@@ -314,7 +314,7 @@ struct SummarizeReportIntent: AppIntent {
             return .result(dialog: "Résumé de « \(report.name) » dans md Viewer.")
         } else {
             store.openReport(id: report.id)
-            return .result(dialog: "Apple Intelligence n’est pas disponible ici ; j’ouvre le rapport.")
+            return .result(dialog: "Le résumé n’est pas disponible sur cet appareil ; j’ouvre le rapport.")
         }
     }
 }
