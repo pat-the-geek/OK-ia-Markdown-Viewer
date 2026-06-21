@@ -113,7 +113,10 @@ html, body.present-body {
 .slide.slide-map .slide-canvas {
   width: 100%;
   height: 100%;
-  padding: 14px clamp(12px, 1.6vw, 26px) 16px;
+  /* Reserve top room so the opaque map never sits under the top controls
+     (gear/overview at top-left, end button at top-right). */
+  padding: max(64px, calc(env(safe-area-inset-top) + 52px))
+           clamp(12px, 1.6vw, 26px) 16px;
   transform: none !important;
 }
 .slide.slide-map .slide-inner {
