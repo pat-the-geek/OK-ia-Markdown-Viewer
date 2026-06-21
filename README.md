@@ -81,8 +81,11 @@ affiche le document en **plein écran**, façon Keynote/PowerPoint.
 
 Implémentation : `Web/presentation.{html,js,css}` (moteur autonome qui réutilise le pipeline de rendu
 via `window.OKIA.renderFragment`) + `PresentationView` / `PresentationWebView` / `KeyCapturingWebView`
-dans `ReaderView.swift`. Un guide de rédaction des présentations (format Markdown, conseils images) est
-disponible sur demande.
+dans `ReaderView.swift`.
+
+> 📝 **Rédiger une présentation** : voir le [guide de rédaction](docs/GUIDE-PRESENTATION.md) (format
+> Markdown attendu, découpage des diapos, conseils images inline, modèles, commandes). Il sert aussi
+> d'instructions à coller dans une config d'assistant pour générer des présentations exploitables.
 
 ---
 
