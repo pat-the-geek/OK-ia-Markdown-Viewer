@@ -9,9 +9,12 @@
 (function () {
   'use strict';
 
-  // Fixed design canvas (16:9). Slides are laid out here, then the whole canvas
-  // is uniformly scaled to fill the screen — so every slide uses all the room.
-  var CW = 1280, CH = 720, PAD_H = 72, PAD_V = 48;
+  // Design canvas with a fixed reference HEIGHT (720) and a width that ADAPTS to
+  // the screen's aspect ratio, so the canvas always fills the viewport exactly —
+  // on phone (wide), tablet (4:3) and Mac (16:10) alike, with no letterboxing.
+  // The canvas is then uniformly scaled to the viewport.
+  var CH = 720, PAD_H = 72, PAD_V = 48;
+  var CW = 1280;   // current canvas logical width, recomputed per fit
 
   function post(name, payload) {
     try {
@@ -58,6 +61,36 @@
   var rendered = [];                  // bool per slide
   var current = 0;
 
+  // Slide transitions — the 5 Keynote classics. Each spec returns the incoming
+  // slide's start state and the outgoing slide's end state (per direction d:
+  // +1 = forward / next, -1 = backward / prev).
+  var TRANSITIONS = [
+    { key: 'dissolve', label: 'Fondu' },
+    { key: 'push',     label: 'Poussée' },
+    { key: 'movein',   label: 'Entrée' },
+    { key: 'scale',    label: 'Échelle' },
+    { key: 'flip',     label: 'Retournement 3D' }
+  ];
+  var SPECS = {
+    dissolve: { dur: 450, ease: 'ease',
+      enter: function () { return { t: '', o: 0 }; },
+      leave: function () { return { t: '', o: 0 }; } },
+    push: { dur: 520, ease: 'cubic-bezier(.4,0,.2,1)',
+      enter: function (d) { return { t: 'translateX(' + (d * 100) + '%)', o: 1 }; },
+      leave: function (d) { return { t: 'translateX(' + (-d * 100) + '%)', o: 1 }; } },
+    movein: { dur: 480, ease: 'cubic-bezier(.4,0,.2,1)', incomingOnTop: true,
+      enter: function (d) { return { t: 'translateX(' + (d * 100) + '%)', o: 1 }; },
+      leave: function () { return { t: '', o: 1 }; } },
+    scale: { dur: 480, ease: 'cubic-bezier(.4,0,.2,1)',
+      enter: function () { return { t: 'scale(.82)', o: 0 }; },
+      leave: function () { return { t: 'scale(1.14)', o: 0 }; } },
+    flip: { dur: 640, ease: 'cubic-bezier(.45,0,.25,1)', threeD: true,
+      enter: function (d) { return { t: 'rotateY(' + (d * 90) + 'deg)', o: 0 }; },
+      leave: function (d) { return { t: 'rotateY(' + (-d * 90) + 'deg)', o: 0 }; } }
+  };
+  var transition = 'dissolve';
+  var animating = false, animTimer = null;
+
   function el(id) { return document.getElementById(id); }
 
   /* ---- auto-fit ----------------------------------------------------------- */
@@ -100,6 +133,8 @@
 
     if (inner.querySelector('.okia-map')) {
       section.classList.add('slide-map');
+      canvas.style.width = '';
+      canvas.style.height = '';
       canvas.style.transform = '';
       inner.style.transform = '';
       var mapEl = inner.querySelector('.okia-map');
@@ -113,6 +148,14 @@
     inner.style.transform = '';
     canvas.style.transform = '';
 
+    // Adapt the canvas width to the viewport's aspect ratio so it fills exactly
+    // (no letterboxing on 4:3 iPad or 16:10 Mac); height stays the 720 reference.
+    var vw = section.clientWidth, vh = section.clientHeight;
+    if (vw <= 0 || vh <= 0) return;
+    CW = Math.max(640, Math.round(CH * vw / vh));
+    canvas.style.width = CW + 'px';
+    canvas.style.height = CH + 'px';
+
     // 0. Grow a lone image to fill the canvas's leftover height (PowerPoint-style).
     fitImage(section, inner);
 
@@ -125,8 +168,8 @@
     }
 
     // 2. Scale the whole canvas to fill the viewport (this is the "fill" step).
-    var s = Math.min(section.clientWidth / CW, section.clientHeight / CH);
-    if (s > 0 && isFinite(s)) canvas.style.transform = 'scale(' + s.toFixed(4) + ')';
+    var s = vh / CH;   // == vw/CW by construction → fills exactly
+    canvas.style.transform = 'scale(' + s.toFixed(4) + ')';
   }
 
   /* ---- rendering ---------------------------------------------------------- */
@@ -148,25 +191,122 @@
     el('navNext').disabled = (current === sections.length - 1);
   }
 
+  function clearAnim(elm) {
+    elm.style.transition = '';
+    elm.style.transform = '';
+    elm.style.opacity = '';
+    elm.style.zIndex = '';
+  }
+
+  // End any in-flight animation immediately, leaving only `keepEl` visible.
+  function finishPending(keepEl) {
+    if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+    sections.forEach(function (s) {
+      if (s !== keepEl) { s.classList.remove('active'); clearAnim(s); }
+    });
+    animating = false;
+  }
+
   function show(index) {
-    if (index < 0 || index >= sections.length || index === current) {
-      // still refit (e.g. resize) the active slide
-      if (index === current) fitSlide(sections[current]);
-      return;
-    }
-    sections[current].classList.remove('active');
+    if (index < 0 || index >= sections.length) return;
+    if (index === current) { fitSlide(sections[current]); return; }
+    var dir = index > current ? 1 : -1;
+    var fromEl = sections[current], toEl = sections[index];
     current = index;
-    var section = sections[current];
-    section.classList.add('active');
     updateChrome();
-    renderSlide(current).then(function () { fitSlide(section); });
-    // Warm the neighbour so the next transition is instant.
-    if (current + 1 < sections.length) renderSlide(current + 1);
+
+    // Ensure the incoming slide is rendered & fitted before/just as it appears.
+    renderSlide(index).then(function () { fitSlide(toEl); });
+    fitSlide(toEl);
+    var ahead = index + dir;
+    if (ahead >= 0 && ahead < sections.length) renderSlide(ahead);
+
+    runTransition(fromEl, toEl, dir);
+  }
+
+  function runTransition(fromEl, toEl, dir) {
+    finishPending(fromEl);                       // settle any previous animation
+    var spec = SPECS[transition] || SPECS.dissolve;
+    var dur = spec.dur;
+    animating = true;
+
+    deck.classList.toggle('deck-3d', !!spec.threeD);
+
+    // Both slides visible during the transition; incoming on top when needed.
+    toEl.classList.add('active');
+    toEl.style.zIndex = spec.incomingOnTop ? '3' : '2';
+    fromEl.style.zIndex = '1';
+
+    // Initial states (no animation yet).
+    toEl.style.transition = 'none';
+    fromEl.style.transition = 'none';
+    var e = spec.enter(dir);
+    toEl.style.transform = e.t; toEl.style.opacity = e.o;
+    fromEl.style.transform = ''; fromEl.style.opacity = 1;
+
+    // Force reflow so the start state is committed before we animate.
+    void toEl.offsetWidth;
+
+    var tr = 'transform ' + dur + 'ms ' + spec.ease + ', opacity ' + dur + 'ms ' + spec.ease;
+    toEl.style.transition = tr;
+    fromEl.style.transition = tr;
+    toEl.style.transform = ''; toEl.style.opacity = 1;
+    var l = spec.leave(dir);
+    fromEl.style.transform = l.t; fromEl.style.opacity = l.o;
+
+    animTimer = setTimeout(function () {
+      animTimer = null;
+      fromEl.classList.remove('active');
+      clearAnim(fromEl);
+      clearAnim(toEl);
+      deck.classList.remove('deck-3d');
+      animating = false;
+    }, dur + 40);
   }
 
   function next() { show(current + 1); }
   function prev() { show(current - 1); }
   function exit() { post('presentExit'); }
+
+  /* ---- transition choice -------------------------------------------------- */
+
+  function setTransition(key) {
+    if (!SPECS[key]) return;
+    transition = key;
+    try { localStorage.setItem('okia.transition', key); } catch (e) {}
+    syncMenu();
+  }
+
+  function syncMenu() {
+    var menu = el('presentMenu');
+    if (!menu) return;
+    Array.prototype.forEach.call(menu.querySelectorAll('.present-menu-item'), function (b) {
+      b.classList.toggle('selected', b.getAttribute('data-key') === transition);
+    });
+  }
+
+  function buildMenu() {
+    var menu = el('presentMenu');
+    if (!menu) return;
+    menu.innerHTML = '<div class="present-menu-title">Transition</div>';
+    TRANSITIONS.forEach(function (t) {
+      var b = document.createElement('button');
+      b.className = 'present-menu-item';
+      b.setAttribute('data-key', t.key);
+      b.textContent = t.label;
+      b.onclick = function (ev) { ev.stopPropagation(); setTransition(t.key); closeMenu(); };
+      menu.appendChild(b);
+    });
+    syncMenu();
+  }
+
+  function openMenu()  { var m = el('presentMenu'); if (m) { m.hidden = false; syncMenu(); } }
+  function closeMenu() { var m = el('presentMenu'); if (m) m.hidden = true; }
+  function toggleMenu(ev) {
+    if (ev) ev.stopPropagation();
+    var m = el('presentMenu');
+    if (m) { if (m.hidden) openMenu(); else closeMenu(); }
+  }
 
   /* ---- input -------------------------------------------------------------- */
   // Hardware-keyboard navigation is driven natively (UIKeyCommand) and routed
@@ -224,6 +364,13 @@
     current = 0;
     build();
 
+    // Restore the saved transition choice.
+    try {
+      var saved = localStorage.getItem('okia.transition');
+      if (saved && SPECS[saved]) transition = saved;
+    } catch (e) {}
+    buildMenu();
+
     sections[0].classList.add('active');
     updateChrome();
     renderSlide(0).then(function () { fitSlide(sections[0]); });
@@ -232,6 +379,10 @@
     el('navPrev').onclick = function (e) { e.stopPropagation(); prev(); };
     el('navNext').onclick = function (e) { e.stopPropagation(); next(); };
     el('presentEnd').onclick = function (e) { e.stopPropagation(); exit(); };
+    var menuBtn = el('presentMenuBtn');
+    if (menuBtn) menuBtn.onclick = toggleMenu;
+    // Tap anywhere else closes the transition menu.
+    document.addEventListener('click', closeMenu);
 
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
@@ -242,6 +393,7 @@
     post('presentStarted', { count: sections.length });
   }
 
-  window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit };
+  window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
+                          setTransition: setTransition };
   post('presentReady', {});
 })();

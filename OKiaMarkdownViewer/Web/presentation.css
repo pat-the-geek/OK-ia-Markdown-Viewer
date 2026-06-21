@@ -17,14 +17,18 @@ html, body.present-body {
   html, body.present-body { background: #15151a; }
 }
 
-/* The deck fills the safe area; each slide stacks on top, only one is visible. */
+/* The deck fills the safe area; each slide stacks on top, only one is visible.
+   `deck-3d` enables a perspective for the 3-D flip transition. */
 .deck {
   position: fixed;
   inset: 0;
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+.deck.deck-3d { perspective: 1800px; }
 
+/* Slides stack; transitions are driven inline by JS (transform + opacity), so no
+   base CSS transition here. Only the active slide is shown (and interactive). */
 .slide {
   position: absolute;
   inset: 0;
@@ -34,7 +38,8 @@ html, body.present-body {
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.28s ease;
+  backface-visibility: hidden;
+  transform-origin: center center;
 }
 .slide.active {
   opacity: 1;
@@ -194,6 +199,74 @@ html, body.present-body {
   -webkit-tap-highlight-color: transparent;
 }
 .present-end:hover { opacity: 1; background: rgba(232, 151, 46, 0.6); }
+
+/* ---- transitions menu (gear, top-left) ----------------------------------- */
+.present-menu-btn {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
+  z-index: 41;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(40, 40, 40, 0.30);
+  color: #fff;
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0.5;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.present-menu-btn:hover { opacity: 1; background: rgba(232, 151, 46, 0.6); }
+
+.present-menu {
+  position: fixed;
+  top: max(66px, calc(env(safe-area-inset-top) + 52px));
+  left: max(14px, env(safe-area-inset-left));
+  z-index: 41;
+  min-width: 184px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(28, 28, 30, 0.82);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+.present-menu[hidden] { display: none; }
+.present-menu-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  padding: 6px 10px 4px;
+}
+.present-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.present-menu-item:hover { background: rgba(255, 255, 255, 0.10); }
+.present-menu-item.selected { background: rgba(232, 151, 46, 0.30); }
+.present-menu-item.selected::after {
+  content: '✓';
+  margin-left: auto;
+  color: var(--orange-clair);
+  font-weight: 700;
+}
 
 /* ---- slide counter ------------------------------------------------------- */
 .present-counter {
