@@ -381,6 +381,22 @@
     });
   }
 
+  /* Make content images tappable → open full-screen in a native zoom view.
+     Linked images keep their link; broken/hidden ones are skipped. */
+  function attachImageZoom(container) {
+    var imgs = Array.prototype.slice.call(container.querySelectorAll('img'));
+    imgs.forEach(function (img) {
+      if (img.closest('a')) return;                 // an image that is itself a link
+      if (img.getAttribute('data-okia-zoom') === '1') return;
+      img.setAttribute('data-okia-zoom', '1');
+      img.classList.add('okia-zoomable');
+      img.addEventListener('click', function () {
+        if (img.style.display === 'none') return;
+        post('imageTapped', { src: img.currentSrc || img.src });
+      });
+    });
+  }
+
   function renderMermaid(container, title) {
     var blocks = Array.prototype.slice.call(container.querySelectorAll('pre.mermaid'));
     if (!blocks.length) return Promise.resolve();
@@ -570,6 +586,7 @@
         dedupeTitle(container, header.title);                       // remove duplicate H1
         highlightEntities(container, ner.entities, ner.subtypes);   // 6 (DOM-safe)
         hideRedundantSecondImage(container);
+        attachImageZoom(container);                                 // tap image → full-screen
         clearSearch();
         applyFontScale();                                           // keep chosen size across renders
         buildTOC(container);                                        // headings -> ids + TOC
@@ -589,6 +606,24 @@
       post('renderError', { message: String(err && err.message || err) });
       return Promise.reject(err);
     }
+  }
+
+  /* =========================================================================
+     RENDER FRAGMENT — run the full transform pipeline (mermaid · leaflet ·
+     callouts · wiki-links · images) into an arbitrary container. Used by the
+     slideshow to render one slide at a time, identical to the reader.
+     ========================================================================= */
+  function renderFragment(container, md) {
+    var body = transformMermaid(md);
+    body = transformLeaflet(body);
+    return removeBrokenImages(body).then(function (cleaned) {
+      body = transformCallouts(cleaned);
+      body = transformWikiLinks(body);
+      container.innerHTML = marked.parse(body, { breaks: true, gfm: true });
+      renderLeafletMaps(container);
+      attachImageZoom(container);
+      return renderMermaid(container, '');
+    });
   }
 
   /* =========================================================================
@@ -710,6 +745,7 @@
 
   window.OKIA = {
     render: render,
+    renderFragment: renderFragment,
     setFontScale: setFontScale,
     scrollToHeading: scrollToHeading,
     search: search,

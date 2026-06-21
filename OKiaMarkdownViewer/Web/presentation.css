@@ -1,0 +1,176 @@
+/* ===========================================================================
+   OK-ia Markdown Viewer — slideshow ("Diaporama") styles
+   Full-screen deck: one slide centered at a time, auto-fitted, with a thin
+   progress line, transparent navigation arrows and an end button.
+   =========================================================================== */
+
+html, body.present-body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--blanc-casse);
+  color: var(--fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html, body.present-body { background: #15151a; }
+}
+
+/* The deck fills the safe area; each slide stacks on top, only one is visible. */
+.deck {
+  position: fixed;
+  inset: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Inner content block. transform-origin centre so auto-fit scales about the middle. */
+.slide-inner {
+  max-width: min(1180px, 94vw);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  transform-origin: center center;
+  text-align: left;
+}
+
+/* A slide that holds only a heading + one media element reads better centred. */
+.slide-inner > h1:first-child,
+.slide-inner > h2:first-child {
+  margin-top: 0;
+}
+
+/* Make media as large as possible inside a slide. */
+.slide-inner img {
+  display: block;
+  margin: 0.4em auto;
+  max-width: 100%;
+  max-height: 72vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.slide-inner pre.mermaid {
+  background: transparent;
+  border: none;
+  margin: 0.4em auto;
+}
+.slide-inner pre.mermaid svg {
+  max-width: 100%;
+  max-height: 74vh;
+  height: auto;
+}
+.slide-inner pre.mermaid[data-rendered="1"]::after { content: none; }
+
+/* Interactive maps: sized via viewport units (not transform-scaled). */
+.slide-inner .okia-map {
+  height: 72vh !important;
+  margin: 0.4em auto;
+}
+
+/* Slightly larger base typography for across-the-room legibility. */
+.slide-inner h1 { font-size: 2.6rem; }
+.slide-inner h2 { font-size: 2.0rem; }
+.slide-inner p,
+.slide-inner li { font-size: 1.18rem; }
+.slide-inner table { font-size: 1.05rem; }
+.slide-inner blockquote { font-size: 1.15rem; }
+
+/* ---- progress line (2 mm) ----------------------------------------------- */
+.present-progress {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 2mm;
+  background: rgba(120, 120, 120, 0.18);
+  z-index: 30;
+}
+.present-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--orange);
+  box-shadow: 0 0 6px rgba(232, 151, 46, 0.6);
+  transition: width 0.28s ease;
+}
+
+/* ---- navigation arrows (semi-transparent) -------------------------------- */
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  width: 56px;
+  height: 84px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(40, 40, 40, 0.28);
+  color: #fff;
+  font-size: 40px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0.45;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-arrow:hover { opacity: 0.95; background: rgba(232, 151, 46, 0.55); }
+.nav-arrow:disabled { opacity: 0.12; pointer-events: none; }
+.nav-prev { left: max(12px, env(safe-area-inset-left)); }
+.nav-next { right: max(12px, env(safe-area-inset-right)); }
+
+/* ---- end button ---------------------------------------------------------- */
+.present-end {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 40;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(40, 40, 40, 0.30);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0.5;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.present-end:hover { opacity: 1; background: rgba(232, 151, 46, 0.6); }
+
+/* ---- slide counter ------------------------------------------------------- */
+.present-counter {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: calc(2mm + 10px);
+  z-index: 40;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  opacity: 0.7;
+  pointer-events: none;
+}

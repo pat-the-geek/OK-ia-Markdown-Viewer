@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 #if canImport(FoundationModels)
 import FoundationModels   // Apple Intelligence on-device model (iOS 26 / macOS 26+)
 #endif
@@ -14,6 +15,8 @@ struct ReaderView: View {
 
     @StateObject private var web = ReaderWebController()
     @State private var tapped: TappedDiagram?
+    @State private var tappedImage: TappedImage?
+    @State private var presenting = false
     @State private var title: String = ""
 
     @State private var showTOC = false
@@ -32,9 +35,32 @@ struct ReaderView: View {
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
+    /// True when the document is made of at least two slides — i.e. it contains a
+    /// top-level "---" separator after any YAML frontmatter and outside code fences.
+    private var hasSlides: Bool { Self.slideCount(in: document.text) >= 2 }
+
+    static func slideCount(in markdown: String) -> Int {
+        var text = markdown
+        // Drop a leading YAML frontmatter block.
+        if let r = text.range(of: "^---\\r?\\n[\\s\\S]*?\\r?\\n---\\r?\\n?",
+                              options: .regularExpression), r.lowerBound == text.startIndex {
+            text.removeSubrange(r)
+        }
+        var separators = 0, content = 0, inFence = false
+        for raw in text.split(separator: "\n", omittingEmptySubsequences: false) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("```") || line.hasPrefix("~~~") { inFence.toggle(); continue }
+            if inFence { if !line.isEmpty { content += 1 }; continue }
+            if line.range(of: #"^-{3,}$"#, options: .regularExpression) != nil { separators += 1 }
+            else if !line.isEmpty { content += 1 }
+        }
+        return (separators > 0 && content > 0) ? separators + 1 : (content > 0 ? 1 : 0)
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
-            MarkdownWebView(document: document, tapped: $tapped, onTitle: { title = $0 },
+            MarkdownWebView(document: document, tapped: $tapped, tappedImage: $tappedImage,
+                            onTitle: { title = $0 },
                             webController: web, onExternalLink: handleExternalLink,
                             topInset: barHeight)
                 .ignoresSafeArea(edges: .bottom)
@@ -54,6 +80,12 @@ struct ReaderView: View {
         }
         .fullScreenCover(item: $tapped) { diagram in
             DiagramZoomView(diagram: diagram)
+        }
+        .fullScreenCover(item: $tappedImage) { image in
+            ImageZoomView(image: image)
+        }
+        .fullScreenCover(isPresented: $presenting) {
+            PresentationView(document: document)
         }
         .sheet(isPresented: $showTOC) {
             TableOfContentsView(items: web.toc) { item in web.scrollToHeading(item.id) }
@@ -103,6 +135,12 @@ struct ReaderView: View {
                 .truncationMode(.tail)
 
             Spacer(minLength: 4)
+
+            // Diaporama — present the document as full-screen slides (split on "---").
+            if hasSlides {
+                Button { presenting = true } label: { Image(systemName: "play.rectangle") }
+                    .accessibilityLabel("Diaporama")
+            }
 
             // Apple Intelligence summary — only when the on-device model is available.
             if DocumentSummarizer.isAvailable {
@@ -364,6 +402,7 @@ struct DocumentSummaryView: View {
     @StateObject private var summarizer = DocumentSummarizer()
     @StateObject private var web = ReaderWebController()
     @State private var ignoredTap: TappedDiagram?
+    @State private var ignoredImage: TappedImage?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -413,7 +452,7 @@ struct DocumentSummaryView: View {
         case .done(let summary):
             VStack(spacing: 0) {
                 MarkdownWebView(document: MarkdownDocument(filename: "Résumé — \(sourceTitle)", text: summary),
-                                tapped: $ignoredTap, onTitle: { _ in },
+                                tapped: $ignoredTap, tappedImage: $ignoredImage, onTitle: { _ in },
                                 webController: web, onExternalLink: { _ in })
                 summaryDisclaimer
             }
@@ -429,5 +468,177 @@ struct DocumentSummaryView: View {
         .padding(.horizontal, 16).padding(.vertical, 8)
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
+    }
+}
+
+// MARK: - Diaporama (slideshow)
+
+/// Full-screen slideshow of the document. Hosts a dedicated web view running the
+/// OK-ia slideshow engine (slides split on "---"). The end button or the Esc key
+/// dismisses back to the normal Markdown reader. Tapping an image or diagram opens
+/// the existing full-screen zoom viewers on top of the slideshow.
+struct PresentationView: View {
+    let document: MarkdownDocument
+    @Environment(\.dismiss) private var dismiss
+    @State private var tappedDiagram: TappedDiagram?
+    @State private var tappedImage: TappedImage?
+
+    var body: some View {
+        PresentationWebView(document: document,
+                            onExit: { dismiss() },
+                            onDiagram: { tappedDiagram = $0 },
+                            onImage: { tappedImage = $0 })
+            .ignoresSafeArea()
+            .statusBarHidden(true)
+            .persistentSystemOverlays(.hidden)
+            .fullScreenCover(item: $tappedDiagram) { DiagramZoomView(diagram: $0) }
+            .fullScreenCover(item: $tappedImage) { ImageZoomView(image: $0) }
+            .onAppear(perform: requestLandscapeIfPhone)
+    }
+
+    /// On iPhone, the deck reads best in landscape ("en largeur"); nudge the scene.
+    private func requestLandscapeIfPhone() {
+        #if !targetEnvironment(macCatalyst)
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        for scene in UIApplication.shared.connectedScenes {
+            if let ws = scene as? UIWindowScene {
+                ws.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
+            }
+        }
+        #endif
+    }
+}
+
+/// A WKWebView that captures hardware-keyboard navigation (←/→, space, page up/down,
+/// Esc) for the slideshow, reliably on Mac Catalyst and iPad with a keyboard.
+final class KeyCapturingWebView: WKWebView {
+    var onKey: ((String) -> Void)?
+
+    override var canBecomeFirstResponder: Bool { true }
+
+    override var keyCommands: [UIKeyCommand]? {
+        let inputs = [UIKeyCommand.inputRightArrow, UIKeyCommand.inputLeftArrow,
+                      UIKeyCommand.inputEscape, " ",
+                      UIKeyCommand.inputPageUp, UIKeyCommand.inputPageDown]
+        return inputs.map { input in
+            let cmd = UIKeyCommand(input: input, modifierFlags: [], action: #selector(handleKey(_:)))
+            cmd.wantsPriorityOverSystemBehavior = true
+            return cmd
+        }
+    }
+
+    @objc private func handleKey(_ command: UIKeyCommand) {
+        onKey?(command.input ?? "")
+    }
+}
+
+struct PresentationWebView: UIViewRepresentable {
+    let document: MarkdownDocument
+    var onExit: () -> Void
+    var onDiagram: (TappedDiagram) -> Void
+    var onImage: (TappedImage) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let controller = WKUserContentController()
+        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped"] {
+            controller.add(context.coordinator, name: name)
+        }
+
+        let config = WKWebViewConfiguration()
+        config.userContentController = controller
+        config.defaultWebpagePreferences.allowsContentJavaScript = true
+
+        let webView = KeyCapturingWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+        webView.scrollView.isScrollEnabled = false
+        webView.onKey = { [weak coordinator = context.coordinator] key in
+            coordinator?.handleNativeKey(key)
+        }
+
+        context.coordinator.webView = webView
+        loadRenderer(into: webView)
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        context.coordinator.parent = self
+    }
+
+    private func loadRenderer(into webView: WKWebView) {
+        guard let webDir = Bundle.main.url(forResource: "presentation", withExtension: "html", subdirectory: "Web")
+                ?? Bundle.main.url(forResource: "presentation", withExtension: "html") else { return }
+        webView.loadFileURL(webDir, allowingReadAccessTo: webDir.deletingLastPathComponent())
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+        var parent: PresentationWebView
+        weak var webView: WKWebView?
+
+        init(_ parent: PresentationWebView) { self.parent = parent }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            startPresentation()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak webView] in
+                webView?.becomeFirstResponder()
+            }
+        }
+
+        func startPresentation() {
+            guard let webView,
+                  let data = try? JSONEncoder().encode(parent.document.text),
+                  let mdJSON = String(data: data, encoding: .utf8) else { return }
+            webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.start(\(mdJSON));",
+                                       completionHandler: nil)
+        }
+
+        func handleNativeKey(_ key: String) {
+            switch key {
+            case UIKeyCommand.inputRightArrow, " ", UIKeyCommand.inputPageDown:
+                webView?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.next();")
+            case UIKeyCommand.inputLeftArrow, UIKeyCommand.inputPageUp:
+                webView?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.prev();")
+            case UIKeyCommand.inputEscape:
+                parent.onExit()
+            default: break
+            }
+        }
+
+        // Open external links (e.g. an article URL on a slide) in the system browser.
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            if navigationAction.navigationType == .linkActivated,
+               let url = navigationAction.request.url,
+               let scheme = url.scheme?.lowercased(),
+               ["http", "https", "mailto", "tel"].contains(scheme) {
+                decisionHandler(.cancel)
+                UIApplication.shared.open(url)
+                return
+            }
+            decisionHandler(.allow)
+        }
+
+        func userContentController(_ controller: WKUserContentController,
+                                   didReceive message: WKScriptMessage) {
+            switch message.name {
+            case "presentExit":
+                parent.onExit()
+            case "diagramTapped":
+                if let dict = message.body as? [String: Any], let svg = dict["svg"] as? String {
+                    parent.onDiagram(TappedDiagram(svg: svg, title: (dict["title"] as? String) ?? ""))
+                }
+            case "imageTapped":
+                if let dict = message.body as? [String: Any], let src = dict["src"] as? String {
+                    parent.onImage(TappedImage(src: src))
+                }
+            default:
+                break
+            }
+        }
     }
 }

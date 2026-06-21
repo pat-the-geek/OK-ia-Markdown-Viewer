@@ -48,7 +48,7 @@ struct DiagramZoomView: View {
             Color.black.opacity(1 - min(Double(dragOffset) / 400, 0.6))
                 .ignoresSafeArea()
 
-            ZoomWebView(svg: diagram.svg, controller: controller)
+            ZoomWebView(bodyHTML: diagram.svg, controller: controller)
                 .ignoresSafeArea()
                 .offset(y: dragOffset)
 
@@ -131,9 +131,10 @@ struct DiagramZoomView: View {
     }
 }
 
-/// WKWebView hosting the SVG with native scroll-view zoom/pan.
+/// WKWebView hosting arbitrary centred content (an SVG diagram or an `<img>`)
+/// with native scroll-view zoom/pan.
 private struct ZoomWebView: UIViewRepresentable {
-    let svg: String
+    let bodyHTML: String
     let controller: ZoomController
 
     func makeCoordinator() -> Coordinator { Coordinator(controller) }
@@ -158,13 +159,13 @@ private struct ZoomWebView: UIViewRepresentable {
 
         let baseURL = Bundle.main.url(forResource: "renderer", withExtension: "html", subdirectory: "Web")?
             .deletingLastPathComponent()
-        webView.loadHTMLString(Self.wrap(svg: svg), baseURL: baseURL)
+        webView.loadHTMLString(Self.wrap(bodyHTML: bodyHTML), baseURL: baseURL)
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
-    static func wrap(svg: String) -> String {
+    static func wrap(bodyHTML: String) -> String {
         """
         <!DOCTYPE html><html><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=6, user-scalable=yes">
@@ -176,8 +177,9 @@ private struct ZoomWebView: UIViewRepresentable {
           .wrap{min-width:100%;min-height:100%;display:flex;align-items:center;justify-content:center;
                 padding:24px;box-sizing:border-box;}
           .wrap svg{max-width:100%;height:auto;display:block;}
+          .wrap img{max-width:100%;max-height:100%;height:auto;display:block;border-radius:8px;}
         </style></head>
-        <body><div class="wrap">\(svg)</div></body></html>
+        <body><div class="wrap">\(bodyHTML)</div></body></html>
         """
     }
 
@@ -193,5 +195,107 @@ private struct ZoomWebView: UIViewRepresentable {
             let point = gr.location(in: gr.view)
             controller.toggleZoom(at: point)
         }
+    }
+}
+
+// MARK: - Full-screen image viewer
+
+/// An image the user tapped, ready to be shown full-screen.
+struct TappedImage: Identifiable, Equatable {
+    let id = UUID()
+    let src: String
+}
+
+/// Full-screen, pinch-to-zoom image viewer. Reuses the same zoom web view as the
+/// diagram viewer, wrapping the source in an `<img>` on a dark canvas.
+struct ImageZoomView: View {
+    let image: TappedImage
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var controller = ZoomController()
+    @State private var dragOffset: CGFloat = 0
+
+    private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color.black.opacity(1 - min(Double(dragOffset) / 400, 0.6))
+                .ignoresSafeArea()
+
+            ZoomWebView(bodyHTML: Self.imgTag(image.src), controller: controller)
+                .ignoresSafeArea()
+                .offset(y: dragOffset)
+
+            chrome
+        }
+        .overlay(alignment: .bottom) { zoomBar }
+        .statusBarHidden(true)
+    }
+
+    private static func imgTag(_ src: String) -> String {
+        let escaped = src
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+        return "<img src=\"\(escaped)\" alt=\"\">"
+    }
+
+    private var zoomBar: some View {
+        HStack(spacing: 0) {
+            Button { controller.zoomOut() } label: {
+                Image(systemName: "minus.magnifyingglass")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 56, height: 44)
+            }
+            .accessibilityLabel("Dézoomer")
+
+            Divider().frame(height: 24).overlay(Color.white.opacity(0.25))
+
+            Button { controller.zoomIn() } label: {
+                Image(systemName: "plus.magnifyingglass")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 56, height: 44)
+            }
+            .accessibilityLabel("Zoomer")
+        }
+        .tint(orange)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(.white.opacity(0.15)))
+        .padding(.bottom, 28)
+        .offset(y: dragOffset)
+    }
+
+    private var chrome: some View {
+        HStack {
+            Button(action: { controller.fitToScreen() }) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 18, weight: .semibold))
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .accessibilityLabel("Ajuster à l’écran")
+
+            Spacer()
+
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .bold))
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .accessibilityLabel("Fermer")
+        }
+        .tint(orange)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    if value.translation.height > 0 { dragOffset = value.translation.height }
+                }
+                .onEnded { value in
+                    if value.translation.height > 120 { dismiss() }
+                    else { withAnimation(.spring()) { dragOffset = 0 } }
+                }
+        )
     }
 }

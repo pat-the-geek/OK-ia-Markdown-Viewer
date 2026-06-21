@@ -123,6 +123,7 @@ pre {
 pre code { background: none; padding: 0; }
 
 img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 1em auto; }
+img.okia-zoomable { cursor: zoom-in; }
 
 table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 0.95em; }
 th, td { border: 1px solid var(--rule); padding: 8px 12px; text-align: left; }

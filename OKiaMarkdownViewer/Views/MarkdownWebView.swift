@@ -14,6 +14,7 @@ struct TappedDiagram: Identifiable, Equatable {
 struct MarkdownWebView: UIViewRepresentable {
     let document: MarkdownDocument
     @Binding var tapped: TappedDiagram?
+    @Binding var tappedImage: TappedImage?
     var onTitle: (String) -> Void
     var webController: ReaderWebController
     var onExternalLink: (URL) -> Void
@@ -24,7 +25,7 @@ struct MarkdownWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "toc"] {
+        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "imageTapped", "toc"] {
             controller.add(context.coordinator, name: name)
         }
 
@@ -154,6 +155,10 @@ struct MarkdownWebView: UIViewRepresentable {
                 if let dict = message.body as? [String: Any], let svg = dict["svg"] as? String {
                     let title = (dict["title"] as? String) ?? ""
                     parent.tapped = TappedDiagram(svg: svg, title: title)
+                }
+            case "imageTapped":
+                if let dict = message.body as? [String: Any], let src = dict["src"] as? String {
+                    parent.tappedImage = TappedImage(src: src)
                 }
             case "toc":
                 if let dict = message.body as? [String: Any], let raw = dict["items"] as? [[String: Any]] {
