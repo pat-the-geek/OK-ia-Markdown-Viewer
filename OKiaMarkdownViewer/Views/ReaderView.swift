@@ -604,7 +604,9 @@ struct PresentationWebView: UIViewRepresentable {
             case UIKeyCommand.inputLeftArrow, UIKeyCommand.inputPageUp:
                 webView?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.prev();")
             case UIKeyCommand.inputEscape:
-                parent.onExit()
+                // Let the slideshow handle Esc: it closes the overview/menu first,
+                // and posts presentExit (→ onExit) only when nothing is open.
+                webView?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.escape();")
             default: break
             }
         }

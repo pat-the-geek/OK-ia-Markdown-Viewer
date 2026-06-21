@@ -189,6 +189,7 @@
     counter.textContent = (current + 1) + ' / ' + total;
     el('navPrev').disabled = (current === 0);
     el('navNext').disabled = (current === sections.length - 1);
+    syncOverviewCurrent();
   }
 
   function clearAnim(elm) {
@@ -310,6 +311,124 @@
     if (m) { if (m.hidden) openMenu(); else closeMenu(); }
   }
 
+  /* ---- overview / slide navigator ----------------------------------------- */
+
+  function slideTitle(index) {
+    var el2 = sections[index] && sections[index].querySelector('h1, h2, h3');
+    var t = el2 ? el2.textContent.trim() : '';
+    if (!t) {
+      var m = rawSlides[index].match(/^#{1,3}\s+(.+?)\s*$/m);
+      t = m ? m[1].trim() : '';
+    }
+    return t || ('Diapositive ' + (index + 1));
+  }
+
+  // Fill a thumbnail "stage" with a scaled-down clone of the rendered slide.
+  function fillThumb(stage, index) {
+    var src = sections[index].querySelector('.slide-inner');
+    if (!src) return;
+    var w = CW || 1280, h = CH;
+    stage.style.width = w + 'px';
+    stage.style.height = h + 'px';
+    stage.innerHTML = '';
+
+    var pad = document.createElement('div');
+    pad.className = 'overview-stage-pad';
+    var clone = src.cloneNode(true);
+    clone.style.transform = '';
+    clone.style.maxWidth = 'none';
+    clone.style.width = '100%';
+    // Interactive maps don't clone — show a placeholder instead.
+    clone.querySelectorAll('.okia-map').forEach(function (m) {
+      var ph = document.createElement('div');
+      ph.className = 'overview-map-ph';
+      ph.textContent = '🗺';
+      m.parentNode.replaceChild(ph, m);
+    });
+    pad.appendChild(clone);
+    stage.appendChild(pad);
+
+    var frame = stage.parentNode;
+    var fw = frame.clientWidth || 260;
+    var scale = fw / w;
+    stage.style.transform = 'scale(' + scale + ')';
+    frame.style.height = (h * scale) + 'px';
+  }
+
+  function buildOverview() {
+    var grid = el('overviewGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    var thumbs = [];
+    rawSlides.forEach(function (_, i) {
+      var item = document.createElement('button');
+      item.className = 'overview-item' + (i === current ? ' current' : '');
+      item.setAttribute('data-index', i);
+
+      var frame = document.createElement('div');
+      frame.className = 'overview-frame';
+      var stage = document.createElement('div');
+      stage.className = 'overview-stage';
+      frame.appendChild(stage);
+      var num = document.createElement('span');
+      num.className = 'overview-num';
+      num.textContent = (i + 1);
+      frame.appendChild(num);
+      item.appendChild(frame);
+
+      var label = document.createElement('div');
+      label.className = 'overview-label';
+      label.textContent = slideTitle(i);
+      item.appendChild(label);
+
+      item.onclick = function () { closeOverview(); show(i); };
+      grid.appendChild(item);
+      thumbs.push({ stage: stage, index: i });
+    });
+
+    // Render every slide (sequentially, to avoid concurrent mermaid runs), then
+    // fill its thumbnail. Already-rendered slides resolve instantly.
+    var chain = Promise.resolve();
+    thumbs.forEach(function (t) {
+      chain = chain.then(function () {
+        return renderSlide(t.index).then(function () { fillThumb(t.stage, t.index); });
+      });
+    });
+  }
+
+  function syncOverviewCurrent() {
+    var grid = el('overviewGrid');
+    if (!grid) return;
+    Array.prototype.forEach.call(grid.querySelectorAll('.overview-item'), function (it) {
+      it.classList.toggle('current', +it.getAttribute('data-index') === current);
+    });
+  }
+
+  function openOverview() {
+    var ov = el('presentOverview');
+    if (!ov) return;
+    closeMenu();
+    ov.hidden = false;
+    buildOverview();
+    var cur = ov.querySelector('.overview-item.current');
+    if (cur) cur.scrollIntoView({ block: 'center' });
+  }
+  function closeOverview() { var ov = el('presentOverview'); if (ov) ov.hidden = true; }
+  function toggleOverview(ev) {
+    if (ev) ev.stopPropagation();
+    var ov = el('presentOverview');
+    if (ov) { if (ov.hidden) openOverview(); else closeOverview(); }
+  }
+
+  // Escape priority: close overview, then the menu, otherwise leave the show.
+  function escape() {
+    var ov = el('presentOverview');
+    if (ov && !ov.hidden) { closeOverview(); return; }
+    var m = el('presentMenu');
+    if (m && !m.hidden) { closeMenu(); return; }
+    exit();
+  }
+
   /* ---- input -------------------------------------------------------------- */
   // Hardware-keyboard navigation is driven natively (UIKeyCommand) and routed
   // through next()/prev()/exit(); see PresentationWebView. Touch swipe below.
@@ -383,6 +502,10 @@
     el('presentEnd').onclick = function (e) { e.stopPropagation(); exit(); };
     var menuBtn = el('presentMenuBtn');
     if (menuBtn) menuBtn.onclick = toggleMenu;
+    var gridBtn = el('presentGridBtn');
+    if (gridBtn) gridBtn.onclick = toggleOverview;
+    var ovClose = el('overviewClose');
+    if (ovClose) ovClose.onclick = function (e) { e.stopPropagation(); closeOverview(); };
     // Tap anywhere else closes the transition menu.
     document.addEventListener('click', closeMenu);
 
@@ -396,6 +519,7 @@
   }
 
   window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
-                          setTransition: setTransition };
+                          setTransition: setTransition, escape: escape,
+                          toggleOverview: toggleOverview };
   post('presentReady', {});
 })();

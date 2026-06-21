@@ -25,6 +25,16 @@
   <button id="presentMenuBtn" class="present-menu-btn" aria-label="Transitions">⚙</button>
   <div id="presentMenu" class="present-menu" hidden></div>
 
+  <button id="presentGridBtn" class="present-grid-btn" aria-label="Vue d’ensemble des diapositives">▦</button>
+
+  <div id="presentOverview" class="present-overview" hidden>
+    <div class="overview-head">
+      <span class="overview-title">Diapositives</span>
+      <button id="overviewClose" class="overview-close" aria-label="Fermer">✕</button>
+    </div>
+    <div id="overviewGrid" class="overview-grid"></div>
+  </div>
+
   <div id="counter" class="present-counter"></div>
 
   <script src="render.js"></script>
