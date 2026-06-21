@@ -65,6 +65,7 @@ html, body.present-body {
    overflow the canvas; otherwise it sits at design size, centred in the canvas. */
 .slide-inner {
   width: 100%;
+  max-width: none;          /* override .markdown-body's reading-column cap */
   margin: 0;
   padding: 0;
   transform-origin: center center;
@@ -112,24 +113,32 @@ html, body.present-body {
 .slide.slide-map .slide-canvas {
   width: 100%;
   height: 100%;
-  padding: 24px clamp(16px, 4vw, 56px);
+  padding: 14px clamp(12px, 1.6vw, 26px) 16px;
   transform: none !important;
 }
 .slide.slide-map .slide-inner {
   width: 100%;
+  max-width: none;
   height: 100%;
   display: flex;
   flex-direction: column;
   transform: none !important;
 }
+/* Compact title so the map takes nearly all the room. */
 .slide.slide-map .slide-inner > h1,
-.slide.slide-map .slide-inner > h2 { flex: 0 0 auto; }
+.slide.slide-map .slide-inner > h2 {
+  flex: 0 0 auto;
+  margin: 0 0 0.25em;
+  padding-bottom: 0.15em;
+  font-size: 1.9rem;
+}
 .slide.slide-map .okia-map {
   flex: 1 1 auto;
   height: auto !important;
-  min-height: 50vh;
-  margin: 0.4em auto 0;
+  min-height: 40vh;
+  margin: 0;
   width: 100%;
+  border-radius: 10px;
 }
 
 /* ---- progress line (2 mm) ----------------------------------------------- */

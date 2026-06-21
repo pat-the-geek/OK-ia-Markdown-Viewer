@@ -5,6 +5,11 @@
   window.OKIA_MERMAID_CONFIG = {
     startOnLoad: false,
     theme: 'base',
+    // SVG <text> labels instead of HTML <foreignObject> labels: foreignObject
+    // measurement collapses to 0×0 inside the slideshow's flex/transform canvas
+    // (labels become invisible). SVG text measures reliably everywhere.
+    htmlLabels: false,
+    flowchart: { htmlLabels: false },
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
       fontSize: '15px',

@@ -261,6 +261,8 @@
       clearAnim(toEl);
       deck.classList.remove('deck-3d');
       animating = false;
+      // Re-fit now that the slide is settled at full size (re-measures maps).
+      fitSlide(toEl);
     }, dur + 40);
   }
 

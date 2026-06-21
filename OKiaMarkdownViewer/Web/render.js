@@ -397,6 +397,69 @@
     });
   }
 
+  /* Final contrast guard: after the OK-ia theme/recolor runs, force every node
+     and cluster label to contrast with ITS OWN rendered fill. This fixes cases
+     where a styled subgraph's white text bled onto child nodes that have a white
+     fill (white-on-white → invisible). Uses the actual painted colour, so it is
+     correct regardless of how the palette was remapped. */
+  function okiaParseColor(str) {
+    if (!str) return null;
+    str = String(str).trim();
+    if (str === 'none' || str === 'transparent') return { r: 255, g: 255, b: 255, a: 0 };
+    if (str.charAt(0) === '#') {
+      var h = str.slice(1);
+      if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+      if (h.length < 6) return null;
+      return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16),
+               b: parseInt(h.slice(4, 6), 16), a: 1 };
+    }
+    var m = str.match(/rgba?\(([^)]+)\)/i);
+    if (m) {
+      var p = m[1].split(',').map(function (s) { return parseFloat(s); });
+      return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+    }
+    return null;
+  }
+
+  function okiaContrastFor(fillStr) {
+    var c = okiaParseColor(fillStr);
+    if (!c) return null;
+    // Transparent fill → sits on the light diagram background → dark text.
+    var lum = (c.a === 0) ? 1 : (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+    return lum < 0.5 ? '#FAFAF8' : NOIR;
+  }
+
+  function okiaPaintLabel(scope, color) {
+    scope.querySelectorAll('text, tspan').forEach(function (t) {
+      t.style.setProperty('fill', color, 'important');
+    });
+    scope.querySelectorAll('foreignObject span, foreignObject p, foreignObject div, foreignObject label')
+      .forEach(function (t) { t.style.setProperty('color', color, 'important'); });
+  }
+
+  function enforceMermaidContrast(root) {
+    // Nodes: each label contrasts with its own shape fill.
+    root.querySelectorAll('.node').forEach(function (node) {
+      var shape = node.querySelector('rect, polygon, circle, ellipse, path');
+      if (!shape) return;
+      var fill = (window.getComputedStyle(shape).fill) || shape.getAttribute('fill');
+      var color = okiaContrastFor(fill);
+      if (!color) return;
+      var label = node.querySelector('.label') || node.querySelector('foreignObject') || node;
+      okiaPaintLabel(label, color);
+    });
+    // Clusters: only the cluster's OWN title (never its child nodes).
+    root.querySelectorAll('.cluster').forEach(function (cl) {
+      var shape = cl.querySelector(':scope > rect, :scope > polygon, :scope > path');
+      if (!shape) return;
+      var fill = (window.getComputedStyle(shape).fill) || shape.getAttribute('fill');
+      var color = okiaContrastFor(fill);
+      if (!color) return;
+      var label = cl.querySelector('.cluster-label');
+      if (label) okiaPaintLabel(label, color);
+    });
+  }
+
   function renderMermaid(container, title) {
     var blocks = Array.prototype.slice.call(container.querySelectorAll('pre.mermaid'));
     if (!blocks.length) return Promise.resolve();
@@ -417,6 +480,7 @@
         if (window.applyMermaidTextColors) {
           try { window.applyMermaidTextColors(pre, src); } catch (e) {}
         }
+        try { enforceMermaidContrast(pre); } catch (e) {}
         if (pre.querySelector('svg')) attachZoom(pre, title);
       });
     }).catch(function (err) {
