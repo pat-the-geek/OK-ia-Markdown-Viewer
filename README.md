@@ -5,7 +5,9 @@
 Application iOS native (SwiftUI) qui ouvre des fichiers **Markdown contenant des diagrammes
 Mermaid** et les affiche **exactement selon le principe du viewer de ok-ia.ch** : même charte,
 même pipeline (frontmatter, callouts Obsidian, wiki-links, coloration NER), même thème Mermaid
-normalisé. Tout fonctionne **100 % hors-ligne** — `marked` et `mermaid` sont embarqués dans l'app.
+normalisé. Les documents peuvent aussi être **présentés en diaporama plein écran** (mode Keynote/
+PowerPoint). Tout fonctionne **100 % hors-ligne** — `marked`, `mermaid` et `leaflet` sont embarqués
+dans l'app.
 
 Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 
@@ -22,6 +24,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
   `marked.parse` → normalisation/recoloration du thème Mermaid.
 - **Zoom diagramme plein écran** : tap → overlay ; pincer (0.5×–6×), glisser, double-tap
   (ajuster ↔ zoom), bouton « ajuster à l'écran », fermer ✕ + swipe-down. SVG **vectoriel**, net à fort zoom.
+- **Image en plein écran** : un tap sur une image du document l'ouvre en plein écran — même
+  visionneuse zoomable que les diagrammes (pincer, glisser, double-tap, swipe-down pour fermer).
+- **Mode Diaporama (présentation)** : affiche le document en plein écran, une diapositive par bloc
+  séparé par `---`, façon Keynote/PowerPoint (mise à l'échelle adaptative, 5 transitions, navigateur
+  de vignettes). Voir la section dédiée plus bas.
 - **Cartes géographiques Leaflet** (à la façon du plugin Obsidian Leaflet) : bloc <code>```leaflet</code>
   avec `marker: lat, long, [[Lien]]`, fonds de carte CARTO clair/sombre + OpenStreetMap, popups,
   cadrage auto sur les points. Bouton **plein écran ⛶** pour panner/zoomer en portrait ou paysage.
@@ -45,6 +52,37 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.
 - **Recherche dans le document** : surlignage des occurrences + navigation précédent/suivant.
 - **Partage / export** : export du rendu en **PDF** ou partage du fichier `.md` via la share sheet iOS.
+
+---
+
+## Mode Diaporama (présentation)
+
+Le bouton **▶︎ Diaporama** (barre du lecteur, visible dès qu'un document contient **≥ 2 diapositives**)
+affiche le document en **plein écran**, façon Keynote/PowerPoint.
+
+- **Découpage** : une diapositive par bloc séparé par une ligne `---` (le frontmatter YAML et les
+  lignes `---` à l'intérieur des blocs de code <code>```</code> sont ignorés).
+- **Mise à l'échelle adaptative** : chaque diapo est composée dans une **toile au ratio de l'écran**,
+  puis mise à l'échelle pour **occuper tout l'espace** — sans bandes vides sur iPhone (large), iPad
+  (4:3) ou Mac (16:10). Images, diagrammes Mermaid et cartes sont affichés **le plus grand possible** ;
+  une image seule est agrandie pour remplir la diapo.
+- **Transitions** (les 5 classiques de Keynote) : **Fondu**, **Poussée**, **Entrée**, **Échelle**,
+  **Retournement 3D**. Choisies via le menu **⚙** (haut-gauche) ; le choix est mémorisé (`localStorage`).
+- **Navigateur de diapositives** : le bouton **▦** ouvre une **grille de vignettes** (mini-rendu du
+  contenu + numéro + titre) ; cliquer une vignette saute directement à la diapo, la diapo courante est
+  surlignée.
+- **Navigation** : flèches **←/→** (clavier matériel via `UIKeyCommand`), **balayage** tactile,
+  **flèches** semi-transparentes à l'écran, bouton **fin ✕**. **Échap** ferme d'abord la grille / le
+  menu, puis quitte le diaporama (retour au lecteur Markdown habituel).
+- **Repère de progression** : fine ligne orange (**2 mm**) en bas de l'écran + compteur « n / total ».
+- **Cartes** : affichées en **plein cadre** sous le titre, sans recouvrir les contrôles du haut ; les
+  diagrammes et images restent **zoomables** par tap pendant le diaporama.
+- **Plein écran** : barre d'état masquée ; sur iPhone, passage automatique en **paysage**.
+
+Implémentation : `Web/presentation.{html,js,css}` (moteur autonome qui réutilise le pipeline de rendu
+via `window.OKIA.renderFragment`) + `PresentationView` / `PresentationWebView` / `KeyCapturingWebView`
+dans `ReaderView.swift`. Un guide de rédaction des présentations (format Markdown, conseils images) est
+disponible sur demande.
 
 ---
 
@@ -106,16 +144,19 @@ OKiaMarkdownViewer/
 ├── Views/
 │   ├── RootView.swift              # routage + .fileImporter + alertes
 │   ├── EmptyStateView.swift        # accueil (ouvrir / exemple)
-│   ├── ReaderView.swift            # barre titre + overlay zoom
+│   ├── ReaderView.swift            # barre titre + overlay zoom + Diaporama (PresentationView)
 │   ├── MarkdownWebView.swift       # WKWebView + message handlers + injection JSON sûre
-│   └── DiagramZoomView.swift       # overlay pinch/pan/double-tap (SVG vectoriel)
+│   └── DiagramZoomView.swift       # overlay pinch/pan/double-tap (SVG) + ImageZoomView
 ├── Web/                            # (référence de dossier — copiée verbatim dans le bundle)
-│   ├── renderer.html               # gabarit ; charge vendor + thème + render.js
-│   ├── render.js                   # pipeline complet OK-ia
+│   ├── renderer.html               # gabarit lecteur ; charge vendor + thème + render.js
+│   ├── presentation.html           # gabarit diaporama ; vendor + render.js + presentation.js
+│   ├── render.js                   # pipeline complet OK-ia (+ renderFragment, zoom image)
+│   ├── presentation.js             # moteur diaporama (découpe ---, fit, transitions, navigateur)
+│   ├── presentation.css            # styles diaporama (toile, progression, vignettes)
 │   ├── mermaid-okia-theme.js       # thème + normalizeMermaidPalette + applyMermaidTextColors
 │   ├── style.css                   # charte, callouts, wiki-links, NER, mermaid, dark mode
 │   ├── fonts/Nunito-{Black,Regular}.woff2
-│   └── vendor/marked.min.js, mermaid.min.js   # bundlés offline (aucun CDN)
+│   └── vendor/marked.min.js, mermaid.min.js, leaflet.{js,css}   # bundlés offline (aucun CDN)
 └── Samples/Demo.md                 # document de démonstration
 ```
 
@@ -191,10 +232,11 @@ L'app enregistre le schéma d'URL `mdviewer://` (`CFBundleURLTypes` dans `Info.p
    cible *OKiaMarkdownViewer* → **Signing & Capabilities** que **Automatically manage signing** est
    coché, la Team sélectionnée, et qu'aucune erreur de provisioning ne s'affiche (Xcode crée au besoin
    le certificat *Apple Distribution* et le profil App Store à la première archive).
-2. **Versions** : `MARKETING_VERSION` = 1.0.0, `CURRENT_PROJECT_VERSION` = 1. App Store Connect refuse
-   un build dont le numéro existe déjà : si l'upload signale « build already exists », **incrémentez
-   `CURRENT_PROJECT_VERSION`** (le `.xcodeproj` étant commité et XcodeGen non requis, modifiez-le via
-   *Xcode → General → Build*, ou `project.yml` + `xcodegen generate` si XcodeGen est installé).
+2. **Versions** : `MARKETING_VERSION` = 1.0.0, `CURRENT_PROJECT_VERSION` incrémenté à chaque archive
+   (build **10** au moment de la rédaction). App Store Connect refuse un build dont le numéro existe
+   déjà : si l'upload signale « build already exists », **incrémentez `CURRENT_PROJECT_VERSION`** dans
+   [`project.yml`](project.yml) (source de vérité ; le `.xcodeproj` est généré et non commité) — ou
+   directement via *Xcode → General → Build*.
 3. **Archive** : sélectionnez la destination **Any iOS Device (arm64)** →
    **Product → Archive**.
 4. **Upload** : dans l'Organizer → **Distribute App → App Store Connect → Upload**.
@@ -242,3 +284,4 @@ ou, dans Xcode, choisir la destination **« Mac (Mac Catalyst) »** puis **Run**
 | 6 | Archive/upload TestFlight sans erreur de signature | ✅ build OK ; signature à finaliser dans Xcode (Team à définir) |
 | 7 | README (build, assets, TestFlight, macOS) | ✅ (ce document) |
 | 8 | macOS (Mac Catalyst) | ✅ build + lancement OK ; menu ⌘O, drag&drop, fenêtre redimensionnable |
+| 9 | Mode Diaporama (plein écran, transitions, navigateur de vignettes, image plein écran) | ✅ découpe `---`, toile adaptative, 5 transitions Keynote, grille de vignettes, clavier/balayage/Échap |
