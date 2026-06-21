@@ -488,6 +488,7 @@
         maxZoom: cfg.maxZoom || 19,
         scrollWheelZoom: true
       });
+      el._leafletMap = map;   // expose for the slideshow to re-measure on fit/resize
 
       var attribution = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>';
       var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',

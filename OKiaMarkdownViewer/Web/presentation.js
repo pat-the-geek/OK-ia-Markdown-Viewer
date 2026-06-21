@@ -9,7 +9,9 @@
 (function () {
   'use strict';
 
-  var PAD = 28;                       // inner padding (px) kept clear of edges
+  // Fixed design canvas (16:9). Slides are laid out here, then the whole canvas
+  // is uniformly scaled to fill the screen — so every slide uses all the room.
+  var CW = 1280, CH = 720, PAD_H = 72, PAD_V = 48;
 
   function post(name, payload) {
     try {
@@ -60,23 +62,71 @@
 
   /* ---- auto-fit ----------------------------------------------------------- */
 
-  // Scale the slide's content down so it fits the viewport. Slides containing an
-  // interactive Leaflet map are not transform-scaled (it would break the map);
-  // those are sized through CSS viewport units instead.
+  // Scale the fixed design canvas to fill the screen (grow AND shrink), so each
+  // slide uses all available room like a real presentation. Content is only
+  // scaled DOWN when it would overflow the canvas. Map slides are full-bleed and
+  // never transform-scaled (it would break the interactive Leaflet map).
+  // Enlarge a single primary image so it fills the canvas's remaining height,
+  // keeping aspect ratio (so small sources are scaled up, like dragging an image
+  // to fill a PowerPoint slide). Skipped when there are several images.
+  function fitImage(section, inner) {
+    var imgs = inner.querySelectorAll('img');
+    if (imgs.length !== 1) return;
+    var img = imgs[0];
+    img.style.height = '';
+    img.style.width = '';
+    if (!img.complete || !img.naturalWidth) {
+      img.addEventListener('load', function () { fitSlide(section); }, { once: true });
+      return;
+    }
+    var aspect = img.naturalWidth / img.naturalHeight;
+    var availH = CH - PAD_V * 2;
+    var availW = CW - PAD_H * 2;
+    // Measure the surrounding content (title, caption) with the image collapsed.
+    img.style.height = '0px';
+    var otherH = inner.scrollHeight;
+    var leftover = availH - otherH - 24;                 // breathing room
+    var targetH = Math.min(leftover, availW / aspect, 600);
+    if (targetH < 120) targetH = Math.min(availW / aspect, 600); // tiny leftover → ignore
+    img.style.height = Math.round(targetH) + 'px';
+    img.style.width = 'auto';
+  }
+
   function fitSlide(section) {
     if (!section) return;
+    var canvas = section.querySelector('.slide-canvas');
     var inner = section.querySelector('.slide-inner');
-    if (!inner) return;
-    inner.style.transform = '';
-    if (inner.querySelector('.okia-map')) return;
-    var availH = section.clientHeight - PAD * 2;
-    var availW = section.clientWidth - PAD * 2;
-    var h = inner.scrollHeight, w = inner.scrollWidth;
-    if (h <= 0 || w <= 0) return;
-    var scale = Math.min(1, availH / h, availW / w);
-    if (scale < 0.999) {
-      inner.style.transform = 'scale(' + scale.toFixed(4) + ')';
+    if (!canvas || !inner) return;
+
+    if (inner.querySelector('.okia-map')) {
+      section.classList.add('slide-map');
+      canvas.style.transform = '';
+      inner.style.transform = '';
+      var mapEl = inner.querySelector('.okia-map');
+      if (mapEl && mapEl._leafletMap) {
+        setTimeout(function () { try { mapEl._leafletMap.invalidateSize(); } catch (e) {} }, 60);
+      }
+      return;
     }
+
+    section.classList.remove('slide-map');
+    inner.style.transform = '';
+    canvas.style.transform = '';
+
+    // 0. Grow a lone image to fill the canvas's leftover height (PowerPoint-style).
+    fitImage(section, inner);
+
+    // 1. Shrink content if it overflows the design canvas (never enlarge here).
+    var availW = CW - PAD_H * 2, availH = CH - PAD_V * 2;
+    var h = inner.scrollHeight, w = inner.scrollWidth;
+    if (h > 0 && w > 0) {
+      var shrink = Math.min(1, availH / h, availW / w);
+      if (shrink < 0.999) inner.style.transform = 'scale(' + shrink.toFixed(4) + ')';
+    }
+
+    // 2. Scale the whole canvas to fill the viewport (this is the "fill" step).
+    var s = Math.min(section.clientWidth / CW, section.clientHeight / CH);
+    if (s > 0 && isFinite(s)) canvas.style.transform = 'scale(' + s.toFixed(4) + ')';
   }
 
   /* ---- rendering ---------------------------------------------------------- */
@@ -146,9 +196,12 @@
     rawSlides.forEach(function (_, i) {
       var section = document.createElement('section');
       section.className = 'slide';
+      var canvas = document.createElement('div');
+      canvas.className = 'slide-canvas';
       var inner = document.createElement('div');
       inner.className = 'slide-inner markdown-body';
-      section.appendChild(inner);
+      canvas.appendChild(inner);
+      section.appendChild(canvas);
       deck.appendChild(section);
       sections.push(section);
       rendered.push(false);
