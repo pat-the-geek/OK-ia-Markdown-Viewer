@@ -460,6 +460,28 @@
     });
   }
 
+  /* Some Mermaid diagrams (notably xychart-beta) draw their bottom axis labels
+     a hair past the SVG viewBox, so the labels get clipped. Grow the viewBox to
+     enclose the full content (with a small margin). Only ever expands — diagrams
+     already within their viewBox are untouched. */
+  function unclipMermaidSvg(svg) {
+    try {
+      if (!svg.viewBox || !svg.viewBox.baseVal || !svg.viewBox.baseVal.width) return;
+      var vb = svg.viewBox.baseVal;
+      var bb = svg.getBBox();
+      if (!bb || !isFinite(bb.width) || bb.width <= 0) return;
+      var pad = 6;
+      var x1 = Math.min(vb.x, bb.x - pad);
+      var y1 = Math.min(vb.y, bb.y - pad);
+      var x2 = Math.max(vb.x + vb.width, bb.x + bb.width + pad);
+      var y2 = Math.max(vb.y + vb.height, bb.y + bb.height + pad);
+      if (x1 < vb.x - 0.5 || y1 < vb.y - 0.5 ||
+          x2 > vb.x + vb.width + 0.5 || y2 > vb.y + vb.height + 0.5) {
+        svg.setAttribute('viewBox', x1 + ' ' + y1 + ' ' + (x2 - x1) + ' ' + (y2 - y1));
+      }
+    } catch (e) {}
+  }
+
   function renderMermaid(container, title) {
     var blocks = Array.prototype.slice.call(container.querySelectorAll('pre.mermaid'));
     if (!blocks.length) return Promise.resolve();
@@ -481,7 +503,8 @@
           try { window.applyMermaidTextColors(pre, src); } catch (e) {}
         }
         try { enforceMermaidContrast(pre); } catch (e) {}
-        if (pre.querySelector('svg')) attachZoom(pre, title);
+        var svgEl = pre.querySelector('svg');
+        if (svgEl) { unclipMermaidSvg(svgEl); attachZoom(pre, title); }
       });
     }).catch(function (err) {
       blocks.forEach(function (pre) {
