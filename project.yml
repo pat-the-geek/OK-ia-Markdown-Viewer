@@ -10,7 +10,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "11"
+    CURRENT_PROJECT_VERSION: "12"
     DEVELOPMENT_TEAM: "72NVM63N83"      # Paid Apple Developer Program team (auto-signing) — used for TestFlight/App Store.
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
@@ -46,3 +46,20 @@ targets:
         # Run locally on Mac without a Mac provisioning profile (personal team)
         CODE_SIGN_IDENTITY[sdk=macosx*]: "-"
         GENERATE_INFOPLIST_FILE: NO
+
+# Scheme named "md Viewer" so archives are filed under that name in the Organizer
+# (the archive's Name = scheme name). The target keeps its internal id.
+schemes:
+  md Viewer:
+    build:
+      targets:
+        OKiaMarkdownViewer: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+      revealInOrganizer: true
