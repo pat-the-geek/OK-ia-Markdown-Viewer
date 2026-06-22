@@ -482,6 +482,15 @@
     } catch (e) {}
   }
 
+  /* Charts (xychart/pie/quadrant/gantt) use filled areas that turn invisible
+     under the dark-theme invert filter; flag them so the slideshow puts them on
+     a light card instead of inverting. */
+  function mermaidKeepsLight(src) {
+    var m = (src || '').replace(/^\s*%%[^\n]*\r?\n/, '').match(/^\s*([A-Za-z-]+)/);
+    var t = m ? m[1].toLowerCase() : '';
+    return /^(xychart|pie|quadrantchart|gantt)/.test(t);
+  }
+
   function renderMermaid(container, title) {
     var blocks = Array.prototype.slice.call(container.querySelectorAll('pre.mermaid'));
     if (!blocks.length) return Promise.resolve();
@@ -502,6 +511,7 @@
         if (window.applyMermaidTextColors) {
           try { window.applyMermaidTextColors(pre, src); } catch (e) {}
         }
+        pre.classList.toggle('mermaid-keeplight', mermaidKeepsLight(src));
         try { enforceMermaidContrast(pre); } catch (e) {}
         var svgEl = pre.querySelector('svg');
         if (svgEl) { unclipMermaidSvg(svgEl); attachZoom(pre, title); }

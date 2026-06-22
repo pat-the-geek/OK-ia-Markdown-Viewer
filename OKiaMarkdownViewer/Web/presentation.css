@@ -73,12 +73,21 @@ body.present-body.theme-console .slide-inner :is(h1, h2, h3, h4, h5, h6) {
 }
 
 /* Diagrams adapt to dark themes: the OK-ia Mermaid palette renders light (white
-   nodes, dark text), so on dark backgrounds we flip it to dark while preserving
-   the accent hues (invert + hue-rotate). Light themes keep the original. */
-body.present-body.theme-dark .slide-inner pre.mermaid svg,
-body.present-body.theme-console .slide-inner pre.mermaid svg,
-body.present-body.theme-ocean .slide-inner pre.mermaid svg {
+   nodes, dark text), so on dark backgrounds we flip node graphs to dark while
+   preserving the accent hues (invert + hue-rotate). Light themes keep the
+   original. Charts (xychart/pie/quadrant/gantt) have filled areas that vanish
+   under invert, so they sit on a light "figure" card instead. */
+body.present-body.theme-dark .slide-inner pre.mermaid:not(.mermaid-keeplight) svg,
+body.present-body.theme-console .slide-inner pre.mermaid:not(.mermaid-keeplight) svg,
+body.present-body.theme-ocean .slide-inner pre.mermaid:not(.mermaid-keeplight) svg {
   filter: invert(1) hue-rotate(180deg);
+}
+body.present-body.theme-dark .slide-inner pre.mermaid.mermaid-keeplight,
+body.present-body.theme-console .slide-inner pre.mermaid.mermaid-keeplight,
+body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
+  background: #FAFAF8;
+  border-radius: 14px;
+  padding: 16px 18px;
 }
 
 /* The deck fills the safe area; each slide stacks on top, only one is visible.
