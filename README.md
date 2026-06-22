@@ -66,8 +66,10 @@ affiche le document en **plein écran**, façon Keynote/PowerPoint.
   puis mise à l'échelle pour **occuper tout l'espace** — sans bandes vides sur iPhone (large), iPad
   (4:3) ou Mac (16:10). Images, diagrammes Mermaid et cartes sont affichés **le plus grand possible** ;
   une image seule est agrandie pour remplir la diapo.
+- **Thèmes** : **Clair** (défaut), **Sombre**, **Console** (vert monospace sur noir), **Sépia**
+  (papier), **Océan** (bleu nuit). Choisis via le menu **⚙** ; choix mémorisé (`localStorage`).
 - **Transitions** (les 5 classiques de Keynote) : **Fondu**, **Poussée**, **Entrée**, **Échelle**,
-  **Retournement 3D**. Choisies via le menu **⚙** (haut-gauche) ; le choix est mémorisé (`localStorage`).
+  **Retournement 3D**. Aussi dans le menu **⚙** (haut-gauche) ; le choix est mémorisé (`localStorage`).
 - **Navigateur de diapositives** : le bouton **▦** ouvre une **grille de vignettes** (mini-rendu du
   contenu + numéro + titre) ; cliquer une vignette saute directement à la diapo, la diapo courante est
   surlignée.

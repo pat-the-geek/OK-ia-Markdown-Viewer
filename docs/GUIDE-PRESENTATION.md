@@ -117,6 +117,7 @@ marker: default,-1.68,29.22,[[Goma]]
 | Action | Geste / touche |
 |--------|----------------|
 | Diapo suivante / précédente | flèches **←/→**, **espace**, balayage tactile, flèches à l'écran |
+| Choisir le **thème** | bouton **⚙** (Clair, Sombre, Console, Sépia, Océan) |
 | Choisir la **transition** | bouton **⚙** (Fondu, Poussée, Entrée, Échelle, Retournement 3D) |
 | **Vue d'ensemble** (grille de vignettes) | bouton **▦**, puis cliquer une vignette |
 | **Quitter** le diaporama | bouton **✕** ou touche **Échap** |

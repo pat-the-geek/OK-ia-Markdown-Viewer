@@ -91,6 +91,16 @@
   var transition = 'dissolve';
   var animating = false, animTimer = null;
 
+  // Colour themes — applied as a `theme-<key>` class on <body>.
+  var THEMES = [
+    { key: 'light',   label: 'Clair' },
+    { key: 'dark',    label: 'Sombre' },
+    { key: 'console', label: 'Console' },
+    { key: 'sepia',   label: 'Sépia' },
+    { key: 'ocean',   label: 'Océan' }
+  ];
+  var theme = 'light';
+
   function el(id) { return document.getElementById(id); }
 
   /* ---- auto-fit ----------------------------------------------------------- */
@@ -280,26 +290,52 @@
     syncMenu();
   }
 
+  function setTheme(key) {
+    if (!THEMES.some(function (t) { return t.key === key; })) return;
+    theme = key;
+    var b = document.body;
+    THEMES.forEach(function (t) { b.classList.remove('theme-' + t.key); });
+    b.classList.add('theme-' + key);
+    try { localStorage.setItem('okia.theme', key); } catch (e) {}
+    syncMenu();
+  }
+
   function syncMenu() {
     var menu = el('presentMenu');
     if (!menu) return;
     Array.prototype.forEach.call(menu.querySelectorAll('.present-menu-item'), function (b) {
-      b.classList.toggle('selected', b.getAttribute('data-key') === transition);
+      var kind = b.getAttribute('data-kind'), key = b.getAttribute('data-key');
+      b.classList.toggle('selected', kind === 'theme' ? key === theme : key === transition);
     });
+  }
+
+  function menuSection(title, items, kind) {
+    var frag = document.createDocumentFragment();
+    var h = document.createElement('div');
+    h.className = 'present-menu-title';
+    h.textContent = title;
+    frag.appendChild(h);
+    items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.className = 'present-menu-item';
+      b.setAttribute('data-kind', kind);
+      b.setAttribute('data-key', it.key);
+      b.textContent = it.label;
+      b.onclick = function (ev) {
+        ev.stopPropagation();
+        if (kind === 'theme') setTheme(it.key); else setTransition(it.key);
+      };
+      frag.appendChild(b);
+    });
+    return frag;
   }
 
   function buildMenu() {
     var menu = el('presentMenu');
     if (!menu) return;
-    menu.innerHTML = '<div class="present-menu-title">Transition</div>';
-    TRANSITIONS.forEach(function (t) {
-      var b = document.createElement('button');
-      b.className = 'present-menu-item';
-      b.setAttribute('data-key', t.key);
-      b.textContent = t.label;
-      b.onclick = function (ev) { ev.stopPropagation(); setTransition(t.key); closeMenu(); };
-      menu.appendChild(b);
-    });
+    menu.innerHTML = '';
+    menu.appendChild(menuSection('Thème', THEMES, 'theme'));
+    menu.appendChild(menuSection('Transition', TRANSITIONS, 'transition'));
     syncMenu();
   }
 
@@ -485,12 +521,15 @@
     current = 0;
     build();
 
-    // Restore the saved transition choice.
+    // Restore the saved transition + theme choices.
     try {
       var saved = localStorage.getItem('okia.transition');
       if (saved && SPECS[saved]) transition = saved;
+      var savedTheme = localStorage.getItem('okia.theme');
+      if (savedTheme && THEMES.some(function (t) { return t.key === savedTheme; })) theme = savedTheme;
     } catch (e) {}
     buildMenu();
+    setTheme(theme);   // apply the theme class to <body>
 
     sections[0].classList.add('active');
     updateChrome();
@@ -519,7 +558,7 @@
   }
 
   window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
-                          setTransition: setTransition, escape: escape,
+                          setTransition: setTransition, setTheme: setTheme, escape: escape,
                           toggleOverview: toggleOverview };
   post('presentReady', {});
 })();
