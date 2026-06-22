@@ -485,6 +485,35 @@
   /* Charts (xychart/pie/quadrant/gantt) use filled areas that turn invisible
      under the dark-theme invert filter; flag them so the slideshow puts them on
      a light card instead of inverting. */
+  /* xychart-beta renders bars/line as pale tints (≈#FFF4DD) that are nearly
+     invisible on the light plot, and mermaid's base theme ignores the configured
+     plotColorPalette. Recolor each plot series to a saturated OK-ia colour by its
+     plot index (bars + line markers). No-op on non-xychart diagrams. */
+  function recolorXychart(svg) {
+    var PALETTE = ['#E8972E', '#1A3A5C', '#2D5A1B', '#8B0000', '#9A9A90', '#F0A840'];
+    function idx(g) {
+      var m = (g.getAttribute('class') || '').match(/(?:bar|line)-plot-(\d+)/);
+      return m ? parseInt(m[1], 10) : 0;
+    }
+    svg.querySelectorAll('g[class*="bar-plot-"]').forEach(function (g) {
+      var c = PALETTE[idx(g) % PALETTE.length];
+      g.querySelectorAll('rect').forEach(function (r) {
+        r.style.setProperty('fill', c, 'important');
+        r.style.setProperty('stroke', c, 'important');
+      });
+    });
+    svg.querySelectorAll('g[class*="line-plot-"]').forEach(function (g) {
+      var c = PALETTE[idx(g) % PALETTE.length];
+      g.querySelectorAll('path').forEach(function (p) {
+        p.style.setProperty('stroke', c, 'important');
+        p.style.setProperty('stroke-width', '3px', 'important');
+      });
+      g.querySelectorAll('circle').forEach(function (ci) {
+        ci.style.setProperty('fill', c, 'important');
+      });
+    });
+  }
+
   function mermaidKeepsLight(src) {
     var m = (src || '').replace(/^\s*%%[^\n]*\r?\n/, '').match(/^\s*([A-Za-z-]+)/);
     var t = m ? m[1].toLowerCase() : '';
@@ -514,7 +543,7 @@
         pre.classList.toggle('mermaid-keeplight', mermaidKeepsLight(src));
         try { enforceMermaidContrast(pre); } catch (e) {}
         var svgEl = pre.querySelector('svg');
-        if (svgEl) { unclipMermaidSvg(svgEl); attachZoom(pre, title); }
+        if (svgEl) { recolorXychart(svgEl); unclipMermaidSvg(svgEl); attachZoom(pre, title); }
       });
     }).catch(function (err) {
       blocks.forEach(function (pre) {
