@@ -18,30 +18,32 @@ html, body.present-body {
    A theme class is always applied to <body> (default .theme-light), so the
    chosen theme wins over the OS colour scheme.
    =========================================================================== */
+/* Each palette is tuned for comfortable contrast: body text ≳ 10:1, secondary
+   (muted) text ≳ 4.5:1, accent legible. */
 body.present-body.theme-light {
-  --bg: #FAFAF8; --fg: #111111; --noir: #111111; --muted: #6b6b63;
-  --rule: #E8E6E0; --card-bg: #FFFFFF; --code-bg: #f3f1ec; --gris-clair: #E8E6E0;
+  --bg: #FAFAF8; --fg: #131313; --noir: #131313; --muted: #5c5c54;
+  --rule: #E4E2DC; --card-bg: #FFFFFF; --code-bg: #f0eee8; --gris-clair: #EAE8E2;
   --orange: #E8972E;
 }
 body.present-body.theme-dark {
-  --bg: #15151a; --fg: #ECEAE3; --noir: #ECEAE3; --muted: #a7a79c;
-  --rule: #34343a; --card-bg: #1f1f24; --code-bg: #23232a; --gris-clair: #2a2a31;
-  --orange: #F0A840;
+  --bg: #14141a; --fg: #EDEBE4; --noir: #FFFFFF; --muted: #ABABA0;
+  --rule: #33333b; --card-bg: #1e1e25; --code-bg: #24242c; --gris-clair: #2b2b34;
+  --orange: #F2AE54;
 }
 body.present-body.theme-console {
-  --bg: #0a0e0a; --fg: #3df281; --noir: #5cff95; --muted: #2aa85a;
-  --rule: #16401f; --card-bg: #0f160f; --code-bg: #0e160e; --gris-clair: #10240f;
-  --orange: #39ff84;
+  --bg: #07100a; --fg: #5BE88C; --noir: #9DFFC2; --muted: #4FB377;
+  --rule: #18421f; --card-bg: #0c1a0f; --code-bg: #0a160d; --gris-clair: #103018;
+  --orange: #4DF58E;
 }
 body.present-body.theme-sepia {
-  --bg: #f4ecd9; --fg: #4a3a28; --noir: #3a2c1c; --muted: #7a6a52;
-  --rule: #ddcfb3; --card-bg: #fbf5e6; --code-bg: #ece0c8; --gris-clair: #e7d8b8;
-  --orange: #b5651d;
+  --bg: #F3EAD6; --fg: #3F3120; --noir: #2F2415; --muted: #6A5A41;
+  --rule: #DBCBAE; --card-bg: #FBF6E9; --code-bg: #EADDC4; --gris-clair: #E6D6B4;
+  --orange: #A85416;
 }
 body.present-body.theme-ocean {
-  --bg: #0d1b2a; --fg: #e0e7f0; --noir: #eaf2fb; --muted: #8aa0b5;
-  --rule: #22384e; --card-bg: #142838; --code-bg: #112233; --gris-clair: #1a3047;
-  --orange: #4fc3f7;
+  --bg: #0C1A2B; --fg: #E3EAF3; --noir: #F4F8FD; --muted: #93A8BD;
+  --rule: #233A50; --card-bg: #13283A; --code-bg: #0F2233; --gris-clair: #1B3149;
+  --orange: #5BC8F5;
 }
 
 /* Make themed elements follow --fg/--bg regardless of the OS colour scheme. */
@@ -54,6 +56,16 @@ body.present-body[class*="theme-"] .slide-inner blockquote {
   background: color-mix(in srgb, var(--fg) 6%, transparent);
   color: var(--muted);
 }
+/* Links: blend the accent toward the text colour so link text stays legible
+   on every theme (the brand orange alone is too low-contrast on the light bg);
+   the underline keeps the accent hue. */
+body.present-body[class*="theme-"] .slide-inner a {
+  color: color-mix(in srgb, var(--orange) 58%, var(--fg));
+  border-bottom-color: color-mix(in srgb, var(--orange) 50%, transparent);
+}
+/* Inline code follows the theme. */
+body.present-body[class*="theme-"] .slide-inner :not(pre) > code { color: var(--fg); }
+
 /* Console theme → monospace typography. */
 body.present-body.theme-console .slide-inner,
 body.present-body.theme-console .slide-inner :is(h1, h2, h3, h4, h5, h6) {
@@ -199,7 +211,7 @@ body.present-body.theme-console .slide-inner :is(h1, h2, h3, h4, h5, h6) {
   height: 100%;
   width: 0%;
   background: var(--orange);
-  box-shadow: 0 0 6px rgba(232, 151, 46, 0.6);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--orange) 60%, transparent);
   transition: width 0.28s ease;
 }
 
