@@ -72,6 +72,15 @@ body.present-body.theme-console .slide-inner :is(h1, h2, h3, h4, h5, h6) {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
+/* Diagrams adapt to dark themes: the OK-ia Mermaid palette renders light (white
+   nodes, dark text), so on dark backgrounds we flip it to dark while preserving
+   the accent hues (invert + hue-rotate). Light themes keep the original. */
+body.present-body.theme-dark .slide-inner pre.mermaid svg,
+body.present-body.theme-console .slide-inner pre.mermaid svg,
+body.present-body.theme-ocean .slide-inner pre.mermaid svg {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* The deck fills the safe area; each slide stacks on top, only one is visible.
    `deck-3d` enables a perspective for the 3-D flip transition. */
 .deck {
