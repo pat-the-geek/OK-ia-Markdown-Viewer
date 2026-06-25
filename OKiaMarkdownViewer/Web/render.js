@@ -870,9 +870,144 @@
   function searchNext() { return { count: searchState.hits.length, index: setCurrent(searchState.idx + 1) }; }
   function searchPrev() { return { count: searchState.hits.length, index: setCurrent(searchState.idx - 1) }; }
 
+  /* =========================================================================
+     EXPORT MODEL — walk a rendered container into an ordered list of blocks
+     (headings, paragraphs, quotes, lists, tables, images) for Word/PowerPoint
+     export. Mermaid diagrams are rasterised to PNG; remote images are passed by
+     URL (downloaded natively); maps become a labelled marker list.
+     ========================================================================= */
+
+  function pushRun(out, text, fmt) {
+    if (!text) return;
+    var last = out[out.length - 1];
+    if (last && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code) {
+      last.text += text;
+    } else {
+      out.push({ text: text, bold: !!fmt.bold, italic: !!fmt.italic, code: !!fmt.code });
+    }
+  }
+
+  function collectRuns(node, fmt, out) {
+    fmt = fmt || {};
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var c = node.childNodes[i];
+      if (c.nodeType === 3) { pushRun(out, c.nodeValue.replace(/\s+/g, ' '), fmt); continue; }
+      if (c.nodeType !== 1) continue;
+      var tag = c.tagName;
+      if (tag === 'IMG' || tag === 'BR') { if (tag === 'BR') pushRun(out, '\n', fmt); continue; }
+      var f = { bold: fmt.bold, italic: fmt.italic, code: fmt.code };
+      if (tag === 'STRONG' || tag === 'B') f.bold = true;
+      if (tag === 'EM' || tag === 'I') f.italic = true;
+      if (tag === 'CODE' && node.tagName !== 'PRE') f.code = true;
+      collectRuns(c, f, out);
+    }
+  }
+  function runsOf(el) { var o = []; collectRuns(el, {}, o); return o.filter(function (r) { return r.text.trim().length || r.text === '\n'; }); }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve) {
+      try {
+        var box = svg.getBoundingClientRect();
+        var scale = 2;
+        var w = Math.max(1, Math.round(box.width)), h = Math.max(1, Math.round(box.height));
+        var clone = svg.cloneNode(true);
+        clone.setAttribute('width', w); clone.setAttribute('height', h);
+        var xml = new XMLSerializer().serializeToString(clone);
+        var url = 'data:image/svg+xml;base64,' + b64encode(xml);
+        var img = new Image();
+        img.onload = function () {
+          var cv = document.createElement('canvas');
+          cv.width = w * scale; cv.height = h * scale;
+          var ctx = cv.getContext('2d');
+          ctx.fillStyle = '#FAFAF8'; ctx.fillRect(0, 0, cv.width, cv.height);
+          ctx.drawImage(img, 0, 0, cv.width, cv.height);
+          try {
+            var data = cv.toDataURL('image/png').split(',')[1];
+            resolve({ png: data, w: w * scale, h: h * scale });
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = function () { resolve(null); };
+        img.src = url;
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  function mapMarkers(el) {
+    try {
+      var cfg = JSON.parse(b64decode(el.getAttribute('data-okia-map') || ''));
+      return (cfg.markers || []).map(function (m) { return m.label || m.link || (m.lat + ',' + m.lng); });
+    } catch (e) { return []; }
+  }
+
+  function tableModel(table) {
+    var rows = [];
+    table.querySelectorAll('tr').forEach(function (tr) {
+      var cells = [];
+      tr.querySelectorAll('th,td').forEach(function (cell) { cells.push(runsOf(cell)); });
+      if (cells.length) rows.push(cells);
+    });
+    return rows;
+  }
+
+  // Returns a Promise of an array of block objects.
+  function exportModel(container) {
+    var tasks = [];     // async image tasks
+    var blocks = [];
+    var kids = Array.prototype.slice.call(container.children);
+
+    kids.forEach(function (el) {
+      var tag = el.tagName;
+      if (el.classList && el.classList.contains('okia-meta')) return;
+      if (el.classList && el.classList.contains('ner-legend')) return;
+      if (el.classList && el.classList.contains('okia-title')) return;   // passed as doc title
+      if (/^H[1-6]$/.test(tag)) {
+        blocks.push({ t: 'heading', level: parseInt(tag[1], 10), runs: runsOf(el) });
+      } else if (tag === 'P') {
+        var img = el.querySelector('img');
+        if (img) {
+          blocks.push({ t: 'image', src: img.currentSrc || img.src, w: img.naturalWidth, h: img.naturalHeight, caption: [] });
+        } else {
+          var r = runsOf(el); if (r.length) blocks.push({ t: 'paragraph', runs: r });
+        }
+      } else if (tag === 'UL' || tag === 'OL') {
+        var items = [];
+        Array.prototype.slice.call(el.children).forEach(function (li) { if (li.tagName === 'LI') items.push(runsOf(li)); });
+        if (items.length) blocks.push({ t: 'list', ordered: tag === 'OL', items: items });
+      } else if (tag === 'BLOCKQUOTE') {
+        blocks.push({ t: 'quote', runs: runsOf(el) });
+      } else if (tag === 'TABLE') {
+        blocks.push({ t: 'table', rows: tableModel(el) });
+      } else if (tag === 'IMG') {
+        blocks.push({ t: 'image', src: el.currentSrc || el.src, w: el.naturalWidth, h: el.naturalHeight, caption: [] });
+      } else if (tag === 'PRE' && el.classList.contains('mermaid')) {
+        var svg = el.querySelector('svg');
+        if (svg) {
+          var block = { t: 'image', png: null, w: 0, h: 0, caption: [] };
+          blocks.push(block);
+          tasks.push(svgToPng(svg).then(function (res) { if (res) { block.png = res.png; block.w = res.w; block.h = res.h; } }));
+        }
+      } else if (el.classList && el.classList.contains('okia-map')) {
+        blocks.push({ t: 'map', markers: mapMarkers(el) });
+      } else if (el.classList && el.classList.contains('callout')) {
+        var titleEl = el.querySelector('.callout-title');
+        var contentEl = el.querySelector('.callout-content');
+        var runs = [];
+        if (titleEl) { var tr = runsOf(titleEl); tr.forEach(function (x) { x.bold = true; }); runs = runs.concat(tr); runs.push({ text: ' — ', bold: false }); }
+        if (contentEl) runs = runs.concat(runsOf(contentEl));
+        if (runs.length) blocks.push({ t: 'quote', runs: runs });
+      }
+    });
+
+    return Promise.all(tasks).then(function () {
+      // drop images that failed to rasterise and have no src
+      return blocks.filter(function (b) { return b.t !== 'image' || b.png || b.src; });
+    });
+  }
+
   window.OKIA = {
     render: render,
     renderFragment: renderFragment,
+    exportModel: exportModel,
     setFontScale: setFontScale,
     scrollToHeading: scrollToHeading,
     search: search,

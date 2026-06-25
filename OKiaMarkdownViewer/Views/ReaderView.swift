@@ -104,6 +104,7 @@ struct ReaderView: View {
 #endif
         .confirmationDialog("Partager", isPresented: $showShareOptions, titleVisibility: .visible) {
             Button("Exporter en PDF") { exportPDF() }
+            Button("Exporter en Word (.docx)") { exportWord() }
             Button("Partager le Markdown (.md)") { shareMarkdown() }
             Button("Annuler", role: .cancel) {}
         }
@@ -270,6 +271,19 @@ struct ReaderView: View {
     private func exportPDF() {
         web.exportPDF { url in
             if let url { sharePayload = SharePayload(url: url) }
+        }
+    }
+
+    private func exportWord() {
+        let name = title.isEmpty ? document.filename.replacingOccurrences(of: ".md", with: "") : title
+        web.buildExportModel { model in
+            guard let model else { return }
+            OOXMLExportBridge.buildDocx(title: name, model: model) { data in
+                guard let data else { return }
+                let safe = name.replacingOccurrences(of: "/", with: "-")
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).docx")
+                do { try data.write(to: url); sharePayload = SharePayload(url: url) } catch { /* ignore */ }
+            }
         }
     }
 
@@ -482,17 +496,20 @@ struct PresentationView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tappedDiagram: TappedDiagram?
     @State private var tappedImage: TappedImage?
+    @State private var sharePayload: SharePayload?
 
     var body: some View {
         PresentationWebView(document: document,
                             onExit: { dismiss() },
                             onDiagram: { tappedDiagram = $0 },
-                            onImage: { tappedImage = $0 })
+                            onImage: { tappedImage = $0 },
+                            onExportReady: { sharePayload = SharePayload(url: $0) })
             .ignoresSafeArea()
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .fullScreenCover(item: $tappedDiagram) { DiagramZoomView(diagram: $0) }
             .fullScreenCover(item: $tappedImage) { ImageZoomView(image: $0) }
+            .sheet(item: $sharePayload) { payload in ShareSheet(items: [payload.url]) }
             .onAppear(perform: requestLandscapeIfPhone)
     }
 
@@ -537,12 +554,13 @@ struct PresentationWebView: UIViewRepresentable {
     var onExit: () -> Void
     var onDiagram: (TappedDiagram) -> Void
     var onImage: (TappedImage) -> Void
+    var onExportReady: (URL) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped"] {
+        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx"] {
             controller.add(context.coordinator, name: name)
         }
 
@@ -638,8 +656,26 @@ struct PresentationWebView: UIViewRepresentable {
                 if let dict = message.body as? [String: Any], let src = dict["src"] as? String {
                     parent.onImage(TappedImage(src: src))
                 }
+            case "exportPptx":
+                exportPptx()
             default:
                 break
+            }
+        }
+
+        private func exportPptx() {
+            guard let webView else { return }
+            let name = (parent.document.filename as NSString).deletingPathExtension
+            webView.callAsyncJavaScript("return await window.OKIA_PRESENT.exportModel();",
+                                        arguments: [:], in: nil, in: .page) { [weak self] result in
+                guard let self, case .success(let value) = result,
+                      let model = value as? [String: Any] else { return }
+                OOXMLExportBridge.buildPptx(model: model) { data in
+                    guard let data else { return }
+                    let safe = name.isEmpty ? "Présentation" : name.replacingOccurrences(of: "/", with: "-")
+                    let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).pptx")
+                    do { try data.write(to: url); self.parent.onExportReady(url) } catch { /* ignore */ }
+                }
             }
         }
     }

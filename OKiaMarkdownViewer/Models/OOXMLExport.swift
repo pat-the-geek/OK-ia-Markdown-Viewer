@@ -613,3 +613,113 @@ enum PptxBuilder {
     </a:fmtScheme></a:themeElements></a:theme>
     """
 }
+
+// MARK: - Bridge from the JS export model (app only)
+
+#if canImport(UIKit)
+import UIKit
+
+/// Converts the JS `exportModel` JSON into OOXML blocks (downloading remote
+/// images), then builds .docx / .pptx. App-only (uses UIKit/URLSession).
+enum OOXMLExportBridge {
+
+    private static func intOf(_ v: Any?) -> Int {
+        if let i = v as? Int { return i }
+        if let d = v as? Double { return Int(d) }
+        if let n = v as? NSNumber { return n.intValue }
+        return 0
+    }
+
+    private static func runs(_ v: Any?) -> [OOXMLRun] {
+        guard let a = v as? [[String: Any]] else { return [] }
+        return a.map { OOXMLRun(text: $0["text"] as? String ?? "",
+                                bold: $0["bold"] as? Bool ?? false,
+                                italic: $0["italic"] as? Bool ?? false,
+                                code: $0["code"] as? Bool ?? false) }
+    }
+
+    private static func image(_ d: [String: Any], _ downloaded: [String: OOXMLImage]) -> OOXMLImage? {
+        if let b64 = d["png"] as? String, let data = Data(base64Encoded: b64) {
+            return OOXMLImage(data: data, widthPx: max(intOf(d["w"]), 1), heightPx: max(intOf(d["h"]), 1), isPNG: true)
+        }
+        if let src = d["src"] as? String { return downloaded[src] }
+        return nil
+    }
+
+    private static func block(_ d: [String: Any], _ downloaded: [String: OOXMLImage]) -> OOXMLBlock? {
+        switch d["t"] as? String {
+        case "heading":   return .heading(level: max(1, intOf(d["level"])), runs: runs(d["runs"]))
+        case "paragraph": return .paragraph(runs: runs(d["runs"]))
+        case "quote":     return .quote(runs: runs(d["runs"]))
+        case "list":
+            let items = (d["items"] as? [Any] ?? []).map { runs($0) }
+            return .list(ordered: d["ordered"] as? Bool ?? false, items: items)
+        case "table":
+            let rows = (d["rows"] as? [Any] ?? []).map { row in (row as? [Any] ?? []).map { runs($0) } }
+            return .table(rows: rows)
+        case "image":
+            if let img = image(d, downloaded) { return .image(img, caption: runs(d["caption"])) }
+            return nil
+        case "map":
+            let markers = (d["markers"] as? [String]) ?? []
+            let text = "🗺 Carte — " + markers.joined(separator: " · ")
+            return .paragraph(runs: [OOXMLRun(text: text, italic: true)])
+        default: return nil
+        }
+    }
+
+    /// Collect remote image URLs from a flat block array.
+    private static func imageURLs(in blocks: [[String: Any]]) -> [String] {
+        blocks.compactMap { ($0["t"] as? String) == "image" ? ($0["src"] as? String) : nil }
+              .filter { $0.hasPrefix("http") }
+    }
+
+    private static func download(_ urls: [String], completion: @escaping ([String: OOXMLImage]) -> Void) {
+        var out: [String: OOXMLImage] = [:]
+        let group = DispatchGroup()
+        let lock = NSLock()
+        for s in Set(urls) {
+            guard let url = URL(string: s) else { continue }
+            group.enter()
+            URLSession.shared.dataTask(with: url) { data, _, _ in
+                defer { group.leave() }
+                guard let data = data, let img = UIImage(data: data), let cg = img.cgImage else { return }
+                let isPNG = data.starts(with: [0x89, 0x50, 0x4E, 0x47])
+                let isJPEG = data.starts(with: [0xFF, 0xD8])
+                let bytes: Data; let png: Bool
+                if isPNG { bytes = data; png = true }
+                else if isJPEG { bytes = data; png = false }
+                else if let p = img.pngData() { bytes = p; png = true }
+                else { return }
+                lock.lock()
+                out[s] = OOXMLImage(data: bytes, widthPx: cg.width, heightPx: cg.height, isPNG: png)
+                lock.unlock()
+            }.resume()
+        }
+        group.notify(queue: .main) { completion(out) }
+    }
+
+    // MARK: public
+
+    /// Build a .docx from the report export model (flat block array).
+    static func buildDocx(title: String, model: [[String: Any]], completion: @escaping (Data?) -> Void) {
+        download(imageURLs(in: model)) { imgs in
+            let blocks = model.compactMap { block($0, imgs) }
+            completion(DocxBuilder.build(title: title, blocks: blocks))
+        }
+    }
+
+    /// Build a .pptx from the presentation export model ({slides:[{title,blocks}]}).
+    static func buildPptx(model: [String: Any], completion: @escaping (Data?) -> Void) {
+        let rawSlides = (model["slides"] as? [[String: Any]]) ?? []
+        let allBlocks = rawSlides.flatMap { ($0["blocks"] as? [[String: Any]]) ?? [] }
+        download(imageURLs(in: allBlocks)) { imgs in
+            let slides = rawSlides.map { s -> PptxSlide in
+                let blocks = ((s["blocks"] as? [[String: Any]]) ?? []).compactMap { block($0, imgs) }
+                return PptxSlide(title: runs(s["title"]), blocks: blocks)
+            }
+            completion(PptxBuilder.build(slides: slides))
+        }
+    }
+}
+#endif

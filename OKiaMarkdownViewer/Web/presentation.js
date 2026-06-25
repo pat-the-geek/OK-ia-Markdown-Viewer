@@ -336,7 +336,41 @@
     menu.innerHTML = '';
     menu.appendChild(menuSection('Thème', THEMES, 'theme'));
     menu.appendChild(menuSection('Transition', TRANSITIONS, 'transition'));
+    // Export section.
+    var h = document.createElement('div');
+    h.className = 'present-menu-title';
+    h.textContent = 'Export';
+    menu.appendChild(h);
+    var ex = document.createElement('button');
+    ex.className = 'present-menu-item';
+    ex.textContent = 'PowerPoint (.pptx)';
+    ex.onclick = function (e) { e.stopPropagation(); closeMenu(); post('exportPptx', {}); };
+    menu.appendChild(ex);
     syncMenu();
+  }
+
+  // Build the presentation export model: render each slide off-screen and collect
+  // its blocks (the first heading becomes the slide title). Mermaid is rasterised
+  // by OKIA.exportModel; maps become a marker list.
+  function buildExportModel() {
+    var tmp = document.createElement('div');
+    tmp.className = 'slide-inner markdown-body';
+    tmp.style.cssText = 'position:absolute;left:-99999px;top:0;width:1120px;';
+    document.body.appendChild(tmp);
+    var out = [];
+    var chain = Promise.resolve();
+    rawSlides.forEach(function (md) {
+      chain = chain.then(function () {
+        return window.OKIA.renderFragment(tmp, md).then(function () {
+          return window.OKIA.exportModel(tmp).then(function (blocks) {
+            var title = [];
+            if (blocks.length && blocks[0].t === 'heading') { title = blocks[0].runs; blocks = blocks.slice(1); }
+            out.push({ title: title, blocks: blocks });
+          });
+        });
+      });
+    });
+    return chain.then(function () { try { document.body.removeChild(tmp); } catch (e) {} return { slides: out }; });
   }
 
   function openMenu()  { var m = el('presentMenu'); if (m) { m.hidden = false; syncMenu(); } }
@@ -559,6 +593,6 @@
 
   window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
                           setTransition: setTransition, setTheme: setTheme, escape: escape,
-                          toggleOverview: toggleOverview };
+                          toggleOverview: toggleOverview, exportModel: buildExportModel };
   post('presentReady', {});
 })();

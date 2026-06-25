@@ -61,6 +61,17 @@ final class ReaderWebController: ObservableObject {
         searchResult = SearchResult(count: 0, index: 0)
     }
 
+    // MARK: Word (.docx) export
+    /// Fetch the structured export model (blocks) from the rendered document.
+    func buildExportModel(completion: @escaping ([[String: Any]]?) -> Void) {
+        guard let webView else { completion(nil); return }
+        let js = "return await window.OKIA.exportModel(document.getElementById('content'));"
+        webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { result in
+            if case .success(let value) = result { completion(value as? [[String: Any]]) }
+            else { completion(nil) }
+        }
+    }
+
     // MARK: PDF export
     func exportPDF(completion: @escaping (URL?) -> Void) {
         guard let webView else { completion(nil); return }
