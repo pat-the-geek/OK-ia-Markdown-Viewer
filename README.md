@@ -52,6 +52,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.
 - **Recherche dans le document** : surlignage des occurrences + navigation précédent/suivant.
 - **Partage / export** : export du rendu en **PDF** ou partage du fichier `.md` via la share sheet iOS.
+- **Export Office (Word / PowerPoint)** : le **Rapport** s'exporte en **`.docx`** (titres, gras/italique,
+  citations, listes, **tableaux éditables**, images + diagrammes) ; le **Diaporama** s'exporte en
+  **`.pptx` mixte** (texte éditable + **tableaux éditables** + images/diagrammes rasterisés). Générateur
+  OOXML **maison, sans dépendance** ; `.docx` ouvre Word **et** Pages, `.pptx` ouvre PowerPoint **et**
+  Keynote. Voir la section dédiée.
 
 ---
 
@@ -88,6 +93,32 @@ dans `ReaderView.swift`.
 > 📝 **Rédiger une présentation** : voir le [guide de rédaction](docs/GUIDE-PRESENTATION.md) (format
 > Markdown attendu, découpage des diapos, conseils images inline, modèles, commandes). Il sert aussi
 > d'instructions à coller dans une config d'assistant pour générer des présentations exploitables.
+
+---
+
+## Export Word (.docx) & PowerPoint (.pptx)
+
+Deux exports « bureautique », via un **générateur OOXML maison sans dépendance**
+([`Models/OOXMLExport.swift`](OKiaMarkdownViewer/Models/OOXMLExport.swift) — écriture ZIP + builders
+DOCX/PPTX, Foundation pur donc validable hors-app).
+
+- **Rapport → Word (`.docx`)** : menu **Partager → « Exporter en Word (.docx) »**. Produit un
+  document éditable : titres, paragraphes, **gras/italique/code**, citations, listes à puces/numérotées,
+  **tableaux éditables** bordurés, images + diagrammes.
+- **Diaporama → PowerPoint (`.pptx`, mixte)** : menu **⚙ → Export → « PowerPoint (.pptx) »**. Une
+  diapo par bloc, en **texte éditable** (titre + puces) + **tableaux éditables** (`a:tbl`) + **images**
+  (diagrammes Mermaid rasterisés, photos intégrées) positionnées.
+
+**Pipeline** : le JS `window.OKIA.exportModel(container)` parcourt le DOM rendu → blocs ordonnés et
+**rasterise les diagrammes Mermaid** en PNG ; côté Swift, `OOXMLExportBridge` télécharge les images
+distantes (natif, sans souci CORS), les dimensionne, puis appelle `DocxBuilder` / `PptxBuilder` ; le
+fichier part dans la share sheet.
+
+> **Couverture des 4 cibles** : `.docx` s'ouvre dans **Word et Pages** ; `.pptx` s'ouvre dans
+> **PowerPoint et Keynote** (import OOXML d'Apple). Les formats Apple natifs `.key`/`.pages` (fermés)
+> ne sont pas générés directement. Les **cartes** sont exportées en **liste de marqueurs** (texte) ;
+> leur rendu image natif reste une amélioration possible. Validé hors-app : `.docx` via `textutil`,
+> `.pptx` via QuickLook (moteur Office/iWork de macOS).
 
 ---
 
@@ -145,7 +176,8 @@ OKiaMarkdownViewer/
 ├── Info.plist                      # Document Types + UTI + orientations + export compliance
 ├── Assets.xcassets/                # AppIcon (1024, sans alpha) + AccentColor (#E8972E)
 ├── Models/
-│   └── MarkdownDocument.swift      # chargement UTF-8 → Latin-1, security-scoped, sans UIKit
+│   ├── MarkdownDocument.swift      # chargement UTF-8 → Latin-1, security-scoped, sans UIKit
+│   └── OOXMLExport.swift           # ZIP + builders DOCX/PPTX + bridge (export Word/PowerPoint)
 ├── Views/
 │   ├── RootView.swift              # routage + .fileImporter + alertes
 │   ├── EmptyStateView.swift        # accueil (ouvrir / exemple)
@@ -290,3 +322,4 @@ ou, dans Xcode, choisir la destination **« Mac (Mac Catalyst) »** puis **Run**
 | 7 | README (build, assets, TestFlight, macOS) | ✅ (ce document) |
 | 8 | macOS (Mac Catalyst) | ✅ build + lancement OK ; menu ⌘O, drag&drop, fenêtre redimensionnable |
 | 9 | Mode Diaporama (plein écran, transitions, navigateur de vignettes, image plein écran) | ✅ découpe `---`, toile adaptative, 5 transitions Keynote, grille de vignettes, clavier/balayage/Échap |
+| 10 | Export Word (.docx) & PowerPoint (.pptx mixte, tableaux éditables) | ✅ OOXML maison ; validé `textutil`/QuickLook ; ouverture Word/Pages & PowerPoint/Keynote (test final sur appareil) |
