@@ -300,3 +300,316 @@ enum DocxBuilder {
     </w:numbering>
     """
 }
+
+// MARK: - PPTX builder (mixed: editable text + tables + images)
+
+/// One slide: a title plus ordered content blocks (text, lists, quotes, native
+/// editable tables, and rasterised media images).
+struct PptxSlide {
+    var title: [OOXMLRun]
+    var blocks: [OOXMLBlock]
+}
+
+enum PptxBuilder {
+    // 16:9 slide, EMU.
+    static let slideW = 12192000, slideH = 6858000
+    static let marginX = 457200          // 0.5in
+    static let titleTop = 274638, titleH = 1106424
+    static let contentTop = 1490000
+    static var contentW: Int { slideW - marginX * 2 }
+    static var contentBottom: Int { slideH - 365760 }
+    static var contentH: Int { contentBottom - contentTop }
+
+    private enum Item {
+        case text([OOXMLBlock])           // contiguous paragraph/list/quote
+        case table([[[OOXMLRun]]])
+        case image(OOXMLImage)
+    }
+
+    static func build(slides: [PptxSlide]) -> Data {
+        var zip = OOXMLZip()
+        var slideOverrides = ""
+        var presRels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster\" Target=\"slideMasters/slideMaster1.xml\"/>"
+        var sldIdList = ""
+
+        for (i, slide) in slides.enumerated() {
+            let n = i + 1
+            let rid = "rId\(n + 1)"
+            var images: [(name: String, img: OOXMLImage)] = []
+            let xml = slideXML(slide, slideIndex: n, images: &images)
+            zip.add("ppt/slides/slide\(n).xml", xml: xml)
+
+            var rels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout\" Target=\"../slideLayouts/slideLayout1.xml\"/>"
+            for (k, entry) in images.enumerated() {
+                rels += "<Relationship Id=\"rIdImg\(k + 1)\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"../media/\(entry.name)\"/>"
+                zip.add("ppt/media/\(entry.name)", entry.img.data)
+            }
+            zip.add("ppt/slides/_rels/slide\(n).xml.rels", xml: relsDoc(rels))
+
+            slideOverrides += "<Override PartName=\"/ppt/slides/slide\(n).xml\" ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
+            presRels += "<Relationship Id=\"\(rid)\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" Target=\"slides/slide\(n).xml\"/>"
+            sldIdList += "<p:sldId id=\"\(255 + n)\" r:id=\"\(rid)\"/>"
+        }
+
+        zip.add("[Content_Types].xml", xml: contentTypes(slideOverrides))
+        zip.add("_rels/.rels", xml: rootRels)
+        zip.add("ppt/presentation.xml", xml: presentationXML(sldIdList))
+        zip.add("ppt/_rels/presentation.xml.rels", xml: relsDoc(presRels))
+        zip.add("ppt/slideMasters/slideMaster1.xml", xml: slideMaster)
+        zip.add("ppt/slideMasters/_rels/slideMaster1.xml.rels", xml: relsDoc(
+            "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout\" Target=\"../slideLayouts/slideLayout1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"../theme/theme1.xml\"/>"))
+        zip.add("ppt/slideLayouts/slideLayout1.xml", xml: slideLayout)
+        zip.add("ppt/slideLayouts/_rels/slideLayout1.xml.rels", xml: relsDoc(
+            "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster\" Target=\"../slideMasters/slideMaster1.xml\"/>"))
+        zip.add("ppt/theme/theme1.xml", xml: theme1)
+        return zip.finalize()
+    }
+
+    // MARK: per-slide layout
+
+    private static func slideXML(_ slide: PptxSlide, slideIndex: Int, images: inout [(name: String, img: OOXMLImage)]) -> String {
+        var id = 1
+        func nextId() -> Int { id += 1; return id }
+        var shapes = ""
+
+        // Title placeholder.
+        if !slide.title.isEmpty {
+            shapes += """
+            <p:sp><p:nvSpPr><p:cNvPr id="\(nextId())" name="Title"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>\
+            <p:spPr><a:xfrm><a:off x="\(marginX)" y="\(titleTop)"/><a:ext cx="\(contentW)" cy="\(titleH)"/></a:xfrm></p:spPr>\
+            <p:txBody><a:bodyPr/><a:lstStyle/><a:p>\(runsAXML(slide.title, size: 3200, bold: true))</a:p></p:txBody></p:sp>
+            """
+        }
+
+        // Group contiguous text blocks; tables and images are standalone.
+        var items: [Item] = []
+        var textRun: [OOXMLBlock] = []
+        func flush() { if !textRun.isEmpty { items.append(.text(textRun)); textRun = [] } }
+        for b in slide.blocks {
+            switch b {
+            case .heading, .paragraph, .quote, .list: textRun.append(b)
+            case .table(let rows): flush(); items.append(.table(rows))
+            case .image(let img, _): flush(); items.append(.image(img))
+            }
+        }
+        flush()
+
+        // Natural heights, then scale to fit the content area.
+        func natural(_ it: Item) -> Int {
+            switch it {
+            case .text(let blocks):
+                var lines = 0
+                for b in blocks {
+                    switch b {
+                    case .list(_, let items): lines += items.count
+                    case .table: break
+                    case .image: break
+                    default: lines += 1
+                    }
+                }
+                return max(1, lines) * 430000 + 120000
+            case .table(let rows): return rows.count * 430000 + 80000
+            case .image(let img):
+                let ar = Double(img.widthPx) / Double(max(img.heightPx, 1))
+                return Int(Double(contentW) / max(ar, 0.1))
+            }
+        }
+        let gap = 160000
+        let naturals = items.map(natural)
+        let totalNat = naturals.reduce(0, +) + gap * max(0, items.count - 1)
+        let scale = totalNat > contentH ? Double(contentH) / Double(totalNat) : 1.0
+
+        var y = contentTop
+        for (idx, it) in items.enumerated() {
+            let h = max(200000, Int(Double(naturals[idx]) * scale))
+            switch it {
+            case .text(let blocks):
+                shapes += textBoxXML(blocks, id: nextId(), x: marginX, y: y, w: contentW, h: h)
+            case .table(let rows):
+                shapes += tableXML(rows, id: nextId(), x: marginX, y: y, w: contentW, h: h)
+            case .image(let img):
+                let ar = Double(img.widthPx) / Double(max(img.heightPx, 1))
+                var w = Int(Double(h) * ar)
+                var hh = h
+                if w > contentW { w = contentW; hh = Int(Double(contentW) / max(ar, 0.1)) }
+                let x = marginX + (contentW - w) / 2
+                let name = "image\(slideIndex)_\(images.count + 1).\(img.isPNG ? "png" : "jpeg")"
+                let rid = "rIdImg\(images.count + 1)"
+                images.append((name, img))
+                shapes += pictureXML(rid: rid, id: nextId(), x: x, y: y, w: w, h: hh)
+            }
+            y += h + gap
+        }
+
+        return """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
+        <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>\
+        <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>\
+        \(shapes)</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sld>
+        """
+    }
+
+    // MARK: DrawingML helpers
+
+    private static func runAXML(_ r: OOXMLRun, size: Int, bold: Bool) -> String {
+        var rPr = "<a:rPr lang=\"fr-FR\" sz=\"\(size)\""
+        if r.bold || bold { rPr += " b=\"1\"" }
+        if r.italic { rPr += " i=\"1\"" }
+        rPr += ">"
+        if r.code { rPr += "<a:latin typeface=\"Menlo\"/>" }
+        rPr += "</a:rPr>"
+        return "<a:r>\(rPr)<a:t>\(XML.esc(r.text))</a:t></a:r>"
+    }
+    private static func runsAXML(_ runs: [OOXMLRun], size: Int, bold: Bool) -> String {
+        runs.map { runAXML($0, size: size, bold: bold) }.joined()
+    }
+
+    private static func textBoxXML(_ blocks: [OOXMLBlock], id: Int, x: Int, y: Int, w: Int, h: Int) -> String {
+        var paras = ""
+        for b in blocks {
+            switch b {
+            case .heading(_, let runs):
+                paras += "<a:p>\(runsAXML(runs, size: 2200, bold: true))</a:p>"
+            case .paragraph(let runs):
+                paras += "<a:p>\(runsAXML(runs, size: 1800, bold: false))</a:p>"
+            case .quote(let runs):
+                paras += "<a:p><a:pPr><a:lnSpc><a:spcPct val=\"100000\"/></a:lnSpc></a:pPr>" +
+                         runs.map { var r = $0; r.italic = true; return runAXML(r, size: 1800, bold: false) }.joined() + "</a:p>"
+            case .list(let ordered, let items):
+                for item in items {
+                    let bu = ordered ? "<a:buAutoNum type=\"arabicPeriod\"/>" : "<a:buChar char=\"•\"/>"
+                    paras += "<a:p><a:pPr marL=\"285750\" indent=\"-285750\">\(bu)</a:pPr>\(runsAXML(item, size: 1800, bold: false))</a:p>"
+                }
+            default: break
+            }
+        }
+        if paras.isEmpty { paras = "<a:p><a:endParaRPr lang=\"fr-FR\"/></a:p>" }
+        return """
+        <p:sp><p:nvSpPr><p:cNvPr id="\(id)" name="Text \(id)"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>\
+        <p:spPr><a:xfrm><a:off x="\(x)" y="\(y)"/><a:ext cx="\(w)" cy="\(h)"/></a:xfrm>\
+        <a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>\
+        <p:txBody><a:bodyPr wrap="square" rtlCol="0"><a:normAutofit/></a:bodyPr><a:lstStyle/>\(paras)</p:txBody></p:sp>
+        """
+    }
+
+    private static func tableXML(_ rows: [[[OOXMLRun]]], id: Int, x: Int, y: Int, w: Int, h: Int) -> String {
+        let cols = rows.map { $0.count }.max() ?? 1
+        let colW = w / max(cols, 1)
+        let rowH = max(300000, h / max(rows.count, 1))
+        var grid = ""
+        for _ in 0..<cols { grid += "<a:gridCol w=\"\(colW)\"/>" }
+        var trs = ""
+        for (ri, row) in rows.enumerated() {
+            var tcs = ""
+            for ci in 0..<cols {
+                let runs = ci < row.count ? row[ci] : []
+                let header = ri == 0
+                let cellRuns = header ? runs.map { var r = $0; r.bold = true; return r } : runs
+                let body = "<a:p>\(runsAXML(cellRuns, size: 1600, bold: false))</a:p>"
+                let fill = header ? "<a:solidFill><a:srgbClr val=\"EAE8E2\"/></a:solidFill>" : ""
+                let bdr = "<a:lnL w=\"6350\"><a:solidFill><a:srgbClr val=\"BFBFBF\"/></a:solidFill></a:lnL><a:lnR w=\"6350\"><a:solidFill><a:srgbClr val=\"BFBFBF\"/></a:solidFill></a:lnR><a:lnT w=\"6350\"><a:solidFill><a:srgbClr val=\"BFBFBF\"/></a:solidFill></a:lnT><a:lnB w=\"6350\"><a:solidFill><a:srgbClr val=\"BFBFBF\"/></a:solidFill></a:lnB>"
+                tcs += "<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>\(body)</a:txBody><a:tcPr marL=\"45720\" marR=\"45720\" marT=\"22860\" marB=\"22860\">\(bdr)\(fill)</a:tcPr></a:tc>"
+            }
+            trs += "<a:tr h=\"\(rowH)\">\(tcs)</a:tr>"
+        }
+        let cy = rowH * rows.count
+        return """
+        <p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="\(id)" name="Table \(id)"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>\
+        <p:xfrm><a:off x="\(x)" y="\(y)"/><a:ext cx="\(w)" cy="\(cy)"/></p:xfrm>\
+        <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">\
+        <a:tbl><a:tblPr firstRow="1"><a:tableStyleId>{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}</a:tableStyleId></a:tblPr>\
+        <a:tblGrid>\(grid)</a:tblGrid>\(trs)</a:tbl></a:graphicData></a:graphic></p:graphicFrame>
+        """
+    }
+
+    private static func pictureXML(rid: String, id: Int, x: Int, y: Int, w: Int, h: Int) -> String {
+        """
+        <p:pic><p:nvPicPr><p:cNvPr id="\(id)" name="Image \(id)"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>\
+        <p:blipFill><a:blip r:embed="\(rid)"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>\
+        <p:spPr><a:xfrm><a:off x="\(x)" y="\(y)"/><a:ext cx="\(w)" cy="\(h)"/></a:xfrm>\
+        <a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>
+        """
+    }
+
+    // MARK: boilerplate
+
+    private static func relsDoc(_ inner: String) -> String {
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\(inner)</Relationships>"
+    }
+
+    private static func contentTypes(_ slideOverrides: String) -> String {
+        """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\
+        <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\
+        <Default Extension="xml" ContentType="application/xml"/>\
+        <Default Extension="png" ContentType="image/png"/>\
+        <Default Extension="jpeg" ContentType="image/jpeg"/>\
+        <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>\
+        <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>\
+        <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>\
+        <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>\
+        \(slideOverrides)</Types>
+        """
+    }
+
+    private static let rootRels = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>\
+    </Relationships>
+    """
+
+    private static func presentationXML(_ sldIdList: String) -> String {
+        """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
+        <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>\
+        <p:sldIdLst>\(sldIdList)</p:sldIdLst>\
+        <p:sldSz cx="\(slideW)" cy="\(slideH)" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>
+        """
+    }
+
+    private static let slideMaster = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
+    <p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>\
+    <p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>\
+    <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>\
+    <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>\
+    <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>\
+    <p:txStyles>\
+    <p:titleStyle><a:lvl1pPr algn="l"><a:defRPr sz="3200" b="1"><a:solidFill><a:srgbClr val="111111"/></a:solidFill><a:latin typeface="Helvetica Neue"/></a:defRPr></a:lvl1pPr></p:titleStyle>\
+    <p:bodyStyle><a:lvl1pPr><a:defRPr sz="1800"><a:solidFill><a:srgbClr val="222222"/></a:solidFill><a:latin typeface="Helvetica Neue"/></a:defRPr></a:lvl1pPr></p:bodyStyle>\
+    <p:otherStyle><a:defPPr><a:defRPr lang="fr-FR"/></a:defPPr></p:otherStyle></p:txStyles></p:sldMaster>
+    """
+
+    private static let slideLayout = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1">\
+    <p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>\
+    <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>\
+    <p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sldLayout>
+    """
+
+    private static let theme1 = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="OK-ia">\
+    <a:themeElements><a:clrScheme name="OK-ia">\
+    <a:dk1><a:srgbClr val="111111"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1>\
+    <a:dk2><a:srgbClr val="1A3A5C"/></a:dk2><a:lt2><a:srgbClr val="FAFAF8"/></a:lt2>\
+    <a:accent1><a:srgbClr val="E8972E"/></a:accent1><a:accent2><a:srgbClr val="1A3A5C"/></a:accent2>\
+    <a:accent3><a:srgbClr val="2D5A1B"/></a:accent3><a:accent4><a:srgbClr val="8B0000"/></a:accent4>\
+    <a:accent5><a:srgbClr val="9A9A90"/></a:accent5><a:accent6><a:srgbClr val="F0A840"/></a:accent6>\
+    <a:hlink><a:srgbClr val="C9781A"/></a:hlink><a:folHlink><a:srgbClr val="8B0000"/></a:folHlink></a:clrScheme>\
+    <a:fontScheme name="OK-ia"><a:majorFont><a:latin typeface="Helvetica Neue"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>\
+    <a:minorFont><a:latin typeface="Helvetica Neue"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>\
+    <a:fmtScheme name="OK-ia">\
+    <a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>\
+    <a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>\
+    <a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>\
+    <a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst>\
+    </a:fmtScheme></a:themeElements></a:theme>
+    """
+}
