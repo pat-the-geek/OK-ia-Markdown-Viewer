@@ -76,6 +76,17 @@
     .mdv-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
                 font-size: 0.85em; background: #fff; border: 1px solid var(--border);
                 border-radius: 4px; padding: 0.1em 0.4em; white-space: nowrap; }
+    .mdv-exemples { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    gap: 1rem; margin-top: 1.4rem; }
+    .mdv-exemple-card { border: 1px solid var(--border); border-radius: 6px; background: #fff;
+                        padding: 1.4rem 1.5rem 1.5rem; display: flex; flex-direction: column;
+                        gap: 0.45rem; }
+    .mdv-exemple-card h3 { font-size: 1.02rem; font-weight: 700; color: var(--text);
+                           margin: 0 0 0.2rem; }
+    .mdv-exemple-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.5;
+                          margin: 0 0 0.8rem; flex: 1; }
+    .mdv-exemple-card .fw-btn { display: block; text-align: center; margin: 0; }
+    .mdv-exemple-card .fw-btn-secondaire { margin: 0.5rem 0 0; }
   </style>
 </head>
 <body>
@@ -742,14 +753,22 @@
     douzaine de diapositives</strong>. Si md Viewer est installé, « Ouvrir dans md Viewer »
     les charge directement ; sinon, téléchargez le <span class="mdv-code">.md</span> et
     ouvrez-le depuis Fichiers.</p>
-    <p style="margin-bottom:0.6rem;">
-      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md">📄 Ouvrir le rapport dans md Viewer</a>
-      <a class="fw-btn fw-btn-secondaire" href="exemples/rapport-exemple.md" download>Télécharger le rapport (.md)</a>
-    </p>
-    <p>
-      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/presentation-exemple.md">🎞️ Ouvrir la présentation dans md Viewer</a>
-      <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Télécharger la présentation (.md)</a>
-    </p>
+    <div class="mdv-exemples">
+      <div class="mdv-exemple-card">
+        <h3>📄 Le rapport</h3>
+        <p>Un observatoire complet : 5 diagrammes Mermaid, carte de Suisse romande,
+        callouts, entités colorées, tableaux et listes de tâches.</p>
+        <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md">Ouvrir dans md Viewer</a>
+        <a class="fw-btn fw-btn-secondaire" href="exemples/rapport-exemple.md" download>Télécharger le .md</a>
+      </div>
+      <div class="mdv-exemple-card">
+        <h3>🎞️ La présentation</h3>
+        <p>13 diapositives : un diagramme par famille, carte interactive, tableau,
+        thèmes et transitions à essayer, export PowerPoint.</p>
+        <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/presentation-exemple.md">Ouvrir dans md Viewer</a>
+        <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Télécharger le .md</a>
+      </div>
+    </div>
   </section>
 
   <!-- Fonctionnalités -->
@@ -966,14 +985,22 @@
     lists, code) and a <strong>dozen-slide presentation</strong>. If md Viewer is
     installed, “Open in md Viewer” loads them directly; otherwise download the
     <span class="mdv-code">.md</span> and open it from Files.</p>
-    <p style="margin-bottom:0.6rem;">
-      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md">📄 Open the report in md Viewer</a>
-      <a class="fw-btn fw-btn-secondaire" href="exemples/rapport-exemple.md" download>Download the report (.md)</a>
-    </p>
-    <p>
-      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/presentation-exemple.md">🎞️ Open the presentation in md Viewer</a>
-      <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Download the presentation (.md)</a>
-    </p>
+    <div class="mdv-exemples">
+      <div class="mdv-exemple-card">
+        <h3>📄 The report</h3>
+        <p>A full observatory: 5 Mermaid diagrams, a map of western Switzerland,
+        callouts, highlighted entities, tables and task lists.</p>
+        <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md">Open in md Viewer</a>
+        <a class="fw-btn fw-btn-secondaire" href="exemples/rapport-exemple.md" download>Download the .md</a>
+      </div>
+      <div class="mdv-exemple-card">
+        <h3>🎞️ The presentation</h3>
+        <p>13 slides: one diagram per family, an interactive map, a table,
+        themes and transitions to try, PowerPoint export.</p>
+        <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/presentation-exemple.md">Open in md Viewer</a>
+        <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Download the .md</a>
+      </div>
+    </div>
   </section>
 
   <!-- Features -->
