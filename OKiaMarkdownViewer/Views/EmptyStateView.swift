@@ -12,6 +12,8 @@ struct EmptyStateView: View {
     var onOpenVault: (VaultReport) -> Void
 
     @State private var showAbout = false
+    @State private var showSettings = false
+    @ObservedObject private var loc = Localization.shared
 
     private var recents: [RecentFile] { recentsStore.items }
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
@@ -28,7 +30,8 @@ struct EmptyStateView: View {
                 VStack(spacing: 6) {
                     Text("OK-ia Markdown Viewer")
                         .font(.system(size: 25, weight: .heavy))
-                    Text("Ce que les algorithmes ignorent encore.")
+                    Text(tr("Ce que les algorithmes ignorent encore.",
+                            "What the algorithms still miss."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .italic()
@@ -37,7 +40,7 @@ struct EmptyStateView: View {
 
                 VStack(spacing: 12) {
                     Button(action: onOpen) {
-                        Label("Ouvrir un fichier", systemImage: "folder")
+                        Label(tr("Ouvrir un fichier", "Open a file"), systemImage: "folder")
                             .font(.headline)
                             .frame(maxWidth: 280)
                             .padding(.vertical, 12)
@@ -46,7 +49,7 @@ struct EmptyStateView: View {
                     .tint(orange)
 
                     Button(action: onSample) {
-                        Label("Voir un exemple", systemImage: "doc.text")
+                        Label(tr("Voir un exemple", "View a sample"), systemImage: "doc.text")
                             .frame(maxWidth: 280)
                             .padding(.vertical, 6)
                     }
@@ -62,9 +65,16 @@ struct EmptyStateView: View {
 
                 Spacer(minLength: 24)
 
-                Button { showAbout = true } label: {
-                    Label("Librairies & licences", systemImage: "info.circle")
-                        .font(.footnote)
+                HStack(spacing: 20) {
+                    Button { showSettings = true } label: {
+                        Label(tr("Réglages", "Settings"), systemImage: "gearshape")
+                            .font(.footnote)
+                    }
+                    Button { showAbout = true } label: {
+                        Label(tr("Librairies & licences", "Libraries & licenses"),
+                              systemImage: "info.circle")
+                            .font(.footnote)
+                    }
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -82,11 +92,12 @@ struct EmptyStateView: View {
         }
         .onAppear { vault.refresh() }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
+        .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
     private var recentsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Récents")
+            Text(tr("Récents", "Recent"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
@@ -118,7 +129,7 @@ struct EmptyStateView: View {
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button(role: .destructive) { recentsStore.remove(item) } label: {
-                            Label("Retirer de la liste", systemImage: "trash")
+                            Label(tr("Retirer de la liste", "Remove from list"), systemImage: "trash")
                         }
                     }
                     if item.id != recents.last?.id { Divider().padding(.leading, 44) }
@@ -150,9 +161,9 @@ private struct LibraryInfo: Identifiable {
 
         var label: String {
             switch self {
-            case .offline: return "Hors-ligne"
-            case .network: return "En ligne"
-            case .system:  return "Système"
+            case .offline: return tr("Hors-ligne", "Offline")
+            case .network: return tr("En ligne", "Online")
+            case .system:  return tr("Système", "System")
             }
         }
         var icon: String {
@@ -169,34 +180,43 @@ private struct LibraryInfo: Identifiable {
 /// roles, licenses and whether they run offline. Presented as a sheet.
 struct AboutLibrariesView: View {
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var loc = Localization.shared
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
-    private let libraries: [LibraryInfo] = [
+    private var libraries: [LibraryInfo] {
+        [
         LibraryInfo(name: "marked", version: "18.0.5",
-                    role: "Conversion Markdown → HTML (le cœur du rendu).",
+                    role: tr("Conversion Markdown → HTML (le cœur du rendu).",
+                             "Markdown → HTML conversion (the heart of the renderer)."),
                     license: "MIT", availability: .offline,
                     url: URL(string: "https://marked.js.org")),
         LibraryInfo(name: "Mermaid", version: "11.15.0",
-                    role: "Diagrammes : flowchart, séquence, gantt, pie, mindmap.",
+                    role: tr("Diagrammes : flowchart, séquence, gantt, pie, mindmap.",
+                             "Diagrams: flowchart, sequence, gantt, pie, mindmap."),
                     license: "MIT", availability: .offline,
                     url: URL(string: "https://mermaid.js.org")),
         LibraryInfo(name: "Leaflet", version: "1.9.4",
-                    role: "Cartes géographiques interactives et marqueurs (blocs ```leaflet).",
+                    role: tr("Cartes géographiques interactives et marqueurs (blocs ```leaflet).",
+                             "Interactive maps and markers (```leaflet blocks)."),
                     license: "BSD-2-Clause", availability: .offline,
                     url: URL(string: "https://leafletjs.com")),
         LibraryInfo(name: "OpenStreetMap & CARTO", version: nil,
-                    role: "Fonds de carte (tuiles) affichés par Leaflet.",
+                    role: tr("Fonds de carte (tuiles) affichés par Leaflet.",
+                             "Base map tiles displayed by Leaflet."),
                     license: "ODbL · CC BY", availability: .network,
                     url: URL(string: "https://www.openstreetmap.org/copyright")),
         LibraryInfo(name: "Nunito", version: nil,
-                    role: "Police d'affichage des titres (charte OK-ia).",
+                    role: tr("Police d'affichage des titres (charte OK-ia).",
+                             "Display typeface for headings (OK-ia brand)."),
                     license: "SIL OFL 1.1", availability: .offline,
                     url: URL(string: "https://fonts.google.com/specimen/Nunito")),
         LibraryInfo(name: "WebKit · WKWebView", version: nil,
-                    role: "Moteur web qui exécute le pipeline de rendu.",
+                    role: tr("Moteur web qui exécute le pipeline de rendu.",
+                             "Web engine running the rendering pipeline."),
                     license: "Apple", availability: .system,
                     url: nil)
-    ]
+        ]
+    }
 
     var body: some View {
         NavigationStack {
@@ -204,17 +224,18 @@ struct AboutLibrariesView: View {
                 Section {
                     ForEach(libraries) { lib in row(lib) }
                 } header: {
-                    Text("Librairies utilisées")
+                    Text(tr("Librairies utilisées", "Libraries used"))
                 } footer: {
-                    Text("Le rendu Markdown, les diagrammes et les cartes fonctionnent **100 % hors-ligne** — seules les tuiles de fond de carte nécessitent une connexion.")
+                    Text(tr("Le rendu Markdown, les diagrammes et les cartes fonctionnent **100 % hors-ligne** — seules les tuiles de fond de carte nécessitent une connexion.",
+                            "Markdown rendering, diagrams and maps work **100% offline** — only the base map tiles need a connection."))
                         .padding(.top, 4)
                 }
             }
-            .navigationTitle("Librairies & licences")
+            .navigationTitle(tr("Librairies & licences", "Libraries & licenses"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Fermer") { dismiss() }
+                    Button(tr("Fermer", "Done")) { dismiss() }
                 }
             }
         }
@@ -246,7 +267,7 @@ struct AboutLibrariesView: View {
                     .foregroundStyle(.secondary)
                 if let url = lib.url {
                     Link(destination: url) {
-                        Label("Site", systemImage: "arrow.up.right.square")
+                        Label(tr("Site", "Website"), systemImage: "arrow.up.right.square")
                             .font(.caption)
                     }
                     .tint(orange)

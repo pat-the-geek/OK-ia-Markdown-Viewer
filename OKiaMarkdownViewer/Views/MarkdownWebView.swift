@@ -29,6 +29,11 @@ struct MarkdownWebView: UIViewRepresentable {
             controller.add(context.coordinator, name: name)
         }
 
+        // Hand the app language to the web pipeline (meta bar label, etc.).
+        controller.addUserScript(WKUserScript(
+            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            injectionTime: .atDocumentStart, forMainFrameOnly: true))
+
         let config = WKWebViewConfiguration()
         config.userContentController = controller
         config.defaultWebpagePreferences.allowsContentJavaScript = true

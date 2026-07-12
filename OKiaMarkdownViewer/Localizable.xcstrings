@@ -1,0 +1,66 @@
+{
+  "sourceLanguage" : "fr",
+  "strings" : {
+    "Rapport" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Report" } }
+      }
+    },
+    "Ouvrir un rapport" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open a report" } }
+      }
+    },
+    "Ouvre un rapport du coffre dans md Viewer." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opens a vault report in md Viewer." } }
+      }
+    },
+    "Ouvrir ${report}" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open ${report}" } }
+      }
+    },
+    "Ouvrir le dernier rapport" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the latest report" } }
+      }
+    },
+    "Ouvre le rapport le plus récent du coffre." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opens the most recent vault report." } }
+      }
+    },
+    "Résumer un rapport" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Summarize a report" } }
+      }
+    },
+    "Ouvre un rapport et génère son résumé sur l’appareil." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opens a report and generates its summary on-device." } }
+      }
+    },
+    "Résumer ${report}" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Summarize ${report}" } }
+      }
+    },
+    "Résumé de « %@ » dans md Viewer." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Summarizing “%@” in md Viewer." } }
+      }
+    },
+    "Le résumé n’est pas disponible sur cet appareil ; j’ouvre le rapport." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Summaries are not available on this device; opening the report." } }
+      }
+    },
+    "Dernier rapport" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Latest report" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -40,7 +40,7 @@ final class DocumentStore: ObservableObject {
     /// mdviewer://render?name=<f>&content=<percent-encoded markdown>  — render inline
     private func handleScheme(_ url: URL) {
         guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            errorMessage = "Lien invalide."; return
+            errorMessage = tr("Lien invalide.", "Invalid link."); return
         }
         let action = (comps.host ?? "").lowercased()
         func value(_ names: String...) -> String? {
@@ -52,29 +52,31 @@ final class DocumentStore: ObservableObject {
             if let s = value("url", "u"), let remote = URL(string: s), remote.scheme?.hasPrefix("http") == true {
                 openRemote(remote)
             } else {
-                errorMessage = "URL du rapport manquante ou invalide (https requis)."
+                errorMessage = tr("URL du rapport manquante ou invalide (https requis).",
+                                  "Missing or invalid report URL (https required).")
             }
         case "render", "content":
-            let name = value("name", "title") ?? "Rapport.md"
+            let name = value("name", "title") ?? tr("Rapport.md", "Report.md")
             if let content = value("content", "text"), !content.isEmpty {
                 document = MarkdownDocument(filename: sanitize(name), text: content)
                 errorMessage = nil
             } else {
-                errorMessage = "Contenu du rapport manquant."
+                errorMessage = tr("Contenu du rapport manquant.", "Missing report content.")
             }
         default:
-            errorMessage = "Action inconnue : « \(action) »."
+            errorMessage = tr("Action inconnue : « \(action) ».", "Unknown action: “\(action)”.")
         }
     }
 
     /// Downloads a remote Markdown report (HTTPS) and renders it.
     func openRemote(_ url: URL) {
-        let name = url.lastPathComponent.isEmpty ? "Rapport.md" : url.lastPathComponent
+        let name = url.lastPathComponent.isEmpty ? tr("Rapport.md", "Report.md") : url.lastPathComponent
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let self else { return }
                 if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                    self.errorMessage = "Le serveur a répondu \(http.statusCode) pour le rapport."
+                    self.errorMessage = tr("Le serveur a répondu \(http.statusCode) pour le rapport.",
+                                           "The server answered \(http.statusCode) for the report.")
                     return
                 }
                 if let data, error == nil {
@@ -85,7 +87,8 @@ final class DocumentStore: ObservableObject {
                     self.recents.addRemote(url: url, name: safeName)
                     self.errorMessage = nil
                 } else {
-                    self.errorMessage = "Impossible de télécharger le rapport (\(error?.localizedDescription ?? "réseau"))."
+                    self.errorMessage = tr("Impossible de télécharger le rapport (\(error?.localizedDescription ?? "réseau")).",
+                                           "The report could not be downloaded (\(error?.localizedDescription ?? "network")).")
                 }
             }
         }.resume()
@@ -93,7 +96,7 @@ final class DocumentStore: ObservableObject {
 
     private func sanitize(_ name: String) -> String {
         let cleaned = name.replacingOccurrences(of: "/", with: "-")
-        return cleaned.isEmpty ? "Rapport.md" : cleaned
+        return cleaned.isEmpty ? tr("Rapport.md", "Report.md") : cleaned
     }
 
     /// Opens a user-selected file (importer / open-in / cold launch) and remembers it.
@@ -116,7 +119,7 @@ final class DocumentStore: ObservableObject {
             return
         }
         guard let url = recents.resolve(item) else {
-            errorMessage = "Ce fichier n’est plus accessible."
+            errorMessage = tr("Ce fichier n’est plus accessible.", "This file is no longer accessible.")
             recents.remove(item)
             return
         }
@@ -126,7 +129,8 @@ final class DocumentStore: ObservableObject {
     /// Opens a report from the watched vault folder (downloading from iCloud if needed).
     func openVaultReport(_ report: VaultReport) {
         guard let folder = vault.resolveFolder() else {
-            errorMessage = "Le dossier du coffre n’est plus accessible."; return
+            errorMessage = tr("Le dossier du coffre n’est plus accessible.",
+                              "The vault folder is no longer accessible."); return
         }
         let scoped = folder.startAccessingSecurityScopedResource()
         defer { if scoped { folder.stopAccessingSecurityScopedResource() } }
@@ -140,7 +144,8 @@ final class DocumentStore: ObservableObject {
             recents.add(url: fileURL)
             errorMessage = nil
         } catch {
-            errorMessage = "Impossible d’ouvrir « \(report.name) » (synchronisation iCloud en cours ?)."
+            errorMessage = tr("Impossible d’ouvrir « \(report.name) » (synchronisation iCloud en cours ?).",
+                              "Could not open “\(report.name)” (iCloud sync in progress?).")
         }
     }
 
@@ -152,7 +157,7 @@ final class DocumentStore: ObservableObject {
         if let report = vault.reports.first(where: { $0.id == id }) {
             openVaultReport(report)
         } else {
-            errorMessage = "Rapport introuvable dans le coffre."
+            errorMessage = tr("Rapport introuvable dans le coffre.", "Report not found in the vault.")
         }
     }
 
@@ -162,7 +167,7 @@ final class DocumentStore: ObservableObject {
         if let report = vault.reports.first {
             openVaultReport(report)
         } else {
-            errorMessage = "Aucun rapport dans le coffre."
+            errorMessage = tr("Aucun rapport dans le coffre.", "No report in the vault.")
         }
     }
 
@@ -175,7 +180,7 @@ final class DocumentStore: ObservableObject {
     func openSample() {
         guard let url = Bundle.main.url(forResource: "Demo", withExtension: "md", subdirectory: "Samples")
             ?? Bundle.main.url(forResource: "Demo", withExtension: "md") else {
-            errorMessage = "Exemple introuvable dans le bundle."
+            errorMessage = tr("Exemple introuvable dans le bundle.", "Sample not found in the bundle.")
             return
         }
         // Don't pollute recents with the bundled sample.
@@ -209,9 +214,9 @@ struct OKiaMarkdownViewerApp: App {
                 }
         }
         .commands {
-            // macOS: replace the default "New" with "Ouvrir…" (⌘O).
+            // macOS: replace the default "New" with "Ouvrir…" / "Open…" (⌘O).
             CommandGroup(replacing: .newItem) {
-                Button("Ouvrir…") {
+                Button(tr("Ouvrir…", "Open…")) {
                     NotificationCenter.default.post(name: .okiaOpenFile, object: nil)
                 }
                 .keyboardShortcut("o", modifiers: .command)
@@ -267,6 +272,8 @@ struct VaultReportQuery: EntityQuery, EntityStringQuery {
 
 /// Open a chosen report in md Viewer.
 struct OpenReportIntent: AppIntent {
+    // App Intents metadata must be compile-time static; the English translations
+    // live in Localizable.xcstrings (resolved by the system language).
     static var title: LocalizedStringResource = "Ouvrir un rapport"
     static var description = IntentDescription("Ouvre un rapport du coffre dans md Viewer.")
     static var openAppWhenRun = true
@@ -324,16 +331,21 @@ struct MdViewerShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: OpenLatestReportIntent(),
                     phrases: ["Ouvre le dernier rapport dans \(.applicationName)",
-                              "Dernier rapport \(.applicationName)"],
+                              "Dernier rapport \(.applicationName)",
+                              "Open the latest report in \(.applicationName)",
+                              "Latest report \(.applicationName)"],
                     shortTitle: "Dernier rapport",
                     systemImageName: "doc.text")
         AppShortcut(intent: SummarizeReportIntent(),
                     phrases: ["Résume un rapport dans \(.applicationName)",
-                              "Résumé \(.applicationName)"],
+                              "Résumé \(.applicationName)",
+                              "Summarise a report in \(.applicationName)",
+                              "Summarize a report in \(.applicationName)"],
                     shortTitle: "Résumer un rapport",
                     systemImageName: "sparkles")
         AppShortcut(intent: OpenReportIntent(),
-                    phrases: ["Ouvre un rapport dans \(.applicationName)"],
+                    phrases: ["Ouvre un rapport dans \(.applicationName)",
+                              "Open a report in \(.applicationName)"],
                     shortTitle: "Ouvrir un rapport",
                     systemImageName: "folder")
     }

@@ -16,6 +16,10 @@
   var CH = 720, PAD_H = 72, PAD_V = 48;
   var CW = 1280;   // current canvas logical width, recomputed per fit
 
+  // App language, injected by the host app (window.OKIA_LANG = 'fr' | 'en').
+  var LANG = (window.OKIA_LANG === 'en') ? 'en' : 'fr';
+  function L(fr, en) { return LANG === 'en' ? en : fr; }
+
   function post(name, payload) {
     try {
       if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name]) {
@@ -65,11 +69,11 @@
   // slide's start state and the outgoing slide's end state (per direction d:
   // +1 = forward / next, -1 = backward / prev).
   var TRANSITIONS = [
-    { key: 'dissolve', label: 'Fondu' },
-    { key: 'push',     label: 'Poussée' },
-    { key: 'movein',   label: 'Entrée' },
-    { key: 'scale',    label: 'Échelle' },
-    { key: 'flip',     label: 'Retournement 3D' }
+    { key: 'dissolve', label: L('Fondu', 'Dissolve') },
+    { key: 'push',     label: L('Poussée', 'Push') },
+    { key: 'movein',   label: L('Entrée', 'Move In') },
+    { key: 'scale',    label: L('Échelle', 'Scale') },
+    { key: 'flip',     label: L('Retournement 3D', '3D Flip') }
   ];
   var SPECS = {
     dissolve: { dur: 450, ease: 'ease',
@@ -93,11 +97,11 @@
 
   // Colour themes — applied as a `theme-<key>` class on <body>.
   var THEMES = [
-    { key: 'light',   label: 'Clair' },
-    { key: 'dark',    label: 'Sombre' },
-    { key: 'console', label: 'Console' },
-    { key: 'sepia',   label: 'Sépia' },
-    { key: 'ocean',   label: 'Océan' }
+    { key: 'light',   label: L('Clair', 'Light') },
+    { key: 'dark',    label: L('Sombre', 'Dark') },
+    { key: 'console', label: L('Console', 'Console') },
+    { key: 'sepia',   label: L('Sépia', 'Sepia') },
+    { key: 'ocean',   label: L('Océan', 'Ocean') }
   ];
   var theme = 'light';
 
@@ -334,8 +338,8 @@
     var menu = el('presentMenu');
     if (!menu) return;
     menu.innerHTML = '';
-    menu.appendChild(menuSection('Thème', THEMES, 'theme'));
-    menu.appendChild(menuSection('Transition', TRANSITIONS, 'transition'));
+    menu.appendChild(menuSection(L('Thème', 'Theme'), THEMES, 'theme'));
+    menu.appendChild(menuSection(L('Transition', 'Transition'), TRANSITIONS, 'transition'));
     // Export section.
     var h = document.createElement('div');
     h.className = 'present-menu-title';
@@ -545,10 +549,27 @@
     resizeTimer = setTimeout(function () { fitSlide(sections[current]); }, 120);
   }
 
+  // Localise the static chrome of presentation.html (authored in French).
+  function localizeChrome() {
+    function setLabel(id, fr, en) {
+      var n = el(id);
+      if (n) n.setAttribute('aria-label', L(fr, en));
+    }
+    setLabel('navPrev', 'Diapositive précédente', 'Previous slide');
+    setLabel('navNext', 'Diapositive suivante', 'Next slide');
+    setLabel('presentEnd', 'Quitter le diaporama', 'End slideshow');
+    setLabel('presentMenuBtn', 'Transitions', 'Transitions');
+    setLabel('presentGridBtn', 'Vue d’ensemble des diapositives', 'Slide overview');
+    setLabel('overviewClose', 'Fermer', 'Close');
+    var t = document.querySelector('.overview-title');
+    if (t) t.textContent = L('Diapositives', 'Slides');
+  }
+
   function start(md) {
     deck = el('deck');
     progressBar = el('progressBar');
     counter = el('counter');
+    localizeChrome();
 
     rawSlides = splitSlides(md || '');
     if (!rawSlides.length) rawSlides = [' '];

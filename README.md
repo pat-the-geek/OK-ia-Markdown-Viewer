@@ -47,6 +47,11 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
+- **Interface bilingue FR/EN** : français par défaut si l'appareil est en français, anglais sinon ;
+  choix manuel (Système / Français / English) dans **Réglages** sur l'écran d'accueil. Couvre les vues
+  natives, les messages d'erreur, la couche web (`window.OKIA_LANG` : « Lire l'article », menus du
+  diaporama) et la langue du résumé Apple Intelligence. Les App Intents (Siri/Raccourcis) suivent la
+  langue **système** via `Localizable.xcstrings`. Voir `Models/Localization.swift` (`tr(fr, en)`).
 - **Fichiers récents** : les derniers `.md` ouverts sont mémorisés (bookmarks security-scoped) et
   proposés sur l'écran d'accueil.
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.

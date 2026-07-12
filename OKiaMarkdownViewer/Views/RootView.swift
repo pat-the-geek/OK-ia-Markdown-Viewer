@@ -50,7 +50,7 @@ struct RootView: View {
                 store.errorMessage = error.localizedDescription
             }
         }
-        .alert("Erreur",
+        .alert(tr("Erreur", "Error"),
                isPresented: Binding(
                 get: { store.errorMessage != nil },
                 set: { if !$0 { store.errorMessage = nil } })) {

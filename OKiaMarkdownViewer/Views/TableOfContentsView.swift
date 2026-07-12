@@ -5,6 +5,7 @@ struct TableOfContentsView: View {
     let items: [TOCItem]
     var onSelect: (TOCItem) -> Void
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var loc = Localization.shared
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -12,8 +13,9 @@ struct TableOfContentsView: View {
         NavigationStack {
             Group {
                 if items.isEmpty {
-                    ContentUnavailableView("Aucun titre", systemImage: "list.bullet.indent",
-                                           description: Text("Ce document ne contient pas de titres."))
+                    ContentUnavailableView(tr("Aucun titre", "No headings"), systemImage: "list.bullet.indent",
+                                           description: Text(tr("Ce document ne contient pas de titres.",
+                                                                "This document contains no headings.")))
                 } else {
                     List(items) { item in
                         Button {
@@ -31,11 +33,11 @@ struct TableOfContentsView: View {
                     .listStyle(.plain)
                 }
             }
-            .navigationTitle("Sommaire")
+            .navigationTitle(tr("Sommaire", "Contents"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fermer") { dismiss() }.tint(orange)
+                    Button(tr("Fermer", "Done")) { dismiss() }.tint(orange)
                 }
             }
         }

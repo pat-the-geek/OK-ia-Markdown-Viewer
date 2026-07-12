@@ -18,7 +18,8 @@ enum DocumentError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unreadable(let name): return "Impossible de lire le fichier « \(name) »."
+        case .unreadable(let name): return tr("Impossible de lire le fichier « \(name) ».",
+                                              "The file “\(name)” could not be read.")
         }
     }
 }

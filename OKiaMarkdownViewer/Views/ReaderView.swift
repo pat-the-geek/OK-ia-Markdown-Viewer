@@ -30,6 +30,7 @@ struct ReaderView: View {
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     @FocusState private var searchFocused: Bool
+    @ObservedObject private var loc = Localization.shared
 
     private let minScale = 0.7, maxScale = 2.0, scaleStep = 0.1
 
@@ -102,11 +103,11 @@ struct ReaderView: View {
             SafariView(url: link.url).ignoresSafeArea()
         }
 #endif
-        .confirmationDialog("Partager", isPresented: $showShareOptions, titleVisibility: .visible) {
-            Button("Exporter en PDF") { exportPDF() }
-            Button("Exporter en Word (.docx)") { exportWord() }
-            Button("Partager le Markdown (.md)") { shareMarkdown() }
-            Button("Annuler", role: .cancel) {}
+        .confirmationDialog(tr("Partager", "Share"), isPresented: $showShareOptions, titleVisibility: .visible) {
+            Button(tr("Exporter en PDF", "Export as PDF")) { exportPDF() }
+            Button(tr("Exporter en Word (.docx)", "Export as Word (.docx)")) { exportWord() }
+            Button(tr("Partager le Markdown (.md)", "Share the Markdown (.md)")) { shareMarkdown() }
+            Button(tr("Annuler", "Cancel"), role: .cancel) {}
         }
         // Reset transient UI when the document changes.
         .onChange(of: document.id) { _, _ in
@@ -128,7 +129,7 @@ struct ReaderView: View {
     private var titleBar: some View {
         HStack(spacing: 14) {
             Button(action: onHome) { Image(systemName: "house") }
-                .accessibilityLabel("Écran d’accueil")
+                .accessibilityLabel(tr("Écran d’accueil", "Home screen"))
 
             Text(title.isEmpty ? document.filename : title)
                 .font(.system(size: 16, weight: .heavy))
@@ -140,17 +141,18 @@ struct ReaderView: View {
             // Diaporama — present the document as full-screen slides (split on "---").
             if hasSlides {
                 Button { presenting = true } label: { Image(systemName: "play.rectangle") }
-                    .accessibilityLabel("Diaporama")
+                    .accessibilityLabel(tr("Diaporama", "Slideshow"))
             }
 
             // Apple Intelligence summary — only when the on-device model is available.
             if DocumentSummarizer.isAvailable {
                 Button { showSummary = true } label: { AppleIntelligenceGlyph(size: 18) }
-                    .accessibilityLabel("Résumé du document par Apple Intelligence")
+                    .accessibilityLabel(tr("Résumé du document par Apple Intelligence",
+                                           "Document summary by Apple Intelligence"))
             }
 
             Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
-                .accessibilityLabel("Taille du texte")
+                .accessibilityLabel(tr("Taille du texte", "Text size"))
                 .popover(isPresented: $showTextSize) {
                     textSizeControls
                         .presentationCompactAdaptation(.popover)
@@ -158,19 +160,19 @@ struct ReaderView: View {
 
             Button { showTOC = true } label: { Image(systemName: "list.bullet") }
                 .disabled(web.toc.isEmpty)
-                .accessibilityLabel("Sommaire")
+                .accessibilityLabel(tr("Sommaire", "Table of contents"))
 
             Button {
                 withAnimation(.easeInOut(duration: 0.15)) { isSearching.toggle() }
                 if isSearching { searchFocused = true } else { searchText = ""; web.clearSearch() }
             } label: { Image(systemName: "magnifyingglass") }
-                .accessibilityLabel("Rechercher")
+                .accessibilityLabel(tr("Rechercher", "Search"))
 
             Button { showShareOptions = true } label: { Image(systemName: "square.and.arrow.up") }
-                .accessibilityLabel("Partager")
+                .accessibilityLabel(tr("Partager", "Share"))
 
             Button(action: onOpen) { Image(systemName: "folder") }
-                .accessibilityLabel("Ouvrir un fichier")
+                .accessibilityLabel(tr("Ouvrir un fichier", "Open a file"))
         }
         .font(.system(size: 17, weight: .semibold))
         .tint(orange)
@@ -185,7 +187,7 @@ struct ReaderView: View {
     private var searchBar: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField("Rechercher dans le document", text: $searchText)
+            TextField(tr("Rechercher dans le document", "Search in the document"), text: $searchText)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .focused($searchFocused)
@@ -231,7 +233,7 @@ struct ReaderView: View {
             VStack(spacing: 2) {
                 Text("\(Int((fontScale * 100).rounded()))%")
                     .font(.headline.monospacedDigit())
-                Button("Réinitialiser") { setScale(1.0) }
+                Button(tr("Réinitialiser", "Reset")) { setScale(1.0) }
                     .font(.caption)
                     .disabled(abs(fontScale - 1.0) < 0.001)
             }
@@ -348,7 +350,8 @@ final class DocumentSummarizer: ObservableObject {
             return
         }
         #endif
-        state = .failed("Apple Intelligence n’est pas disponible sur cet appareil.")
+        state = .failed(tr("Apple Intelligence n’est pas disponible sur cet appareil.",
+                           "Apple Intelligence is not available on this device."))
     }
 
     #if canImport(FoundationModels)
@@ -356,14 +359,17 @@ final class DocumentSummarizer: ObservableObject {
     private func run(_ text: String) async {
         do {
             let session = LanguageModelSession(instructions: Self.instructions)
-            let response = try await session.respond(to: "Voici le document à résumer :\n\n\(text)")
+            let prompt = tr("Voici le document à résumer :", "Here is the document to summarise:")
+            let response = try await session.respond(to: "\(prompt)\n\n\(text)")
             state = .done(Self.cleanMarkdown(response.content))
         } catch {
-            state = .failed("Le résumé n’a pas pu être généré (\(error.localizedDescription)).")
+            state = .failed(tr("Le résumé n’a pas pu être généré (\(error.localizedDescription)).",
+                               "The summary could not be generated (\(error.localizedDescription))."))
         }
     }
 
-    private static let instructions = """
+    private static var instructions: String {
+        tr("""
     Tu es un assistant qui résume des documents en français. CONDENSE fortement :
     ne recopie pas le texte, reformule l’essentiel.
     Produis un résumé STRUCTURÉ au format Markdown, prêt à être affiché :
@@ -374,7 +380,19 @@ final class DocumentSummarizer: ObservableObject {
       noms propres et chiffres clés ;
     - termine par un chapitre « ## En bref » de 2 à 3 points.
     Reste fidèle au document, n’invente rien. Réponds UNIQUEMENT avec le Markdown du résumé.
-    """
+    """, """
+    You are an assistant that summarises documents in English. CONDENSE aggressively:
+    do not copy the text, rephrase the essentials.
+    Produce a STRUCTURED summary in Markdown, ready to display:
+    - start with a bold hook sentence (**…**);
+    - organise into 3 to 5 chapters with level-2 headings, written exactly as "## Title"
+      (a single "##", never "## ##");
+    - under each chapter, 2 to 4 concise bullets, with key terms, proper nouns and
+      figures in **bold**;
+    - end with a "## In brief" chapter of 2 to 3 points.
+    Stay faithful to the document, invent nothing. Reply ONLY with the summary's Markdown.
+    """)
+    }
 
     /// Tidy the model's Markdown: drop wrapping ```-fences and collapse any doubled
     /// heading markers (`## ## Titre` → `## Titre`).
@@ -422,7 +440,7 @@ struct DocumentSummaryView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Résumé du document")
+                .navigationTitle(tr("Résumé du document", "Document summary"))
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) { Button("OK") { dismiss() } }
                     ToolbarItem(placement: .cancellationAction) {
@@ -430,7 +448,7 @@ struct DocumentSummaryView: View {
                             Image(systemName: "arrow.clockwise")
                         }
                         .disabled(isWorking)
-                        .accessibilityLabel("Régénérer le résumé")
+                        .accessibilityLabel(tr("Régénérer le résumé", "Regenerate the summary"))
                     }
                 }
         }
@@ -448,7 +466,8 @@ struct DocumentSummaryView: View {
             VStack(spacing: 14) {
                 AppleIntelligenceGlyph(size: 34)
                 ProgressView()
-                Text("Apple Intelligence rédige le résumé…")
+                Text(tr("Apple Intelligence rédige le résumé…",
+                        "Apple Intelligence is writing the summary…"))
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -465,7 +484,7 @@ struct DocumentSummaryView: View {
 
         case .done(let summary):
             VStack(spacing: 0) {
-                MarkdownWebView(document: MarkdownDocument(filename: "Résumé — \(sourceTitle)", text: summary),
+                MarkdownWebView(document: MarkdownDocument(filename: tr("Résumé — \(sourceTitle)", "Summary — \(sourceTitle)"), text: summary),
                                 tapped: $ignoredTap, tappedImage: $ignoredImage, onTitle: { _ in },
                                 webController: web, onExternalLink: { _ in })
                 summaryDisclaimer
@@ -476,7 +495,8 @@ struct DocumentSummaryView: View {
     private var summaryDisclaimer: some View {
         HStack(spacing: 6) {
             AppleIntelligenceGlyph(size: 12)
-            Text("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs.")
+            Text(tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs.",
+                    "Summary generated on-device by Apple Intelligence. May contain mistakes."))
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
@@ -563,6 +583,10 @@ struct PresentationWebView: UIViewRepresentable {
         for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx"] {
             controller.add(context.coordinator, name: name)
         }
+        // Hand the app language to the slideshow engine (menu labels, aria labels).
+        controller.addUserScript(WKUserScript(
+            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            injectionTime: .atDocumentStart, forMainFrameOnly: true))
 
         let config = WKWebViewConfiguration()
         config.userContentController = controller
@@ -672,7 +696,8 @@ struct PresentationWebView: UIViewRepresentable {
                       let model = value as? [String: Any] else { return }
                 OOXMLExportBridge.buildPptx(model: model) { data in
                     guard let data else { return }
-                    let safe = name.isEmpty ? "Présentation" : name.replacingOccurrences(of: "/", with: "-")
+                    let safe = name.isEmpty ? tr("Présentation", "Presentation")
+                                            : name.replacingOccurrences(of: "/", with: "-")
                     let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).pptx")
                     do { try data.write(to: url); self.parent.onExportReady(url) } catch { /* ignore */ }
                 }
