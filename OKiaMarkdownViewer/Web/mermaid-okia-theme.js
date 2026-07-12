@@ -10,6 +10,10 @@
     // (labels become invisible). SVG text measures reliably everywhere.
     htmlLabels: false,
     flowchart: { htmlLabels: false },
+    // Gantt: force an explicit pixel width. Without it, Mermaid derives the width
+    // from the (narrow, pre-layout) container and computes 0 → viewBox "0 0 0 h",
+    // making the whole chart invisible. useMaxWidth keeps it responsive on screen.
+    gantt: { useMaxWidth: true, useWidth: 1000 },
     themeVariables: {
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
       fontSize: '15px',

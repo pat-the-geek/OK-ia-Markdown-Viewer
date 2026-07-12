@@ -10,7 +10,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "16"
+    CURRENT_PROJECT_VERSION: "17"
     DEVELOPMENT_TEAM: "PU9BSXN2V5"      # Paid Apple Developer Program team (auto-signing) — used for TestFlight/App Store.
                                         # (Build 14 and the store provisioning profile are under this team;
                                         #  72NVM63N83 was the cert-name suffix, not the team id.)
