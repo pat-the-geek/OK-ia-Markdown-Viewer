@@ -9,6 +9,11 @@ Contenu prêt à téléverser sur l'hébergement de **ok-ia.ch**.
   `/style.css` (déjà sur le site) et la police Nunito (Google Fonts).
 - `mdviewer/confidentialite.html` — copie de `store/mdviewer-confidentialite.html`,
   liée depuis la page.
+- `mdviewer/exemples/rapport-exemple.md` et `mdviewer/exemples/presentation-exemple.md` —
+  fichiers de démonstration liés depuis la section « Essayez, tout de suite » :
+  téléchargement direct + lien profond `mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/…`
+  (ouvre le fichier dans l'app si elle est installée). ⚠️ Les liens profonds pointent vers
+  ok-ia.ch : ils ne fonctionneront qu'une fois le dossier déployé.
 - `style.css` — **copie locale** de `https://ok-ia.ch/style.css`, uniquement pour la
   prévisualisation locale (`.claude/launch.json` → serveur `mdviewer-site`,
   http://localhost:8766/mdviewer/). Ne pas téléverser (le site a déjà le sien).

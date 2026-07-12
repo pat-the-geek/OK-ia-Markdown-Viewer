@@ -638,8 +638,7 @@
     <h1 class="mdv-wordmark">md<span class="bar" aria-hidden="true"></span>Viewer</h1>
     <p class="mdv-sub">Lecteur Markdown &amp; Mermaid — OK-ia</p>
     <p class="fw-tagline">Vos rapports Markdown, rendus parfaitement — hors-ligne, sur tous vos appareils.</p>
-    <!-- TODO : remplacer # par le lien TestFlight / App Store -->
-    <a class="fw-btn" href="#">Rejoindre la bêta TestFlight</a>
+    <a class="fw-btn" href="#exemples">Essayer avec nos exemples</a>
     <a class="fw-btn fw-btn-secondaire" href="/fornews/">Découvrir fornews.ai</a>
     <p class="fw-devices">iPhone · iPad · Mac — iOS/iPadOS 17 ou macOS 14 ou ultérieur · Français &amp; English</p>
     <figure class="fw-capture">
@@ -696,6 +695,23 @@
     </figure>
   </section>
 
+  <!-- Exports -->
+  <section>
+    <h2>Exportez : PDF, Word, PowerPoint</h2>
+    <p>Le rapport s'exporte en <strong>PDF</strong> (mise en page fidèle) ou en
+    <strong>Word (.docx)</strong> — titres, gras et italiques, citations, listes, images,
+    diagrammes… et <strong>tableaux éditables</strong>. Le diaporama s'exporte en
+    <strong>PowerPoint (.pptx)</strong> mixte : texte et tableaux restent éditables,
+    diagrammes et cartes sont intégrés en haute résolution. Le générateur OOXML est
+    développé maison, sans aucune dépendance — les fichiers s'ouvrent dans Word
+    <em>et</em> Pages, PowerPoint <em>et</em> Keynote. Et le
+    <span class="mdv-code">.md</span> source se partage tel quel.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 900 560" role="img" aria-label="Un fichier Markdown exporté vers PDF, Word et PowerPoint"><use href="#ill-export"/></svg>
+      <figcaption>Un fichier source, trois sorties : PDF fidèle, .docx éditable, .pptx éditable.</figcaption>
+    </figure>
+  </section>
+
   <!-- Bilingue -->
   <section>
     <h2>En français et en anglais</h2>
@@ -708,6 +724,25 @@
       <svg viewBox="0 0 1200 440" role="img" aria-label="Le réglage de langue : un iPhone en français, un iPhone en anglais, et la bascule FR/EN"><use href="#ill-lang"/></svg>
       <figcaption>Une app, deux langues : le réglage se change en un tap, sans redémarrage.</figcaption>
     </figure>
+  </section>
+
+  <!-- Exemples -->
+  <section id="exemples">
+    <h2>Essayez, tout de suite</h2>
+    <p>Deux fichiers de démonstration condensent tout ce que vous venez de lire : un
+    <strong>rapport complet</strong> (les cinq familles Mermaid, carte Leaflet, callouts,
+    entités colorées, tableaux, listes de tâches, code) et une <strong>présentation d'une
+    douzaine de diapositives</strong>. Si md Viewer est installé, « Ouvrir dans md Viewer »
+    les charge directement ; sinon, téléchargez le <span class="mdv-code">.md</span> et
+    ouvrez-le depuis Fichiers.</p>
+    <p style="margin-bottom:0.6rem;">
+      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md">📄 Ouvrir le rapport dans md Viewer</a>
+      <a class="fw-btn fw-btn-secondaire" href="exemples/rapport-exemple.md" download>Télécharger le rapport (.md)</a>
+    </p>
+    <p>
+      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/presentation-exemple.md">🎞️ Ouvrir la présentation dans md Viewer</a>
+      <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Télécharger la présentation (.md)</a>
+    </p>
   </section>
 
   <!-- Fonctionnalités -->
@@ -725,12 +760,6 @@
         <p>Sommaire automatique avec saut direct à une section, recherche dans le document
         avec surlignage et navigation entre occurrences, taille de texte ajustable, images
         et diagrammes en plein écran.</p>
-      </div>
-      <div class="fw-card">
-        <h3>📤 Export PDF · Word · PowerPoint</h3>
-        <p>Le rapport s'exporte en PDF ou en Word (.docx) avec tableaux éditables ; le
-        diaporama s'exporte en PowerPoint (.pptx). Générateur OOXML maison, sans dépendance —
-        s'ouvre aussi dans Pages et Keynote.</p>
       </div>
       <div class="fw-card">
         <h3>✨ Résumé Apple Intelligence</h3>
@@ -829,8 +858,7 @@
     <h1 class="mdv-wordmark">md<span class="bar" aria-hidden="true"></span>Viewer</h1>
     <p class="mdv-sub">Markdown &amp; Mermaid reader — OK-ia</p>
     <p class="fw-tagline">Your Markdown reports, beautifully rendered — offline, on all your devices.</p>
-    <!-- TODO: replace # with the TestFlight / App Store link -->
-    <a class="fw-btn" href="#">Join the TestFlight beta</a>
+    <a class="fw-btn" href="#exemples-en">Try our sample files</a>
     <a class="fw-btn fw-btn-secondaire" href="/fornews/?lang=en">Discover fornews.ai</a>
     <p class="fw-devices">iPhone · iPad · Mac — iOS/iPadOS 17 or macOS 14 or later · Français &amp; English</p>
     <figure class="fw-capture">
@@ -886,6 +914,22 @@
     </figure>
   </section>
 
+  <!-- Exports -->
+  <section>
+    <h2>Export: PDF, Word, PowerPoint</h2>
+    <p>Reports export to <strong>PDF</strong> (faithful layout) or
+    <strong>Word (.docx)</strong> — headings, bold and italics, quotes, lists, images,
+    diagrams… and <strong>editable tables</strong>. The slideshow exports to a mixed
+    <strong>PowerPoint (.pptx)</strong>: text and tables stay editable, diagrams and maps
+    are embedded in high resolution. The OOXML generator is home-grown with zero
+    dependencies — files open in Word <em>and</em> Pages, PowerPoint <em>and</em> Keynote.
+    And the source <span class="mdv-code">.md</span> can be shared as is.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 900 560" role="img" aria-label="A Markdown file exported to PDF, Word and PowerPoint"><use href="#ill-export"/></svg>
+      <figcaption>One source file, three outputs: faithful PDF, editable .docx, editable .pptx.</figcaption>
+    </figure>
+  </section>
+
   <!-- Bilingual -->
   <section>
     <h2>In English and in French</h2>
@@ -898,6 +942,24 @@
       <svg viewBox="0 0 1200 440" role="img" aria-label="The language setting: an iPhone in French, an iPhone in English, and the FR/EN switch"><use href="#ill-lang"/></svg>
       <figcaption>One app, two languages: the setting changes with a tap, no restart.</figcaption>
     </figure>
+  </section>
+
+  <!-- Samples -->
+  <section id="exemples-en">
+    <h2>Try it, right now</h2>
+    <p>Two demo files condense everything you just read: a <strong>full report</strong>
+    (all five Mermaid families, a Leaflet map, callouts, highlighted entities, tables, task
+    lists, code) and a <strong>dozen-slide presentation</strong>. If md Viewer is
+    installed, “Open in md Viewer” loads them directly; otherwise download the
+    <span class="mdv-code">.md</span> and open it from Files.</p>
+    <p style="margin-bottom:0.6rem;">
+      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md">📄 Open the report in md Viewer</a>
+      <a class="fw-btn fw-btn-secondaire" href="exemples/rapport-exemple.md" download>Download the report (.md)</a>
+    </p>
+    <p>
+      <a class="fw-btn" href="mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/presentation-exemple.md">🎞️ Open the presentation in md Viewer</a>
+      <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Download the presentation (.md)</a>
+    </p>
   </section>
 
   <!-- Features -->
@@ -915,12 +977,6 @@
         <p>Automatic outline with direct section jumps, in-document search with highlighting
         and match navigation, adjustable text size, and full-screen viewing for images and
         diagrams.</p>
-      </div>
-      <div class="fw-card">
-        <h3>📤 PDF · Word · PowerPoint export</h3>
-        <p>Reports export to PDF or Word (.docx) with editable tables; the slideshow exports
-        to PowerPoint (.pptx). A home-grown, dependency-free OOXML generator — files also
-        open in Pages and Keynote.</p>
       </div>
       <div class="fw-card">
         <h3>✨ Apple Intelligence summary</h3>
