@@ -452,6 +452,174 @@
         </g>
       </g>
     </symbol>
+    <!-- ── Rapport : Mermaid + carte Leaflet côte à côte ── -->
+    <symbol id="ill-report" viewBox="0 0 1200 620">
+      <rect width="1200" height="620" fill="#FAFAF8"/>
+      <rect x="50" y="28" width="1100" height="564" rx="14" fill="#fff" stroke="#E8E6E0"/>
+      <text x="100" y="96" font-family="Nunito, sans-serif" font-weight="900" font-size="32" fill="#111">Observatoire des tensions — juillet</text>
+      <rect x="100" y="114" width="64" height="5" rx="2.5" fill="#E8972E"/>
+      <text x="100" y="146" font-family="-apple-system, sans-serif" font-size="14" fill="#9A9A90">OK-ia · 12.07.2026 · 5 min · <tspan fill="#E8972E">Lire l'article ↗</tspan></text>
+      <!-- bloc mermaid -->
+      <rect x="100" y="180" width="480" height="360" rx="10" fill="#FDFCFA" stroke="#E8E6E0"/>
+      <rect x="116" y="196" width="96" height="24" rx="6" fill="#F4F2EC"/>
+      <text x="128" y="213" font-family="ui-monospace, Menlo, monospace" font-size="12" fill="#9A9A90">```mermaid</text>
+      <g font-family="-apple-system, sans-serif" font-size="15" font-weight="600" fill="#111" text-anchor="middle">
+        <use href="#mdv-node" x="140" y="250"/><text x="200" y="277">Flux</text>
+        <use href="#mdv-node" x="400" y="250"/><text x="460" y="277">Analyse</text>
+        <use href="#mdv-node" x="140" y="430"/><text x="200" y="457">Entités</text>
+        <use href="#mdv-node" x="400" y="430"/><text x="460" y="457">Carte</text>
+      </g>
+      <g stroke="#E8972E" stroke-width="2.4" fill="none" marker-end="url(#mdv-arrow)">
+        <path d="M262 272 H394"/>
+        <path d="M200 296 V424"/>
+        <path d="M460 296 V424"/>
+        <path d="M262 452 H394"/>
+      </g>
+      <!-- bloc leaflet -->
+      <g>
+        <rect x="620" y="180" width="480" height="360" rx="10" fill="#F2F0E9" stroke="#E8E6E0"/>
+        <!-- eau -->
+        <path d="M620 460 C 700 430, 760 470, 830 450 C 900 430, 960 470, 1100 440 L 1100 530 a10 10 0 0 1 -10 10 L 630 540 a10 10 0 0 1 -10 -10 z" fill="#D6E8F2"/>
+        <!-- parcs -->
+        <ellipse cx="720" cy="260" rx="56" ry="34" fill="#DFE8D8"/>
+        <ellipse cx="1010" cy="330" rx="48" ry="30" fill="#DFE8D8"/>
+        <!-- routes -->
+        <g stroke="#E0DCD2" stroke-width="7" fill="none">
+          <path d="M620 340 C 720 330, 820 360, 1100 320"/>
+          <path d="M800 180 C 810 260, 790 380, 830 540"/>
+        </g>
+        <g stroke="#fff" stroke-width="2.4" fill="none">
+          <path d="M620 340 C 720 330, 820 360, 1100 320"/>
+          <path d="M800 180 C 810 260, 790 380, 830 540"/>
+        </g>
+        <!-- badge leaflet -->
+        <rect x="636" y="196" width="90" height="24" rx="6" fill="#fff" opacity="0.92"/>
+        <text x="648" y="213" font-family="ui-monospace, Menlo, monospace" font-size="12" fill="#9A9A90">```leaflet</text>
+        <!-- contrôle zoom -->
+        <rect x="636" y="232" width="34" height="64" rx="7" fill="#fff" stroke="#D8D4CA"/>
+        <text x="653" y="256" text-anchor="middle" font-size="18" font-weight="700" fill="#4A4A44" font-family="-apple-system, sans-serif">+</text>
+        <line x1="640" y1="264" x2="666" y2="264" stroke="#E8E6E0"/>
+        <text x="653" y="286" text-anchor="middle" font-size="20" font-weight="700" fill="#4A4A44" font-family="-apple-system, sans-serif">−</text>
+        <!-- plein écran -->
+        <rect x="1046" y="196" width="38" height="34" rx="7" fill="#fff" stroke="#D8D4CA"/>
+        <text x="1065" y="219" text-anchor="middle" font-size="16" fill="#4A4A44" font-family="-apple-system, sans-serif">⛶</text>
+        <!-- marqueurs -->
+        <g fill="#E8972E" stroke="#fff" stroke-width="2">
+          <path d="M760 350 c -10 -16 -16 -26 -16 -36 a16 16 0 1 1 32 0 c 0 10 -6 20 -16 36 z"/>
+          <path d="M900 300 c -10 -16 -16 -26 -16 -36 a16 16 0 1 1 32 0 c 0 10 -6 20 -16 36 z"/>
+          <path d="M990 430 c -10 -16 -16 -26 -16 -36 a16 16 0 1 1 32 0 c 0 10 -6 20 -16 36 z"/>
+        </g>
+        <!-- popup -->
+        <g>
+          <rect x="828" y="196" width="150" height="48" rx="8" fill="#fff" stroke="#D8D4CA"/>
+          <path d="M894 244 l8 12 8 -12 z" fill="#fff" stroke="#D8D4CA"/>
+          <text x="842" y="216" font-family="-apple-system, sans-serif" font-size="12" font-weight="700" fill="#111">Genève</text>
+          <rect x="842" y="224" width="96" height="7" rx="3.5" fill="#E8E6E0"/>
+        </g>
+        <!-- attribution -->
+        <rect x="962" y="516" width="130" height="18" rx="4" fill="#fff" opacity="0.85"/>
+        <text x="1086" y="529" text-anchor="end" font-family="-apple-system, sans-serif" font-size="10" fill="#9A9A90">OpenStreetMap · CARTO</text>
+      </g>
+    </symbol>
+
+    <!-- ── Les 5 thèmes de couleurs du diaporama ── -->
+    <symbol id="ill-themes" viewBox="0 0 1200 260">
+      <rect width="1200" height="260" fill="#FAFAF8"/>
+      <!-- Clair -->
+      <g transform="translate(40,54)">
+        <rect width="200" height="150" rx="10" fill="#FAFAF8" stroke="#E8E6E0"/>
+        <text x="18" y="42" font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#111">Aa</text>
+        <rect x="18" y="52" width="30" height="4" rx="2" fill="#E8972E"/>
+        <rect x="18" y="70" width="120" height="8" rx="4" fill="#D9D7D0"/>
+        <rect x="18" y="86" width="92" height="8" rx="4" fill="#D9D7D0"/>
+        <g><rect x="146" y="106" width="13" height="26" fill="#D9D7D0"/><rect x="162" y="92" width="13" height="40" fill="#E8972E"/><rect x="178" y="112" width="13" height="20" fill="#111"/></g>
+      </g>
+      <!-- Sombre -->
+      <g transform="translate(272,54)">
+        <rect width="200" height="150" rx="10" fill="#16161A" stroke="#2C2C33"/>
+        <text x="18" y="42" font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#F5F5F2">Aa</text>
+        <rect x="18" y="52" width="30" height="4" rx="2" fill="#E8972E"/>
+        <rect x="18" y="70" width="120" height="8" rx="4" fill="#3A3A42"/>
+        <rect x="18" y="86" width="92" height="8" rx="4" fill="#3A3A42"/>
+        <g><rect x="146" y="106" width="13" height="26" fill="#3A3A42"/><rect x="162" y="92" width="13" height="40" fill="#E8972E"/><rect x="178" y="112" width="13" height="20" fill="#F5F5F2"/></g>
+      </g>
+      <!-- Console -->
+      <g transform="translate(504,54)">
+        <rect width="200" height="150" rx="10" fill="#0D0F0C" stroke="#243020"/>
+        <text x="18" y="42" font-family="ui-monospace, Menlo, monospace" font-weight="700" font-size="22" fill="#F0A840">Aa_</text>
+        <rect x="18" y="52" width="30" height="4" rx="2" fill="#6FBF4F"/>
+        <rect x="18" y="70" width="120" height="8" rx="4" fill="#2E4226"/>
+        <rect x="18" y="86" width="92" height="8" rx="4" fill="#2E4226"/>
+        <g><rect x="146" y="106" width="13" height="26" fill="#2E4226"/><rect x="162" y="92" width="13" height="40" fill="#F0A840"/><rect x="178" y="112" width="13" height="20" fill="#6FBF4F"/></g>
+      </g>
+      <!-- Sépia -->
+      <g transform="translate(736,54)">
+        <rect width="200" height="150" rx="10" fill="#F3E9D8" stroke="#E0D2B8"/>
+        <text x="18" y="42" font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#4A3826">Aa</text>
+        <rect x="18" y="52" width="30" height="4" rx="2" fill="#B0793C"/>
+        <rect x="18" y="70" width="120" height="8" rx="4" fill="#E0D2B8"/>
+        <rect x="18" y="86" width="92" height="8" rx="4" fill="#E0D2B8"/>
+        <g><rect x="146" y="106" width="13" height="26" fill="#E0D2B8"/><rect x="162" y="92" width="13" height="40" fill="#B0793C"/><rect x="178" y="112" width="13" height="20" fill="#4A3826"/></g>
+      </g>
+      <!-- Océan -->
+      <g transform="translate(968,54)">
+        <rect width="200" height="150" rx="10" fill="#0E2A3F" stroke="#1F4A66"/>
+        <text x="18" y="42" font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#EAF4FA">Aa</text>
+        <rect x="18" y="52" width="30" height="4" rx="2" fill="#4FB3D9"/>
+        <rect x="18" y="70" width="120" height="8" rx="4" fill="#1F4A66"/>
+        <rect x="18" y="86" width="92" height="8" rx="4" fill="#1F4A66"/>
+        <g><rect x="146" y="106" width="13" height="26" fill="#1F4A66"/><rect x="162" y="92" width="13" height="40" fill="#4FB3D9"/><rect x="178" y="112" width="13" height="20" fill="#EAF4FA"/></g>
+      </g>
+    </symbol>
+
+    <!-- ── Bilingue : réglage de langue FR / EN ── -->
+    <symbol id="ill-lang" viewBox="0 0 1200 440">
+      <rect width="1200" height="440" fill="#FAFAF8"/>
+      <!-- iPhone FR -->
+      <g transform="translate(200,40)">
+        <rect width="260" height="360" rx="32" fill="#111"/>
+        <rect x="9" y="9" width="242" height="342" rx="25" fill="#fff"/>
+        <rect x="92" y="18" width="76" height="16" rx="8" fill="#111"/>
+        <text x="130" y="74" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="17" font-weight="700" fill="#111">Réglages</text>
+        <line x1="9" y1="88" x2="251" y2="88" stroke="#E8E6E0"/>
+        <text x="30" y="118" font-family="-apple-system, sans-serif" font-size="12" font-weight="600" fill="#9A9A90">LANGUE DE L'APP</text>
+        <rect x="24" y="132" width="212" height="150" rx="12" fill="#F7F6F2"/>
+        <g font-family="-apple-system, sans-serif" font-size="15" fill="#111">
+          <text x="42" y="164">Système</text>
+          <line x1="42" y1="180" x2="218" y2="180" stroke="#E8E6E0"/>
+          <text x="42" y="214" font-weight="700">Français</text>
+          <text x="218" y="214" text-anchor="end" font-weight="700" fill="#E8972E">✓</text>
+          <line x1="42" y1="230" x2="218" y2="230" stroke="#E8E6E0"/>
+          <text x="42" y="264">English</text>
+        </g>
+      </g>
+      <!-- bascule centrale -->
+      <g transform="translate(500,180)">
+        <rect width="200" height="60" rx="30" fill="#fff" stroke="#E8E6E0"/>
+        <rect x="6" y="6" width="94" height="48" rx="24" fill="#E8972E"/>
+        <text x="53" y="38" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="22" fill="#fff">FR</text>
+        <text x="148" y="38" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="22" fill="#9A9A90">EN</text>
+      </g>
+      <text x="600" y="290" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="26" fill="#E8972E">⇄</text>
+      <!-- iPhone EN -->
+      <g transform="translate(740,40)">
+        <rect width="260" height="360" rx="32" fill="#111"/>
+        <rect x="9" y="9" width="242" height="342" rx="25" fill="#fff"/>
+        <rect x="92" y="18" width="76" height="16" rx="8" fill="#111"/>
+        <text x="130" y="74" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="17" font-weight="700" fill="#111">Settings</text>
+        <line x1="9" y1="88" x2="251" y2="88" stroke="#E8E6E0"/>
+        <text x="30" y="118" font-family="-apple-system, sans-serif" font-size="12" font-weight="600" fill="#9A9A90">APP LANGUAGE</text>
+        <rect x="24" y="132" width="212" height="150" rx="12" fill="#F7F6F2"/>
+        <g font-family="-apple-system, sans-serif" font-size="15" fill="#111">
+          <text x="42" y="164">System</text>
+          <line x1="42" y1="180" x2="218" y2="180" stroke="#E8E6E0"/>
+          <text x="42" y="214">Français</text>
+          <line x1="42" y1="230" x2="218" y2="230" stroke="#E8E6E0"/>
+          <text x="42" y="264" font-weight="700">English</text>
+          <text x="218" y="264" text-anchor="end" font-weight="700" fill="#E8972E">✓</text>
+        </g>
+      </g>
+    </symbol>
   </defs>
 </svg>
 
@@ -480,10 +648,71 @@
     </figure>
   </section>
 
-  <!-- Fonctionnalités -->
+  <!-- Rapports : Mermaid + Leaflet -->
   <section>
     <div class="accent-line"></div>
-    <h2>Fonctionnalités</h2>
+    <h2>Des rapports Markdown qui prennent vie</h2>
+    <p>md Viewer affiche vos <span class="mdv-code">.md</span> comme de vrais rapports :
+    titres, tableaux, citations, callouts Obsidian, entités colorées — et les blocs
+    spécialisés se transforment d'eux-mêmes. Un bloc
+    <span class="mdv-code">```mermaid</span> devient un <strong>diagramme</strong>
+    (flowchart, séquence, gantt, pie, mindmap) rendu hors-ligne au thème OK-ia, zoomable en
+    plein écran vectoriel. Un bloc <span class="mdv-code">```leaflet</span> devient une
+    <strong>carte géographique interactive</strong> : marqueurs positionnés, popups, fonds
+    CARTO/OpenStreetMap, cadrage automatique sur les points et mode plein écran pour
+    explorer.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 620" role="img" aria-label="Un rapport md Viewer avec un diagramme Mermaid et une carte Leaflet côte à côte"><use href="#ill-report"/></svg>
+      <figcaption>Dans le même rapport : le diagramme Mermaid à gauche, la carte Leaflet et ses marqueurs à droite.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Mode Présentation -->
+  <section>
+    <h2>Mode Présentation : du rapport au diaporama en un geste</h2>
+    <p>Un bouton ▶ et chaque bloc séparé par <span class="mdv-code">---</span> devient une
+    diapositive plein écran, façon Keynote. Cinq transitions (Fondu, Poussée, Entrée,
+    Échelle, Retournement 3D), navigation au clavier, aux gestes ou aux flèches, vue
+    d'ensemble en vignettes, mise à l'échelle automatique du contenu — images, diagrammes
+    et cartes occupent tout l'écran. Et quand la réunion est finie, le diaporama s'exporte
+    en <strong>PowerPoint (.pptx)</strong>, texte et tableaux restant éditables.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 900 560" role="img" aria-label="Diaporama plein écran avec titre, camembert, compteur et barre de progression"><use href="#ill-slides"/></svg>
+      <figcaption>Diapositive 3 sur 12 : titre Nunito, contenu mis à l'échelle, barre de progression et menu ⚙.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Thèmes -->
+  <section>
+    <h2>Cinq thèmes de couleurs</h2>
+    <p>Le diaporama se décline en cinq ambiances — <strong>Clair</strong>,
+    <strong>Sombre</strong>, <strong>Console</strong>, <strong>Sépia</strong> et
+    <strong>Océan</strong> — à choisir dans le menu ⚙ selon la salle, l'écran ou l'humeur.
+    Le choix est mémorisé d'une présentation à l'autre, et la lisibilité de la charte
+    OK-ia est préservée dans chacun.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 260" role="img" aria-label="Les cinq thèmes du diaporama : Clair, Sombre, Console, Sépia, Océan"><use href="#ill-themes"/></svg>
+      <figcaption>De gauche à droite : Clair, Sombre, Console, Sépia, Océan.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Bilingue -->
+  <section>
+    <h2>En français et en anglais</h2>
+    <p>md Viewer parle votre langue : <strong>français</strong> si votre appareil est en
+    français, <strong>anglais</strong> sinon — et vous pouvez forcer l'une ou l'autre à
+    tout moment dans les Réglages (Système / Français / English). Toute l'app suit :
+    menus, messages, dates, diaporama… jusqu'au <strong>résumé Apple Intelligence</strong>,
+    rédigé dans la langue choisie. Siri et Raccourcis comprennent les deux langues.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 440" role="img" aria-label="Le réglage de langue : un iPhone en français, un iPhone en anglais, et la bascule FR/EN"><use href="#ill-lang"/></svg>
+      <figcaption>Une app, deux langues : le réglage se change en un tap, sans redémarrage.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Fonctionnalités -->
+  <section>
+    <h2>Et aussi</h2>
     <div class="fw-grid">
       <div class="fw-card">
         <h3>📄 Rendu fidèle OK-ia</h3>
@@ -492,22 +721,10 @@
         entités (personnes, lieux, organisations).</p>
       </div>
       <div class="fw-card">
-        <h3>📊 Diagrammes Mermaid</h3>
-        <p>Flowchart, séquence, gantt, pie, mindmap — rendus hors-ligne avec le thème OK-ia
-        normalisé. Un tap ouvre le diagramme en plein écran, vectoriel et net même à fort
-        zoom.</p>
-      </div>
-      <div class="fw-card">
-        <h3>🗺️ Cartes Leaflet</h3>
-        <p>Blocs <span class="mdv-code">```leaflet</span> à la façon du plugin Obsidian :
-        marqueurs positionnés, fonds de carte CARTO/OSM, cadrage automatique et mode plein
-        écran pour explorer.</p>
-      </div>
-      <div class="fw-card">
-        <h3>🎞️ Mode Diaporama</h3>
-        <p>Chaque bloc séparé par <span class="mdv-code">---</span> devient une diapositive
-        plein écran, façon Keynote : 5 transitions, 5 thèmes de couleurs, vue d'ensemble en
-        vignettes et navigation au clavier.</p>
+        <h3>🔎 Sommaire, recherche &amp; zoom</h3>
+        <p>Sommaire automatique avec saut direct à une section, recherche dans le document
+        avec surlignage et navigation entre occurrences, taille de texte ajustable, images
+        et diagrammes en plein écran.</p>
       </div>
       <div class="fw-card">
         <h3>📤 Export PDF · Word · PowerPoint</h3>
@@ -622,10 +839,70 @@
     </figure>
   </section>
 
-  <!-- Features -->
+  <!-- Reports: Mermaid + Leaflet -->
   <section>
     <div class="accent-line"></div>
-    <h2>Features</h2>
+    <h2>Markdown reports that come alive</h2>
+    <p>md Viewer displays your <span class="mdv-code">.md</span> files as real reports:
+    headings, tables, quotes, Obsidian callouts, highlighted entities — and the specialised
+    blocks transform themselves. A <span class="mdv-code">```mermaid</span> block becomes a
+    <strong>diagram</strong> (flowchart, sequence, gantt, pie, mindmap) rendered offline
+    with the OK-ia theme, zoomable full screen as crisp vectors. A
+    <span class="mdv-code">```leaflet</span> block becomes an <strong>interactive
+    geographic map</strong>: positioned markers, popups, CARTO/OpenStreetMap base maps,
+    automatic framing on your points and a full-screen mode to explore.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 620" role="img" aria-label="An md Viewer report with a Mermaid diagram and a Leaflet map side by side"><use href="#ill-report"/></svg>
+      <figcaption>In the same report: the Mermaid diagram on the left, the Leaflet map and its markers on the right.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Presentation mode -->
+  <section>
+    <h2>Presentation mode: from report to slideshow in one tap</h2>
+    <p>One ▶ button and every block separated by <span class="mdv-code">---</span> becomes
+    a full-screen slide, Keynote style. Five transitions (Dissolve, Push, Move In, Scale,
+    3D Flip), keyboard, gesture or arrow navigation, a thumbnail overview, and automatic
+    content scaling — images, diagrams and maps fill the screen. When the meeting is over,
+    the slideshow exports to <strong>PowerPoint (.pptx)</strong> with text and tables still
+    editable.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 900 560" role="img" aria-label="Full-screen slideshow with title, pie chart, counter and progress bar"><use href="#ill-slides"/></svg>
+      <figcaption>Slide 3 of 12: Nunito title, auto-scaled content, progress bar and the ⚙ menu.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Themes -->
+  <section>
+    <h2>Five colour themes</h2>
+    <p>The slideshow comes in five moods — <strong>Light</strong>, <strong>Dark</strong>,
+    <strong>Console</strong>, <strong>Sepia</strong> and <strong>Ocean</strong> — picked
+    from the ⚙ menu to match the room, the screen or the mood. Your choice is remembered
+    from one presentation to the next, and the OK-ia design language stays legible in every
+    one of them.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 260" role="img" aria-label="The five slideshow themes: Light, Dark, Console, Sepia, Ocean"><use href="#ill-themes"/></svg>
+      <figcaption>Left to right: Light, Dark, Console, Sepia, Ocean.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Bilingual -->
+  <section>
+    <h2>In English and in French</h2>
+    <p>md Viewer speaks your language: <strong>French</strong> when your device is set to
+    French, <strong>English</strong> otherwise — and you can force either one at any time
+    in Settings (System / Français / English). The whole app follows: menus, messages,
+    dates, the slideshow… down to the <strong>Apple Intelligence summary</strong>, written
+    in the chosen language. Siri and Shortcuts understand both.</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 440" role="img" aria-label="The language setting: an iPhone in French, an iPhone in English, and the FR/EN switch"><use href="#ill-lang"/></svg>
+      <figcaption>One app, two languages: the setting changes with a tap, no restart.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Features -->
+  <section>
+    <h2>And also</h2>
     <div class="fw-grid">
       <div class="fw-card">
         <h3>📄 Faithful OK-ia rendering</h3>
@@ -634,22 +911,10 @@
         (people, places, organisations).</p>
       </div>
       <div class="fw-card">
-        <h3>📊 Mermaid diagrams</h3>
-        <p>Flowchart, sequence, gantt, pie, mindmap — rendered offline with the normalised
-        OK-ia theme. One tap opens the diagram full screen, as crisp vectors even at high
-        zoom.</p>
-      </div>
-      <div class="fw-card">
-        <h3>🗺️ Leaflet maps</h3>
-        <p><span class="mdv-code">```leaflet</span> blocks in the style of the Obsidian
-        plugin: positioned markers, CARTO/OSM base maps, automatic framing and a full-screen
-        mode to explore.</p>
-      </div>
-      <div class="fw-card">
-        <h3>🎞️ Slideshow mode</h3>
-        <p>Every block separated by <span class="mdv-code">---</span> becomes a full-screen
-        slide, Keynote style: 5 transitions, 5 colour themes, a thumbnail overview and
-        keyboard navigation.</p>
+        <h3>🔎 Outline, search &amp; zoom</h3>
+        <p>Automatic outline with direct section jumps, in-document search with highlighting
+        and match navigation, adjustable text size, and full-screen viewing for images and
+        diagrams.</p>
       </div>
       <div class="fw-card">
         <h3>📤 PDF · Word · PowerPoint export</h3>
