@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="fr" data-lang="fr">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>md Viewer — Vos rapports Markdown, rendus parfaitement — OK-ia</title>
+  <meta name="description" content="md Viewer ouvre vos fichiers Markdown avec diagrammes Mermaid, cartes Leaflet, callouts et diaporama plein écran — fidèle à la charte ok-ia.ch, 100 % hors-ligne. Résumé Apple Intelligence, export PDF/Word/PowerPoint. Your Markdown reports, beautifully rendered — offline, private. iPhone, iPad, Mac." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* ─── Bascule de langue (même patron que fornews) ─── */
+    html[data-lang="fr"] .lang-en { display: none; }
+    html[data-lang="en"] .lang-fr { display: none; }
+    .fw-langswitch { position: sticky; top: 0.75rem; z-index: 5; float: right;
+                     display: inline-flex; border: 1px solid var(--border); border-radius: 2rem;
+                     background: #fff; overflow: hidden; margin: 0 0 0.5rem 1rem; }
+    .fw-langswitch button { border: 0; background: transparent; padding: 0.35rem 0.9rem;
+                            font: inherit; font-size: 0.82rem; font-weight: 700;
+                            color: var(--muted); cursor: pointer; }
+    .fw-langswitch button.on { background: var(--accent); color: #fff; }
+
+    /* ─── Spécifique md Viewer (jetons de la charte OK-ia) ─── */
+    .fw-hero { text-align: center; padding-top: 1rem; }
+    .mdv-wordmark { font-family: 'Nunito', sans-serif; font-weight: 900;
+                    font-size: clamp(2.6rem, 8vw, 4rem); line-height: 1.1;
+                    letter-spacing: -0.02em; color: var(--text); }
+    .mdv-wordmark .bar { display: inline-block; width: 0.62em; height: 0.16em;
+                         background: var(--accent); border-radius: 0.08em;
+                         margin: 0 0.16em; vertical-align: 0.28em; }
+    .mdv-sub { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.05rem;
+               color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase;
+               margin-top: 0.2rem; }
+    .fw-tagline { margin: 1.2rem auto 1.8rem; font-size: 1rem; color: var(--muted);
+                  font-style: italic; }
+    .fw-btn { display: inline-block; background: var(--accent); color: #fff;
+              border-radius: 6px; padding: 0.65rem 1.4rem; font-weight: 700;
+              font-size: 0.95rem; }
+    .fw-btn:hover { text-decoration: none; opacity: 0.9; }
+    .fw-btn-secondaire { background: transparent; color: var(--accent);
+                         border: 1px solid var(--accent); margin-left: 0.6rem; }
+    @media (max-width: 520px) { .fw-btn-secondaire { margin-left: 0; margin-top: 0.6rem; } }
+    .fw-devices { margin-top: 1rem; font-size: 0.82rem; color: var(--muted); }
+    .fw-capture { margin: 2.5rem 0 0; }
+    .fw-capture svg { width: 100%; height: auto; display: block; border-radius: 6px;
+                      border: 1px solid var(--border); background: #fff; }
+    .fw-capture figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.6rem;
+                             text-align: center; }
+    .fw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+               gap: 1rem; }
+    .fw-card { padding: 1.4rem 1.5rem 1.3rem; border: 1px solid var(--border);
+               border-radius: 6px; background: #fff;
+               transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
+    .fw-card:hover { border-color: var(--accent); transform: translateY(-2px);
+                     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04); }
+    .fw-card h3 { font-size: 1.02rem; font-weight: 700; color: var(--text);
+                  margin-bottom: 0.5rem; line-height: 1.35; }
+    .fw-card p { font-size: 0.92rem; color: var(--text); line-height: 1.55;
+                 margin-bottom: 0; }
+    .fw-galerie { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem;
+                  -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+    .fw-galerie figure { flex: 0 0 auto; scroll-snap-align: start; margin: 0; }
+    .fw-galerie svg { height: 380px; width: auto; display: block; border-radius: 6px;
+                      border: 1px solid var(--border); background: #fff; }
+    .fw-galerie figcaption { font-size: 0.8rem; color: var(--muted); text-align: center;
+                             margin-top: 0.5rem; }
+    @media (max-width: 640px) { .fw-galerie svg { height: 300px; } }
+    .fw-pages { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+    .fw-pages a { border: 1px solid var(--border); color: var(--muted);
+                  padding: 0.3rem 0.85rem; border-radius: 2rem; font-size: 0.82rem; }
+    .fw-pages a:hover { color: var(--text); border-color: var(--accent);
+                        text-decoration: none; }
+    .mdv-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 0.85em; background: #fff; border: 1px solid var(--border);
+                border-radius: 4px; padding: 0.1em 0.4em; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/" aria-label="OK-ia — Accueil">
+    <span>OK</span>
+    <span class="sep" aria-hidden="true"></span>
+    <span>ia</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="/fornews/">fornews.ai</a></li>
+    <li><a href="/mdviewer/" class="active">md Viewer</a></li>
+    <li><a href="/terminal.html">Terminal IA</a></li>
+    <li><a href="/vision.html">Vision</a></li>
+    <li><a href="/observatoires/">Observatoires</a></li>
+    <li><a href="/rapports.html">Veille informationnelle</a></li>
+    <li><a href="/#contact">Contact</a></li>
+  </ul>
+  <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ═════════ Illustrations partagées FR/EN (symboles SVG, charte OK-ia) ═════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="mdv-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#E8972E"/>
+    </marker>
+    <linearGradient id="mdv-ai" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F54D8C"/><stop offset="0.4" stop-color="#9957F5"/>
+      <stop offset="0.7" stop-color="#4599FC"/><stop offset="1" stop-color="#FCA64D"/>
+    </linearGradient>
+
+    <!-- Nœud de flowchart réutilisé -->
+    <g id="mdv-node">
+      <rect width="120" height="44" rx="8" fill="#fff" stroke="#111" stroke-width="2"/>
+    </g>
+
+    <!-- ── Hero : fenêtre Mac + iPhone, rapport rendu avec diagramme ── -->
+    <symbol id="ill-hero" viewBox="0 0 1200 640">
+      <rect width="1200" height="640" fill="#FAFAF8"/>
+      <!-- fenêtre Mac -->
+      <rect x="60" y="40" width="860" height="560" rx="14" fill="#fff" stroke="#E8E6E0"/>
+      <rect x="60" y="40" width="860" height="46" rx="14" fill="#F4F2EC"/>
+      <rect x="60" y="72" width="860" height="14" fill="#F4F2EC"/>
+      <circle cx="92" cy="63" r="7" fill="#FF5F57"/><circle cx="116" cy="63" r="7" fill="#FEBC2E"/>
+      <circle cx="140" cy="63" r="7" fill="#28C840"/>
+      <text x="490" y="68" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="16" fill="#9A9A90">rapport-2026-07.md</text>
+      <!-- barre d'outils du lecteur -->
+      <g fill="none" stroke="#E8972E" stroke-width="2.4" stroke-linecap="round">
+        <path d="M778 58 l7 7 M792 58 a7 7 0 1 0 -14 0 a7 7 0 1 0 14 0" transform="translate(0,2)"/>
+        <path d="M816 55 v14 M810 62 h12"/>
+        <path d="M842 55 l6 7 -6 7 M852 55 h6"/>
+      </g>
+      <!-- titre + méta -->
+      <text x="120" y="150" font-family="Nunito, sans-serif" font-weight="900" font-size="34" fill="#111">Observatoire IA — Synthèse</text>
+      <rect x="120" y="168" width="64" height="5" rx="2.5" fill="#E8972E"/>
+      <text x="120" y="200" font-family="-apple-system, sans-serif" font-size="15" fill="#9A9A90">OK-ia · 10.07.2026 · 6 min · <tspan fill="#E8972E">↗</tspan></text>
+      <!-- paragraphe -->
+      <g fill="#E8E6E0">
+        <rect x="120" y="222" width="740" height="12" rx="6"/>
+        <rect x="120" y="244" width="700" height="12" rx="6"/>
+        <rect x="120" y="266" width="720" height="12" rx="6"/>
+        <rect x="120" y="288" width="430" height="12" rx="6"/>
+      </g>
+      <!-- entités colorées dans le texte -->
+      <rect x="560" y="288" width="90" height="12" rx="6" fill="#F6DFC0"/>
+      <rect x="662" y="288" width="70" height="12" rx="6" fill="#D8E7D3"/>
+      <!-- diagramme mermaid -->
+      <rect x="120" y="326" width="740" height="230" rx="10" fill="#FDFCFA" stroke="#E8E6E0"/>
+      <g font-family="-apple-system, sans-serif" font-size="15" font-weight="600" fill="#111" text-anchor="middle">
+        <use href="#mdv-node" x="160" y="360"/><text x="220" y="387">Sources</text>
+        <use href="#mdv-node" x="430" y="360"/><text x="490" y="387">Analyse</text>
+        <use href="#mdv-node" x="700" y="360"/><text x="760" y="387">Rapport</text>
+        <use href="#mdv-node" x="430" y="470"/><text x="490" y="497">Corpus</text>
+      </g>
+      <g stroke="#E8972E" stroke-width="2.4" fill="none" marker-end="url(#mdv-arrow)">
+        <path d="M282 382 H424"/>
+        <path d="M552 382 H694"/>
+        <path d="M490 406 V464"/>
+      </g>
+      <!-- iPhone au premier plan -->
+      <rect x="880" y="120" width="270" height="500" rx="38" fill="#111"/>
+      <rect x="890" y="130" width="250" height="480" rx="30" fill="#fff"/>
+      <rect x="975" y="140" width="80" height="18" rx="9" fill="#111"/>
+      <text x="912" y="205" font-family="Nunito, sans-serif" font-weight="900" font-size="19" fill="#111">Synthèse</text>
+      <rect x="912" y="216" width="40" height="4" rx="2" fill="#E8972E"/>
+      <g fill="#E8E6E0">
+        <rect x="912" y="238" width="206" height="9" rx="4.5"/>
+        <rect x="912" y="255" width="188" height="9" rx="4.5"/>
+        <rect x="912" y="272" width="198" height="9" rx="4.5"/>
+      </g>
+      <rect x="912" y="300" width="206" height="120" rx="8" fill="#FDFCFA" stroke="#E8E6E0"/>
+      <g stroke="#E8972E" stroke-width="2" fill="none" marker-end="url(#mdv-arrow)">
+        <path d="M952 340 H1000"/><path d="M1015 360 V390 H 980" fill="none"/>
+      </g>
+      <g fill="#fff" stroke="#111" stroke-width="1.6">
+        <rect x="924" y="326" width="56" height="26" rx="6"/>
+        <rect x="1004" y="326" width="56" height="26" rx="6"/>
+        <rect x="952" y="382" width="56" height="26" rx="6"/>
+      </g>
+      <g fill="#E8E6E0">
+        <rect x="912" y="444" width="206" height="9" rx="4.5"/>
+        <rect x="912" y="461" width="160" height="9" rx="4.5"/>
+      </g>
+      <!-- callout -->
+      <rect x="912" y="490" width="206" height="64" rx="8" fill="#FBF3E6"/>
+      <rect x="912" y="490" width="4" height="64" fill="#E8972E"/>
+      <text x="928" y="514" font-size="13" font-weight="700" font-family="-apple-system, sans-serif" fill="#111">💡 Note</text>
+      <rect x="928" y="526" width="170" height="8" rx="4" fill="#EFE3CE"/>
+    </symbol>
+
+    <!-- ── Lecture iPhone ── -->
+    <symbol id="ill-reader" viewBox="0 0 340 720">
+      <rect width="340" height="720" rx="0" fill="#FAFAF8"/>
+      <rect x="14" y="14" width="312" height="692" rx="42" fill="#111"/>
+      <rect x="24" y="24" width="292" height="672" rx="34" fill="#fff"/>
+      <rect x="128" y="36" width="84" height="20" rx="10" fill="#111"/>
+      <!-- barre du lecteur -->
+      <g fill="none" stroke="#E8972E" stroke-width="2.2" stroke-linecap="round">
+        <path d="M44 84 l8 -8 8 8 M46 82 v10 h12 v-10" />
+        <path d="M236 88 a6 6 0 1 0 -12 0 a6 6 0 1 0 12 0 M239 95 l-4 -4"/>
+        <path d="M262 80 v12 M256 86 h12"/>
+        <path d="M288 80 l5 6 -5 6 M295 80 h3"/>
+      </g>
+      <text x="44" y="140" font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#111">Rapport mensuel</text>
+      <rect x="44" y="152" width="48" height="5" rx="2.5" fill="#E8972E"/>
+      <text x="44" y="180" font-family="-apple-system, sans-serif" font-size="12" fill="#9A9A90">OK-ia · 12.07.2026 · 4 min</text>
+      <g fill="#E8E6E0">
+        <rect x="44" y="202" width="252" height="10" rx="5"/>
+        <rect x="44" y="222" width="236" height="10" rx="5"/>
+        <rect x="44" y="242" width="244" height="10" rx="5"/>
+        <rect x="44" y="262" width="150" height="10" rx="5"/>
+      </g>
+      <rect x="204" y="262" width="70" height="10" rx="5" fill="#F6DFC0"/>
+      <!-- diagramme -->
+      <rect x="44" y="292" width="252" height="170" rx="10" fill="#FDFCFA" stroke="#E8E6E0"/>
+      <g fill="#fff" stroke="#111" stroke-width="1.8">
+        <rect x="64" y="316" width="76" height="32" rx="7"/>
+        <rect x="200" y="316" width="76" height="32" rx="7"/>
+        <rect x="132" y="398" width="76" height="32" rx="7"/>
+      </g>
+      <g stroke="#E8972E" stroke-width="2.2" fill="none" marker-end="url(#mdv-arrow)">
+        <path d="M142 332 H196"/>
+        <path d="M102 350 C 102 390, 128 408, 128 412"/>
+        <path d="M238 350 C 238 390, 212 408, 212 412"/>
+      </g>
+      <!-- callout warning -->
+      <rect x="44" y="486" width="252" height="70" rx="8" fill="#FBF3E6"/>
+      <rect x="44" y="486" width="4" height="70" fill="#E8972E"/>
+      <text x="60" y="512" font-size="13" font-weight="700" font-family="-apple-system, sans-serif" fill="#111">⚠️ Attention</text>
+      <rect x="60" y="524" width="212" height="8" rx="4" fill="#EFE3CE"/>
+      <rect x="60" y="538" width="160" height="8" rx="4" fill="#EFE3CE"/>
+      <g fill="#E8E6E0">
+        <rect x="44" y="580" width="252" height="10" rx="5"/>
+        <rect x="44" y="600" width="222" height="10" rx="5"/>
+        <rect x="44" y="620" width="240" height="10" rx="5"/>
+        <rect x="44" y="640" width="120" height="10" rx="5"/>
+      </g>
+    </symbol>
+
+    <!-- ── Sommaire + recherche ── -->
+    <symbol id="ill-toc" viewBox="0 0 340 720">
+      <rect width="340" height="720" fill="#FAFAF8"/>
+      <rect x="14" y="14" width="312" height="692" rx="42" fill="#111"/>
+      <rect x="24" y="24" width="292" height="672" rx="34" fill="#fff"/>
+      <rect x="128" y="36" width="84" height="20" rx="10" fill="#111"/>
+      <text x="170" y="98" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="16" font-weight="700" fill="#111">Sommaire</text>
+      <text x="292" y="98" text-anchor="end" font-size="13" font-weight="600" fill="#E8972E" font-family="-apple-system, sans-serif">✕</text>
+      <line x1="24" y1="114" x2="316" y2="114" stroke="#E8E6E0"/>
+      <g font-family="-apple-system, sans-serif" fill="#111">
+        <text x="44" y="152" font-size="15" font-weight="800">1. Contexte</text>
+        <text x="60" y="188" font-size="14" font-weight="600" fill="#4A4A44">1.1 Sources analysées</text>
+        <text x="60" y="224" font-size="14" font-weight="600" fill="#4A4A44">1.2 Méthode</text>
+        <text x="44" y="260" font-size="15" font-weight="800">2. Tendances</text>
+        <text x="60" y="296" font-size="14" font-weight="600" fill="#4A4A44">2.1 Modèles</text>
+        <text x="60" y="332" font-size="14" font-weight="600" fill="#4A4A44">2.2 Régulation</text>
+        <text x="44" y="368" font-size="15" font-weight="800">3. Chiffres clés</text>
+        <text x="44" y="404" font-size="15" font-weight="800">4. En bref</text>
+      </g>
+      <g stroke="#E8E6E0"><line x1="44" y1="166" x2="296" y2="166"/><line x1="44" y1="202" x2="296" y2="202"/>
+        <line x1="44" y1="238" x2="296" y2="238"/><line x1="44" y1="274" x2="296" y2="274"/>
+        <line x1="44" y1="310" x2="296" y2="310"/><line x1="44" y1="346" x2="296" y2="346"/>
+        <line x1="44" y1="382" x2="296" y2="382"/></g>
+      <!-- barre de recherche -->
+      <rect x="44" y="460" width="252" height="44" rx="10" fill="#FDFCFA" stroke="#E8E6E0"/>
+      <circle cx="68" cy="482" r="7" fill="none" stroke="#9A9A90" stroke-width="2"/>
+      <line x1="73" y1="487" x2="79" y2="493" stroke="#9A9A90" stroke-width="2"/>
+      <text x="92" y="487" font-family="-apple-system, sans-serif" font-size="14" fill="#111">mermaid</text>
+      <text x="252" y="487" font-family="-apple-system, sans-serif" font-size="12" fill="#9A9A90">3/7</text>
+      <g fill="#E8E6E0">
+        <rect x="44" y="536" width="252" height="10" rx="5"/>
+        <rect x="44" y="556" width="230" height="10" rx="5"/>
+      </g>
+      <rect x="128" y="556" width="74" height="12" rx="4" fill="#F6DFC0"/>
+      <g fill="#E8E6E0">
+        <rect x="44" y="576" width="240" height="10" rx="5"/>
+        <rect x="44" y="596" width="140" height="10" rx="5"/>
+      </g>
+    </symbol>
+
+    <!-- ── Diaporama ── -->
+    <symbol id="ill-slides" viewBox="0 0 900 560">
+      <rect width="900" height="560" fill="#131310"/>
+      <rect x="70" y="60" width="760" height="440" rx="12" fill="#FAFAF8"/>
+      <text x="130" y="170" font-family="Nunito, sans-serif" font-weight="900" font-size="44" fill="#111">Tendances 2026</text>
+      <rect x="130" y="192" width="90" height="7" rx="3.5" fill="#E8972E"/>
+      <g fill="#D9D7D0">
+        <rect x="130" y="236" width="300" height="14" rx="7"/>
+        <rect x="130" y="266" width="270" height="14" rx="7"/>
+        <rect x="130" y="296" width="290" height="14" rx="7"/>
+        <rect x="130" y="326" width="210" height="14" rx="7"/>
+      </g>
+      <!-- camembert -->
+      <g transform="translate(640,300)">
+        <circle r="110" fill="#fff" stroke="#E8E6E0"/>
+        <path d="M0,0 L0,-110 A110,110 0 0 1 95.3,-55 z" fill="#E8972E"/>
+        <path d="M0,0 L95.3,-55 A110,110 0 0 1 95.3,55 z" fill="#111"/>
+        <path d="M0,0 L95.3,55 A110,110 0 0 1 -38,103.2 z" fill="#9A9A90"/>
+        <path d="M0,0 L-38,103.2 A110,110 0 0 1 0,-110 z" fill="#E8E6E0"/>
+      </g>
+      <!-- chrome du diaporama -->
+      <text x="90" y="530" font-family="-apple-system, sans-serif" font-size="20" fill="#9A9A90">‹</text>
+      <text x="120" y="530" font-family="-apple-system, sans-serif" font-size="20" fill="#FAFAF8">›</text>
+      <text x="810" y="532" text-anchor="end" font-family="-apple-system, sans-serif" font-size="16" fill="#9A9A90">3 / 12</text>
+      <rect x="70" y="508" width="760" height="4" rx="2" fill="#33322C"/>
+      <rect x="70" y="508" width="190" height="4" rx="2" fill="#E8972E"/>
+      <text x="828" y="46" text-anchor="end" font-size="20" fill="#9A9A90" font-family="-apple-system, sans-serif">⚙ ▦ ✕</text>
+    </symbol>
+
+    <!-- ── Zoom diagramme plein écran ── -->
+    <symbol id="ill-zoom" viewBox="0 0 900 560">
+      <rect width="900" height="560" fill="#0B0B0A"/>
+      <rect x="120" y="70" width="660" height="400" rx="12" fill="#FAFAF8"/>
+      <g font-family="-apple-system, sans-serif" font-size="17" font-weight="600" fill="#111" text-anchor="middle">
+        <use href="#mdv-node" x="180" y="130"/><text x="240" y="157">Coffre</text>
+        <use href="#mdv-node" x="390" y="130"/><text x="450" y="157">iCloud</text>
+        <use href="#mdv-node" x="600" y="130"/><text x="660" y="157">iPhone</text>
+        <use href="#mdv-node" x="285" y="300"/><text x="345" y="327">Mac</text>
+        <use href="#mdv-node" x="495" y="300"/><text x="555" y="327">iPad</text>
+      </g>
+      <g stroke="#E8972E" stroke-width="2.6" fill="none" marker-end="url(#mdv-arrow)">
+        <path d="M302 152 H384"/>
+        <path d="M512 152 H594"/>
+        <path d="M420 176 C 390 240, 360 270, 348 294"/>
+        <path d="M480 176 C 510 240, 540 270, 552 294"/>
+      </g>
+      <!-- chrome -->
+      <text x="160" y="52" font-size="22" fill="#E8972E" font-family="-apple-system, sans-serif">⤢</text>
+      <text x="760" y="52" font-size="20" fill="#FAFAF8" font-family="-apple-system, sans-serif">✕</text>
+      <rect x="360" y="496" width="180" height="44" rx="22" fill="#26251F"/>
+      <text x="410" y="525" font-size="22" fill="#E8972E" text-anchor="middle" font-family="-apple-system, sans-serif">−</text>
+      <line x1="450" y1="506" x2="450" y2="530" stroke="#4A4940"/>
+      <text x="490" y="525" font-size="22" fill="#E8972E" text-anchor="middle" font-family="-apple-system, sans-serif">+</text>
+    </symbol>
+
+    <!-- ── Export PDF / Word / PowerPoint ── -->
+    <symbol id="ill-export" viewBox="0 0 900 560">
+      <rect width="900" height="560" fill="#FAFAF8"/>
+      <!-- document source -->
+      <g>
+        <path d="M120 160 h150 l50 50 v190 h-200 z" fill="#fff" stroke="#111" stroke-width="2.5"/>
+        <path d="M270 160 v50 h50" fill="none" stroke="#111" stroke-width="2.5"/>
+        <text x="150" y="230" font-family="ui-monospace, Menlo, monospace" font-size="26" font-weight="700" fill="#E8972E">.md</text>
+        <g fill="#E8E6E0">
+          <rect x="145" y="255" width="130" height="9" rx="4.5"/>
+          <rect x="145" y="273" width="110" height="9" rx="4.5"/>
+          <rect x="145" y="291" width="120" height="9" rx="4.5"/>
+        </g>
+        <rect x="145" y="315" width="130" height="52" rx="6" fill="#FDFCFA" stroke="#E8E6E0"/>
+        <g fill="#fff" stroke="#111" stroke-width="1.4">
+          <rect x="155" y="328" width="34" height="16" rx="4"/>
+          <rect x="220" y="328" width="34" height="16" rx="4"/>
+        </g>
+        <path d="M189 336 H216" stroke="#E8972E" stroke-width="1.8" marker-end="url(#mdv-arrow)"/>
+      </g>
+      <!-- flèches -->
+      <g stroke="#E8972E" stroke-width="3" fill="none" marker-end="url(#mdv-arrow)">
+        <path d="M350 280 C 420 180, 480 150, 540 140"/>
+        <path d="M350 280 H 540"/>
+        <path d="M350 280 C 420 380, 480 410, 540 420"/>
+      </g>
+      <!-- cibles -->
+      <g font-family="-apple-system, sans-serif" font-weight="800" text-anchor="middle">
+        <rect x="560" y="95" width="220" height="90" rx="10" fill="#fff" stroke="#E8E6E0"/>
+        <rect x="580" y="117" width="46" height="46" rx="8" fill="#E24B4B"/>
+        <text x="603" y="147" font-size="15" fill="#fff">PDF</text>
+        <text x="700" y="135" font-size="18" fill="#111">PDF</text>
+        <text x="700" y="158" font-size="12" font-weight="500" fill="#9A9A90">mise en page fidèle</text>
+
+        <rect x="560" y="235" width="220" height="90" rx="10" fill="#fff" stroke="#E8E6E0"/>
+        <rect x="580" y="257" width="46" height="46" rx="8" fill="#2B579A"/>
+        <text x="603" y="287" font-size="15" fill="#fff">W</text>
+        <text x="700" y="275" font-size="18" fill="#111">.docx</text>
+        <text x="700" y="298" font-size="12" font-weight="500" fill="#9A9A90">Word · Pages</text>
+
+        <rect x="560" y="375" width="220" height="90" rx="10" fill="#fff" stroke="#E8E6E0"/>
+        <rect x="580" y="397" width="46" height="46" rx="8" fill="#D24726"/>
+        <text x="603" y="427" font-size="15" fill="#fff">P</text>
+        <text x="700" y="415" font-size="18" fill="#111">.pptx</text>
+        <text x="700" y="438" font-size="12" font-weight="500" fill="#9A9A90">PowerPoint · Keynote</text>
+      </g>
+    </symbol>
+
+    <!-- ── Coffre iCloud ── -->
+    <symbol id="ill-vault" viewBox="0 0 900 560">
+      <rect width="900" height="560" fill="#FAFAF8"/>
+      <!-- nuage -->
+      <g transform="translate(450,110)">
+        <path d="M-70 30 a45 45 0 0 1 8 -89 a58 58 0 0 1 112 -12 a40 40 0 0 1 24 76 z"
+              fill="#fff" stroke="#111" stroke-width="2.5"/>
+        <text x="-12" y="8" font-family="-apple-system, sans-serif" font-size="15" font-weight="700" fill="#9A9A90">iCloud</text>
+      </g>
+      <path d="M450 150 V 208" stroke="#E8972E" stroke-width="3" fill="none" marker-end="url(#mdv-arrow)"/>
+      <!-- dossier -->
+      <g transform="translate(450,238)">
+        <path d="M-60 -18 h38 l12 14 h70 a8 8 0 0 1 8 8 v40 a8 8 0 0 1 -8 8 h-120 a8 8 0 0 1 -8 -8 v-54 a8 8 0 0 1 8 -8 z"
+              fill="#F6DFC0" stroke="#E8972E" stroke-width="2.5"/>
+        <text x="0" y="34" text-anchor="middle" font-family="-apple-system, sans-serif" font-size="14" font-weight="700" fill="#111">Coffre</text>
+      </g>
+      <path d="M450 300 V 342" stroke="#E8972E" stroke-width="3" fill="none" marker-end="url(#mdv-arrow)"/>
+      <!-- liste de rapports -->
+      <g font-family="-apple-system, sans-serif">
+        <rect x="230" y="352" width="440" height="52" rx="10" fill="#fff" stroke="#E8E6E0"/>
+        <text x="252" y="384" font-size="17" fill="#E8972E">📄</text>
+        <text x="286" y="378" font-size="15" font-weight="700" fill="#111">observatoire-ia.md</text>
+        <text x="286" y="396" font-size="11" fill="#9A9A90">Observatoires · il y a 2 h</text>
+        <text x="646" y="384" font-size="14" fill="#9A9A90">›</text>
+
+        <rect x="230" y="412" width="440" height="52" rx="10" fill="#fff" stroke="#E8E6E0"/>
+        <text x="252" y="444" font-size="17" fill="#E8972E">📄</text>
+        <text x="286" y="438" font-size="15" font-weight="700" fill="#111">veille-presse.md</text>
+        <text x="286" y="456" font-size="11" fill="#9A9A90">fornews · hier</text>
+        <text x="646" y="444" font-size="14" fill="#9A9A90">›</text>
+
+        <rect x="230" y="472" width="440" height="52" rx="10" fill="#fff" stroke="#E8E6E0"/>
+        <text x="252" y="504" font-size="17" fill="#E8972E">📄</text>
+        <text x="286" y="498" font-size="15" font-weight="700" fill="#111">rapport-mensuel.md</text>
+        <text x="286" y="516" font-size="11" fill="#9A9A90">Rapports · 8 juillet</text>
+        <text x="646" y="504" font-size="14" fill="#9A9A90">›</text>
+      </g>
+    </symbol>
+
+    <!-- ── Résumé Apple Intelligence ── -->
+    <symbol id="ill-ai" viewBox="0 0 900 560">
+      <rect width="900" height="560" fill="#FAFAF8"/>
+      <!-- sparkle -->
+      <g transform="translate(450,86)">
+        <path d="M0 -34 C 4 -12, 12 -4, 34 0 C 12 4, 4 12, 0 34 C -4 12, -12 4, -34 0 C -12 -4, -4 -12, 0 -34 z"
+              fill="url(#mdv-ai)"/>
+        <path d="M42 -30 C 44 -20, 48 -16, 58 -14 C 48 -12, 44 -8, 42 2 C 40 -8, 36 -12, 26 -14 C 36 -16, 40 -20, 42 -30 z"
+              fill="url(#mdv-ai)" opacity="0.8"/>
+      </g>
+      <!-- carte résumé -->
+      <rect x="170" y="150" width="560" height="360" rx="14" fill="#fff" stroke="#E8E6E0"/>
+      <g fill="#111" font-family="-apple-system, sans-serif">
+        <rect x="210" y="188" width="330" height="14" rx="7" fill="#111"/>
+        <text x="210" y="248" font-family="Nunito, sans-serif" font-weight="900" font-size="21">Points clés</text>
+        <rect x="210" y="258" width="42" height="4" rx="2" fill="#E8972E"/>
+        <g fill="#E8E6E0">
+          <circle cx="218" cy="288" r="4" fill="#E8972E"/><rect x="234" y="282" width="400" height="11" rx="5.5"/>
+          <circle cx="218" cy="316" r="4" fill="#E8972E"/><rect x="234" y="310" width="360" height="11" rx="5.5"/>
+          <circle cx="218" cy="344" r="4" fill="#E8972E"/><rect x="234" y="338" width="386" height="11" rx="5.5"/>
+        </g>
+        <rect x="300" y="282" width="86" height="11" rx="5.5" fill="#111"/>
+        <rect x="420" y="310" width="60" height="11" rx="5.5" fill="#111"/>
+        <text x="210" y="404" font-family="Nunito, sans-serif" font-weight="900" font-size="21">En bref</text>
+        <rect x="210" y="414" width="42" height="4" rx="2" fill="#E8972E"/>
+        <g fill="#E8E6E0">
+          <circle cx="218" cy="442" r="4" fill="#E8972E"/><rect x="234" y="436" width="370" height="11" rx="5.5"/>
+          <circle cx="218" cy="470" r="4" fill="#E8972E"/><rect x="234" y="464" width="300" height="11" rx="5.5"/>
+        </g>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<main>
+
+<div class="fw-langswitch" role="group" aria-label="Langue / Language">
+  <button id="btn-fr" type="button" onclick="fwSetLang('fr')">FR</button>
+  <button id="btn-en" type="button" onclick="fwSetLang('en')">EN</button>
+</div>
+
+<!-- ═══════════════════════════ FRANÇAIS ═══════════════════════════ -->
+<div class="lang-fr">
+
+  <!-- Hero -->
+  <section class="fw-hero">
+    <h1 class="mdv-wordmark">md<span class="bar" aria-hidden="true"></span>Viewer</h1>
+    <p class="mdv-sub">Lecteur Markdown &amp; Mermaid — OK-ia</p>
+    <p class="fw-tagline">Vos rapports Markdown, rendus parfaitement — hors-ligne, sur tous vos appareils.</p>
+    <!-- TODO : remplacer # par le lien TestFlight / App Store -->
+    <a class="fw-btn" href="#">Rejoindre la bêta TestFlight</a>
+    <a class="fw-btn fw-btn-secondaire" href="/fornews/">Découvrir fornews.ai</a>
+    <p class="fw-devices">iPhone · iPad · Mac — iOS/iPadOS 17 ou macOS 14 ou ultérieur · Français &amp; English</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 640" role="img" aria-label="md Viewer sur Mac et iPhone : un rapport Markdown rendu avec titre, entités colorées et diagramme Mermaid"><use href="#ill-hero"/></svg>
+      <figcaption>Le même rapport, la même charte : titres Nunito, entités colorées, diagrammes Mermaid — sur Mac comme sur iPhone.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Fonctionnalités -->
+  <section>
+    <div class="accent-line"></div>
+    <h2>Fonctionnalités</h2>
+    <div class="fw-grid">
+      <div class="fw-card">
+        <h3>📄 Rendu fidèle OK-ia</h3>
+        <p>Le pipeline du viewer ok-ia.ch, embarqué dans l'app : typographie Nunito, tableaux,
+        citations, callouts Obsidian (note, tip, warning…), wiki-links et coloration des
+        entités (personnes, lieux, organisations).</p>
+      </div>
+      <div class="fw-card">
+        <h3>📊 Diagrammes Mermaid</h3>
+        <p>Flowchart, séquence, gantt, pie, mindmap — rendus hors-ligne avec le thème OK-ia
+        normalisé. Un tap ouvre le diagramme en plein écran, vectoriel et net même à fort
+        zoom.</p>
+      </div>
+      <div class="fw-card">
+        <h3>🗺️ Cartes Leaflet</h3>
+        <p>Blocs <span class="mdv-code">```leaflet</span> à la façon du plugin Obsidian :
+        marqueurs positionnés, fonds de carte CARTO/OSM, cadrage automatique et mode plein
+        écran pour explorer.</p>
+      </div>
+      <div class="fw-card">
+        <h3>🎞️ Mode Diaporama</h3>
+        <p>Chaque bloc séparé par <span class="mdv-code">---</span> devient une diapositive
+        plein écran, façon Keynote : 5 transitions, 5 thèmes de couleurs, vue d'ensemble en
+        vignettes et navigation au clavier.</p>
+      </div>
+      <div class="fw-card">
+        <h3>📤 Export PDF · Word · PowerPoint</h3>
+        <p>Le rapport s'exporte en PDF ou en Word (.docx) avec tableaux éditables ; le
+        diaporama s'exporte en PowerPoint (.pptx). Générateur OOXML maison, sans dépendance —
+        s'ouvre aussi dans Pages et Keynote.</p>
+      </div>
+      <div class="fw-card">
+        <h3>✨ Résumé Apple Intelligence</h3>
+        <p>Un résumé structuré (chapitres, gras, listes) généré sur l'appareil par le modèle
+        local d'Apple Intelligence — dans la langue de l'app, sans qu'aucun texte ne quitte
+        votre appareil.</p>
+      </div>
+      <div class="fw-card">
+        <h3>🗂️ Coffre à rapports</h3>
+        <p>Désignez un dossier (iCloud Drive) comme « coffre » : vos nouveaux rapports
+        apparaissent sur l'écran d'accueil, et s'ouvrent automatiquement sur Mac. Siri et
+        Raccourcis : « Ouvre le dernier rapport ».</p>
+      </div>
+      <div class="fw-card">
+        <h3>🔒 100 % hors-ligne</h3>
+        <p>marked, Mermaid et Leaflet sont embarqués dans l'app : rendu, diagrammes, résumé et
+        exports fonctionnent sans réseau. Aucun compte, aucun pistage. Interface en français
+        ou en anglais, au choix dans les réglages.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Galerie -->
+  <section>
+    <h2>L'app en images</h2>
+    <div class="fw-galerie">
+      <figure>
+        <svg viewBox="0 0 340 720" role="img" aria-label="iPhone : lecture d'un rapport avec diagramme et callout"><use href="#ill-reader"/></svg>
+        <figcaption>La lecture, fidèle à la charte</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 340 720" role="img" aria-label="iPhone : sommaire du document et recherche"><use href="#ill-toc"/></svg>
+        <figcaption>Sommaire &amp; recherche</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Diaporama plein écran avec camembert et barre de progression"><use href="#ill-slides"/></svg>
+        <figcaption>Le diaporama, façon Keynote</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Diagramme Mermaid en plein écran avec boutons de zoom"><use href="#ill-zoom"/></svg>
+        <figcaption>Zoom vectoriel plein écran</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Export d'un fichier Markdown vers PDF, Word et PowerPoint"><use href="#ill-export"/></svg>
+        <figcaption>Exports PDF, Word, PowerPoint</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Le coffre : dossier iCloud surveillé avec liste de rapports"><use href="#ill-vault"/></svg>
+        <figcaption>Le coffre, synchronisé par iCloud</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Résumé structuré généré par Apple Intelligence"><use href="#ill-ai"/></svg>
+        <figcaption>Le résumé Apple Intelligence</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Intégration -->
+  <section>
+    <h2>Pensé pour vos flux OK-ia</h2>
+    <p>md Viewer est le lecteur des rapports générés par les outils OK-ia (observatoires,
+    veille, fornews.ai) — et de n'importe quel fichier Markdown. Ouvrez un
+    <span class="mdv-code">.md</span> depuis Fichiers, le partage iOS, un glisser-déposer sur
+    Mac, ou par lien : <span class="mdv-code">mdviewer://open?url=https://…/rapport.md</span>.</p>
+  </section>
+
+  <!-- Confidentialité -->
+  <section>
+    <h2>Confidentialité par conception</h2>
+    <p>Aucune collecte de données, aucun compte, aucun pistage. Vos documents restent sur vos
+    appareils et dans votre iCloud <em>privé</em> ; le résumé IA est calculé localement. Seules
+    les tuiles de fond de carte sont chargées en ligne.
+    <a href="confidentialite.html">Lire la politique de confidentialité</a>.</p>
+  </section>
+
+  <!-- Essai -->
+  <section>
+    <h2>Essayer md Viewer</h2>
+    <p>L'app est actuellement diffusée en <strong>bêta via TestFlight</strong>. Envie de
+    l'essayer ? <a href="/#contact">Contactez-nous</a> pour recevoir une invitation.</p>
+    <div class="fw-pages">
+      <a href="confidentialite.html">Confidentialité / Privacy</a>
+      <a href="/fornews/">fornews.ai</a>
+      <a href="/rapports.html">Veille informationnelle</a>
+      <a href="/#contact">Contact</a>
+    </div>
+  </section>
+
+</div><!-- /lang-fr -->
+
+<!-- ═══════════════════════════ ENGLISH ═══════════════════════════ -->
+<div class="lang-en">
+
+  <!-- Hero -->
+  <section class="fw-hero">
+    <h1 class="mdv-wordmark">md<span class="bar" aria-hidden="true"></span>Viewer</h1>
+    <p class="mdv-sub">Markdown &amp; Mermaid reader — OK-ia</p>
+    <p class="fw-tagline">Your Markdown reports, beautifully rendered — offline, on all your devices.</p>
+    <!-- TODO: replace # with the TestFlight / App Store link -->
+    <a class="fw-btn" href="#">Join the TestFlight beta</a>
+    <a class="fw-btn fw-btn-secondaire" href="/fornews/?lang=en">Discover fornews.ai</a>
+    <p class="fw-devices">iPhone · iPad · Mac — iOS/iPadOS 17 or macOS 14 or later · Français &amp; English</p>
+    <figure class="fw-capture">
+      <svg viewBox="0 0 1200 640" role="img" aria-label="md Viewer on Mac and iPhone: a rendered Markdown report with title, highlighted entities and a Mermaid diagram"><use href="#ill-hero"/></svg>
+      <figcaption>The same report, the same design language: Nunito headings, highlighted entities, Mermaid diagrams — on Mac and iPhone alike.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Features -->
+  <section>
+    <div class="accent-line"></div>
+    <h2>Features</h2>
+    <div class="fw-grid">
+      <div class="fw-card">
+        <h3>📄 Faithful OK-ia rendering</h3>
+        <p>The ok-ia.ch viewer pipeline, embedded in the app: Nunito typography, tables,
+        quotes, Obsidian callouts (note, tip, warning…), wiki-links and entity highlighting
+        (people, places, organisations).</p>
+      </div>
+      <div class="fw-card">
+        <h3>📊 Mermaid diagrams</h3>
+        <p>Flowchart, sequence, gantt, pie, mindmap — rendered offline with the normalised
+        OK-ia theme. One tap opens the diagram full screen, as crisp vectors even at high
+        zoom.</p>
+      </div>
+      <div class="fw-card">
+        <h3>🗺️ Leaflet maps</h3>
+        <p><span class="mdv-code">```leaflet</span> blocks in the style of the Obsidian
+        plugin: positioned markers, CARTO/OSM base maps, automatic framing and a full-screen
+        mode to explore.</p>
+      </div>
+      <div class="fw-card">
+        <h3>🎞️ Slideshow mode</h3>
+        <p>Every block separated by <span class="mdv-code">---</span> becomes a full-screen
+        slide, Keynote style: 5 transitions, 5 colour themes, a thumbnail overview and
+        keyboard navigation.</p>
+      </div>
+      <div class="fw-card">
+        <h3>📤 PDF · Word · PowerPoint export</h3>
+        <p>Reports export to PDF or Word (.docx) with editable tables; the slideshow exports
+        to PowerPoint (.pptx). A home-grown, dependency-free OOXML generator — files also
+        open in Pages and Keynote.</p>
+      </div>
+      <div class="fw-card">
+        <h3>✨ Apple Intelligence summary</h3>
+        <p>A structured summary (chapters, bold, lists) generated on-device by Apple
+        Intelligence's local model — in the app's language, without a single word leaving
+        your device.</p>
+      </div>
+      <div class="fw-card">
+        <h3>🗂️ Report vault</h3>
+        <p>Pick a folder (iCloud Drive) as your "vault": new reports show up on the home
+        screen and open automatically on the Mac. Siri and Shortcuts: "Open the latest
+        report".</p>
+      </div>
+      <div class="fw-card">
+        <h3>🔒 100% offline</h3>
+        <p>marked, Mermaid and Leaflet ship inside the app: rendering, diagrams, summaries
+        and exports all work without a network. No account, no tracking. UI in French or
+        English — your choice in Settings.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section>
+    <h2>The app in pictures</h2>
+    <div class="fw-galerie">
+      <figure>
+        <svg viewBox="0 0 340 720" role="img" aria-label="iPhone: reading a report with a diagram and a callout"><use href="#ill-reader"/></svg>
+        <figcaption>Reading, true to the brand</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 340 720" role="img" aria-label="iPhone: document outline and in-document search"><use href="#ill-toc"/></svg>
+        <figcaption>Outline &amp; search</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Full-screen slideshow with a pie chart and progress bar"><use href="#ill-slides"/></svg>
+        <figcaption>The Keynote-style slideshow</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Mermaid diagram in full screen with zoom controls"><use href="#ill-zoom"/></svg>
+        <figcaption>Full-screen vector zoom</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Exporting a Markdown file to PDF, Word and PowerPoint"><use href="#ill-export"/></svg>
+        <figcaption>PDF, Word, PowerPoint exports</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="The vault: a watched iCloud folder with a list of reports"><use href="#ill-vault"/></svg>
+        <figcaption>The vault, synced by iCloud</figcaption>
+      </figure>
+      <figure>
+        <svg viewBox="0 0 900 560" role="img" aria-label="Structured summary generated by Apple Intelligence"><use href="#ill-ai"/></svg>
+        <figcaption>The Apple Intelligence summary</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Integration -->
+  <section>
+    <h2>Built for your OK-ia workflows</h2>
+    <p>md Viewer is the reader for reports produced by OK-ia tools (observatories, media
+    monitoring, fornews.ai) — and for any Markdown file. Open a
+    <span class="mdv-code">.md</span> from Files, the iOS share sheet, drag &amp; drop on the
+    Mac, or via a link: <span class="mdv-code">mdviewer://open?url=https://…/report.md</span>.</p>
+  </section>
+
+  <!-- Privacy -->
+  <section>
+    <h2>Privacy by design</h2>
+    <p>No data collection, no account, no tracking. Your documents stay on your devices and
+    in your <em>private</em> iCloud; the AI summary is computed locally. Only the base map
+    tiles are loaded online.
+    <a href="confidentialite.html">Read the privacy policy</a>.</p>
+  </section>
+
+  <!-- Try it -->
+  <section>
+    <h2>Try md Viewer</h2>
+    <p>The app is currently distributed as a <strong>beta through TestFlight</strong>. Want
+    to try it? <a href="/#contact">Get in touch</a> to receive an invitation.</p>
+    <div class="fw-pages">
+      <a href="confidentialite.html">Privacy</a>
+      <a href="/fornews/?lang=en">fornews.ai</a>
+      <a href="/rapports.html">Media monitoring</a>
+      <a href="/#contact">Contact</a>
+    </div>
+  </section>
+
+</div><!-- /lang-en -->
+
+</main>
+
+<footer>
+  <span>© 2026 OK-ia · md Viewer</span>
+  <span>ok-ia.ch</span>
+</footer>
+
+<script>
+function fwSetLang(l) {
+  document.documentElement.setAttribute('data-lang', l);
+  document.documentElement.setAttribute('lang', l);
+  try { localStorage.setItem('mdv-lang', l); } catch (e) {}
+  document.getElementById('btn-fr').classList.toggle('on', l === 'fr');
+  document.getElementById('btn-en').classList.toggle('on', l === 'en');
+}
+(function(){
+  var l = null;
+  var q = location.search.match(/[?&]lang=(fr|en)/);
+  if (q) l = q[1];
+  if (!l) { try { l = localStorage.getItem('mdv-lang'); } catch (e) {} }
+  if (l !== 'fr' && l !== 'en') {
+    l = (navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
+  }
+  fwSetLang(l);
+
+  var b = document.getElementById('nav-burger');
+  var m = document.querySelector('.nav-links');
+  if (!b || !m) return;
+  b.addEventListener('click', function(){
+    var o = m.classList.toggle('open');
+    b.setAttribute('aria-expanded', o ? 'true' : 'false');
+  });
+  m.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      m.classList.remove('open');
+      b.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+</script>
+</body>
+</html>

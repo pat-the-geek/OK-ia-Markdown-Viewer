@@ -4,8 +4,26 @@
     {
       "name": "okia-web",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "OKiaMarkdownViewer"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--directory",
+        "OKiaMarkdownViewer"
+      ],
       "port": 8765
+    },
+    {
+      "name": "mdviewer-site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8766",
+        "--directory",
+        "site"
+      ],
+      "port": 8766
     }
   ]
 }
