@@ -145,7 +145,7 @@ marker: 47.1368, 7.2468, [[Bienne]]
 ```
 
 > [!info] Syntaxe
-> Un bloc ` ```leaflet ` à la façon du plugin Obsidian : `marker: lat, long, [[Nom]]`,
+> Un bloc de code `leaflet` à la façon du plugin Obsidian : `marker: lat, long, [[Nom]]`,
 > avec `minZoom`, `maxZoom` et `height` en options. Cadrage automatique sur les points.
 
 ## 4. Chiffres clés
@@ -192,7 +192,7 @@ func handleIncoming(_ url: URL) {
 Et le lien profond qui a ouvert ce document, peut-être :
 `mdviewer://open?url=https://ok-ia.ch/mdviewer/exemples/rapport-exemple.md`
 
-## 7. Acteurs cités
+## Entités
 
 ### Organisations
 - [[OK-ia]]

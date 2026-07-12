@@ -11,7 +11,7 @@
 
   // App language, injected by the host app (window.OKIA_LANG = 'fr' | 'en').
   var LANG = (window.OKIA_LANG === 'en') ? 'en' : 'fr';
-  function L(fr, en) { return LANG === 'en' ? en : fr; }
+  function TXT(fr, en) { return LANG === 'en' ? en : fr; }
 
   /* ---- native bridge ----------------------------------------------------- */
   function post(name, payload) {
@@ -69,7 +69,7 @@
     else if (ch) d = new Date(parseInt(ch[3]), parseInt(ch[2]) - 1, parseInt(ch[1]));
     if (!d || isNaN(d.getTime())) return raw;
     try {
-      return new Intl.DateTimeFormat(L('fr-CH', 'en-GB'),
+      return new Intl.DateTimeFormat(TXT('fr-CH', 'en-GB'),
                                      { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
     } catch (e) { return raw; }
   }
@@ -93,7 +93,7 @@
     if (dateStr) parts.push('<span class="meta-date">' + escapeHtml(dateStr) + '</span>');
     if (lecture) parts.push('<span class="meta-read">' + escapeHtml(lecture) + '</span>');
     if (url) parts.push('<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
-                        L('Lire l\'article', 'Read the article') + ' ↗</a>');
+                        TXT('Lire l\'article', 'Read the article') + ' ↗</a>');
 
     var metaBar = parts.length
       ? '<div class="okia-meta">' + parts.join('<span class="sep">·</span>') + '</div>'
@@ -734,7 +734,7 @@
     } catch (err) {
       container.innerHTML = '<div class="callout callout-error" style="--callout-color:#ef5350">' +
         '<div class="callout-title"><span class="callout-icon">⛔</span>' +
-        L('Erreur de rendu', 'Rendering error') + '</div>' +
+        TXT('Erreur de rendu', 'Rendering error') + '</div>' +
         '<div class="callout-content"><pre>' + escapeHtml(String(err && err.stack || err)) +
         '</pre></div></div>';
       post('renderError', { message: String(err && err.message || err) });
