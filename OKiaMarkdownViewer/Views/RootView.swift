@@ -81,6 +81,14 @@ struct RootView: View {
             if let windowScene = scene as? UIWindowScene {
                 windowScene.sizeRestrictions?.minimumSize = CGSize(width: 480, height: 600)
                 windowScene.title = "md Viewer"
+                #if DEBUG
+                // Screenshot harness: pin the window to a fixed size for pixel-exact captures.
+                if ProcessInfo.processInfo.environment["OKIA_SHOT_SIZE"] != nil {
+                    let fixed = CGSize(width: 1360, height: 860)
+                    windowScene.sizeRestrictions?.minimumSize = fixed
+                    windowScene.sizeRestrictions?.maximumSize = fixed
+                }
+                #endif
             }
         }
         #endif

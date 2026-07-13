@@ -202,6 +202,15 @@ struct OKiaMarkdownViewerApp: App {
         _store = StateObject(wrappedValue: store)
         // Share the running store with App Intents (Siri / Spotlight / Shortcuts).
         AppDependencyManager.shared.add(dependency: store)
+        #if DEBUG
+        // Screenshot harness (Debug/simulator only): render a document handed in via
+        // environment so App Store captures can be scripted headlessly.
+        let env = ProcessInfo.processInfo.environment
+        if let content = env["OKIA_RENDER_CONTENT"], !content.isEmpty {
+            let name = env["OKIA_RENDER_NAME"] ?? "Demo.md"
+            store.document = MarkdownDocument(filename: name, text: content)
+        }
+        #endif
     }
 
     var body: some Scene {

@@ -1,5 +1,29 @@
 # Captures d'écran — App Store
 
+## ✅ Captures générées (13 juillet 2026)
+
+Jeu prêt à téléverser dans `store/screenshots/` — toutes aux tailles exactes requises :
+
+| Dossier | Taille | Scènes |
+|---|---|---|
+| `screenshots/iphone-6.9/` | **1320×2868** | accueil · lecteur · Mermaid · carte Leaflet · mode sombre |
+| `screenshots/ipad-13/`    | **2064×2752** | accueil · lecteur · Mermaid · carte Leaflet · mode sombre |
+| `screenshots/mac/`        | **2880×1800** | accueil · lecteur · Mermaid · carte Leaflet · **callouts + entités** |
+
+- Générées **headless** : iPhone/iPad via `simctl` (framebuffer natif), Mac Catalyst via
+  `screencapture` de la fenêtre puis normalisation `sips` (fenêtre posée sur fond crème #FAFAF8).
+- Chaque scène est chargée par un **hook de debug** (`#if DEBUG`, variables d'env
+  `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` ; taille de fenêtre Mac via `OKIA_SHOT_SIZE`) —
+  **absent du build de production**.
+- ⚠️ **Non incluses** (impossibles en simulateur) : le **résumé Apple Intelligence** (nécessite
+  Foundation Models = vrai appareil compatible) et les **callouts iOS** (les emoji d'icône
+  s'affichent en « ? » dans le WebView du simulateur — nets sur vrai appareil et sur Mac).
+  → à capturer sur un iPhone/iPad réel avant soumission si tu veux ces scènes côté iOS.
+
+---
+
+## Références de tailles
+
 App **universelle** → captures requises pour **iPhone**, **iPad** et **Mac**. Format **PNG ou JPEG**,
 sans transparence, sans coins arrondis ajoutés (capture brute). ⚠️ Vérifie les tailles exactes
 demandées le jour J dans App Store Connect (Apple les ajuste).
