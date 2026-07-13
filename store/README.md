@@ -10,7 +10,7 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 |---|---|
 | [`listing-fr.md`](listing-fr.md) | Fiche produit : nom, sous-titre, description, mots-clés, nouveautés, URLs, catégorie, copyright |
 | [`app-privacy.md`](app-privacy.md) | Réponses au questionnaire « App Privacy » |
-| [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/mdviewer-confidentialite.html` |
+| [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/mdviewer/confidentialite.html` |
 | [`screenshots.md`](screenshots.md) | Tailles de captures requises (iPhone/iPad/Mac) + plan de capture |
 | [`review-notes.md`](review-notes.md) | Notes pour l'équipe App Review (comment tester, contenu de démo, pas de login) |
 | [`testflight.md`](testflight.md) | Infos TestFlight : description bêta, « Que tester », notes review externe, feedback |
@@ -19,7 +19,7 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 
 - **Nom** : OK-ia Markdown Viewer · **Catégorie** : Productivité · **Prix** : Gratuit
 - **Âge** : 4+ (répondre « Non » à « accès web sans restriction »)
-- **URLs** : assistance & marketing `https://ok-ia.ch` · confidentialité `https://ok-ia.ch/mdviewer-confidentialite.html`
+- **URLs** : assistance & marketing `https://ok-ia.ch` · confidentialité `https://ok-ia.ch/mdviewer/confidentialite.html`
 - **Copyright** : © 2026 OK-ia
 
 ## Portée des plateformes
@@ -32,8 +32,9 @@ L'app est **universelle** : `TARGETED_DEVICE_FAMILY = 1,2` (iPhone + iPad) **et*
 
 - ✅ Icône 1024×1024 sans canal alpha (conforme).
 - ✅ Conformité export : `ITSAppUsesNonExemptEncryption = false` (pas de questionnaire crypto).
-- ✅ Signature : équipe payante `72NVM63N83`, signature automatique.
-- ✅ Build `1.0.0 (3)` archivé (déjà sur TestFlight côté iOS).
+- ✅ Signature : équipe payante `PU9BSXN2V5`, signature automatique.
+- ✅ Build `1.0.0 (18)` — inclut le résumé Apple Intelligence, les App Intents et le correctif Gantt.
+  Réarchiver depuis Xcode (Organizer) avant soumission ; les builds précédents (≤17) sont périmés.
 
 ## Ce que je ne peux pas faire à ta place
 
@@ -45,9 +46,9 @@ exactement quoi saisir.
 ## Ordre conseillé
 
 1. ~~Décider les points (nom, catégorie, prix, URLs)~~ ✅ fait — voir *Décisions actées*.
-2. Héberger [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) sur `ok-ia.ch/mdviewer-confidentialite.html` (URL requise).
+2. Héberger [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) sur `ok-ia.ch/mdviewer/confidentialite.html` (URL requise).
 3. Capturer les **screenshots** (iPhone, iPad, Mac) — voir `screenshots.md`.
 4. Remplir la fiche dans App Store Connect — voir `listing-fr.md`.
 5. Renseigner **App Privacy** — voir `app-privacy.md`.
-6. Rattacher le build (iOS : `1.0.0 (3)` ; macOS : archiver le Catalyst → voir `review-notes.md`).
+6. Rattacher le build (iOS : `1.0.0 (18)` ; macOS : archiver le Catalyst → voir `review-notes.md`).
 7. Ajouter les **notes pour la review**, puis **Submit for Review**.

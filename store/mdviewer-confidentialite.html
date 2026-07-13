@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Politique de confidentialité — md Viewer (OK-ia Markdown Viewer)</title>
+  <title>Politique de confidentialité / Privacy Policy — md Viewer (OK-ia)</title>
   <meta name="robots" content="index,follow" />
   <style>
     :root{
@@ -29,69 +29,166 @@
     footer{margin-top:2.5em;padding-top:1.2em;border-top:1px solid var(--rule);
       color:var(--muted);font-size:.85rem}
     code{background:#f3f1ec;padding:.1em .35em;border-radius:5px;font-size:.92em}
+    /* Bascule de langue (même patron que la page md Viewer) */
+    html[data-lang="fr"] .lang-en{display:none}
+    html[data-lang="en"] .lang-fr{display:none}
+    .fw-langswitch{float:right;display:inline-flex;border:1px solid var(--rule);
+      border-radius:2rem;background:var(--card);overflow:hidden;margin:0 0 .5rem 1rem}
+    .fw-langswitch button{border:0;background:transparent;padding:.35rem .9rem;
+      font:inherit;font-size:.82rem;font-weight:700;color:var(--muted);cursor:pointer}
+    .fw-langswitch button.on{background:var(--orange);color:#fff}
     @media (prefers-color-scheme: dark){
       :root{--bg:#16161a;--card:#1f1f24;--rule:#34343a;--noir:#ECEAE3;--muted:#a7a79c}
       p,li{color:#d9d7cf}
+      code{background:#2a2a30}
     }
   </style>
 </head>
 <body>
   <main class="wrap">
-    <h1>Politique de confidentialité</h1>
-    <p class="meta">Application <strong>md Viewer</strong> (OK-ia Markdown Viewer) ·
-       Dernière mise à jour : 17 juin 2026</p>
-
-    <p class="lead">md Viewer est un lecteur de documents Markdown.
-       Notre principe est simple : <strong>vos documents restent les vôtres</strong>.</p>
-
-    <h2>Données que nous collectons</h2>
-    <div class="card">
-      <strong>Aucune.</strong> L'application ne crée pas de compte, n'intègre aucun outil
-      d'analyse ou de publicité, et ne transmet aucune donnée personnelle à OK-ia ou à des tiers
-      à des fins de suivi. Nous ne réalisons <strong>aucun pistage</strong>.
+    <div class="fw-langswitch" role="group" aria-label="Langue / Language">
+      <button id="btn-fr" type="button" onclick="fwSetLang('fr')">FR</button>
+      <button id="btn-en" type="button" onclick="fwSetLang('en')">EN</button>
     </div>
 
-    <h2>Données stockées sur votre appareil</h2>
-    <p>Pour vous faciliter la vie, l'application conserve <em>localement</em> :</p>
-    <ul>
-      <li>la liste de vos <strong>fichiers récents</strong> ;</li>
-      <li>la référence (signet « security-scoped ») de votre <strong>dossier de coffre</strong>,
-          si vous en configurez un.</li>
-    </ul>
-    <p>Ces informations restent <strong>sur votre appareil</strong> et ne nous sont jamais envoyées.</p>
+    <!-- ═══════════════ FRANÇAIS ═══════════════ -->
+    <div class="lang-fr">
+      <h1>Politique de confidentialité</h1>
+      <p class="meta">Application <strong>md Viewer</strong> (OK-ia Markdown Viewer) ·
+         Dernière mise à jour : 17 juin 2026</p>
 
-    <h2>Accès à Internet</h2>
-    <p>L'application fonctionne hors-ligne. Elle se connecte à Internet uniquement
-       lorsque <strong>vous</strong> le déclenchez :</p>
-    <ul>
-      <li>pour afficher les <strong>fonds de carte</strong> des documents contenant une carte
-          (tuiles fournies par
-          <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> et
-          <a href="https://carto.com/attributions" rel="noopener">CARTO</a>) ;</li>
-      <li>pour <strong>télécharger un document</strong> ou une image lorsque vous ouvrez un lien
-          <code>https</code>.</li>
-    </ul>
-    <p>Comme pour tout chargement de page web, ces services tiers peuvent recevoir votre adresse IP.
-       L'application, elle, ne collecte ni ne relie ces informations à votre identité.</p>
+      <p class="lead">md Viewer est un lecteur de documents Markdown.
+         Notre principe est simple : <strong>vos documents restent les vôtres</strong>.</p>
 
-    <h2>Intelligence artificielle</h2>
-    <p>La fonction « Résumé du document » utilise <strong>Apple Intelligence sur l'appareil</strong>.
-       Le contenu de vos documents <strong>n'est pas envoyé</strong> à un serveur pour être résumé.</p>
+      <h2>Données que nous collectons</h2>
+      <div class="card">
+        <strong>Aucune.</strong> L'application ne crée pas de compte, n'intègre aucun outil
+        d'analyse ou de publicité, et ne transmet aucune donnée personnelle à OK-ia ou à des tiers
+        à des fins de suivi. Nous ne réalisons <strong>aucun pistage</strong>.
+      </div>
 
-    <h2>Enfants</h2>
-    <p>L'application ne collecte aucune donnée et convient à tous les publics.</p>
+      <h2>Données stockées sur votre appareil</h2>
+      <p>Pour vous faciliter la vie, l'application conserve <em>localement</em> :</p>
+      <ul>
+        <li>la liste de vos <strong>fichiers récents</strong> ;</li>
+        <li>la référence (signet « security-scoped ») de votre <strong>dossier de coffre</strong>,
+            si vous en configurez un ;</li>
+        <li>vos <strong>préférences</strong> (langue de l'interface, taille du texte, thème et
+            transition du diaporama).</li>
+      </ul>
+      <p>Ces informations restent <strong>sur votre appareil</strong> et ne nous sont jamais envoyées.</p>
 
-    <h2>Modifications de cette politique</h2>
-    <p>Toute évolution sera publiée sur cette page, avec une date de mise à jour actualisée.</p>
+      <h2>Accès à Internet</h2>
+      <p>L'application fonctionne hors-ligne. Elle se connecte à Internet uniquement
+         lorsque <strong>vous</strong> le déclenchez :</p>
+      <ul>
+        <li>pour afficher les <strong>fonds de carte</strong> des documents contenant une carte
+            (tuiles fournies par
+            <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> et
+            <a href="https://carto.com/attributions" rel="noopener">CARTO</a>) ;</li>
+        <li>pour <strong>télécharger un document</strong> ou une image lorsque vous ouvrez un lien
+            <code>https</code>.</li>
+      </ul>
+      <p>Comme pour tout chargement de page web, ces services tiers peuvent recevoir votre adresse IP.
+         L'application, elle, ne collecte ni ne relie ces informations à votre identité.</p>
 
-    <h2>Contact</h2>
-    <p>Comme aucune donnée personnelle n'est collectée, il n'y a rien à consulter, corriger ou
-       supprimer de notre côté. Pour toute question :
-       <a href="mailto:contact@ok-ia.ch">contact@ok-ia.ch</a>.</p>
+      <h2>Intelligence artificielle</h2>
+      <p>La fonction « Résumé du document » utilise <strong>Apple Intelligence sur l'appareil</strong>.
+         Le contenu de vos documents <strong>n'est pas envoyé</strong> à un serveur pour être résumé.</p>
+
+      <h2>Enfants</h2>
+      <p>L'application ne collecte aucune donnée et convient à tous les publics.</p>
+
+      <h2>Modifications de cette politique</h2>
+      <p>Toute évolution sera publiée sur cette page, avec une date de mise à jour actualisée.</p>
+
+      <h2>Contact</h2>
+      <p>Comme aucune donnée personnelle n'est collectée, il n'y a rien à consulter, corriger ou
+         supprimer de notre côté. Pour toute question :
+         <a href="mailto:contact@ok-ia.ch">contact@ok-ia.ch</a>.</p>
+    </div><!-- /lang-fr -->
+
+    <!-- ═══════════════ ENGLISH ═══════════════ -->
+    <div class="lang-en">
+      <h1>Privacy Policy</h1>
+      <p class="meta"><strong>md Viewer</strong> app (OK-ia Markdown Viewer) ·
+         Last updated: June 17, 2026</p>
+
+      <p class="lead">md Viewer is a Markdown document reader.
+         Our principle is simple: <strong>your documents remain yours</strong>.</p>
+
+      <h2>Data we collect</h2>
+      <div class="card">
+        <strong>None.</strong> The app creates no account, embeds no analytics or advertising
+        tools, and transmits no personal data to OK-ia or to third parties for tracking
+        purposes. We do <strong>no tracking</strong> whatsoever.
+      </div>
+
+      <h2>Data stored on your device</h2>
+      <p>To make your life easier, the app keeps <em>locally</em>:</p>
+      <ul>
+        <li>the list of your <strong>recent files</strong>;</li>
+        <li>the reference (security-scoped bookmark) of your <strong>vault folder</strong>,
+            if you set one up;</li>
+        <li>your <strong>preferences</strong> (interface language, text size, slideshow theme
+            and transition).</li>
+      </ul>
+      <p>This information stays <strong>on your device</strong> and is never sent to us.</p>
+
+      <h2>Internet access</h2>
+      <p>The app works offline. It connects to the Internet only when <strong>you</strong>
+         trigger it:</p>
+      <ul>
+        <li>to display the <strong>base maps</strong> of documents containing a map
+            (tiles provided by
+            <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> and
+            <a href="https://carto.com/attributions" rel="noopener">CARTO</a>);</li>
+        <li>to <strong>download a document</strong> or an image when you open an
+            <code>https</code> link.</li>
+      </ul>
+      <p>As with any web page load, these third-party services may receive your IP address.
+         The app itself neither collects nor links this information to your identity.</p>
+
+      <h2>Artificial intelligence</h2>
+      <p>The "Document summary" feature uses <strong>Apple Intelligence on-device</strong>.
+         The content of your documents is <strong>never sent</strong> to a server to be summarised.</p>
+
+      <h2>Children</h2>
+      <p>The app collects no data and is suitable for all audiences.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>Any change will be published on this page, with an updated revision date.</p>
+
+      <h2>Contact</h2>
+      <p>Since no personal data is collected, there is nothing to access, correct or delete on
+         our side. For any question:
+         <a href="mailto:contact@ok-ia.ch">contact@ok-ia.ch</a>.</p>
+    </div><!-- /lang-en -->
 
     <footer>
-      © 2026 OK-ia · <a href="https://ok-ia.ch" rel="noopener">ok-ia.ch</a>
+      © 2026 OK-ia · <a href="https://ok-ia.ch" rel="noopener">ok-ia.ch</a> ·
+      <a href="/mdviewer/"><span class="lang-fr">Retour à md Viewer</span><span class="lang-en">Back to md Viewer</span></a>
     </footer>
   </main>
+
+  <script>
+  function fwSetLang(l) {
+    document.documentElement.setAttribute('data-lang', l);
+    document.documentElement.setAttribute('lang', l);
+    try { localStorage.setItem('mdv-lang', l); } catch (e) {}
+    document.getElementById('btn-fr').classList.toggle('on', l === 'fr');
+    document.getElementById('btn-en').classList.toggle('on', l === 'en');
+  }
+  (function(){
+    var l = null;
+    var q = location.search.match(/[?&]lang=(fr|en)/);
+    if (q) l = q[1];
+    if (!l) { try { l = localStorage.getItem('mdv-lang'); } catch (e) {} }
+    if (l !== 'fr' && l !== 'en') {
+      l = (navigator.language || 'fr').toLowerCase().indexOf('fr') === 0 ? 'fr' : 'en';
+    }
+    fwSetLang(l);
+  })();
+  </script>
 </body>
 </html>

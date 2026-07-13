@@ -5,10 +5,9 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.0.0 (4)`** — le build `(3)` déjà sur App Store Connect ne contient pas
-> le résumé Apple Intelligence, les App Intents, ni le correctif d'affichage du titre. **Archive un
-> nouveau build (4)** avant de renseigner ce qui suit (Xcode → bump `CURRENT_PROJECT_VERSION` à 4 →
-> Archive → Upload).
+> ⚠️ **Build à utiliser : `1.0.0 (18)`** — inclut le résumé Apple Intelligence, les App Intents et
+> le correctif Gantt. `CURRENT_PROJECT_VERSION` est déjà à 18 et le projet régénéré : Xcode →
+> Archive (scheme « md Viewer », Any iOS Device) → Organizer → Distribute/Upload.
 
 ---
 
@@ -22,11 +21,11 @@ Cette bêta sert à valider le rendu, la navigation et la stabilité sur iPhone,
 ```
 - **Feedback Email** : `contact@ok-ia.ch` ⚠️ (adresse réellement relevée — ajuster si besoin)
 - **Marketing URL** : `https://ok-ia.ch`
-- **Privacy Policy URL** : `https://ok-ia.ch/mdviewer-confidentialite.html`
+- **Privacy Policy URL** : `https://ok-ia.ch/mdviewer/confidentialite.html`
 
 ---
 
-## What to Test — build 1.0.0 (4)
+## What to Test — build 1.0.0 (18)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :

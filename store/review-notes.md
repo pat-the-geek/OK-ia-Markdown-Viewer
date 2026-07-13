@@ -67,7 +67,7 @@ PLATFORMS
 
 - **Sign-in required:** Non.
 - **Export compliance:** déjà géré (`ITSAppUsesNonExemptEncryption=false`) → pas de question.
-- **Build:** iOS → rattacher `1.0.0 (3)` (déjà sur App Store Connect) ; macOS → archiver le
+- **Build:** iOS → rattacher `1.0.0 (18)` (à uploader via Transporter) ; macOS → archiver le
   Catalyst (« My Mac ») et le rattacher à la plateforme macOS de la même fiche.
 - **Contenu généré par IA:** si le formulaire le demande, préciser que les résumés sont produits
   **sur l'appareil** par Apple Intelligence à partir du document ouvert par l'utilisateur.

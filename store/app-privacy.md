@@ -38,7 +38,7 @@ par transparence.
 ## 2. Politique de confidentialité
 
 ✅ **Version finalisée, prête à héberger : [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html)**
-(page HTML autonome). Publie-la à `https://ok-ia.ch/mdviewer-confidentialite.html`, puis renseigne cette URL
+(page HTML autonome). Publie-la à `https://ok-ia.ch/mdviewer/confidentialite.html`, puis renseigne cette URL
 dans App Store Connect (champ **obligatoire**). Contact dans la page : `contact@ok-ia.ch`
 (à ajuster si une autre adresse est préférée).
 
