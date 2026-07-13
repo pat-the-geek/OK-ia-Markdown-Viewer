@@ -39,7 +39,7 @@ par transparence.
 
 ✅ **Version finalisée, prête à héberger : [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html)**
 (page HTML autonome). Publie-la à `https://ok-ia.ch/mdviewer/confidentialite.html`, puis renseigne cette URL
-dans App Store Connect (champ **obligatoire**). Contact dans la page : `contact@ok-ia.ch`
+dans App Store Connect (champ **obligatoire**). Contact dans la page : `patrick@ok-ia.ch`
 (à ajuster si une autre adresse est préférée).
 
 La source Markdown ci-dessous reste disponible si tu veux l'intégrer à un autre gabarit de site :

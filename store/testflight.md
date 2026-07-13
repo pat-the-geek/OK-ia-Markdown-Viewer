@@ -19,7 +19,7 @@ md Viewer (OK-ia Markdown Viewer) affiche des fichiers Markdown à la charte ok-
 diagrammes Mermaid, cartes Leaflet, callouts, coloration d'entités, résumé par Apple Intelligence.
 Cette bêta sert à valider le rendu, la navigation et la stabilité sur iPhone, iPad et Mac.
 ```
-- **Feedback Email** : `contact@ok-ia.ch` ⚠️ (adresse réellement relevée — ajuster si besoin)
+- **Feedback Email** : `patrick@ok-ia.ch`
 - **Marketing URL** : `https://ok-ia.ch`
 - **Privacy Policy URL** : `https://ok-ia.ch/mdviewer/confidentialite.html`
 
