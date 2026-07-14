@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Sandbox is mandatory for the Mac App Store (Catalyst build). -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Network client: map tiles (OSM/CARTO) + downloading a report over https. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Open .md files the user selects, and the vault folder. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- App-scoped security bookmarks so the vault folder + recents persist across launches. -->
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+</dict>
+</plist>

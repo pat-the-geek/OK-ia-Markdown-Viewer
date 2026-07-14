@@ -10,7 +10,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "18"
+    CURRENT_PROJECT_VERSION: "19"
     DEVELOPMENT_TEAM: "PU9BSXN2V5"      # Paid Apple Developer Program team (auto-signing) — used for TestFlight/App Store.
                                         # (Build 14 and the store provisioning profile are under this team;
                                         #  72NVM63N83 was the cert-name suffix, not the team id.)
@@ -45,8 +45,10 @@ targets:
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO    # true Catalyst app (not "Designed for iPad")
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO  # same bundle id on Mac
         MACOSX_DEPLOYMENT_TARGET: "14.0"
-        # Run locally on Mac without a Mac provisioning profile (personal team)
-        CODE_SIGN_IDENTITY[sdk=macosx*]: "-"
+        # NOTE: local Mac run used CODE_SIGN_IDENTITY[sdk=macosx*]: "-" (ad-hoc); temporarily
+        # removed for Mac App Store distribution archive (automatic signing picks Apple Distribution).
+        # App Sandbox entitlements (mandatory for the Mac App Store) — macOS/Catalyst only, iOS untouched.
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: OKiaMarkdownViewer/macOS.entitlements
         GENERATE_INFOPLIST_FILE: NO
 
 # Scheme named "md Viewer" so archives are filed under that name in the Organizer
