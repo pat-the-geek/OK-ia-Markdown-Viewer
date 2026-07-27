@@ -72,7 +72,14 @@ markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pd
 ## Prix
 - **Gratuit** ✅ — aucune disponibilité limitée, disponible dans tous les pays.
 
-## Nouveautés de cette version (release notes 1.0.0)
+## Nouveautés de cette version (release notes 1.1.0) — à compléter
+```
+(à rédiger une fois les nouveautés de la 1.1.0 arrêtées)
+```
+
+<details>
+<summary>Archive — release notes 1.0.0</summary>
+
 ```
 Première version publique.
 • Lecture de Markdown fidèle à ok-ia.ch
@@ -84,3 +91,5 @@ Première version publique.
 • Export PDF, recherche, sommaire
 • iPhone, iPad et Mac
 ```
+
+</details>
