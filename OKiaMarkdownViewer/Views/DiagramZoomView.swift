@@ -65,7 +65,7 @@ struct DiagramZoomView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .frame(width: 56, height: 44)
             }
-            .accessibilityLabel(tr("Dézoomer", "Zoom out"))
+            .accessibilityLabel(tr("Dézoomer"))
 
             Divider().frame(height: 24).overlay(Color.white.opacity(0.25))
 
@@ -74,7 +74,7 @@ struct DiagramZoomView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .frame(width: 56, height: 44)
             }
-            .accessibilityLabel(tr("Zoomer", "Zoom in"))
+            .accessibilityLabel(tr("Zoomer"))
         }
         .tint(orange)
         .background(.ultraThinMaterial, in: Capsule())
@@ -91,7 +91,7 @@ struct DiagramZoomView: View {
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
             }
-            .accessibilityLabel(tr("Ajuster à l’écran", "Fit to screen"))
+            .accessibilityLabel(tr("Ajuster à l’écran"))
 
             Spacer()
 
@@ -111,7 +111,7 @@ struct DiagramZoomView: View {
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
             }
-            .accessibilityLabel(tr("Fermer", "Close"))
+            .accessibilityLabel(tr("Fermer (accessibilité)"))
         }
         .tint(orange)
         .padding(.horizontal, 16)
@@ -245,7 +245,7 @@ struct ImageZoomView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .frame(width: 56, height: 44)
             }
-            .accessibilityLabel(tr("Dézoomer", "Zoom out"))
+            .accessibilityLabel(tr("Dézoomer"))
 
             Divider().frame(height: 24).overlay(Color.white.opacity(0.25))
 
@@ -254,7 +254,7 @@ struct ImageZoomView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .frame(width: 56, height: 44)
             }
-            .accessibilityLabel(tr("Zoomer", "Zoom in"))
+            .accessibilityLabel(tr("Zoomer"))
         }
         .tint(orange)
         .background(.ultraThinMaterial, in: Capsule())
@@ -271,7 +271,7 @@ struct ImageZoomView: View {
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
             }
-            .accessibilityLabel(tr("Ajuster à l’écran", "Fit to screen"))
+            .accessibilityLabel(tr("Ajuster à l’écran"))
 
             Spacer()
 
@@ -281,7 +281,7 @@ struct ImageZoomView: View {
                     .padding(10)
                     .background(.ultraThinMaterial, in: Circle())
             }
-            .accessibilityLabel(tr("Fermer", "Close"))
+            .accessibilityLabel(tr("Fermer (accessibilité)"))
         }
         .tint(orange)
         .padding(.horizontal, 16)

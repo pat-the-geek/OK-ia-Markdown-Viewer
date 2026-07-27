@@ -16,9 +16,47 @@
   var CH = 720, PAD_H = 72, PAD_V = 48;
   var CW = 1280;   // current canvas logical width, recomputed per fit
 
-  // App language, injected by the host app (window.OKIA_LANG = 'fr' | 'en').
-  var LANG = (window.OKIA_LANG === 'en') ? 'en' : 'fr';
-  function TXT(fr, en) { return LANG === 'en' ? en : fr; }
+  // App language, injected by the host app (window.OKIA_LANG): fr | en | de | es | it.
+  var LANGS = ['fr', 'en', 'de', 'es', 'it'];
+  var LANG = LANGS.indexOf(window.OKIA_LANG) >= 0 ? window.OKIA_LANG : 'fr';
+
+  // The French text is the key, so French needs no entry of its own — and an untranslated
+  // string degrades to readable French rather than to an identifier.
+  var STRINGS = {
+    // Transitions
+    'Fondu':          { en: 'Dissolve', de: 'Überblenden', es: 'Fundido', it: 'Dissolvenza' },
+    'Poussée':        { en: 'Push', de: 'Schieben', es: 'Empujar', it: 'Spinta' },
+    'Entrée':         { en: 'Move In', de: 'Einfahren', es: 'Entrada', it: 'Entrata' },
+    'Échelle':        { en: 'Scale', de: 'Skalieren', es: 'Escala', it: 'Scala' },
+    'Retournement 3D':{ en: '3D Flip', de: '3D-Drehung', es: 'Giro 3D', it: 'Ribaltamento 3D' },
+    // Thèmes
+    'Clair':          { en: 'Light', de: 'Hell', es: 'Claro', it: 'Chiaro' },
+    'Sombre':         { en: 'Dark', de: 'Dunkel', es: 'Oscuro', it: 'Scuro' },
+    'Console':        { en: 'Console', de: 'Konsole', es: 'Consola', it: 'Console' },
+    'Sépia':          { en: 'Sepia', de: 'Sepia', es: 'Sepia', it: 'Seppia' },
+    'Océan':          { en: 'Ocean', de: 'Ozean', es: 'Océano', it: 'Oceano' },
+    // Menu et chrome du diaporama
+    'Thème':          { en: 'Theme', de: 'Thema', es: 'Tema', it: 'Tema' },
+    'Transition':     { en: 'Transition', de: 'Übergang', es: 'Transición', it: 'Transizione' },
+    'Diapositives':   { en: 'Slides', de: 'Folien', es: 'Diapositivas', it: 'Diapositive' },
+    'Diapositive précédente': { en: 'Previous slide', de: 'Vorherige Folie',
+                                es: 'Diapositiva anterior', it: 'Diapositiva precedente' },
+    'Diapositive suivante':   { en: 'Next slide', de: 'Nächste Folie',
+                                es: 'Diapositiva siguiente', it: 'Diapositiva successiva' },
+    'Quitter le diaporama':   { en: 'End slideshow', de: 'Diashow beenden',
+                                es: 'Salir de la presentación', it: 'Esci dalla presentazione' },
+    'Transitions':    { en: 'Transitions', de: 'Übergänge', es: 'Transiciones', it: 'Transizioni' },
+    'Vue d’ensemble des diapositives': { en: 'Slide overview', de: 'Folienübersicht',
+                                         es: 'Vista general de diapositivas',
+                                         it: 'Panoramica delle diapositive' },
+    'Fermer':         { en: 'Close', de: 'Schließen', es: 'Cerrar', it: 'Chiudi' },
+    // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
+    'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta' }
+  };
+  function TXT(fr) {
+    var entry = STRINGS[fr];
+    return (LANG === 'fr' || !entry || !entry[LANG]) ? fr : entry[LANG];
+  }
 
   function post(name, payload) {
     try {
@@ -69,11 +107,11 @@
   // slide's start state and the outgoing slide's end state (per direction d:
   // +1 = forward / next, -1 = backward / prev).
   var TRANSITIONS = [
-    { key: 'dissolve', label: TXT('Fondu', 'Dissolve') },
-    { key: 'push',     label: TXT('Poussée', 'Push') },
-    { key: 'movein',   label: TXT('Entrée', 'Move In') },
-    { key: 'scale',    label: TXT('Échelle', 'Scale') },
-    { key: 'flip',     label: TXT('Retournement 3D', '3D Flip') }
+    { key: 'dissolve', label: TXT('Fondu') },
+    { key: 'push',     label: TXT('Poussée') },
+    { key: 'movein',   label: TXT('Entrée') },
+    { key: 'scale',    label: TXT('Échelle') },
+    { key: 'flip',     label: TXT('Retournement 3D') }
   ];
   var SPECS = {
     dissolve: { dur: 450, ease: 'ease',
@@ -97,11 +135,11 @@
 
   // Colour themes — applied as a `theme-<key>` class on <body>.
   var THEMES = [
-    { key: 'light',   label: TXT('Clair', 'Light') },
-    { key: 'dark',    label: TXT('Sombre', 'Dark') },
-    { key: 'console', label: TXT('Console', 'Console') },
-    { key: 'sepia',   label: TXT('Sépia', 'Sepia') },
-    { key: 'ocean',   label: TXT('Océan', 'Ocean') }
+    { key: 'light',   label: TXT('Clair') },
+    { key: 'dark',    label: TXT('Sombre') },
+    { key: 'console', label: TXT('Console') },
+    { key: 'sepia',   label: TXT('Sépia') },
+    { key: 'ocean',   label: TXT('Océan') }
   ];
   var theme = 'light';
 
@@ -338,12 +376,12 @@
     var menu = el('presentMenu');
     if (!menu) return;
     menu.innerHTML = '';
-    menu.appendChild(menuSection(TXT('Thème', 'Theme'), THEMES, 'theme'));
-    menu.appendChild(menuSection(TXT('Transition', 'Transition'), TRANSITIONS, 'transition'));
+    menu.appendChild(menuSection(TXT('Thème'), THEMES, 'theme'));
+    menu.appendChild(menuSection(TXT('Transition'), TRANSITIONS, 'transition'));
     // Export section.
     var h = document.createElement('div');
     h.className = 'present-menu-title';
-    h.textContent = 'Export';
+    h.textContent = TXT('Export');
     menu.appendChild(h);
     var ex = document.createElement('button');
     ex.className = 'present-menu-item';
@@ -551,18 +589,18 @@
 
   // Localise the static chrome of presentation.html (authored in French).
   function localizeChrome() {
-    function setLabel(id, fr, en) {
+    function setLabel(id, fr) {
       var n = el(id);
-      if (n) n.setAttribute('aria-label', TXT(fr, en));
+      if (n) n.setAttribute('aria-label', TXT(fr));
     }
-    setLabel('navPrev', 'Diapositive précédente', 'Previous slide');
-    setLabel('navNext', 'Diapositive suivante', 'Next slide');
-    setLabel('presentEnd', 'Quitter le diaporama', 'End slideshow');
-    setLabel('presentMenuBtn', 'Transitions', 'Transitions');
-    setLabel('presentGridBtn', 'Vue d’ensemble des diapositives', 'Slide overview');
-    setLabel('overviewClose', 'Fermer', 'Close');
+    setLabel('navPrev', 'Diapositive précédente');
+    setLabel('navNext', 'Diapositive suivante');
+    setLabel('presentEnd', 'Quitter le diaporama');
+    setLabel('presentMenuBtn', 'Transitions');
+    setLabel('presentGridBtn', 'Vue d’ensemble des diapositives');
+    setLabel('overviewClose', 'Fermer');
     var t = document.querySelector('.overview-title');
-    if (t) t.textContent = TXT('Diapositives', 'Slides');
+    if (t) t.textContent = TXT('Diapositives');
   }
 
   function start(md) {

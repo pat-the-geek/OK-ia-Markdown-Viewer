@@ -9,9 +9,25 @@
 
   var NOIR = '#111111';
 
-  // App language, injected by the host app (window.OKIA_LANG = 'fr' | 'en').
-  var LANG = (window.OKIA_LANG === 'en') ? 'en' : 'fr';
-  function TXT(fr, en) { return LANG === 'en' ? en : fr; }
+  // App language, injected by the host app (window.OKIA_LANG): fr | en | de | es | it.
+  var LANGS = ['fr', 'en', 'de', 'es', 'it'];
+  var LANG = LANGS.indexOf(window.OKIA_LANG) >= 0 ? window.OKIA_LANG : 'fr';
+
+  // The French text is the key, so French needs no entry of its own — and an untranslated
+  // string degrades to readable French rather than to an identifier.
+  var STRINGS = {
+    'Lire l\'article': { en: 'Read the article', de: 'Den Artikel lesen',
+                         es: 'Leer el artículo', it: 'Leggi l\'articolo' },
+    'Erreur de rendu':  { en: 'Rendering error', de: 'Rendering-Fehler',
+                          es: 'Error de renderizado', it: 'Errore di rendering' }
+  };
+  function TXT(fr) {
+    var entry = STRINGS[fr];
+    return (LANG === 'fr' || !entry || !entry[LANG]) ? fr : entry[LANG];
+  }
+
+  // Date formatting locale per language (Swiss variants where the app has one).
+  var DATE_LOCALE = { fr: 'fr-CH', en: 'en-GB', de: 'de-CH', es: 'es-ES', it: 'it-CH' };
 
   /* ---- native bridge ----------------------------------------------------- */
   function post(name, payload) {
@@ -69,7 +85,7 @@
     else if (ch) d = new Date(parseInt(ch[3]), parseInt(ch[2]) - 1, parseInt(ch[1]));
     if (!d || isNaN(d.getTime())) return raw;
     try {
-      return new Intl.DateTimeFormat(TXT('fr-CH', 'en-GB'),
+      return new Intl.DateTimeFormat(DATE_LOCALE[LANG],
                                      { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
     } catch (e) { return raw; }
   }
@@ -93,7 +109,7 @@
     if (dateStr) parts.push('<span class="meta-date">' + escapeHtml(dateStr) + '</span>');
     if (lecture) parts.push('<span class="meta-read">' + escapeHtml(lecture) + '</span>');
     if (url) parts.push('<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
-                        TXT('Lire l\'article', 'Read the article') + ' ↗</a>');
+                        TXT('Lire l\'article') + ' ↗</a>');
 
     var metaBar = parts.length
       ? '<div class="okia-meta">' + parts.join('<span class="sep">·</span>') + '</div>'
@@ -748,7 +764,7 @@
     } catch (err) {
       container.innerHTML = '<div class="callout callout-error" style="--callout-color:#ef5350">' +
         '<div class="callout-title"><span class="callout-icon">⛔</span>' +
-        TXT('Erreur de rendu', 'Rendering error') + '</div>' +
+        TXT('Erreur de rendu') + '</div>' +
         '<div class="callout-content"><pre>' + escapeHtml(String(err && err.stack || err)) +
         '</pre></div></div>';
       post('renderError', { message: String(err && err.message || err) });

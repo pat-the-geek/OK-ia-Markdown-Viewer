@@ -6,6 +6,11 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
+  # Localizable.xcstrings is authored in French and translated to en/de/es/it.
+  # Both keys are needed: without knownRegions, only en.lproj is compiled from the
+  # catalogue and the App Store lists a single language.
+  developmentLanguage: fr
+  knownRegions: [Base, fr, en, de, es, it]
 
 settings:
   base:

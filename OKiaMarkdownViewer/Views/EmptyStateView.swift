@@ -30,8 +30,7 @@ struct EmptyStateView: View {
                 VStack(spacing: 6) {
                     Text("OK-ia Markdown Viewer")
                         .font(.system(size: 25, weight: .heavy))
-                    Text(tr("Ce que les algorithmes ignorent encore.",
-                            "What the algorithms still miss."))
+                    Text(tr("Ce que les algorithmes ignorent encore."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .italic()
@@ -40,7 +39,7 @@ struct EmptyStateView: View {
 
                 VStack(spacing: 12) {
                     Button(action: onOpen) {
-                        Label(tr("Ouvrir un fichier", "Open a file"), systemImage: "folder")
+                        Label(tr("Ouvrir un fichier"), systemImage: "folder")
                             .font(.headline)
                             .frame(maxWidth: 280)
                             .padding(.vertical, 12)
@@ -49,7 +48,7 @@ struct EmptyStateView: View {
                     .tint(orange)
 
                     Button(action: onSample) {
-                        Label(tr("Voir un exemple", "View a sample"), systemImage: "doc.text")
+                        Label(tr("Voir un exemple"), systemImage: "doc.text")
                             .frame(maxWidth: 280)
                             .padding(.vertical, 6)
                     }
@@ -67,11 +66,11 @@ struct EmptyStateView: View {
 
                 HStack(spacing: 20) {
                     Button { showSettings = true } label: {
-                        Label(tr("Réglages", "Settings"), systemImage: "gearshape")
+                        Label(tr("Réglages"), systemImage: "gearshape")
                             .font(.footnote)
                     }
                     Button { showAbout = true } label: {
-                        Label(tr("Librairies & licences", "Libraries & licenses"),
+                        Label(tr("Librairies & licences"),
                               systemImage: "info.circle")
                             .font(.footnote)
                     }
@@ -97,7 +96,7 @@ struct EmptyStateView: View {
 
     private var recentsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(tr("Récents", "Recent"))
+            Text(tr("Récents"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
@@ -129,7 +128,7 @@ struct EmptyStateView: View {
                     .buttonStyle(.plain)
                     .contextMenu {
                         Button(role: .destructive) { recentsStore.remove(item) } label: {
-                            Label(tr("Retirer de la liste", "Remove from list"), systemImage: "trash")
+                            Label(tr("Retirer de la liste"), systemImage: "trash")
                         }
                     }
                     if item.id != recents.last?.id { Divider().padding(.leading, 44) }
@@ -161,9 +160,9 @@ private struct LibraryInfo: Identifiable {
 
         var label: String {
             switch self {
-            case .offline: return tr("Hors-ligne", "Offline")
-            case .network: return tr("En ligne", "Online")
-            case .system:  return tr("Système", "System")
+            case .offline: return tr("Hors-ligne")
+            case .network: return tr("En ligne")
+            case .system:  return tr("Système")
             }
         }
         var icon: String {
@@ -186,33 +185,27 @@ struct AboutLibrariesView: View {
     private var libraries: [LibraryInfo] {
         [
         LibraryInfo(name: "marked", version: "18.0.5",
-                    role: tr("Conversion Markdown → HTML (le cœur du rendu).",
-                             "Markdown → HTML conversion (the heart of the renderer)."),
+                    role: tr("Conversion Markdown → HTML (le cœur du rendu)."),
                     license: "MIT", availability: .offline,
                     url: URL(string: "https://marked.js.org")),
         LibraryInfo(name: "Mermaid", version: "11.15.0",
-                    role: tr("Diagrammes : flowchart, séquence, gantt, pie, mindmap.",
-                             "Diagrams: flowchart, sequence, gantt, pie, mindmap."),
+                    role: tr("Diagrammes : flowchart, séquence, gantt, pie, mindmap."),
                     license: "MIT", availability: .offline,
                     url: URL(string: "https://mermaid.js.org")),
         LibraryInfo(name: "Leaflet", version: "1.9.4",
-                    role: tr("Cartes géographiques interactives et marqueurs (blocs ```leaflet).",
-                             "Interactive maps and markers (```leaflet blocks)."),
+                    role: tr("Cartes géographiques interactives et marqueurs (blocs ```leaflet)."),
                     license: "BSD-2-Clause", availability: .offline,
                     url: URL(string: "https://leafletjs.com")),
         LibraryInfo(name: "OpenStreetMap & CARTO", version: nil,
-                    role: tr("Fonds de carte (tuiles) affichés par Leaflet.",
-                             "Base map tiles displayed by Leaflet."),
+                    role: tr("Fonds de carte (tuiles) affichés par Leaflet."),
                     license: "ODbL · CC BY", availability: .network,
                     url: URL(string: "https://www.openstreetmap.org/copyright")),
         LibraryInfo(name: "Nunito", version: nil,
-                    role: tr("Police d'affichage des titres (charte OK-ia).",
-                             "Display typeface for headings (OK-ia brand)."),
+                    role: tr("Police d'affichage des titres (charte OK-ia)."),
                     license: "SIL OFL 1.1", availability: .offline,
                     url: URL(string: "https://fonts.google.com/specimen/Nunito")),
         LibraryInfo(name: "WebKit · WKWebView", version: nil,
-                    role: tr("Moteur web qui exécute le pipeline de rendu.",
-                             "Web engine running the rendering pipeline."),
+                    role: tr("Moteur web qui exécute le pipeline de rendu."),
                     license: "Apple", availability: .system,
                     url: nil)
         ]
@@ -224,18 +217,17 @@ struct AboutLibrariesView: View {
                 Section {
                     ForEach(libraries) { lib in row(lib) }
                 } header: {
-                    Text(tr("Librairies utilisées", "Libraries used"))
+                    Text(tr("Librairies utilisées"))
                 } footer: {
-                    Text(tr("Le rendu Markdown, les diagrammes et les cartes fonctionnent **100 % hors-ligne** — seules les tuiles de fond de carte nécessitent une connexion.",
-                            "Markdown rendering, diagrams and maps work **100% offline** — only the base map tiles need a connection."))
+                    Text(tr("Le rendu Markdown, les diagrammes et les cartes fonctionnent **100 % hors-ligne** — seules les tuiles de fond de carte nécessitent une connexion."))
                         .padding(.top, 4)
                 }
             }
-            .navigationTitle(tr("Librairies & licences", "Libraries & licenses"))
+            .navigationTitle(tr("Librairies & licences"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(tr("Fermer", "Done")) { dismiss() }
+                    Button(tr("Fermer")) { dismiss() }
                 }
             }
         }
@@ -267,7 +259,7 @@ struct AboutLibrariesView: View {
                     .foregroundStyle(.secondary)
                 if let url = lib.url {
                     Link(destination: url) {
-                        Label(tr("Site", "Website"), systemImage: "arrow.up.right.square")
+                        Label(tr("Site"), systemImage: "arrow.up.right.square")
                             .font(.caption)
                     }
                     .tint(orange)

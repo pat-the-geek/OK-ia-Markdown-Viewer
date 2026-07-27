@@ -47,11 +47,17 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
-- **Interface bilingue FR/EN** : français par défaut si l'appareil est en français, anglais sinon ;
-  choix manuel (Système / Français / English) dans **Réglages** sur l'écran d'accueil. Couvre les vues
+- **Interface en 5 langues** (français, anglais, allemand, espagnol, italien) : la langue de
+  l'appareil si elle est prise en charge, anglais sinon ; choix manuel (Système / Français /
+  English / Deutsch / Español / Italiano) dans **Réglages** sur l'écran d'accueil. Couvre les vues
   natives, les messages d'erreur, la couche web (`window.OKIA_LANG` : « Lire l'article », menus du
-  diaporama) et la langue du résumé Apple Intelligence. Les App Intents (Siri/Raccourcis) suivent la
-  langue **système** via `Localizable.xcstrings`. Voir `Models/Localization.swift` (`tr(fr, en)`).
+  diaporama) et la langue du résumé Apple Intelligence. Les App Intents (Siri/Raccourcis) sont
+  traduits eux aussi, mais suivent la langue **système** — c'est le système qui les résout, hors
+  de portée du réglage in-app. Les chaînes vivent dans `Localizable.xcstrings` (langue source : **français**, la clé *est* le
+  texte français) ; `tr("clé")` les résout — voir `Models/Localization.swift`. Comme le choix des
+  Réglages doit primer sur la langue de l'appareil, `tr` lit le bundle `.lproj` de la langue
+  courante au lieu de `Bundle.main`. Le prompt de résumé Apple Intelligence est écrit nativement
+  dans chaque langue (`ReaderView.instructions`), pas traduit mot à mot.
 - **Fichiers récents** : les derniers `.md` ouverts sont mémorisés (bookmarks security-scoped) et
   proposés sur l'écran d'accueil.
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.

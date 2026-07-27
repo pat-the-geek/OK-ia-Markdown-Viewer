@@ -13,9 +13,8 @@ struct TableOfContentsView: View {
         NavigationStack {
             Group {
                 if items.isEmpty {
-                    ContentUnavailableView(tr("Aucun titre", "No headings"), systemImage: "list.bullet.indent",
-                                           description: Text(tr("Ce document ne contient pas de titres.",
-                                                                "This document contains no headings.")))
+                    ContentUnavailableView(tr("Aucun titre"), systemImage: "list.bullet.indent",
+                                           description: Text(tr("Ce document ne contient pas de titres.")))
                 } else {
                     List(items) { item in
                         Button {
@@ -33,11 +32,11 @@ struct TableOfContentsView: View {
                     .listStyle(.plain)
                 }
             }
-            .navigationTitle(tr("Sommaire", "Contents"))
+            .navigationTitle(tr("Sommaire"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(tr("Fermer", "Done")) { dismiss() }.tint(orange)
+                    Button(tr("Fermer")) { dismiss() }.tint(orange)
                 }
             }
         }

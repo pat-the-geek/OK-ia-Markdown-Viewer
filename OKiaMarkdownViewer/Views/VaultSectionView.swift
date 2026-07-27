@@ -15,7 +15,7 @@ struct VaultSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                Text(tr("Coffre", "Vault"))
+                Text(tr("Coffre"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -23,11 +23,11 @@ struct VaultSectionView: View {
                     Image(systemName: "slider.horizontal.3")
                 }
                 .tint(orange)
-                .accessibilityLabel(tr("Réglages du coffre", "Vault settings"))
+                .accessibilityLabel(tr("Réglages du coffre"))
                 .popover(isPresented: $showSettings) {
                     settingsControls.presentationCompactAdaptation(.popover)
                 }
-                Button(vault.hasFolder ? tr("Changer", "Change") : tr("Choisir…", "Choose…"), action: onPick)
+                Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
                     .font(.caption.weight(.semibold))
                     .tint(orange)
             }
@@ -35,7 +35,7 @@ struct VaultSectionView: View {
 
             if !vault.hasFolder {
                 Button(action: onPick) {
-                    Label(tr("Choisir le dossier du coffre…", "Choose the vault folder…"),
+                    Label(tr("Choisir le dossier du coffre…"),
                           systemImage: "folder.badge.gearshape")
                         .font(.callout)
                         .frame(maxWidth: .infinity)
@@ -44,8 +44,8 @@ struct VaultSectionView: View {
                 .buttonStyle(.bordered)
                 .tint(orange)
             } else if vault.reports.isEmpty {
-                Text(tr("Aucun rapport trouvé dans les dossiers « \(vault.pattern) » de « \(vault.folderName ?? "") ».",
-                        "No report found in the “\(vault.pattern)” folders of “\(vault.folderName ?? "")”."))
+                Text(tr("Aucun rapport trouvé dans les dossiers « %@ » de « %@ ».",
+                        vault.pattern, vault.folderName ?? ""))
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -94,10 +94,9 @@ struct VaultSectionView: View {
 
     private var settingsControls: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(tr("Dossiers à inclure", "Folders to include"))
+            Text(tr("Dossiers à inclure"))
                 .font(.headline)
-            Text(tr("Motif des sous-dossiers du coffre à lire (jokers * et ?). Les autres dossiers sont ignorés.",
-                    "Pattern of the vault subfolders to read (wildcards * and ?). Other folders are ignored."))
+            Text(tr("Motif des sous-dossiers du coffre à lire (jokers * et ?). Les autres dossiers sont ignorés."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField(VaultStore.defaultPattern, text: $patternDraft)
@@ -107,10 +106,10 @@ struct VaultSectionView: View {
                 .frame(minWidth: 220)
                 .onSubmit { apply() }
             HStack {
-                Button(tr("Par défaut", "Default")) { patternDraft = VaultStore.defaultPattern }
+                Button(tr("Par défaut")) { patternDraft = VaultStore.defaultPattern }
                     .font(.caption)
                 Spacer()
-                Button(tr("Appliquer", "Apply")) { apply() }
+                Button(tr("Appliquer")) { apply() }
                     .buttonStyle(.borderedProminent)
             }
         }

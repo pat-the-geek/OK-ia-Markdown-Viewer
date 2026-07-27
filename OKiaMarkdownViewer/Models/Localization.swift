@@ -1,13 +1,30 @@
 import SwiftUI
 
-/// The language the app UI speaks. `.system` follows the device: French devices get
-/// French, every other language gets English. The user can override in Réglages/Settings.
+/// The language the app UI speaks. `.system` follows the device when its language is one
+/// of the five the app ships, and falls back to English otherwise. The user can override
+/// the choice in Réglages/Settings.
 enum AppLanguage: String, CaseIterable, Identifiable {
     case system
     case french  = "fr"
     case english = "en"
+    case german  = "de"
+    case spanish = "es"
+    case italian = "it"
 
     var id: String { rawValue }
+
+    /// Each language names itself — a German speaker looks for « Deutsch », not « Allemand ».
+    /// `.system` has no native name; the picker labels it with a translated string.
+    var nativeName: String {
+        switch self {
+        case .system:  return ""
+        case .french:  return "Français"
+        case .english: return "English"
+        case .german:  return "Deutsch"
+        case .spanish: return "Español"
+        case .italian: return "Italiano"
+        }
+    }
 }
 
 /// Single source of truth for the app language. Views observe it so that changing the
@@ -16,41 +33,64 @@ final class Localization: ObservableObject {
     static let shared = Localization()
     private static let defaultsKey = "okia.language"
 
+    /// The languages present in `Localizable.xcstrings` — keep in sync with the catalogue
+    /// and with `CFBundleLocalizations` in Info.plist.
+    static let supported = ["fr", "en", "de", "es", "it"]
+    static let fallback = "en"
+
     @Published var language: AppLanguage {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.defaultsKey) }
+        didSet {
+            UserDefaults.standard.set(language.rawValue, forKey: Self.defaultsKey)
+            cachedBundle = nil          // the .lproj to read from just changed
+        }
     }
+
+    private var cachedBundle: Bundle?
 
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.defaultsKey)
         language = raw.flatMap(AppLanguage.init(rawValue:)) ?? .system
     }
 
-    /// True when the device's preferred language is French.
-    static var systemIsFrench: Bool {
-        (Locale.preferredLanguages.first ?? Locale.current.identifier)
-            .lowercased().hasPrefix("fr")
-    }
-
-    var isFrench: Bool {
-        switch language {
-        case .french:  return true
-        case .english: return false
-        case .system:  return Self.systemIsFrench
+    /// The device's preferred language, when the app speaks it — English otherwise.
+    static var systemCode: String {
+        for tag in Locale.preferredLanguages {
+            let code = String(tag.prefix(2)).lowercased()
+            if supported.contains(code) { return code }
         }
+        return fallback
     }
 
     /// Two-letter code handed to the web renderer (window.OKIA_LANG) and the summariser.
-    var code: String { isFrench ? "fr" : "en" }
+    var code: String { language == .system ? Self.systemCode : language.rawValue }
+
+    /// The `.lproj` bundle strings are read from. Because Settings can override the
+    /// language at runtime, strings cannot be resolved against `Bundle.main` — that one
+    /// follows the *device* language and would ignore the user's choice.
+    var bundle: Bundle {
+        if let cached = cachedBundle { return cached }
+        let resolved = Bundle.main.path(forResource: code, ofType: "lproj")
+            .flatMap(Bundle.init(path:)) ?? .main
+        cachedBundle = resolved
+        return resolved
+    }
 }
 
-/// Resolves a French/English string pair against the current app language.
-func tr(_ fr: String, _ en: String) -> String {
-    Localization.shared.isFrench ? fr : en
+/// Resolves a key against the current app language. Keys are the French strings themselves
+/// (`Localizable.xcstrings` has French as its source language), so a missing translation
+/// degrades to readable French rather than to a raw identifier.
+///
+/// Extra arguments are substituted into the translation's placeholders (`%@`, `%lld`).
+/// Without arguments the string is returned as-is — important for texts that contain a
+/// literal `%`, which `String(format:)` would eat.
+func tr(_ key: String, _ args: CVarArg...) -> String {
+    let format = NSLocalizedString(key, bundle: Localization.shared.bundle, comment: "")
+    return args.isEmpty ? format : String(format: format, arguments: args)
 }
 
 // MARK: - Settings sheet
 
-/// App settings: today just the language choice (System / Français / English).
+/// App settings: today just the language choice (System + the five shipped languages).
 struct SettingsView: View {
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
@@ -61,25 +101,25 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker(tr("Langue", "Language"), selection: $loc.language) {
-                        Text(tr("Système", "System")).tag(AppLanguage.system)
-                        Text("Français").tag(AppLanguage.french)
-                        Text("English").tag(AppLanguage.english)
+                    Picker(tr("Langue"), selection: $loc.language) {
+                        Text(tr("Système")).tag(AppLanguage.system)
+                        ForEach(AppLanguage.allCases.filter { $0 != .system }) { lang in
+                            Text(lang.nativeName).tag(lang)
+                        }
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                 } header: {
-                    Text(tr("Langue de l’app", "App language"))
+                    Text(tr("Langue de l’app"))
                 } footer: {
-                    Text(tr("« Système » : français si l’appareil est en français, anglais sinon.",
-                            "“System”: French when the device is set to French, English otherwise."))
+                    Text(tr("« Système » : la langue de l’appareil si elle est prise en charge, anglais sinon."))
                 }
             }
-            .navigationTitle(tr("Réglages", "Settings"))
+            .navigationTitle(tr("Réglages"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(tr("Fermer", "Done")) { dismiss() }.tint(orange)
+                    Button(tr("Fermer")) { dismiss() }.tint(orange)
                 }
             }
         }
