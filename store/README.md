@@ -8,7 +8,8 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 
 | Fichier | Contenu |
 |---|---|
-| [`listing-fr.md`](listing-fr.md) | Fiche produit : nom, sous-titre, description, mots-clés, nouveautés, URLs, catégorie, copyright |
+| [`listing-fr.md`](listing-fr.md) | Fiche produit **FR** : nom, sous-titre, description, mots-clés, nouveautés, URLs, catégorie, copyright |
+| [`listing-en.md`](listing-en.md) | Fiche produit **EN** — miroir de la FR, à garder synchronisée |
 | [`app-privacy.md`](app-privacy.md) | Réponses au questionnaire « App Privacy » |
 | [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/mdviewer/confidentialite.html` |
 | [`screenshots.md`](screenshots.md) | Tailles de captures requises (iPhone/iPad/Mac) + plan de capture |
@@ -18,6 +19,12 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 ## Décisions actées
 
 - **Nom** : OK-ia Markdown Viewer · **Catégorie** : Productivité · **Prix** : Gratuit
+- **Langues de la fiche** : **français + anglais uniquement** (décidé le 2026-07-27).
+  ⚠️ À ne pas confondre avec les langues de l'**app**, qui sont cinq depuis la 1.1.0
+  (fr, en, de, es, it). App Store Connect proposera donc d'ajouter de/es/it à la fiche :
+  **ne pas les remplir pour l'instant**. Un binaire multilingue avec une fiche FR/EN est
+  parfaitement recevable — l'App Store affiche simplement la fiche dans la langue la plus
+  proche pour les visiteurs germanophones, hispanophones et italophones.
 - **Âge** : 4+ (répondre « Non » à « accès web sans restriction »)
 - **URLs** : assistance & marketing `https://ok-ia.ch` · confidentialité `https://ok-ia.ch/mdviewer/confidentialite.html`
 - **Copyright** : © 2026 OK-ia
