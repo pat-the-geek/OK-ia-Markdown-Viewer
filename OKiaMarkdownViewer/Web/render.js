@@ -293,6 +293,20 @@
   var NER_PALETTE = [[232,151,46],[59,130,246],[139,92,246],[16,185,129],
                      [239,68,68],[245,158,11],[236,72,153],[20,184,166]];
 
+  // Titre de la section d'entités dans les cinq langues d'export de fornews.ai
+  // (fr/en/de/es/it), singulier ou pluriel. Le titre est d'abord dépouillé de ses
+  // accents, donc « Entités », « Entites », « Entità » et « Entitäten » se ramènent
+  // tous à une forme ASCII. La liste reste fermée : « Sources » n'est pas reconnu.
+  var ENTITY_HEADING_RE =
+    /^(?:entit(?:es?|y|ies|a|at(?:en)?|aet(?:en)?)|entidad(?:es)?)$/;
+
+  function isEntityHeading(title) {
+    var ascii = title.trim().toLowerCase();
+    // NFD + suppression des diacritiques : é→e, ä→a, à→a…
+    if (ascii.normalize) ascii = ascii.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return ENTITY_HEADING_RE.test(ascii);
+  }
+
   function extractEntities(body) {
     var lines = body.split(/\r?\n/);
     var inSection = false, subtype = null, colorIdx = 0;
@@ -302,7 +316,7 @@
       var line = lines[i];
       var h2 = line.match(/^##\s+(.+?)\s*$/);
       if (h2) {
-        inSection = /^entit[ée]s$/i.test(h2[1].trim());
+        inSection = isEntityHeading(h2[1]);
         subtype = null;
         if (!inSection && /^(##\s)/.test(line)) { /* left the section */ }
         continue;
