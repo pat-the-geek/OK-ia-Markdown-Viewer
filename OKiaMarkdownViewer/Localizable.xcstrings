@@ -142,6 +142,41 @@
         }
       }
     },
+    "Apple Intelligence rédige la réponse…": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence rédige la réponse…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence is writing the answer…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence schreibt die Antwort…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence está redactando la respuesta…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence sta scrivendo la risposta…"
+          }
+        }
+      }
+    },
     "Apple Intelligence rédige le résumé…": {
       "extractionState": "manual",
       "localizations": {
@@ -772,6 +807,76 @@
         }
       }
     },
+    "Discussion — %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discussion — %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat — %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterhaltung — %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversación — %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversazione — %@"
+          }
+        }
+      }
+    },
+    "Discuter avec le document": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discuter avec le document"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat with the document"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit dem Dokument chatten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chatear con el documento"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chatta con il documento"
+          }
+        }
+      }
+    },
     "Dossiers à inclure": {
       "extractionState": "manual",
       "localizations": {
@@ -873,6 +978,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Online"
+          }
+        }
+      }
+    },
+    "Envoyer": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invia"
           }
         }
       }
@@ -1262,6 +1402,76 @@
         }
       }
     },
+    "La conversation était trop longue : l’historique a été effacé, le document reste chargé.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La conversation était trop longue : l’historique a été effacé, le document reste chargé."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The conversation had grown too long: the history was cleared, the document is still loaded."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Unterhaltung wurde zu lang: Der Verlauf wurde gelöscht, das Dokument bleibt geladen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La conversación era demasiado larga: se borró el historial, el documento sigue cargado."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La conversazione era troppo lunga: la cronologia è stata cancellata, il documento resta caricato."
+          }
+        }
+      }
+    },
+    "La réponse n’a pas pu être générée (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La réponse n’a pas pu être générée (%@)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The answer could not be generated (%@)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Antwort konnte nicht erstellt werden (%@)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo generar la respuesta (%@)."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile generare la risposta (%@)."
+          }
+        }
+      }
+    },
     "Langue": {
       "extractionState": "manual",
       "localizations": {
@@ -1293,6 +1503,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lingua"
+          }
+        }
+      }
+    },
+    "Langue changée : la conversation a été réinitialisée.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langue changée : la conversation a été réinitialisée."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language changed: the conversation has been reset."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprache gewechselt: Die Unterhaltung wurde zurückgesetzt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma cambiado: la conversación se ha reiniciado."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lingua cambiata: la conversazione è stata reimpostata."
           }
         }
       }
@@ -1507,6 +1752,41 @@
         }
       }
     },
+    "Les réponses s’appuient uniquement sur son contenu.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les réponses s’appuient uniquement sur son contenu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answers draw on its content only."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Antworten stützen sich ausschließlich auf seinen Inhalt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las respuestas se basan únicamente en su contenido."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le risposte si basano unicamente sul suo contenuto."
+          }
+        }
+      }
+    },
     "Librairies & licences": {
       "extractionState": "manual",
       "localizations": {
@@ -1678,6 +1958,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Modello delle sottocartelle dello Store da leggere (caratteri jolly * e ?). Le altre cartelle vengono ignorate."
+          }
+        }
+      }
+    },
+    "Nouvelle conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle conversation"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New conversation"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Unterhaltung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva conversación"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova conversazione"
           }
         }
       }
@@ -2102,6 +2417,76 @@
         }
       }
     },
+    "Poser une question…": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poser une question…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask a question…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Frage stellen…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hacer una pregunta…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fai una domanda…"
+          }
+        }
+      }
+    },
+    "Posez une question sur ce document.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posez une question sur ce document."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask a question about this document."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stelle eine Frage zu diesem Dokument."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haz una pregunta sobre este documento."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fai una domanda su questo documento."
+          }
+        }
+      }
+    },
     "Présentation": {
       "extractionState": "manual",
       "localizations": {
@@ -2133,6 +2518,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Presentazione"
+          }
+        }
+      }
+    },
+    "Que dit le document sur %@ ?": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que dit le document sur %@ ?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What does the document say about %@?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was sagt das Dokument über %@?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué dice el documento sobre %@?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Che cosa dice il documento su %@?"
+          }
+        }
+      }
+    },
+    "Quelles questions le document laisse-t-il ouvertes ?": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelles questions le document laisse-t-il ouvertes ?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What questions does the document leave open?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welche Fragen lässt das Dokument offen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué preguntas deja abiertas el documento?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quali domande lascia aperte il documento?"
+          }
+        }
+      }
+    },
+    "Quels chiffres clés faut-il retenir ?": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quels chiffres clés faut-il retenir ?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which key figures should I remember?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welche Kennzahlen sind wichtig?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué cifras clave hay que retener?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quali cifre chiave bisogna ricordare?"
+          }
+        }
+      }
+    },
+    "Quels sont les principaux thèmes abordés ?": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quels sont les principaux thèmes abordés ?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What are the main themes covered?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welches sind die Hauptthemen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Cuáles son los temas principales?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quali sono i temi principali?"
           }
         }
       }
@@ -2522,6 +3047,41 @@
         }
       }
     },
+    "Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Answers generated on-device by Apple Intelligence, from this document only. May contain mistakes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antworten auf dem Gerät von Apple Intelligence erstellt, nur aus diesem Dokument. Können Fehler enthalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respuestas generadas en el dispositivo por Apple Intelligence, solo a partir de este documento. Pueden contener errores."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risposte generate sul dispositivo da Apple Intelligence, solo da questo documento. Possono contenere errori."
+          }
+        }
+      }
+    },
     "réseau": {
       "extractionState": "manual",
       "localizations": {
@@ -2553,6 +3113,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "rete"
+          }
+        }
+      }
+    },
+    "Résume ce document.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Résume ce document."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summarize this document."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fasse dieses Dokument zusammen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume este documento."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riassumi questo documento."
           }
         }
       }

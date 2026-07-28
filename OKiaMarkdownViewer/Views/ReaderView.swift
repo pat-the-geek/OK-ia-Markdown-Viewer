@@ -27,6 +27,7 @@ struct ReaderView: View {
     @State private var externalLink: ExternalLink?
     @State private var showTextSize = false
     @State private var showSummary = false
+    @State private var showChat = false
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     @FocusState private var searchFocused: Bool
@@ -98,6 +99,10 @@ struct ReaderView: View {
             DocumentSummaryView(sourceTitle: title.isEmpty ? document.filename : title,
                                 sourceMarkdown: document.text)
         }
+        .sheet(isPresented: $showChat) {
+            DocumentChatView(sourceTitle: title.isEmpty ? document.filename : title,
+                             sourceMarkdown: document.text)
+        }
 #if !targetEnvironment(macCatalyst)
         .sheet(item: $externalLink) { link in
             SafariView(url: link.url).ignoresSafeArea()
@@ -118,6 +123,11 @@ struct ReaderView: View {
         // An App Intent (Siri/Shortcuts) asked to summarise the opened report.
         .onAppear {
             if store.summaryRequested { showSummary = true; store.summaryRequested = false }
+            #if DEBUG
+            // Harness: OKIA_FAKE_AI=chat opens the chat sheet straight away, the same way an
+            // App Intent auto-opens the summary — lets the screen be captured headlessly.
+            if ProcessInfo.processInfo.environment["OKIA_FAKE_AI"] == "chat" { showChat = true }
+            #endif
         }
         .onChange(of: store.summaryRequested) { _, requested in
             if requested { showSummary = true; store.summaryRequested = false }
@@ -144,10 +154,21 @@ struct ReaderView: View {
                     .accessibilityLabel(tr("Diaporama"))
             }
 
-            // Apple Intelligence summary — only when the on-device model is available.
+            // Apple Intelligence — summary and document chat, grouped under one glyph so the
+            // title bar keeps its eight controls. The whole menu disappears when the on-device
+            // model is unavailable: no greyed-out entries, no sheet that would only fail.
             if DocumentSummarizer.isAvailable {
-                Button { showSummary = true } label: { AppleIntelligenceGlyph(size: 18) }
-                    .accessibilityLabel(tr("Résumé du document par Apple Intelligence"))
+                Menu {
+                    Button { showSummary = true } label: {
+                        Label(tr("Résumé du document"), systemImage: "doc.text")
+                    }
+                    Button { showChat = true } label: {
+                        Label(tr("Discuter avec le document"), systemImage: "text.bubble")
+                    }
+                } label: {
+                    AppleIntelligenceGlyph(size: 18)
+                }
+                .accessibilityLabel("Apple Intelligence")
             }
 
             Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
@@ -332,6 +353,17 @@ final class DocumentSummarizer: ObservableObject {
 
     /// True when on-device summarisation can run right now.
     static var isAvailable: Bool {
+        #if DEBUG
+        // UI/screenshot harness (Debug only, like OKIA_RENDER_CONTENT): Foundation Models
+        // needs a real Apple-Intelligence device, so the simulator can never exercise these
+        // screens. This flag shows them with canned content. Absent from release builds.
+        // "off" forces the unavailable state — the simulator reports Apple Intelligence as
+        // available (it borrows the host Mac's model) yet generation fails there, so this is
+        // the only way to exercise the hidden-options path.
+        if let flag = ProcessInfo.processInfo.environment["OKIA_FAKE_AI"], !flag.isEmpty {
+            return flag != "off"
+        }
+        #endif
         #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
             if case .available = SystemLanguageModel.default.availability { return true }
@@ -435,7 +467,7 @@ final class DocumentSummarizer: ObservableObject {
 
     /// Tidy the model's Markdown: drop wrapping ```-fences and collapse any doubled
     /// heading markers (`## ## Titre` → `## Titre`).
-    private static func cleanMarkdown(_ s: String) -> String {
+    static func cleanMarkdown(_ s: String) -> String {
         var out = s.trimmingCharacters(in: .whitespacesAndNewlines)
         if out.hasPrefix("```") {
             out = out.replacingOccurrences(of: #"^```[a-zA-Z]*\n"#, with: "", options: .regularExpression)

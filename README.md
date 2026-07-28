@@ -34,11 +34,26 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
   cadrage auto sur les points. Bouton **plein écran ⛶** pour panner/zoomer en portrait ou paysage.
   Leaflet est **bundlé offline** (`Web/vendor/leaflet.{js,css}` + `images/`) ; seules les tuiles
   nécessitent le réseau.
-- **Résumé du document par Apple Intelligence** : quand Apple Intelligence est disponible
-  (iOS 26 / macOS 26+), un bouton ✦ apparaît dans la barre du lecteur. Le **modèle on-device**
-  (framework *Foundation Models*) génère un résumé **structuré en Markdown** (chapitres, **gras**,
-  listes), rendu avec la charte de l'app. Gardé par `@available` + `#if canImport(FoundationModels)`
-  → invisible sur les appareils sans Apple Intelligence. Voir `DocumentSummarizer` dans `ReaderView.swift`.
+- **Apple Intelligence** : quand le modèle on-device est disponible (iOS 26 / macOS 26+), un
+  menu ✦ apparaît dans la barre du lecteur, avec **deux entrées**. Gardé par `@available` +
+  `#if canImport(FoundationModels)` et par `DocumentSummarizer.isAvailable` → le menu entier
+  **disparaît** sur les appareils sans Apple Intelligence, plutôt que d'afficher des options
+  qui échoueraient.
+  - **Résumé du document** : le framework *Foundation Models* génère un résumé **structuré en
+    Markdown** (chapitres, **gras**, listes), rendu avec la charte de l'app.
+    Voir `DocumentSummarizer` dans `ReaderView.swift`.
+  - **Discuter avec le document** : questions/réponses multi-tours **ancrées sur le document
+    seul**. Les réponses suivent la même mise en forme (phrase de réponse en gras, chapitres
+    `##`, puces), et toute la conversation est rendue par le **moteur Markdown de l'app** —
+    un seul WebView pour le fil, les questions devenant des callouts `question`. Le prompt
+    traite le document comme une **donnée, jamais une consigne**, et interdit de répondre
+    hors document. La **langue de réponse est celle des Réglages**, pas celle du document :
+    la règle est répétée après le document dans les instructions *et* à chaque tour, et
+    changer de langue reconstruit la session. Le dépassement de fenêtre de contexte efface
+    l'historique et rejoue la question plutôt que de bloquer la conversation.
+    L'écran d'accueil propose **cinq amorces**, dont trois **tirées du document** (entités
+    wiki-liées, sinon titres de niveau 2, hors sections structurelles) — calculées sur
+    l'appareil, sans appel au modèle. Voir `DocumentChatView.swift`.
 - **Siri / Spotlight / Raccourcis (App Intents)** : actions exposées au système — **Ouvrir un
   rapport** (paramètre = rapport du coffre), **Ouvrir le dernier rapport**, **Résumer un rapport**
   (réutilise Apple Intelligence). Phrases FR auto-enregistrées via `AppShortcutsProvider`. Le store

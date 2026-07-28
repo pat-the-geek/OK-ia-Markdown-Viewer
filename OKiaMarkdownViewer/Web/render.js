@@ -1041,8 +1041,27 @@
     });
   }
 
+  // Render into #content WITHOUT the document header (title + meta bar), then bring the last
+  // question into view. Used by the document chat: the sheet already carries the title, so an
+  // H1 would waste the top of every conversation, and after each new turn the reader wants to
+  // land on the exchange that just appeared rather than back at the beginning.
+  function renderPlain(md) {
+    var container = document.getElementById('content');
+    if (!container) return Promise.resolve();
+    clearSearch();
+    return renderFragment(container, md).then(function () {
+      applyFontScale();
+      var questions = container.querySelectorAll('.callout-question');
+      if (questions.length > 1) {
+        questions[questions.length - 1].scrollIntoView({ block: 'start' });
+      }
+      post('rendered', {});
+    });
+  }
+
   window.OKIA = {
     render: render,
+    renderPlain: renderPlain,
     renderFragment: renderFragment,
     exportModel: exportModel,
     setFontScale: setFontScale,

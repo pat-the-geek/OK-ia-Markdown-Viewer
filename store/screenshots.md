@@ -15,6 +15,13 @@ Jeu prêt à téléverser dans `store/screenshots/` — toutes aux tailles exact
 - Chaque scène est chargée par un **hook de debug** (`#if DEBUG`, variables d'env
   `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` ; taille de fenêtre Mac via `OKIA_SHOT_SIZE`) —
   **absent du build de production**.
+- 🆕 **Écrans Apple Intelligence en simulateur** : `OKIA_FAKE_AI` (Debug uniquement) force
+  la disponibilité et sert une réponse pré-écrite, ce qui rend ces écrans capturables sans
+  appareil compatible. `OKIA_FAKE_AI=chat` ouvre directement la feuille de discussion et
+  `OKIA_FAKE_AI_QUESTION="…"` y pose la question ; `OKIA_FAKE_AI=off` force l'état
+  *indisponible* pour vérifier que le menu ✦ disparaît bien.
+  ⚠️ Le **contenu** reste une réponse factice : à ne pas téléverser comme capture store sans
+  l'avoir rejouée sur un vrai appareil.
 - ⚠️ **Non incluses** (impossibles en simulateur) : le **résumé Apple Intelligence** (nécessite
   Foundation Models = vrai appareil compatible) et les **callouts iOS** (les emoji d'icône
   s'affichent en « ? » dans le WebView du simulateur — nets sur vrai appareil et sur Mac).

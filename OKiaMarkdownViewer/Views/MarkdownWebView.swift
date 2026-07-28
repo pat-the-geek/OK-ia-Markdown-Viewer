@@ -20,6 +20,9 @@ struct MarkdownWebView: UIViewRepresentable {
     var onExternalLink: (URL) -> Void
     /// Height of the floating title/search bar overlay, so content scrolls clear of it.
     var topInset: CGFloat = 0
+    /// Draw the document header (big title + meta bar). The chat sheet turns it off: it
+    /// already shows the title, and an H1 per render would eat the top of the thread.
+    var showsHeader: Bool = true
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -139,8 +142,10 @@ struct MarkdownWebView: UIViewRepresentable {
             guard let mdJSON = jsonString(doc.text),
                   let nameJSON = jsonString(doc.filename) else { return }
             loadedDocumentID = doc.id
-            let js = "window.OKIA && window.OKIA.render(\(mdJSON), \(nameJSON));"
-            webView.evaluateJavaScript(js, completionHandler: nil)
+            let call = parent.showsHeader
+                ? "window.OKIA.render(\(mdJSON), \(nameJSON))"
+                : "window.OKIA.renderPlain(\(mdJSON))"
+            webView.evaluateJavaScript("window.OKIA && \(call);", completionHandler: nil)
         }
 
         private func jsonString(_ value: String) -> String? {
