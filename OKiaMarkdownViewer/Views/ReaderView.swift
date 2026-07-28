@@ -391,7 +391,9 @@ final class DocumentSummarizer: ObservableObject {
             let session = LanguageModelSession(instructions: Self.instructions)
             let prompt = tr("Voici le document à résumer :")
             let response = try await session.respond(to: "\(prompt)\n\n\(text)")
-            state = .done(Self.cleanMarkdown(response.content))
+            // Same stutter guard as the chat: asked for 3 to 5 chapters, the on-device model
+            // can emit one of them several times over.
+            state = .done(DocumentChat.dropRepeatedSections(Self.cleanMarkdown(response.content)))
         } catch {
             state = .failed(tr("Le résumé n’a pas pu être généré (%@).", error.localizedDescription))
         }

@@ -191,8 +191,56 @@ final class DocumentChat: ObservableObject {
     #endif
 
     private func complete(with answer: String) {
-        if let last = turns.indices.last { turns[last].answer = answer }
+        if let last = turns.indices.last { turns[last].answer = Self.dropRepeatedSections(answer) }
         isResponding = false
+    }
+
+    /// Small on-device models stutter: asked for "1 to 3 chapters" with only one chapter's
+    /// worth of material, they emit the same `##` section two or three times in a row and the
+    /// reader sees the identical block repeated. The instructions now forbid it, but a prompt
+    /// is a request, not a guarantee — so identical sections are dropped before display.
+    /// Only exact repeats go: two sections sharing a title but differing in content are kept.
+    static func dropRepeatedSections(_ markdown: String) -> String {
+        var blocks: [[String]] = []
+        var current: [String] = []
+        for line in markdown.components(separatedBy: "\n") {
+            if line.hasPrefix("## "), !current.isEmpty {
+                blocks.append(current)
+                current = [line]
+            } else {
+                current.append(line)
+            }
+        }
+        if !current.isEmpty { blocks.append(current) }
+
+        var seen = Set<String>()
+        var kept: [[String]] = []
+        for block in blocks {
+            let key = Self.sectionKey(block)
+            if key.isEmpty || !seen.contains(key) {
+                if !key.isEmpty { seen.insert(key) }
+                kept.append(block)
+            }
+        }
+        return kept.map { $0.joined(separator: "\n") }
+                   .joined(separator: "\n")
+                   .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Identity of a section for repeat detection: its heading plus its bullet points.
+    /// Comparing the raw text is too literal — a stuttered chapter and its last copy differ
+    /// by whatever trailing line the model did or didn't emit, and the copy survives. The
+    /// heading and the bullets are what the reader recognises as "the same block again".
+    private static func sectionKey(_ block: [String]) -> String {
+        let signature = block
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { line in
+                line.hasPrefix("## ") || line.hasPrefix("- ") || line.hasPrefix("* ")
+            }
+        // A section with no bullets is compared on its whole content instead.
+        let lines = signature.count > 1 ? signature
+            : block.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return lines.joined(separator: "\n").lowercased()
     }
 
     /// The answer language is the one chosen in Settings — **not** the document's. A document
@@ -246,6 +294,8 @@ final class DocumentChat: ObservableObject {
     - open with a direct answer sentence in bold (**…**);
     - develop it in 1 to 3 chapters with level-2 headings, written exactly as "## Title"
       (a single "##", never "## ##");
+    - add a chapter only if you genuinely have something else to say: never repeat a
+      heading or bullets you have already written;
     - under each chapter, 2 to 4 concise bullets, key terms and figures in **bold**;
     - skip the chapters when the answer fits in two sentences — never pad.
     Reply ONLY with the answer's Markdown.
@@ -258,6 +308,8 @@ final class DocumentChat: ObservableObject {
     - beginne mit einem direkten Antwortsatz in Fettschrift (**…**);
     - entfalte sie in 1 bis 3 Kapiteln mit Überschriften der Ebene 2, exakt als „## Titel“
       geschrieben (nur ein „##“, niemals „## ##“);
+    - füge ein Kapitel nur hinzu, wenn du wirklich etwas anderes zu sagen hast: wiederhole
+      niemals eine bereits geschriebene Überschrift oder Stichpunkte;
     - unter jedem Kapitel 2 bis 4 knappe Stichpunkte, Schlüsselbegriffe und Zahlen **fett**;
     - lass die Kapitel weg, wenn die Antwort in zwei Sätze passt — blähe nichts auf.
     Antworte NUR mit dem Markdown der Antwort.
@@ -270,6 +322,8 @@ final class DocumentChat: ObservableObject {
     - empieza con una frase de respuesta directa en negrita (**…**);
     - desarróllala en 1 a 3 capítulos con títulos de nivel 2, escritos exactamente «## Título»
       (una sola «##», nunca «## ##»);
+    - añade un capítulo solo si de verdad tienes algo más que decir: no repitas nunca un
+      título ni viñetas ya escritos;
     - bajo cada capítulo, de 2 a 4 viñetas concisas, términos y cifras clave en **negrita**;
     - omite los capítulos si la respuesta cabe en dos frases — no rellenes.
     Responde ÚNICAMENTE con el Markdown de la respuesta.
@@ -282,6 +336,8 @@ final class DocumentChat: ObservableObject {
     - apri con una frase di risposta diretta in grassetto (**…**);
     - sviluppala in 1-3 capitoli con titoli di livello 2, scritti esattamente «## Titolo»
       (un solo «##», mai «## ##»);
+    - aggiungi un capitolo solo se hai davvero altro da dire: non ripetere mai un titolo
+      o punti elenco già scritti;
     - sotto ogni capitolo, da 2 a 4 punti elenco concisi, termini e cifre chiave in **grassetto**;
     - ometti i capitoli se la risposta sta in due frasi — non gonfiare il testo.
     Rispondi SOLO con il Markdown della risposta.
@@ -294,6 +350,8 @@ final class DocumentChat: ObservableObject {
     - commence par une phrase de réponse directe en gras (**…**) ;
     - développe en 1 à 3 chapitres avec des titres de niveau 2, écris exactement « ## Titre »
       (un seul « ## », jamais « ## ## ») ;
+    - n’ajoute un chapitre que si tu as vraiment autre chose à dire : ne répète jamais un
+      titre ni des puces déjà écrits ;
     - sous chaque chapitre, 2 à 4 puces concises, termes et chiffres clés en **gras** ;
     - pas de chapitre si la réponse tient en deux phrases — ne délaye jamais.
     Réponds UNIQUEMENT avec le Markdown de la réponse.

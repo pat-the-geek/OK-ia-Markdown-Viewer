@@ -20,3 +20,6 @@ build/
 *.moved-aside
 *.hmap
 *.ipa
+
+# Identifiants de déploiement (jamais commités)
+scripts/deploy.env

@@ -290,6 +290,33 @@ L'app enregistre le schéma d'URL `mdviewer://` (`CFBundleURLTypes` dans `Info.p
 
 ## Livraison TestFlight
 
+### En une commande
+
+```bash
+scripts/deploy-testflight.sh --bump
+```
+
+Enchaîne incrément du build → `xcodegen` → archive Release → export App Store → **contrôles** →
+envoi via `xcrun altool`. Sans `--bump`, réutilise le numéro courant ; avec `--no-upload`,
+s'arrête après les contrôles et laisse l'`.ipa`.
+
+Les identifiants viennent de `scripts/deploy.env` (non commité — voir `deploy.env.example`) :
+`ASC_KEY_ID` et `ASC_ISSUER_ID`. La clé privée reste dans
+`~/.appstoreconnect/private_keys/AuthKey_<ASC_KEY_ID>.p8`.
+
+Quatre contrôles bloquent l'envoi, chacun pour une panne silencieuse au build et coûteuse plus tard :
+signature **Apple Distribution** (une IPA signée en développement est refusée par App Store Connect),
+**absence du harnais de debug** dans les binaires, **cinq localisations** présentes, et **version
+conforme** à `project.yml`. Le test du harnais est précédé d'un **canari** (`OKIA_LANG`, présent dans
+tout build) : si le canari manque, c'est que `strings` ne lit pas les littéraux du binaire et le
+contrôle serait vide — le script s'arrête plutôt que d'afficher un feu vert sans valeur.
+
+> L'envoi se fait en distribution **App Store standard**. C'est ce qui distingue ce script d'un
+> envoi depuis Xcode Organizer en « TestFlight Internal Only », qui produit des builds
+> **inéligibles à l'App Store** — le piège qui a bloqué les builds 9 à 18.
+
+### À la main
+
 1. **Signature** : la **Team** payante (`72NVM63N83`) et le **Bundle Identifier**
    `ch.ok-ia.markdownviewer` sont déjà configurés (signature **automatique**). Vérifiez dans Xcode →
    cible *OKiaMarkdownViewer* → **Signing & Capabilities** que **Automatically manage signing** est
