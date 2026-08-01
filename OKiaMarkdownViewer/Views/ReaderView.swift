@@ -372,12 +372,17 @@ final class DocumentSummarizer: ObservableObject {
         return false
     }
 
+    /// True when the document was too long to be read whole, so the summary covers its
+    /// opening only. Surfaced to the reader rather than left implicit.
+    @Published private(set) var partialDocument = false
+
     func summarize(_ markdown: String) {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
             state = .loading
-            let text = Self.plainText(from: markdown)
-            Task { await run(text) }
+            let condensed = Self.condensed(from: markdown, limit: 8000)
+            partialDocument = condensed.truncated
+            Task { await run(condensed.text) }
             return
         }
         #endif
@@ -388,7 +393,7 @@ final class DocumentSummarizer: ObservableObject {
     @available(iOS 26.0, macOS 26.0, *)
     private func run(_ text: String) async {
         do {
-            let session = LanguageModelSession(instructions: Self.instructions)
+            let session = LanguageModelSession(instructions: Self.instructions(partial: partialDocument))
             let prompt = tr("Voici le document à résumer :")
             let response = try await session.respond(to: "\(prompt)\n\n\(text)")
             // Same stutter guard as the chat: asked for 3 to 5 chapters, the on-device model
@@ -402,7 +407,8 @@ final class DocumentSummarizer: ObservableObject {
     /// Summarising instructions, one per shipped language. These are model prompts, not UI
     /// strings: each is written natively (not translated word-for-word) and names its own
     /// language explicitly, so the model answers in the language the reader chose.
-    private static var instructions: String {
+    private static func instructions(partial: Bool) -> String {
+        let note = partial ? "\n\n" + excerptNote : ""
         switch Localization.shared.code {
         case "en": return """
     You are an assistant that summarises documents in English. CONDENSE aggressively:
@@ -415,7 +421,7 @@ final class DocumentSummarizer: ObservableObject {
       figures in **bold**;
     - end with a "## In brief" chapter of 2 to 3 points.
     Stay faithful to the document, invent nothing. Reply ONLY with the summary's Markdown.
-    """
+    """ + note
         case "de": return """
     Du bist ein Assistent, der Dokumente auf Deutsch zusammenfasst. VERDICHTE stark:
     schreibe den Text nicht ab, formuliere das Wesentliche neu.
@@ -427,7 +433,7 @@ final class DocumentSummarizer: ObservableObject {
       Zahlen **fett** hervorgehoben;
     - schließe mit einem Kapitel „## Kurz gefasst“ aus 2 bis 3 Punkten.
     Bleibe dem Dokument treu, erfinde nichts. Antworte NUR mit dem Markdown der Zusammenfassung.
-    """
+    """ + note
         case "es": return """
     Eres un asistente que resume documentos en español. CONDENSA con fuerza:
     no copies el texto, reformula lo esencial.
@@ -439,7 +445,7 @@ final class DocumentSummarizer: ObservableObject {
       y cifras clave en **negrita**;
     - termina con un capítulo «## En resumen» de 2 a 3 puntos.
     Cíñete al documento, no inventes nada. Responde ÚNICAMENTE con el Markdown del resumen.
-    """
+    """ + note
         case "it": return """
     Sei un assistente che riassume documenti in italiano. CONDENSA con decisione:
     non ricopiare il testo, riformula l'essenziale.
@@ -451,7 +457,7 @@ final class DocumentSummarizer: ObservableObject {
       e cifre chiave in **grassetto**;
     - concludi con un capitolo «## In breve» di 2 o 3 punti.
     Resta fedele al documento, non inventare nulla. Rispondi SOLO con il Markdown del riassunto.
-    """
+    """ + note
         default: return """
     Tu es un assistant qui résume des documents en français. CONDENSE fortement :
     ne recopie pas le texte, reformule l’essentiel.
@@ -463,7 +469,7 @@ final class DocumentSummarizer: ObservableObject {
       noms propres et chiffres clés ;
     - termine par un chapitre « ## En bref » de 2 à 3 points.
     Reste fidèle au document, n’invente rien. Réponds UNIQUEMENT avec le Markdown du résumé.
-    """
+    """ + note
         }
     }
 
@@ -484,6 +490,101 @@ final class DocumentSummarizer: ObservableObject {
     /// for the model's context window. Stripping the `#`/`>`/`*` markers is important: if the
     /// source headings keep their `##`, the model wraps them in its own `##` → "## ## Titre".
     static func plainText(from markdown: String, limit: Int = 8000) -> String {
+        condensed(from: markdown, limit: limit).text
+    }
+
+    /// Reduce the document to what fits, and report whether the cap actually bit.
+    ///
+    /// When it does, a blind prefix is the worst possible sample: on a 858-article briefing it
+    /// is the first four articles, and the model then answers "what are the main themes" from
+    /// 0.4 % of the text. The headings map the *whole* document for one line each, so the
+    /// excerpt keeps the opening for substance and adds an outline for coverage. Even the
+    /// outline can overflow — 859 headings are 54 KB against a 6 000-character budget — so it
+    /// is sampled at a regular stride, which keeps the sample spread over the entire document
+    /// instead of stopping partway.
+    static func condensed(from markdown: String, limit: Int) -> (text: String, truncated: Bool) {
+        let prose = plainProse(from: markdown)
+        if prose.count <= limit { return (prose, false) }
+
+        let outline = headings(in: markdown)
+        guard !outline.isEmpty else { return (String(prose.prefix(limit)), true) }
+
+        let averageLine = max(1, outline.reduce(0) { $0 + $1.count + 1 } / outline.count)
+        let capacity = max(1, (limit * 3 / 5) / averageLine)
+        let stride = max(1, Int((Double(outline.count) / Double(capacity)).rounded(.up)))
+
+        var kept: [String] = []
+        var index = 0
+        while index < outline.count && kept.count < capacity {
+            kept.append(outline[index])
+            index += stride
+        }
+
+        // The marker is deliberately terse and in English: it is read by the model, and the
+        // per-language instructions are what explain the excerpt to it.
+        let outlineText = "\n\n----- OUTLINE (\(kept.count)/\(outline.count) headings) -----\n"
+            + kept.map { "- " + $0 }.joined(separator: "\n")
+        let proseBudget = max(0, limit - outlineText.count)
+        return (String(prose.prefix(proseBudget)) + outlineText, true)
+    }
+
+    /// Handed to the model whenever `condensed` had to cut. Without it the model treats an
+    /// opening as the whole document and answers "the main themes" from the first few
+    /// sections. Shared by the summary and the chat so the wording cannot drift apart.
+    static var excerptNote: String {
+        switch Localization.shared.code {
+        case "en": return """
+    The document is too long to be sent whole. You are given its OPENING, then an OUTLINE — \
+    headings taken from across the entire document — under "----- OUTLINE -----". The outline \
+    tells you what the document covers as a whole; the opening is the only text you have \
+    actually read. If a question bears on a part you do not have, say so instead of guessing.
+    """
+        case "de": return """
+    Das Dokument ist zu lang, um vollständig übergeben zu werden. Du erhältst seinen ANFANG \
+    und danach eine GLIEDERUNG — Überschriften aus dem gesamten Dokument — unter \
+    "----- OUTLINE -----". Die Gliederung sagt dir, worum es insgesamt geht; der Anfang ist \
+    der einzige Text, den du wirklich gelesen hast. Betrifft eine Frage einen Teil, den du \
+    nicht hast, sage das, statt zu raten.
+    """
+        case "es": return """
+    El documento es demasiado largo para enviarse entero. Recibes su INICIO y después un \
+    ÍNDICE — títulos tomados de todo el documento — bajo "----- OUTLINE -----". El índice te \
+    dice de qué trata el conjunto; el inicio es el único texto que has leído de verdad. Si una \
+    pregunta se refiere a una parte que no tienes, dilo en lugar de suponer.
+    """
+        case "it": return """
+    Il documento è troppo lungo per essere trasmesso per intero. Ricevi il suo INIZIO e poi un \
+    INDICE — titoli presi da tutto il documento — sotto "----- OUTLINE -----". L'indice ti dice \
+    di che cosa tratta l'insieme; l'inizio è l'unico testo che hai davvero letto. Se una domanda \
+    riguarda una parte che non hai, dillo invece di supporre.
+    """
+        default: return """
+    Le document est trop long pour être transmis en entier. Tu reçois son DÉBUT, puis un PLAN — \
+    des titres prélevés sur tout le document — sous « ----- OUTLINE ----- ». Le plan te dit ce \
+    que couvre l'ensemble ; le début est le seul texte que tu aies réellement lu. Si une question \
+    porte sur une partie que tu n'as pas, dis-le au lieu de supposer.
+    """
+        }
+    }
+
+    /// Every heading in document order, markers stripped — `##` left in place would come back
+    /// as "## ## Titre" in the model's own output.
+    private static func headings(in markdown: String) -> [String] {
+        var out: [String] = []
+        var inFence = false
+        for raw in markdown.components(separatedBy: "\n") {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("```") || line.hasPrefix("~~~") { inFence.toggle(); continue }
+            if inFence { continue }
+            guard let marker = line.range(of: #"^#{1,3}[ \t]+"#, options: .regularExpression) else { continue }
+            let title = line[marker.upperBound...].trimmingCharacters(in: .whitespaces)
+            if !title.isEmpty { out.append(title) }
+        }
+        return out
+    }
+
+    /// Markdown reduced to plain prose, uncapped.
+    private static func plainProse(from markdown: String) -> String {
         var s = markdown
         s = s.replacingOccurrences(of: #"```[\s\S]*?```"#, with: " ", options: .regularExpression)        // code/mermaid/leaflet
         s = s.replacingOccurrences(of: #"!\[[^\]]*\]\([^)]*\)"#, with: " ", options: .regularExpression)   // images
@@ -494,7 +595,7 @@ final class DocumentSummarizer: ObservableObject {
         s = s.replacingOccurrences(of: #"[*_`~]"#, with: "", options: .regularExpression)                          // inline emphasis/code
         s = s.replacingOccurrences(of: #"[ \t]{2,}"#, with: " ", options: .regularExpression)
         s = s.trimmingCharacters(in: .whitespacesAndNewlines)
-        return s.count > limit ? String(s.prefix(limit)) : s
+        return s
     }
 }
 
@@ -567,7 +668,10 @@ struct DocumentSummaryView: View {
     private var summaryDisclaimer: some View {
         HStack(spacing: 6) {
             AppleIntelligenceGlyph(size: 12)
-            Text(tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs."))
+            Text(summarizer.partialDocument
+                 ? tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs.")
+                   + " " + tr("Document trop long pour être lu en entier : seul son début a été analysé.")
+                 : tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs."))
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)

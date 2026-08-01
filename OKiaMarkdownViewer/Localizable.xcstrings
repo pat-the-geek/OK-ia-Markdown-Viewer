@@ -877,6 +877,41 @@
         }
       }
     },
+    "Document trop long pour être lu en entier : seul son début a été analysé.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document trop long pour être lu en entier : seul son début a été analysé."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document too long to be read in full: only its opening was analysed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument zu lang, um vollständig gelesen zu werden: nur sein Anfang wurde ausgewertet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documento demasiado largo para leerse entero: solo se ha analizado su inicio."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documento troppo lungo per essere letto per intero: è stato analizzato solo il suo inizio."
+          }
+        }
+      }
+    },
     "Dossiers à inclure": {
       "extractionState": "manual",
       "localizations": {

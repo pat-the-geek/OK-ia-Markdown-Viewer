@@ -9,7 +9,8 @@ normalisé. Les documents peuvent aussi être **présentés en diaporama plein �
 PowerPoint). Tout fonctionne **100 % hors-ligne** — `marked`, `mermaid` et `leaflet` sont embarqués
 dans l'app.
 
-Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
+Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent par **TestFlight**
+(`scripts/deploy-testflight.sh`).
 
 ---
 
@@ -20,8 +21,17 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
 - **Rendu fidèle ok-ia.ch** : charte noir/gris/blanc/orange, titre Nunito 900, barre de méta
   (source · date fr-CH · temps de lecture · « Lire l'article ↗ »).
 - **Pipeline Markdown** (ordre identique à ok-ia.ch) : frontmatter YAML → blocs Mermaid → callouts
-  Obsidian → wiki-links → nettoyage des images cassées (tolérant hors-ligne) → coloration NER →
-  `marked.parse` → normalisation/recoloration du thème Mermaid.
+  Obsidian → wiki-links → coloration NER → `marked.parse` → normalisation/recoloration du thème
+  Mermaid.
+- **Les images ne bloquent jamais l'affichage** : elles portent `loading="lazy"` et se chargent
+  quand on scrolle jusqu'à elles ; une image morte se retire elle-même (avec sa légende) sur son
+  événement `error`. Le pipeline sondait auparavant **chaque** image distante avant de peindre le
+  moindre pixel, en la téléchargeant entièrement — mesuré sur un briefing de 858 articles et
+  815 images : **2 427 ms → 336 ms**, et l'écran restait blanc bien plus longtemps sur réseau réel.
+- **Document volumineux** : au-delà de 2 M de caractères, un message « rendu en cours » est peint
+  avant le parsing, qui monopolise ensuite le thread. La cession se fait par `setTimeout`, jamais
+  par `requestAnimationFrame` — celui-ci ne se déclenche pas quand la vue est masquée, et le
+  document ne se rendrait alors jamais.
 - **Zoom diagramme plein écran** : tap → overlay ; pincer (0.5×–6×), glisser, double-tap
   (ajuster ↔ zoom), bouton « ajuster à l'écran », fermer ✕ + swipe-down. SVG **vectoriel**, net à fort zoom.
 - **Image en plein écran** : un tap sur une image du document l'ouvre en plein écran — même
@@ -33,7 +43,10 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
   avec `marker: lat, long, [[Lien]]`, fonds de carte CARTO clair/sombre + OpenStreetMap, popups,
   cadrage auto sur les points. Bouton **plein écran ⛶** pour panner/zoomer en portrait ou paysage.
   Leaflet est **bundlé offline** (`Web/vendor/leaflet.{js,css}` + `images/`) ; seules les tuiles
-  nécessitent le réseau.
+  nécessitent le réseau. Sans connexion, la carte affiche **« Carte indisponible hors connexion »**
+  et la **liste des marqueurs** plutôt qu'un rectangle gris muet — déclenché par `navigator.onLine`
+  et, parce que celui-ci ne signale qu'un lien et non une joignabilité (portail captif, CDN mort),
+  aussi par les erreurs de tuiles.
 - **Apple Intelligence** : quand le modèle on-device est disponible (iOS 26 / macOS 26+), un
   menu ✦ apparaît dans la barre du lecteur, avec **deux entrées**. Gardé par `@available` +
   `#if canImport(FoundationModels)` et par `DocumentSummarizer.isAvailable` → le menu entier
@@ -54,6 +67,12 @@ Distribution : **TestFlight uniquement** (diffusion interne), pas d'App Store.
     L'écran d'accueil propose **cinq amorces**, dont trois **tirées du document** (entités
     wiki-liées, sinon titres de niveau 2, hors sections structurelles) — calculées sur
     l'appareil, sans appel au modèle. Voir `DocumentChatView.swift`.
+  - **Document trop long pour la fenêtre de contexte** (6 000 car. pour le chat, 8 000 pour le
+    résumé) : le modèle ne reçoit pas un simple préfixe — sur un briefing de 858 articles, ce
+    serait les quatre premiers. Il reçoit **le début du document plus un plan tiré des titres**,
+    échantillonné à pas régulier pour couvrir tout le document (858 articles → 58 titres au chat,
+    couvrant 99 % du texte). Le modèle est prévenu de ce qu'il lit, et le lecteur voit la mention
+    « seul son début a été analysé ». Voir `DocumentSummarizer.condensed(from:limit:)`.
 - **Siri / Spotlight / Raccourcis (App Intents)** : actions exposées au système — **Ouvrir un
   rapport** (paramètre = rapport du coffre), **Ouvrir le dernier rapport**, **Résumer un rapport**
   (réutilise Apple Intelligence). Phrases FR auto-enregistrées via `AppShortcutsProvider`. Le store

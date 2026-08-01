@@ -1,7 +1,8 @@
 /* ===========================================================================
    OK-ia Markdown Viewer — rendering pipeline
    Reproduces the ok-ia.ch viewer: frontmatter → mermaid → callouts → wiki-links
-   → broken-image cleanup → NER → marked.parse → mermaid normalize/run/recolor.
+   → NER → marked.parse → mermaid normalize/run/recolor. Images are never probed
+   before painting: they load lazily and drop themselves if they fail.
    Exposes window.OKIA.render(markdown, filename).
    =========================================================================== */
 (function () {
@@ -19,7 +20,13 @@
     'Lire l\'article': { en: 'Read the article', de: 'Den Artikel lesen',
                          es: 'Leer el artículo', it: 'Leggi l\'articolo' },
     'Erreur de rendu':  { en: 'Rendering error', de: 'Rendering-Fehler',
-                          es: 'Error de renderizado', it: 'Errore di rendering' }
+                          es: 'Error de renderizado', it: 'Errore di rendering' },
+    'Document volumineux, rendu en cours…':
+      { en: 'Large document, rendering…', de: 'Umfangreiches Dokument, wird gerendert…',
+        es: 'Documento voluminoso, procesando…', it: 'Documento voluminoso, rendering in corso…' },
+    'Carte indisponible hors connexion':
+      { en: 'Map unavailable offline', de: 'Karte offline nicht verfügbar',
+        es: 'Mapa no disponible sin conexión', it: 'Mappa non disponibile offline' }
   };
   function TXT(fr) {
     var entry = STRINGS[fr];
@@ -259,48 +266,62 @@
   /* =========================================================================
      5. BROKEN IMAGES (offline-tolerant)
      ========================================================================= */
-  function testImage(url) {
-    return new Promise(function (resolve) {
-      if (!/^https?:\/\//i.test(url)) { resolve(true); return; } // local/relative: keep
-      var img = new Image();
-      var done = false;
-      var t = setTimeout(function () { if (!done) { done = true; resolve(false); } }, 5000);
-      img.onload = function () { if (!done) { done = true; clearTimeout(t); resolve(true); } };
-      img.onerror = function () { if (!done) { done = true; clearTimeout(t); resolve(false); } };
-      img.src = url;
-    });
+  // Images used to be probed BEFORE anything was painted: every remote URL was downloaded
+  // in full (new Image() fetches the file, it is not a HEAD) just to learn which ones were
+  // dead, and `container.innerHTML` waited on all of them. Measured on a 858-article
+  // briefing with 815 remote images: 468 ms to parse and paint the whole document, but
+  // 2 449 ms once the probe ran — and that was against a local server with no latency.
+  // Over a real network it is what turned a large report into an indefinitely blank screen.
+  //
+  // Now nothing is probed. The browser fetches each image when it scrolls into view, and
+  // reports failures itself; the two helpers below carry what the probe used to provide.
+
+  // `loading="lazy"` has to be in the markup BEFORE it reaches the DOM — the browser starts
+  // fetching the instant the element exists, so setting the attribute afterwards is too late
+  // to save the request.
+  function withLazyImages(html) {
+    return html.replace(/<img\b/gi, '<img loading="lazy" decoding="async"');
   }
 
-  function removeBrokenImages(md) {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve(md);
-    var re = /!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g;
-    var urls = [], m;
-    while ((m = re.exec(md)) !== null) urls.push(m[1]);
-    urls = urls.filter(function (u) { return /^https?:\/\//i.test(u); });
-    if (!urls.length) return Promise.resolve(md);
+  // A caption is the paragraph right after an image when it holds nothing but emphasis —
+  // the shape `![](…)` + `*Légende*` produces, and what the old probe stripped alongside a
+  // dead image.
+  function isCaptionParagraph(node) {
+    if (!node || node.tagName !== 'P' || node.children.length !== 1) return false;
+    var only = node.children[0];
+    return (only.tagName === 'EM' || only.tagName === 'I') &&
+           node.textContent.trim() === only.textContent.trim();
+  }
 
-    var unique = Array.from(new Set(urls));
-    return Promise.all(unique.map(testImage)).then(function (results) {
-      var broken = {};
-      unique.forEach(function (u, idx) { if (!results[idx]) broken[u] = true; });
-      if (!Object.keys(broken).length) return md;
-      var lines = md.split(/\r?\n/);
-      var kept = [];
-      for (var i = 0; i < lines.length; i++) {
-        var im = lines[i].match(/^\s*!\[[^\]]*\]\(([^)\s]+)[^)]*\)\s*$/);
-        if (im && broken[im[1]]) {
-          // drop the image AND a following italic caption line, if any
-          if (i + 1 < lines.length && /^\s*[*_].+[*_]\s*$/.test(lines[i + 1])) i++;
-          continue;
-        }
-        // inline broken image inside a paragraph: strip just the image token
-        kept.push(lines[i].replace(/!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g, function (full, u) {
-          return broken[u] ? '' : full;
-        }));
+  function dropBrokenImage(img) {
+    var host = img.parentNode;
+    // `![](…)` alone on its line becomes a <p> holding just the image: drop the paragraph
+    // and its caption, so no empty gap is left behind.
+    if (host && host.tagName === 'P' && host.textContent.trim() === '' &&
+        host.querySelectorAll('img').length === 1) {
+      var caption = host.nextElementSibling;
+      if (isCaptionParagraph(caption)) caption.parentNode.removeChild(caption);
+      host.parentNode.removeChild(host);
+    } else {
+      img.parentNode.removeChild(img);   // inline in a paragraph: drop just the image
+    }
+  }
+
+  function watchImages(container) {
+    var imgs = container.querySelectorAll('img');
+    for (var i = 0; i < imgs.length; i++) {
+      var img = imgs[i];
+      if (img.getAttribute('data-okia-watched') === '1') continue;
+      img.setAttribute('data-okia-watched', '1');
+      img.addEventListener('error', function () { dropBrokenImage(this); });
+      // A cached failure can land before the listener is attached: `complete` with no
+      // intrinsic width means the fetch already finished and produced nothing.
+      if (img.complete && img.naturalWidth === 0 && img.getAttribute('loading') !== 'lazy') {
+        dropBrokenImage(img);
       }
-      return kept.join('\n');
-    });
+    }
   }
+
 
   /* =========================================================================
      6. NER  — parse `## Entités` section, build color map + legend.
@@ -633,6 +654,22 @@
     return new Ctl();
   }
 
+  // A map whose tiles never arrive is a mute grey rectangle — the reader cannot tell an
+  // empty area from a broken app. Offline, the marker labels are the part that still carries
+  // meaning, so they are shown as a list rather than thrown away with the map.
+  function leafletOfflineFallback(el, cfg) {
+    var labels = (cfg.markers || [])
+      .map(function (mk) { return mk.label; })
+      .filter(function (label) { return !!label; });
+    var list = labels.length
+      ? '<ul>' + labels.map(function (label) { return '<li>' + escapeHtml(label) + '</li>'; }).join('') + '</ul>'
+      : '';
+    el.innerHTML = '<div class="okia-map-offline">' +
+      '<span class="okia-map-offline-title">' + escapeHtml(TXT('Carte indisponible hors connexion')) + '</span>' +
+      list + '</div>';
+    el.setAttribute('data-offline', '1');
+  }
+
   function renderLeafletMaps(container) {
     if (typeof L === 'undefined') return;
     var maps = Array.prototype.slice.call(container.querySelectorAll('.okia-map'));
@@ -644,6 +681,13 @@
       if (!cfg) return;
       el.setAttribute('data-rendered', '1');
       el.style.height = cfg.height || '420px';
+
+      // Known offline (fornews.ai ships an airplane-mode case): say so instead of building
+      // a map that can only show grey.
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        leafletOfflineFallback(el, cfg);
+        return;
+      }
 
       var map = L.map(el, {
         minZoom: cfg.minZoom || 0,
@@ -663,6 +707,20 @@
       var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       var base = prefersDark ? dark : light;
       if (cfg.defaultTiles) base = L.tileLayer(cfg.defaultTiles, { maxZoom: 20, attribution: attribution });
+
+      // navigator.onLine only reports a link, not reachability: a captive portal or a dead
+      // tile CDN still ends in a grey rectangle. A single failed tile means nothing (they
+      // fail at the edges of the world); several with not one loaded is a verdict.
+      var tileErrors = 0, anyTileLoaded = false;
+      base.on('tileload', function () { anyTileLoaded = true; });
+      base.on('tileerror', function () {
+        tileErrors++;
+        if (anyTileLoaded || tileErrors < 4) return;
+        map.remove();
+        el._leafletMap = null;
+        leafletOfflineFallback(el, cfg);
+      });
+
       base.addTo(map);
 
       if (!cfg.defaultTiles) {
@@ -713,18 +771,50 @@
     }
   }
 
+  // A second image right after the first, in a document that has only those two, is the
+  // redundant credit/banner this was written for — the shape of a single article. It used to
+  // fire on ANY document with two or more images, which on a briefing of 858 articles simply
+  // deleted the second article's photo. Two conditions now hold it back: the document must
+  // have exactly two images, and no heading may separate them — a heading means they belong
+  // to different sections, so neither is a duplicate of the other.
   function hideRedundantSecondImage(container) {
     var imgs = container.querySelectorAll('.markdown-body img, #content img');
-    if (imgs.length >= 2) {
-      // optional: a 2nd image is often a redundant credit/banner
-      imgs[1].style.display = 'none';
+    if (imgs.length !== 2) return;
+    var headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    for (var i = 0; i < headings.length; i++) {
+      var afterFirst = imgs[0].compareDocumentPosition(headings[i]) & Node.DOCUMENT_POSITION_FOLLOWING;
+      var beforeSecond = headings[i].compareDocumentPosition(imgs[1]) & Node.DOCUMENT_POSITION_FOLLOWING;
+      if (afterFirst && beforeSecond) return;
     }
+    imgs[1].style.display = 'none';
   }
 
   /* =========================================================================
      ORCHESTRATION
      ========================================================================= */
+  // Parsing is linear in document size — measured on this pipeline: ~210 ms per million
+  // characters (desktop Safari), 284 ms at 1.4 M and 2 871 ms at 13.5 M. Past this mark the
+  // wait is long enough that an empty screen reads as a crash, so it gets a word first.
+  // Below it, announcing anything would only add a flash.
+  var BIG_DOCUMENT_CHARS = 2000000;
+
   function render(md, filename) {
+    var container = document.getElementById('content');
+    if (typeof md === 'string' && md.length > BIG_DOCUMENT_CHARS && container) {
+      container.innerHTML = '<div class="okia-rendering">' +
+        escapeHtml(TXT('Document volumineux, rendu en cours…')) + '</div>';
+      // Yield so the browser can paint the notice before the parse seizes the main thread.
+      // setTimeout, never requestAnimationFrame: rAF does not fire while the view is hidden,
+      // and a document opened behind a sheet or in a backgrounded app would then never render
+      // at all — the very blank screen this is meant to prevent.
+      return new Promise(function (resolve, reject) {
+        setTimeout(function () { renderDocument(md, filename).then(resolve, reject); }, 16);
+      });
+    }
+    return renderDocument(md, filename);
+  }
+
+  function renderDocument(md, filename) {
     var container = document.getElementById('content');
     try {
       var fm = parseFrontmatter(md);
@@ -739,27 +829,26 @@
       body = transformMermaid(body);
       body = transformLeaflet(body);
 
-      return removeBrokenImages(body).then(function (cleaned) {     // 5
-        body = transformCallouts(cleaned);                          // 3
-        body = transformWikiLinks(body);                            // 4
+      body = transformCallouts(body);                             // 3
+      body = transformWikiLinks(body);                            // 4
 
-        var html = marked.parse(body, { breaks: true, gfm: true }); // marked
-        container.innerHTML = header.headerHtml + legend + html;
+      var html = withLazyImages(marked.parse(body, { breaks: true, gfm: true }));
+      container.innerHTML = header.headerHtml + legend + html;
 
-        dedupeTitle(container, header.title);                       // remove duplicate H1
-        highlightEntities(container, ner.entities, ner.subtypes);   // 6 (DOM-safe)
-        hideRedundantSecondImage(container);
-        attachImageZoom(container);                                 // tap image → full-screen
-        clearSearch();
-        applyFontScale();                                           // keep chosen size across renders
-        buildTOC(container);                                        // headings -> ids + TOC
-        renderLeafletMaps(container);                               // 2b interactive maps
+      dedupeTitle(container, header.title);                       // remove duplicate H1
+      highlightEntities(container, ner.entities, ner.subtypes);   // 6 (DOM-safe)
+      hideRedundantSecondImage(container);
+      watchImages(container);                                     // 5 drop images that fail
+      attachImageZoom(container);                                 // tap image → full-screen
+      clearSearch();
+      applyFontScale();                                           // keep chosen size across renders
+      buildTOC(container);                                        // headings -> ids + TOC
+      renderLeafletMaps(container);                               // 2b interactive maps
 
-        post('docMeta', { title: header.title });
+      post('docMeta', { title: header.title });
 
-        return renderMermaid(container, header.title).then(function () {
-          post('rendered', { title: header.title });
-        });
+      return renderMermaid(container, header.title).then(function () {
+        post('rendered', { title: header.title });
       });
     } catch (err) {
       container.innerHTML = '<div class="callout callout-error" style="--callout-color:#ef5350">' +
@@ -780,14 +869,13 @@
   function renderFragment(container, md) {
     var body = transformMermaid(md);
     body = transformLeaflet(body);
-    return removeBrokenImages(body).then(function (cleaned) {
-      body = transformCallouts(cleaned);
-      body = transformWikiLinks(body);
-      container.innerHTML = marked.parse(body, { breaks: true, gfm: true });
-      renderLeafletMaps(container);
-      attachImageZoom(container);
-      return renderMermaid(container, '');
-    });
+    body = transformCallouts(body);
+    body = transformWikiLinks(body);
+    container.innerHTML = withLazyImages(marked.parse(body, { breaks: true, gfm: true }));
+    renderLeafletMaps(container);
+    watchImages(container);
+    attachImageZoom(container);
+    return renderMermaid(container, '');
   }
 
   /* =========================================================================

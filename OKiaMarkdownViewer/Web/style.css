@@ -301,6 +301,28 @@ pre.mermaid.mermaid-error::after { content: none; }
   z-index: 0;                 /* keep panes below the app chrome until fullscreen */
 }
 
+/* Offline: the map keeps its frame so the page does not jump, but says why it is empty
+   and keeps the marker labels, which are the part that still means something. */
+.okia-map[data-offline="1"] { display: flex; align-items: center; justify-content: center; }
+
+.okia-map-offline {
+  padding: 1.4em;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.okia-map-offline-title { display: block; font-weight: 700; margin-bottom: 0.5em; }
+.okia-map-offline ul { list-style: none; margin: 0; padding: 0; }
+.okia-map-offline li { padding: 0.15em 0; }
+
+/* Shown before a very large document is parsed, so the wait is never a blank screen. */
+.okia-rendering {
+  padding: 3em 1.4em;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 /* Fullscreen: lift the map out of the reading column to cover the viewport.
    position:fixed follows the device orientation, so portrait/landscape just work. */
 .okia-map.okia-map-fullscreen {

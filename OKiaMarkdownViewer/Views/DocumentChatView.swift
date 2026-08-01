@@ -38,10 +38,17 @@ final class DocumentChat: ObservableObject {
     /// answering in the previous one.
     private var sessionLanguage: String?
 
+    /// True when the document exceeded the cap, so the model is answering from its opening
+    /// only. On a long briefing that can be a fraction of a percent of the text — an answer
+    /// built on it must not be presented as if the whole document had been read.
+    let partialDocument: Bool
+
     init(markdown: String) {
         // A tighter cap than the summary's: the instructions carry the whole document AND the
         // conversation grows on top of them, all inside the same context window.
-        self.documentText = DocumentSummarizer.plainText(from: markdown, limit: 6000)
+        let condensed = DocumentSummarizer.condensed(from: markdown, limit: 6000)
+        self.documentText = condensed.text
+        self.partialDocument = condensed.truncated
         self.topics = Self.topics(in: markdown)
     }
 
@@ -79,12 +86,25 @@ final class DocumentChat: ObservableObject {
 
         // Rank by how often the subject is actually discussed, so the offer leads with the
         // document's real focus rather than with whatever appears first.
-        let haystack = markdown.lowercased()
-        return found.sorted {
-            haystack.components(separatedBy: $0.lowercased()).count >
-            haystack.components(separatedBy: $1.lowercased()).count
+        //
+        // Counting inside the sort comparator rescans the whole document on every comparison
+        // — O(n log n) full scans. Measured on a 1.5 M-character briefing with 200 entities:
+        // 10.9 s, on the main thread, while the sheet was appearing. The count is now taken
+        // once per subject, and both sides are bounded: only three subjects are ever offered,
+        // so ranking every candidate against every character earns nothing.
+        let rankable = Array(found.prefix(rankingCandidates))
+        let sample = String(markdown.prefix(rankingSampleChars)).lowercased()
+        var mentions: [String: Int] = [:]
+        for name in rankable {
+            mentions[name] = sample.components(separatedBy: name.lowercased()).count - 1
         }
+        return rankable.sorted { (mentions[$0] ?? 0) > (mentions[$1] ?? 0) }
     }
+
+    /// Ranking bounds — see `topics(in:)`. Enough candidates that the three offered are a real
+    /// choice, over enough text that the ranking reflects the document's opening subjects.
+    private static let rankingCandidates = 40
+    private static let rankingSampleChars = 200_000
 
     /// Same closed list as `isEntityHeading()` in render.js, plus the usual source sections.
     private static func isStructuralHeading(_ title: String) -> Bool {
@@ -157,7 +177,8 @@ final class DocumentChat: ObservableObject {
         if let existing = sessionStore as? LanguageModelSession, sessionLanguage == language {
             return existing
         }
-        let created = LanguageModelSession(instructions: Self.instructions(document: documentText))
+        let created = LanguageModelSession(instructions: Self.instructions(document: documentText,
+                                                                       partial: partialDocument))
         sessionStore = created
         sessionLanguage = language
         return created
@@ -283,7 +304,7 @@ final class DocumentChat: ObservableObject {
     /// Grounding instructions, one per shipped language — written natively rather than
     /// translated, like the summariser's. Two things matter here: the answer must come from
     /// the document only, and the document is *data*, never a set of orders to follow.
-    static func instructions(document: String) -> String {
+    static func instructions(document: String, partial: Bool) -> String {
         let brief: String
         switch Localization.shared.code {
         case "en": brief = """
@@ -360,7 +381,8 @@ final class DocumentChat: ObservableObject {
         // The language rule is repeated *after* the document: a document in another language
         // is the strongest pull towards answering in it, and the last line of the instructions
         // is the one the model weighs most.
-        return brief + "\n\n----- DOCUMENT -----\n" + document + "\n-----\n\n" + languageRule
+        let note = partial ? "\n\n" + DocumentSummarizer.excerptNote : ""
+        return brief + note + "\n\n----- DOCUMENT -----\n" + document + "\n-----\n\n" + languageRule
     }
 
     /// The conversation as one Markdown document, rendered by the app's own engine so answers
@@ -506,7 +528,10 @@ struct DocumentChatView: View {
     private var disclaimer: some View {
         HStack(spacing: 6) {
             AppleIntelligenceGlyph(size: 12)
-            Text(tr("Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs."))
+            Text(chat.partialDocument
+                 ? tr("Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs.")
+                   + " " + tr("Document trop long pour être lu en entier : seul son début a été analysé.")
+                 : tr("Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs."))
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
