@@ -20,24 +20,24 @@ Contenu prêt à téléverser sur l'hébergement de **ok-ia.ch**.
 
 ## Mise en ligne
 
-1. Téléverser le dossier `mdviewer/` à la racine du site → `https://ok-ia.ch/mdviewer/`.
-2. La page ne figure pas encore dans le menu des autres pages. Ajouter dans le
-   `<ul class="nav-links">` de chaque page (après l'entrée fornews.ai) :
+Le site **n'est pas déployé par téléversement** : il vit dans le dépôt
+[`pat-the-geek/OK-ia`](https://github.com/pat-the-geek/OK-ia), sous `public/mdviewer/`,
+et c'est le **merge sur `main` qui déclenche la publication** (`deploy.yml`).
 
-   ```html
-   <li><a href="/mdviewer/">md Viewer</a></li>
-   ```
+1. Reporter les fichiers modifiés de `site/mdviewer/` vers `public/mdviewer/` du dépôt
+   du site. En pratique, seul `index.html` change.
+2. Ouvrir une **pull request ciblant `main`** — ce dépôt interdit le push direct sur
+   `main` et impose une branche `claude/<description>-<session-id>` pour les assistants
+   (voir son `CLAUDE.md`). Le merge publie.
 
-   Et **supprimer l'entrée « Valeurs »** du menu général sur toutes les pages du site
-   (déjà absente de `mdviewer/index.html`) :
+`site/style.css` est une copie locale pour la prévisualisation : ne jamais la reporter,
+le site a la sienne.
 
-   ```html
-   <li><a href="/vision.html#valeurs">Valeurs</a></li>   <!-- à retirer -->
-   ```
-
-3. `TODO` dans `index.html` : remplacer le lien `#` du bouton
-   « Rejoindre la bêta TestFlight / Join the TestFlight beta » (2 occurrences,
-   FR et EN) par le lien d'invitation TestFlight (ou App Store plus tard).
+> Vérifié le 2026-08-01 — deux tâches que ce fichier réclamait sont **faites**, ne pas
+> les refaire : l'entrée `md Viewer` figure dans les 33 menus principaux du site, et
+> l'entrée « Valeurs » n'existe plus nulle part (les 4 pages d'archives ont un menu
+> contextuel réduit, c'est voulu). Le bouton « Rejoindre la bêta TestFlight » a lui aussi
+> disparu au profit des liens App Store — il ne reste aucun `href="#"` dans la page.
 
 ## Langue
 
