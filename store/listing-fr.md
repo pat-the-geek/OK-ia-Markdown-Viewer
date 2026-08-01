@@ -72,9 +72,32 @@ markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pd
 ## Prix
 - **Gratuit** ✅ — aucune disponibilité limitée, disponible dans tous les pays.
 
-## Nouveautés de cette version (release notes 1.1.0) — à compléter
+## Nouveautés de cette version (release notes 1.1.0)
 ```
-(à rédiger une fois les nouveautés de la 1.1.0 arrêtées)
+Cinq langues, et vos rapports deviennent conversationnels.
+
+NOUVEAU
+• Interface en français, anglais, allemand, espagnol et italien — l'app suit la
+  langue de votre appareil, ou celle que vous choisissez dans les Réglages
+• Discuter avec le document : posez vos questions sur le rapport ouvert. Les
+  réponses sont structurées en chapitres et s'appuient sur son seul contenu
+• L'écran de départ propose des questions tirées du document lui-même
+• Les réponses sont rédigées dans la langue de l'app, même si le rapport est
+  écrit dans une autre
+
+PLUS RAPIDE, PLUS CLAIR
+• Les rapports riches en images s'affichent immédiatement : les images se
+  chargent au fil de la lecture au lieu de retarder tout le document
+• La coloration des entités fonctionne désormais quelle que soit la langue du
+  rapport
+• Hors connexion, une carte annonce son indisponibilité et liste ses marqueurs,
+  au lieu d'afficher un cadre gris
+• Les documents très volumineux affichent un message d'attente plutôt qu'un
+  écran vide
+
+Le résumé et la discussion nécessitent un appareil compatible Apple Intelligence
+(iOS 26 ou ultérieur). Comme le reste de l'app, ils fonctionnent sur l'appareil :
+aucun texte n'est envoyé nulle part.
 ```
 
 <details>

@@ -78,9 +78,30 @@ markdown,mermaid,diagram,leaflet,map,obsidian,callout,report,summary,ai,pdf,md,v
 ## Price
 - **Free** ✅ — no limited availability, available in every country.
 
-## What's new in this version (release notes 1.1.0) — to be written
+## What's new in this version (release notes 1.1.0)
 ```
-(to be written once the 1.1.0 feature set is settled — keep in sync with listing-fr.md)
+Five languages, and your reports become conversational.
+
+NEW
+• Interface in English, French, German, Spanish and Italian — the app follows
+  your device's language, or the one you pick in Settings
+• Chat with the document: ask questions about the open report. Answers are
+  structured into chapters and draw on its content alone
+• The opening screen offers questions taken from the document itself
+• Answers are written in the app's language, even when the report is written
+  in another
+
+FASTER, CLEARER
+• Image-heavy reports appear straight away: images load as you read instead of
+  holding up the whole document
+• Entity highlighting now works whatever language the report is written in
+• Offline, a map says it is unavailable and lists its markers instead of
+  showing a grey frame
+• Very large documents show a waiting message rather than an empty screen
+
+The summary and the chat require an Apple Intelligence-capable device (iOS 26 or
+later). Like the rest of the app, they run on the device: no text is sent
+anywhere.
 ```
 
 <details>
