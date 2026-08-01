@@ -23,3 +23,4 @@ build/
 
 # Identifiants de déploiement (jamais commités)
 scripts/deploy.env
+scripts/deploy-site.env
