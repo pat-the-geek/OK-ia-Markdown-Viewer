@@ -1091,6 +1091,117 @@
     });
   }
 
+  // Wait for the tiles a map has already asked for. Rasterising before they land produces a
+  // half-drawn map, which is worse than the marker list it replaces.
+  function tilesSettled(el, timeoutMs) {
+    return new Promise(function (resolve) {
+      var deadline = Date.now() + (timeoutMs || 5000);
+      (function poll() {
+        var tiles = el.querySelectorAll('img.leaflet-tile');
+        var pending = 0;
+        for (var i = 0; i < tiles.length; i++) if (!tiles[i].complete) pending++;
+        if ((tiles.length > 0 && pending === 0) || Date.now() > deadline) return resolve();
+        setTimeout(poll, 150);
+      })();
+    });
+  }
+
+  // A teardrop pin in the OK-ia orange, tip at (x, y). Drawn rather than blitted — see the
+  // note in mapToPng about local images tainting a file:// canvas.
+  function drawPin(ctx, x, y, scale) {
+    var r = 7 * scale, cy = y - 18 * scale;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x - r * 1.45, cy + r * 0.7, x - r, cy);
+    ctx.arc(x, cy, r, Math.PI, 0, false);
+    ctx.quadraticCurveTo(x + r * 1.45, cy + r * 0.7, x, y);
+    ctx.closePath();
+    ctx.fillStyle = '#E8972E';
+    ctx.fill();
+    ctx.lineWidth = 1.5 * scale;
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, cy, r * 0.42, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+  }
+
+  // Draw the map that is on screen onto a canvas: its tiles, then its markers, then the
+  // attribution the tile licences require.
+  //
+  // Positions come from getBoundingClientRect() rather than from Leaflet's CSS transforms.
+  // Reading `transform: translate3d(…)` by hand means reimplementing the stack of nested
+  // panes, the zoom animation and fractional zoom; a rectangle already carries all of it, and
+  // stays correct in the off-screen container the .pptx export renders slides into.
+  //
+  // Returns null whenever anything is off — offline map, tiles withdrawn from CORS, nothing
+  // loaded, tainted canvas. The caller then keeps the marker list, which always works.
+  function mapToPng(el) {
+    if (el.getAttribute('data-offline') === '1') return Promise.resolve(null);
+    if (el.getAttribute('data-tiles-exportable') === '0') return Promise.resolve(null);
+
+    return tilesSettled(el).then(function () {
+      try {
+        var scale = 2;
+        var box = el.getBoundingClientRect();
+        var w = Math.max(1, Math.round(box.width)), h = Math.max(1, Math.round(box.height));
+        var cv = document.createElement('canvas');
+        cv.width = w * scale; cv.height = h * scale;
+        var ctx = cv.getContext('2d');
+        ctx.fillStyle = '#FAFAF8';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+
+        function paint(node) {
+          var r = node.getBoundingClientRect();
+          if (!r.width || !r.height) return false;
+          ctx.drawImage(node, (r.left - box.left) * scale, (r.top - box.top) * scale,
+                              r.width * scale, r.height * scale);
+          return true;
+        }
+
+        // Leaflet keeps a ring of tiles beyond the frame; the canvas clips them for us.
+        var drawn = 0, tiles = el.querySelectorAll('img.leaflet-tile');
+        for (var i = 0; i < tiles.length; i++) {
+          if (tiles[i].complete && tiles[i].naturalWidth) { if (paint(tiles[i])) drawn++; }
+        }
+        if (!drawn) return null;
+
+        // The marker pins are DRAWN, not copied from their <img>. Counter-intuitive but
+        // verified on iOS: a page served from file:// gets an opaque origin per file, so
+        // drawing the bundled marker-icon.png taints the canvas — while the remote CARTO
+        // tile, fetched with CORS, does not. The local image is the unsafe one here.
+        var marks = el.querySelectorAll('img.leaflet-marker-icon');
+        for (var j = 0; j < marks.length; j++) {
+          var mr = marks[j].getBoundingClientRect();
+          if (!mr.width) continue;
+          // iconAnchor is the tip of the pin: bottom centre of the icon box.
+          drawPin(ctx, (mr.left + mr.width / 2 - box.left) * scale,
+                       (mr.bottom - box.top) * scale, scale);
+        }
+
+        // CARTO and OpenStreetMap both require attribution wherever the map is shown — a
+        // Word document included. Leaflet already composed the wording; reuse it verbatim.
+        var attr = el.querySelector('.leaflet-control-attribution');
+        var credit = attr ? attr.textContent.trim().replace(/\s+/g, ' ') : '';
+        if (credit) {
+          var pad = 4 * scale, size = 10 * scale;
+          ctx.font = size + 'px -apple-system, BlinkMacSystemFont, sans-serif';
+          var tw = ctx.measureText(credit).width, th = size + pad;
+          ctx.fillStyle = 'rgba(255,255,255,0.78)';
+          ctx.fillRect(cv.width - tw - pad * 2, cv.height - th, tw + pad * 2, th);
+          ctx.fillStyle = '#4a4a44';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(credit, cv.width - tw - pad, cv.height - pad / 2);
+        }
+
+        return { png: cv.toDataURL('image/png').split(',')[1], w: cv.width, h: cv.height };
+      } catch (e) {
+        return null;   // canvas taint or anything unforeseen → the marker list stands
+      }
+    });
+  }
+
   function mapMarkers(el) {
     try {
       var cfg = JSON.parse(b64decode(el.getAttribute('data-okia-map') || ''));
@@ -1146,7 +1257,23 @@
           tasks.push(svgToPng(svg).then(function (res) { if (res) { block.png = res.png; block.w = res.w; block.h = res.h; } }));
         }
       } else if (el.classList && el.classList.contains('okia-map')) {
-        blocks.push({ t: 'map', markers: mapMarkers(el) });
+        // Start as the marker list — the form that always works — and upgrade to a real
+        // image only if the rasterisation actually succeeds.
+        var mapBlock = { t: 'map', markers: mapMarkers(el) };
+        blocks.push(mapBlock);
+        tasks.push(mapToPng(el).then(function (res) {
+          if (!res) return;
+          var names = mapBlock.markers || [];
+          mapBlock.t = 'image';
+          mapBlock.png = res.png;
+          mapBlock.w = res.w;
+          mapBlock.h = res.h;
+          // The place names carry information the picture does not spell out; keep them as
+          // the caption rather than losing them with the marker list.
+          mapBlock.caption = names.length
+            ? [{ text: '🗺 ' + names.join(' · '), italic: true }]
+            : [];
+        }));
       } else if (el.classList && el.classList.contains('callout')) {
         var titleEl = el.querySelector('.callout-title');
         var contentEl = el.querySelector('.callout-content');
