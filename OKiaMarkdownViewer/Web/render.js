@@ -1107,7 +1107,7 @@
   }
 
   // A teardrop pin in the OK-ia orange, tip at (x, y). Drawn rather than blitted — see the
-  // note in mapToPng about local images tainting a file:// canvas.
+  // note in mapToImage about local images tainting a file:// canvas.
   function drawPin(ctx, x, y, scale) {
     var r = 7 * scale, cy = y - 18 * scale;
     ctx.beginPath();
@@ -1137,7 +1137,7 @@
   //
   // Returns null whenever anything is off — offline map, tiles withdrawn from CORS, nothing
   // loaded, tainted canvas. The caller then keeps the marker list, which always works.
-  function mapToPng(el) {
+  function mapToImage(el) {
     if (el.getAttribute('data-offline') === '1') return Promise.resolve(null);
     if (el.getAttribute('data-tiles-exportable') === '0') return Promise.resolve(null);
 
@@ -1195,7 +1195,10 @@
           ctx.fillText(credit, cv.width - tw - pad, cv.height - pad / 2);
         }
 
-        return { png: cv.toDataURL('image/png').split(',')[1], w: cv.width, h: cv.height };
+        // JPEG, not PNG: a map is photographic. Measured on one map at this size —
+        // PNG 343 KB against JPEG q0.85 95 KB, for no difference the eye can find.
+        // Diagrams keep PNG, which is the right codec for line art.
+        return { jpeg: cv.toDataURL('image/jpeg', 0.85).split(',')[1], w: cv.width, h: cv.height };
       } catch (e) {
         return null;   // canvas taint or anything unforeseen → the marker list stands
       }
@@ -1261,11 +1264,11 @@
         // image only if the rasterisation actually succeeds.
         var mapBlock = { t: 'map', markers: mapMarkers(el) };
         blocks.push(mapBlock);
-        tasks.push(mapToPng(el).then(function (res) {
+        tasks.push(mapToImage(el).then(function (res) {
           if (!res) return;
           var names = mapBlock.markers || [];
           mapBlock.t = 'image';
-          mapBlock.png = res.png;
+          mapBlock.jpeg = res.jpeg;
           mapBlock.w = res.w;
           mapBlock.h = res.h;
           // The place names carry information the picture does not spell out; keep them as
@@ -1286,7 +1289,7 @@
 
     return Promise.all(tasks).then(function () {
       // drop images that failed to rasterise and have no src
-      return blocks.filter(function (b) { return b.t !== 'image' || b.png || b.src; });
+      return blocks.filter(function (b) { return b.t !== 'image' || b.png || b.jpeg || b.src; });
     });
   }
 

@@ -642,6 +642,12 @@ enum OOXMLExportBridge {
         if let b64 = d["png"] as? String, let data = Data(base64Encoded: b64) {
             return OOXMLImage(data: data, widthPx: max(intOf(d["w"]), 1), heightPx: max(intOf(d["h"]), 1), isPNG: true)
         }
+        // Rasterised maps arrive as JPEG: they are photographic, and PNG costs them roughly
+        // 3.6× the bytes for no visible gain (measured 343 KB against 95 KB on one map).
+        // Diagrams stay PNG — line art is exactly where PNG wins.
+        if let b64 = d["jpeg"] as? String, let data = Data(base64Encoded: b64) {
+            return OOXMLImage(data: data, widthPx: max(intOf(d["w"]), 1), heightPx: max(intOf(d["h"]), 1), isPNG: false)
+        }
         if let src = d["src"] as? String { return downloaded[src] }
         return nil
     }
