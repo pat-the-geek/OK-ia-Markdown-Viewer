@@ -696,31 +696,65 @@
       });
       el._leafletMap = map;   // expose for the slideshow to re-measure on fit/resize
 
+      // `crossOrigin` is what lets the map be rasterised later: without it WebKit taints the
+      // canvas as soon as a remote tile is drawn on it, and toDataURL() throws. Verified in a
+      // real WKWebView on iOS, from a file:// page — CARTO and OpenStreetMap both send the
+      // header, so the three shipped backgrounds can carry the option unconditionally.
       var attribution = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>';
       var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        { subdomains: 'abcd', maxZoom: 20, attribution: attribution });
+        { subdomains: 'abcd', maxZoom: 20, attribution: attribution, crossOrigin: 'anonymous' });
       var dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        { subdomains: 'abcd', maxZoom: 20, attribution: attribution });
+        { subdomains: 'abcd', maxZoom: 20, attribution: attribution, crossOrigin: 'anonymous' });
       var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+        { maxZoom: 19, crossOrigin: 'anonymous',
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
 
       var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      var base = prefersDark ? dark : light;
-      if (cfg.defaultTiles) base = L.tileLayer(cfg.defaultTiles, { maxZoom: 20, attribution: attribution });
+      var custom = !!cfg.defaultTiles;
+      function customLayer(withCORS) {
+        var opts = { maxZoom: 20, attribution: attribution };
+        if (withCORS) opts.crossOrigin = 'anonymous';
+        return L.tileLayer(cfg.defaultTiles, opts);
+      }
+      var base = custom ? customLayer(true) : (prefersDark ? dark : light);
 
-      // navigator.onLine only reports a link, not reachability: a captive portal or a dead
-      // tile CDN still ends in a grey rectangle. A single failed tile means nothing (they
-      // fail at the edges of the world); several with not one loaded is a verdict.
-      var tileErrors = 0, anyTileLoaded = false;
-      base.on('tileload', function () { anyTileLoaded = true; });
-      base.on('tileerror', function () {
-        tileErrors++;
-        if (anyTileLoaded || tileErrors < 4) return;
-        map.remove();
-        el._leafletMap = null;
-        leafletOfflineFallback(el, cfg);
-      });
+      // Whether this map's tiles can be drawn on a canvas — read at export time to choose
+      // between a real image and the marker list.
+      el.setAttribute('data-tiles-exportable', '1');
 
+      var tileErrors = 0, anyTileLoaded = false, corsWithdrawn = false;
+
+      function watchTiles(layer) {
+        layer.on('tileload', function () { anyTileLoaded = true; });
+        layer.on('tileerror', function () {
+          tileErrors++;
+
+          // A `tileserver:` that sends no CORS header does not merely block the export: with
+          // crossOrigin set, the request is refused outright and the map shows nothing. The
+          // display always wins — withdraw the option, keep the map, and give up rasterising
+          // this one. Two failures rather than one: a lone tile fails at the edge of the world.
+          if (custom && !corsWithdrawn && !anyTileLoaded && tileErrors >= 2) {
+            corsWithdrawn = true;
+            tileErrors = 0;
+            el.setAttribute('data-tiles-exportable', '0');
+            map.removeLayer(layer);
+            var plain = customLayer(false);
+            watchTiles(plain);
+            plain.addTo(map);
+            return;
+          }
+
+          // navigator.onLine only reports a link, not reachability: a captive portal or a dead
+          // tile CDN still ends in a grey rectangle. A single failed tile means nothing;
+          // several with not one loaded is a verdict.
+          if (anyTileLoaded || tileErrors < 4) return;
+          map.remove();
+          el._leafletMap = null;
+          leafletOfflineFallback(el, cfg);
+        });
+      }
+
+      watchTiles(base);
       base.addTo(map);
 
       if (!cfg.defaultTiles) {
