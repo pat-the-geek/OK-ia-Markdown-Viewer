@@ -1235,6 +1235,43 @@
     });
   }
 
+  // Une image en loading="lazy" n'est chargée qu'à l'approche de l'écran — c'est ce qui
+  // rend l'affichage immédiat. Mais l'impression rend le document d'un coup : celles qu'on
+  // n'a jamais atteintes en scrollant n'ont aucune donnée et laissent un blanc sous leur
+  // légende. Avant de dessiner le PDF, on les force donc à se charger, et on attend.
+  function loadAllImagesForPrint(timeoutMs) {
+    var imgs = Array.prototype.slice.call(document.querySelectorAll('#content img'));
+    var pending = imgs.filter(function (img) { return !img.complete || !img.naturalWidth; });
+    if (!pending.length) return Promise.resolve(0);
+
+    pending.forEach(function (img) {
+      img.setAttribute('data-okia-lazy', img.getAttribute('loading') || '');
+      img.setAttribute('loading', 'eager');
+      var src = img.getAttribute('src');
+      if (src) img.setAttribute('src', src);   // relance ce que le paresseux avait différé
+    });
+
+    var tous = Promise.all(pending.map(function (img) {
+      return new Promise(function (res) {
+        if (img.complete) return res();
+        img.addEventListener('load', function () { res(); }, { once: true });
+        img.addEventListener('error', function () { res(); }, { once: true });
+      });
+    }));
+    // Un réseau lent ne doit pas retenir l'export indéfiniment : ce qui manque manquera.
+    var delai = new Promise(function (res) { setTimeout(res, timeoutMs || 12000); });
+    return Promise.race([tous, delai]).then(function () { return pending.length; });
+  }
+
+  function restoreLazyImages() {
+    Array.prototype.slice.call(document.querySelectorAll('#content img[data-okia-lazy]'))
+      .forEach(function (img) {
+        var avant = img.getAttribute('data-okia-lazy');
+        if (avant) img.setAttribute('loading', avant); else img.removeAttribute('loading');
+        img.removeAttribute('data-okia-lazy');
+      });
+  }
+
   function freezeMapsForPrint() {
     keepHeadingsWithContent();
     var maps = Array.prototype.slice.call(document.querySelectorAll('.okia-map'));
@@ -1252,6 +1289,8 @@
         return ready.then(function () { el.classList.add('okia-map-frozen'); });
       });
     })).then(function () {
+      return loadAllImagesForPrint();
+    }).then(function () {
       return document.querySelectorAll('.okia-map-print').length;
     });
   }
@@ -1290,6 +1329,7 @@
   function unfreezeMaps() {
     unwrapHeadings();
     clearBreakBefore();
+    restoreLazyImages();
     var imgs = Array.prototype.slice.call(document.querySelectorAll('.okia-map-print'));
     imgs.forEach(function (img) { img.parentNode.removeChild(img); });
     Array.prototype.slice.call(document.querySelectorAll('.okia-map-frozen'))
