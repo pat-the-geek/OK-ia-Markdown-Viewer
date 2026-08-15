@@ -73,19 +73,76 @@ final class ReaderWebController: ObservableObject {
     }
 
     // MARK: PDF export
+
+    /// Paper the PDF is laid out on. A4 everywhere except the handful of countries that
+    /// use US Letter — exporting an A4 report to someone who prints on Letter crops it,
+    /// and the reverse leaves a band of white.
+    private static var paperSize: CGSize {
+        // 72 points to the inch: A4 = 210×297 mm, Letter = 8.5×11 in.
+        let letterRegions: Set<String> = ["US", "CA", "MX", "PH", "CL", "CO", "VE", "PR", "GT", "CR", "DO", "NI", "PA", "SV"]
+        let region = Locale.current.region?.identifier ?? "CH"
+        return letterRegions.contains(region) ? CGSize(width: 612, height: 792)
+                                              : CGSize(width: 595.2, height: 841.8)
+    }
+
+    /// Export the document as an ordinary paginated PDF.
+    ///
+    /// `WKWebView.createPDF` was the obvious call and the wrong one: it returns a single
+    /// page as tall as the whole document and as wide as the screen. Such a file opens, but
+    /// it cannot be paged through, and annotating it in Apple Notes with the Pencil means
+    /// scrolling one endless sheet. `UIPrintPageRenderer` lays the same content out for
+    /// paper instead, so the result is a normal multi-page A4 (or Letter) document.
+    ///
+    /// The layout rules live in the print stylesheet (`@media print` in style.css); this
+    /// method only decides the sheet and its margins.
     func exportPDF(completion: @escaping (URL?) -> Void) {
         guard let webView else { completion(nil); return }
-        let config = WKPDFConfiguration()
-        webView.createPDF(configuration: config) { result in
-            switch result {
-            case .success(let data):
-                let name = (webView.title?.isEmpty == false ? webView.title! : "Document")
-                    .replacingOccurrences(of: "/", with: "-")
-                let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).pdf")
-                do { try data.write(to: url); completion(url) } catch { completion(nil) }
-            case .failure:
-                completion(nil)
+        // Freeze the maps to still images first — Leaflet does not reflow for the print
+        // width and would otherwise print a part-covered box. Restored right after.
+        //
+        // callAsyncJavaScript, not evaluateJavaScript: the freeze is asynchronous (it
+        // rasterises, then waits for the image to decode) and evaluateJavaScript returns
+        // without awaiting the promise — the PDF was then drawn before any of it happened.
+        webView.callAsyncJavaScript("return await window.OKIA.freezeMapsForPrint();",
+                                    in: nil, in: .page) { _ in
+            self.renderPDF(webView) { url in
+                webView.evaluateJavaScript("window.OKIA && window.OKIA.unfreezeMaps();") { _, _ in
+                    completion(url)
+                }
             }
+        }
+    }
+
+    private func renderPDF(_ webView: WKWebView, completion: @escaping (URL?) -> Void) {
+        let paper = Self.paperSize
+        let margin: CGFloat = 42                    // ≈ 15 mm, comfortable for annotation
+        let paperRect = CGRect(origin: .zero, size: paper)
+        let printable = paperRect.insetBy(dx: margin, dy: margin)
+
+        let renderer = UIPrintPageRenderer()
+        renderer.addPrintFormatter(webView.viewPrintFormatter(), startingAtPageAt: 0)
+        renderer.setValue(paperRect, forKey: "paperRect")
+        renderer.setValue(printable, forKey: "printableRect")
+
+        let data = NSMutableData()
+        UIGraphicsBeginPDFContextToData(data, paperRect, nil)
+        renderer.prepare(forDrawingPages: NSRange(location: 0, length: renderer.numberOfPages))
+        for page in 0..<renderer.numberOfPages {
+            UIGraphicsBeginPDFPage()
+            renderer.drawPage(at: page, in: UIGraphicsGetPDFContextBounds())
+        }
+        UIGraphicsEndPDFContext()
+
+        guard data.length > 0 else { completion(nil); return }
+
+        let name = (webView.title?.isEmpty == false ? webView.title! : "Document")
+            .replacingOccurrences(of: "/", with: "-")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).pdf")
+        do {
+            try data.write(to: url, options: .atomic)
+            completion(url)
+        } catch {
+            completion(nil)
         }
     }
 

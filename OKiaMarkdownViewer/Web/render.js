@@ -1205,6 +1205,66 @@
     });
   }
 
+  // Leaflet computes its tile grid for the width it was built at and does not reflow when
+  // the print layout hands it another one: on A4 the map printed as a part-covered box,
+  // tiles on the left, white on the right. So each map is frozen to the image mapToImage()
+  // already knows how to produce, that image is what prints, and the live map is restored
+  // afterwards. A map that cannot be rasterised keeps printing as-is — partial beats absent.
+  // `break-after: avoid` on a heading is not honoured by WebKit's paginator — the heading
+  // stayed at the foot of the page while its diagram moved to the next one. Wrapping the
+  // heading together with the block it introduces works, because `break-inside: avoid` on a
+  // container IS honoured. Undone by unfreezeMaps().
+  function keepHeadingsWithContent() {
+    var heads = Array.prototype.slice.call(
+      document.querySelectorAll('#content h1, #content h2, #content h3, #content h4'));
+    heads.forEach(function (h) {
+      var next = h.nextElementSibling;
+      if (!next || h.parentNode.classList.contains('okia-keep')) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'okia-keep';
+      h.parentNode.insertBefore(wrap, h);
+      wrap.appendChild(h);
+      wrap.appendChild(next);
+    });
+  }
+
+  function unwrapHeadings() {
+    Array.prototype.slice.call(document.querySelectorAll('.okia-keep')).forEach(function (wrap) {
+      while (wrap.firstChild) wrap.parentNode.insertBefore(wrap.firstChild, wrap);
+      wrap.parentNode.removeChild(wrap);
+    });
+  }
+
+  function freezeMapsForPrint() {
+    keepHeadingsWithContent();
+    var maps = Array.prototype.slice.call(document.querySelectorAll('.okia-map'));
+    return Promise.all(maps.map(function (el) {
+      return mapToImage(el).then(function (res) {
+        if (!res) return;
+        var img = document.createElement('img');
+        img.className = 'okia-map-print';
+        img.src = 'data:image/jpeg;base64,' + res.jpeg;
+        el.parentNode.insertBefore(img, el.nextSibling);
+        // The image must be DECODED before the map is hidden: an <img> that has not been
+        // decoded yet lays out at zero height, and the paginator would leave a blank where
+        // the map should be — which is exactly the defect this replaces.
+        var ready = img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+        return ready.then(function () { el.classList.add('okia-map-frozen'); });
+      });
+    })).then(function () {
+      return document.querySelectorAll('.okia-map-print').length;
+    });
+  }
+
+  function unfreezeMaps() {
+    unwrapHeadings();
+    var imgs = Array.prototype.slice.call(document.querySelectorAll('.okia-map-print'));
+    imgs.forEach(function (img) { img.parentNode.removeChild(img); });
+    Array.prototype.slice.call(document.querySelectorAll('.okia-map-frozen'))
+      .forEach(function (el) { el.classList.remove('okia-map-frozen'); });
+    return imgs.length;
+  }
+
   function mapMarkers(el) {
     try {
       var cfg = JSON.parse(b64decode(el.getAttribute('data-okia-map') || ''));
@@ -1314,6 +1374,8 @@
   window.OKIA = {
     render: render,
     renderPlain: renderPlain,
+    freezeMapsForPrint: freezeMapsForPrint,
+    unfreezeMaps: unfreezeMaps,
     renderFragment: renderFragment,
     exportModel: exportModel,
     setFontScale: setFontScale,

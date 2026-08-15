@@ -124,6 +124,7 @@ pre code { background: none; padding: 0; }
 
 img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 1em auto; }
 img.okia-zoomable { cursor: zoom-in; }
+.okia-map-print { display: none; }   /* raster d'impression, voir @media print */
 
 table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 0.95em; }
 th, td { border: 1px solid var(--rule); padding: 8px 12px; text-align: left; }
@@ -386,4 +387,112 @@ body.okia-map-has-fullscreen { overflow: hidden; }
     background: var(--card-bg);
     color: var(--fg);
   }
+}
+
+/* ===========================================================================
+   PRINT / PDF
+   The PDF is produced by UIPrintPageRenderer at A4 or Letter (see
+   ReaderWebController.exportPDF), so the geometry below is expressed relative
+   to the printable area the renderer hands over — never in device pixels.
+   The result is meant to be read and annotated elsewhere, Apple Notes with the
+   Pencil in particular, so it must be an ordinary paginated document.
+   =========================================================================== */
+@media print {
+
+  /* WebKit drops backgrounds and colours when printing unless told otherwise —
+     which would strip the entity highlights, the callout tints and the Mermaid
+     palette, i.e. most of what makes these reports readable. */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Paper is light, whatever the device was set to. Without this, a reader in
+     dark mode exports white text on a near-black page. */
+  :root {
+    --bg: #FAFAF8;
+    --fg: #111111;
+    --muted: #6b6b63;
+    --rule: #E8E6E0;
+    --card-bg: #FFFFFF;
+    --code-bg: #F2F1EC;
+    --diagram-frame: #FAFAF8;
+  }
+  html, body { background: #FAFAF8; color: var(--fg); }
+
+  /* The reading column is the page: the renderer already applies the margins,
+     so a second max-width would leave the text stranded in a narrow strip. */
+  .markdown-body {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+
+  /* Headings sized for paper rather than for a phone held at arm's length. */
+  .okia-title { font-size: 20pt; }
+  h1 { font-size: 18pt; }
+  h2 { font-size: 14.5pt; }
+  h3 { font-size: 12.5pt; }
+
+  /* Nothing may exceed the printable width, and nothing taller than a page —
+     an image that overflows is silently cropped by the paginator. */
+  img, pre.mermaid, pre.mermaid svg, .okia-map, table, figure {
+    max-width: 100% !important;
+  }
+  img, pre.mermaid svg { max-height: 180mm; height: auto; }
+
+  /* A frozen map is replaced by its raster; hide the live one only in that case, so a map
+     that could not be rasterised still prints rather than vanishing from the document. */
+  .okia-map.okia-map-frozen { display: none !important; }
+  .okia-map-print {
+    display: block !important;
+    width: 100%;
+    height: auto;
+    max-height: 150mm;
+    margin: 1.4em auto;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+  }
+
+  /* Interactive chrome is meaningless on paper: zoom buttons, the layer picker
+     and the fullscreen control would print as dead widgets. The attribution
+     stays — the tile licences require it wherever the map is shown. */
+  .leaflet-control-zoom,
+  .leaflet-control-layers,
+  .okia-fs-control { display: none !important; }
+
+  /* The "tap to zoom" badge on diagrams is an affordance, not content. */
+  pre.mermaid[data-rendered="1"]::after { display: none !important; }
+  pre.mermaid { cursor: auto; }
+
+  a { color: var(--fg); text-decoration: underline; }
+
+  /* ---- Pagination ---------------------------------------------------------
+     A page break falling inside a diagram, a map or a table cuts the one thing
+     the reader needed whole. Headings stay with what they announce, so no title
+     is left stranded at the foot of a page. */
+  img, figure, table, pre, pre.mermaid, .callout, .okia-map, .ner-legend, blockquote {
+    break-inside: avoid;
+    page-break-inside: avoid;      /* WebKit still honours the legacy property */
+  }
+  h1, h2, h3, h4, h5, h6, .okia-title {
+    break-after: avoid;
+    page-break-after: avoid;
+    break-inside: avoid;
+  }
+  /* Never strand one line of a paragraph alone on either side of a break. */
+  p, li { orphans: 3; widows: 3; }
+
+  /* Table headers repeat when a long table does span pages. */
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+
+  /* The meta bar belongs to the title it follows. */
+  .okia-meta { break-before: avoid; break-after: avoid; }
+
+  /* Heading + the block it introduces, wrapped by keepHeadingsWithContent() before the
+     PDF is drawn. WebKit ignores break-after on the heading itself but honours this. */
+  .okia-keep { break-inside: avoid; page-break-inside: avoid; }
 }
