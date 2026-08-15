@@ -1256,8 +1256,40 @@
     });
   }
 
+  // Le moteur d'impression d'iOS ignore break-inside/break-after: avoid (mesuré). Il
+  // honore en revanche le saut de page explicite : l'export produit donc un premier PDF,
+  // repère les titres restés seuls en bas de page, les marque ici, et recommence.
+  // Les titres du document, avec leur id. L'export s'en sert pour reconnaître un titre
+  // resté seul en bas d'une page. Lu à la demande plutôt que reçu par message : un export
+  // ne doit pas dépendre d'un sommaire arrivé, ou non, plus tôt.
+  function headings() {
+    return Array.prototype.slice.call(
+      document.querySelectorAll('#content h1, #content h2, #content h3, #content h4'))
+      .filter(function (h) { return h.id; })
+      .map(function (h) { return { id: h.id, text: h.textContent.trim() }; });
+  }
+
+  function markBreakBefore(ids) {
+    var content = document.getElementById('content');
+    (ids || []).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      // Le saut doit porter sur l'enfant DIRECT de #content : demandé sur un élément
+      // imbriqué (dans le conteneur .okia-keep par exemple), il est ignoré.
+      while (el.parentNode && el.parentNode !== content) el = el.parentNode;
+      el.classList.add('okia-break-before');
+    });
+    return document.querySelectorAll('.okia-break-before').length;
+  }
+
+  function clearBreakBefore() {
+    Array.prototype.slice.call(document.querySelectorAll('.okia-break-before'))
+      .forEach(function (el) { el.classList.remove('okia-break-before'); });
+  }
+
   function unfreezeMaps() {
     unwrapHeadings();
+    clearBreakBefore();
     var imgs = Array.prototype.slice.call(document.querySelectorAll('.okia-map-print'));
     imgs.forEach(function (img) { img.parentNode.removeChild(img); });
     Array.prototype.slice.call(document.querySelectorAll('.okia-map-frozen'))
@@ -1376,6 +1408,8 @@
     renderPlain: renderPlain,
     freezeMapsForPrint: freezeMapsForPrint,
     unfreezeMaps: unfreezeMaps,
+    markBreakBefore: markBreakBefore,
+    headings: headings,
     renderFragment: renderFragment,
     exportModel: exportModel,
     setFontScale: setFontScale,

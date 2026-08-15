@@ -448,9 +448,13 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   .okia-map.okia-map-frozen { display: none !important; }
   .okia-map-print {
     display: block !important;
-    width: 100%;
-    height: auto;
-    max-height: 150mm;
+    /* width:auto avec DEUX max- : c'est la seule combinaison qui respecte à la fois la
+       largeur de colonne et la hauteur, en conservant les proportions. Avec width:100%,
+       la hauteur maximale ne contraint plus la mise en page et l'image réclamait presque
+       toute la page — la carte partait alors seule sur la page suivante. */
+    width: auto;
+    max-width: 100%;
+    max-height: 120mm;
     margin: 1.4em auto;
     border: 1px solid var(--rule);
     border-radius: 12px;
@@ -492,7 +496,11 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   /* The meta bar belongs to the title it follows. */
   .okia-meta { break-before: avoid; break-after: avoid; }
 
-  /* Heading + the block it introduces, wrapped by keepHeadingsWithContent() before the
-     PDF is drawn. WebKit ignores break-after on the heading itself but honours this. */
+  /* Heading + the block it introduces, wrapped by keepHeadingsWithContent(). Measured on
+     iOS: this print engine honours NEITHER break-inside nor break-after: avoid, so the
+     wrapper alone does not keep them together — it only helps where the pair already fits.
+     What the engine does honour is an explicit break, applied below to the headings the
+     export found stranded in a first pass. */
   .okia-keep { break-inside: avoid; page-break-inside: avoid; }
+  .okia-break-before { break-before: page !important; page-break-before: always !important; }
 }

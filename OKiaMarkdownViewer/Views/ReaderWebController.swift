@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import PDFKit
 
 /// One heading entry of the document outline.
 struct TOCItem: Identifiable, Equatable {
@@ -105,12 +106,81 @@ final class ReaderWebController: ObservableObject {
         // without awaiting the promise — the PDF was then drawn before any of it happened.
         webView.callAsyncJavaScript("return await window.OKIA.freezeMapsForPrint();",
                                     in: nil, in: .page) { _ in
-            self.renderPDF(webView) { url in
-                webView.evaluateJavaScript("window.OKIA && window.OKIA.unfreezeMaps();") { _, _ in
-                    completion(url)
+            // Headings are read from the DOM, not taken from `toc`: that one is filled by a
+            // script message and may not have arrived, which would silently disable the
+            // orphan pass below.
+            webView.callAsyncJavaScript("return JSON.stringify(window.OKIA.headings());",
+                                        in: nil, in: .page) { result in
+                var headings: [(id: String, text: String)] = []
+                if case .success(let value) = result, let json = value as? String,
+                   let data = json.data(using: .utf8),
+                   let raw = try? JSONSerialization.jsonObject(with: data) as? [[String: String]] {
+                    headings = raw.compactMap { entry in
+                        guard let id = entry["id"], let text = entry["text"] else { return nil }
+                        return (id, text)
+                    }
+                }
+                self.renderPass(webView, headings: headings, attempt: 0) { url in
+                    webView.evaluateJavaScript("window.OKIA && window.OKIA.unfreezeMaps();") { _, _ in
+                        completion(url)
+                    }
                 }
             }
         }
+    }
+
+    /// Draw the PDF, look for headings left stranded at the foot of a page, mark those for a
+    /// page break, and draw again.
+    ///
+    /// This costs a second (rarely a third) render, and it is the only thing that works: this
+    /// print engine ignores `break-inside: avoid` and `break-after: avoid` — measured, a
+    /// heading followed by a map that did not fit stayed behind while the map moved on. It
+    /// does honour an explicit break, but nothing in the DOM knows where the page boundaries
+    /// will fall. So the boundaries are read back from the PDF that was just produced.
+    private func renderPass(_ webView: WKWebView, headings: [(id: String, text: String)],
+                            attempt: Int, completion: @escaping (URL?) -> Void) {
+        renderPDF(webView) { url in
+            guard attempt < 2, !headings.isEmpty, let url,
+                  let data = try? Data(contentsOf: url),
+                  let doc = PDFDocument(data: data) else { completion(url); return }
+
+            let stranded = self.strandedHeadingIDs(in: doc, headings: headings)
+            guard !stranded.isEmpty else { completion(url); return }
+
+            let list = stranded.map { "\"\($0)\"" }.joined(separator: ",")
+            webView.evaluateJavaScript("window.OKIA && window.OKIA.markBreakBefore([\(list)]);") { _, _ in
+                self.renderPass(webView, headings: headings, attempt: attempt + 1,
+                                completion: completion)
+            }
+        }
+    }
+
+    /// Outline entries whose heading is the last thing printed on a page — the reader has to
+    /// turn over to find what it announces. The last page is exempt: a heading there has
+    /// nowhere better to go.
+    private func strandedHeadingIDs(in doc: PDFDocument,
+                                    headings: [(id: String, text: String)]) -> [String] {
+        guard doc.pageCount > 1 else { return [] }
+        var ids: [String] = []
+        for index in 0..<(doc.pageCount - 1) {
+            guard let text = doc.page(at: index)?.string else { continue }
+            let lines = text.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            guard let last = lines.last else { continue }
+            // The PDF may wrap a long heading, so compare on a prefix rather than equality.
+            if let item = headings.first(where: { headingMatches($0.text, last) }) {
+                ids.append(item.id)
+            }
+        }
+        return ids
+    }
+
+    private func headingMatches(_ heading: String, _ line: String) -> Bool {
+        let a = heading.trimmingCharacters(in: .whitespacesAndNewlines)
+        let b = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard a.count > 3, b.count > 3 else { return a == b }
+        return a == b || a.hasPrefix(b) || b.hasPrefix(a)
     }
 
     private func renderPDF(_ webView: WKWebView, completion: @escaping (URL?) -> Void) {
