@@ -90,6 +90,9 @@ NEW
 • The opening screen offers questions taken from the document itself
 • Answers are written in the app's language, even when the report is written
   in another
+• PDF export on A4 (or Letter, depending on your region): a proper paginated
+  document, ready to annotate with the Pencil in Notes or to send on. Maps and
+  diagrams appear whole, and no heading is left stranded at the foot of a page
 
 FASTER, CLEARER
 • Image-heavy reports appear straight away: images load as you read instead of

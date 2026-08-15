@@ -84,6 +84,10 @@ NOUVEAU
 • L'écran de départ propose des questions tirées du document lui-même
 • Les réponses sont rédigées dans la langue de l'app, même si le rapport est
   écrit dans une autre
+• Export PDF au format A4 (ou Letter selon votre région) : un vrai document
+  paginé, qui s'annote au Pencil dans Notes ou se transmet tel quel. Les cartes
+  et les diagrammes y figurent en entier, et aucun titre ne reste seul en bas
+  d'une page
 
 PLUS RAPIDE, PLUS CLAIR
 • Les rapports riches en images s'affichent immédiatement : les images se
