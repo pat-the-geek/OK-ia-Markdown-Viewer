@@ -31,10 +31,13 @@ FONCTIONNALITÉS
   bouton plein écran pour naviguer en portrait ou paysage
 • Callouts Obsidian (note, tip, warning, bug…), wiki-links, coloration des entités (NER)
 • Résumé du document par Apple Intelligence — sur l'appareil, mis en forme (chapitres, gras, listes)
-  (nécessite un appareil compatible Apple Intelligence)
+• Discuter avec le document : posez vos questions, réponses structurées fondées sur son seul
+  contenu, générées sur l'appareil (résumé et discussion nécessitent un appareil compatible
+  Apple Intelligence)
 • Siri, Spotlight et Raccourcis : « Ouvre le dernier rapport », « Résume un rapport »…
 • Sommaire automatique, recherche dans le document, taille de texte ajustable
-• Export PDF et partage du fichier .md
+• Export PDF paginé (A4 ou Letter), Word et PowerPoint ; partage du fichier .md
+• Interface en 5 langues : français, anglais, allemand, espagnol, italien
 • Mode sombre, portrait et paysage, iPhone + iPad + Mac
 • 100 % hors-ligne : le rendu, les diagrammes, les callouts et le résumé IA ne nécessitent aucune
   connexion (seules les tuiles de fond de carte se chargent en ligne)

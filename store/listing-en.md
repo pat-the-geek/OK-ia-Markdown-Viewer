@@ -35,10 +35,11 @@ FEATURES
   full-screen button for portrait or landscape navigation
 • Obsidian callouts (note, tip, warning, bug…), wiki-links, entity highlighting (NER)
 • Document summary by Apple Intelligence — on-device, properly formatted (chapters, bold, lists)
-  (requires an Apple Intelligence capable device)
+• Chat with the document: ask questions, structured answers grounded in its content alone,
+  generated on-device (summary and chat require an Apple Intelligence capable device)
 • Siri, Spotlight and Shortcuts: “Open the latest report”, “Summarise a report”…
 • Automatic table of contents, in-document search, adjustable text size
-• PDF export and .md file sharing
+• Paginated PDF export (A4 or Letter), Word and PowerPoint; .md file sharing
 • Dark mode, portrait and landscape, iPhone + iPad + Mac
 • Interface in French, English, German, Spanish and Italian
 • 100% offline: rendering, diagrams, callouts and the AI summary need no connection
