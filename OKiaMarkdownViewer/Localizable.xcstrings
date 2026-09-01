@@ -1822,6 +1822,41 @@
         }
       }
     },
+    "Liaison entre Leaflet et MapLibre.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liaison entre Leaflet et MapLibre."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binding between Leaflet and MapLibre."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbindung zwischen Leaflet und MapLibre."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enlace entre Leaflet y MapLibre."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collegamento tra Leaflet e MapLibre."
+          }
+        }
+      }
+    },
     "Librairies & licences": {
       "extractionState": "manual",
       "localizations": {
@@ -2868,6 +2903,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cerca nel documento"
+          }
+        }
+      }
+    },
+    "Rendu des fonds de carte vectoriels.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rendu des fonds de carte vectoriels."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renders the vector base maps."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rendert die Vektor-Kartenhintergründe."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renderiza los mapas base vectoriales."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rende le mappe di base vettoriali."
           }
         }
       }

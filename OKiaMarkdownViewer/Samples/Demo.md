@@ -96,7 +96,7 @@ mindmap
 
 ## Carte géographique
 
-Bloc `leaflet` à la façon d'Obsidian — points positionnés, fond de carte CARTO,
+Bloc `leaflet` à la façon d'Obsidian — points positionnés, fond de carte OpenFreeMap,
 bouton plein écran (⛶) pour naviguer en portrait ou paysage.
 
 ```leaflet

@@ -614,9 +614,10 @@
 
   /* =========================================================================
      LEAFLET rendering — instantiate one interactive map per .okia-map div.
-     Tiles come from CARTO (light/dark) so the look matches the screenshot; an
-     OpenStreetMap base layer is offered too. A fullscreen control expands the
-     map to fill the viewport so it can be panned/zoomed in portrait or landscape.
+     The backgrounds are OpenFreeMap's vector styles (positron / dark), drawn by MapLibre
+     inside a Leaflet layer; a raster OpenStreetMap base layer is offered too. Everything
+     above the background — markers, popups, the layers control, the fullscreen button that
+     expands the map to the viewport — is plain Leaflet and does not know the difference.
      ========================================================================= */
   function leafletMarkerIcon() {
     return L.icon({
@@ -690,24 +691,76 @@
       }
 
       var map = L.map(el, {
-        minZoom: cfg.minZoom || 0,
+        // Floor at 1: MapLibre runs one zoom level below Leaflet (its tiles are 512 px), so
+        // a Leaflet zoom of 0 asks the GL map for -1 and the background stops drawing. A
+        // document map at zoom 0 is a 256 px world thumbnail anyway.
+        minZoom: Math.max(1, cfg.minZoom || 1),
         maxZoom: cfg.maxZoom || 19,
         scrollWheelZoom: true
       });
       el._leafletMap = map;   // expose for the slideshow to re-measure on fit/resize
 
-      // `crossOrigin` is what lets the map be rasterised later: without it WebKit taints the
-      // canvas as soon as a remote tile is drawn on it, and toDataURL() throws. Verified in a
-      // real WKWebView on iOS, from a file:// page — CARTO and OpenStreetMap both send the
-      // header, so the three shipped backgrounds can carry the option unconditionally.
-      var attribution = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>';
-      var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        { subdomains: 'abcd', maxZoom: 20, attribution: attribution, crossOrigin: 'anonymous' });
-      var dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        { subdomains: 'abcd', maxZoom: 20, attribution: attribution, crossOrigin: 'anonymous' });
+      // The backgrounds come from OpenFreeMap: the very "positron" and "dark" styles CARTO
+      // withdrew behind an API key, rebuilt from OpenStreetMap data and served without key,
+      // quota or account. Vector tiles, so MapLibre draws them — into one WebGL canvas that
+      // the maplibre-gl-leaflet binding parks in Leaflet's tile pane. The rest of this
+      // function never learns that the ground under its markers is not a grid of <img>.
+      var ofmCredit = '<a href="https://openfreemap.org/">OpenFreeMap</a> · ' +
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+      var osmCredit = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+      // OpenFreeMap's styles print every place twice — "Dongola القندى" — by concatenating
+      // the latin and non-latin forms of its name. In a report that is noise: the reader gets
+      // one name, in the script the rest of the page is written in.
+      function latinLabels(gl) {
+        try {
+          var style = gl.getStyle();
+          if (!style || !style.layers) return;
+          style.layers.forEach(function (layer) {
+            var field = layer.layout && layer.layout['text-field'];
+            if (!field || JSON.stringify(field).indexOf('name:nonlatin') < 0) return;
+            gl.setLayoutProperty(layer.id, 'text-field',
+              ['coalesce', ['get', 'name:latin'], ['get', 'name']]);
+          });
+        } catch (e) {}
+      }
+
+      function vectorStyle(name) {
+        return L.maplibreGL({
+          style: 'https://tiles.openfreemap.org/styles/' + name,
+          // The style's own sources declare no attribution, and the binding reads them to
+          // build the credit — so hand it the wording instead of letting it find none.
+          attributionControl: { customAttribution: ofmCredit },
+          // WebGL clears its drawing buffer once the frame is composited; without this the
+          // export reads back an empty rectangle — markers and credit over nothing, which is
+          // exactly what the first PDF came out as. MapLibre 5 moved the flag inside
+          // canvasContextAttributes, and silently ignores it at the top level.
+          canvasContextAttributes: { preserveDrawingBuffer: true }
+        });
+      }
+
+      // `crossOrigin` is what lets a raster background be rasterised later: without it WebKit
+      // taints the canvas as soon as a remote tile is drawn on it, and toDataURL() throws.
+      // Verified in a real WKWebView on iOS, from a file:// page.
+      //
+      // A `tileserver:` of one's own is almost always OSM-derived; crediting the background
+      // this map is not showing would be worse than crediting the data most of them carry.
+      var attribution = osmCredit;
       var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { maxZoom: 19, crossOrigin: 'anonymous',
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+        { maxZoom: 19, crossOrigin: 'anonymous', attribution: osmCredit });
+
+      // WebGL is not a given — an old device, a simulator without a GPU, a build where the
+      // vendored MapLibre did not load. MapLibre only fails when the layer is added, which
+      // would take the whole map down with it, so the question is asked before that: no
+      // WebGL, no vector styles, and the raster OpenStreetMap layer carries the map alone.
+      var canVector = typeof L.maplibreGL === 'function' && (function () {
+        try {
+          var probe = document.createElement('canvas');
+          return !!(probe.getContext('webgl2') || probe.getContext('webgl'));
+        } catch (e) { return false; }
+      })();
+      var light = canVector ? vectorStyle('positron') : null;
+      var dark = canVector ? vectorStyle('dark') : null;
 
       var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
       var custom = !!cfg.defaultTiles;
@@ -716,7 +769,8 @@
         if (withCORS) opts.crossOrigin = 'anonymous';
         return L.tileLayer(cfg.defaultTiles, opts);
       }
-      var base = custom ? customLayer(true) : (prefersDark ? dark : light);
+      var base = custom ? customLayer(true)
+                       : (canVector ? (prefersDark ? dark : light) : osm);
 
       // Whether this map's tiles can be drawn on a canvas — read at export time to choose
       // between a real image and the marker list.
@@ -724,42 +778,80 @@
 
       var tileErrors = 0, anyTileLoaded = false, corsWithdrawn = false;
 
-      function watchTiles(layer) {
-        layer.on('tileload', function () { anyTileLoaded = true; });
-        layer.on('tileerror', function () {
-          tileErrors++;
+      // The map is gone for good: say so with the marker labels, which still mean something.
+      function giveUp() {
+        map.remove();
+        el._leafletMap = null;
+        el._okiaGL = null;
+        leafletOfflineFallback(el, cfg);
+      }
 
-          // A `tileserver:` that sends no CORS header does not merely block the export: with
-          // crossOrigin set, the request is refused outright and the map shows nothing. The
-          // display always wins — withdraw the option, keep the map, and give up rasterising
-          // this one. Two failures rather than one: a lone tile fails at the edge of the world.
-          if (custom && !corsWithdrawn && !anyTileLoaded && tileErrors >= 2) {
-            corsWithdrawn = true;
-            tileErrors = 0;
-            el.setAttribute('data-tiles-exportable', '0');
-            map.removeLayer(layer);
-            var plain = customLayer(false);
-            watchTiles(plain);
-            plain.addTo(map);
-            return;
-          }
-
-          // navigator.onLine only reports a link, not reachability: a captive portal or a dead
-          // tile CDN still ends in a grey rectangle. A single failed tile means nothing;
-          // several with not one loaded is a verdict.
-          if (anyTileLoaded || tileErrors < 4) return;
-          map.remove();
-          el._leafletMap = null;
-          leafletOfflineFallback(el, cfg);
+      // A vector background has no tile events to count. MapLibre reports `load` once the
+      // style is up and the first frame is drawn, and `error` per failed request — including
+      // the one that matters, the style itself. A lone failure before that can be transient,
+      // so the first one only arms a delay; what decides is whether anything has loaded when
+      // it expires.
+      function watchVector(layer) {
+        var gl = layer.getMaplibreMap();
+        if (!gl) return;
+        el._okiaGL = gl;    // read at export time to know when the frame is complete
+        gl.on('load', function () { anyTileLoaded = true; latinLabels(gl); });
+        gl.on('error', function () {
+          if (anyTileLoaded || corsWithdrawn) return;
+          if (tileErrors++) return;               // already armed
+          setTimeout(function () {
+            if (!anyTileLoaded && el._okiaGL === gl) giveUp();
+          }, 3000);
         });
+      }
+
+      function watchTiles(layer) {
+        if (typeof layer.getMaplibreMap === 'function') { watchVector(layer); return; }
+        // A raster background can be a group, a custom one a lone layer; the events live on
+        // the tile layers, the removal below on the whole background.
+        var parts = typeof layer.getLayers === 'function' ? layer.getLayers() : [layer];
+        parts.forEach(function (part) {
+          part.on('tileload', function () { anyTileLoaded = true; });
+          part.on('tileerror', function () {
+            tileErrors++;
+
+            // A `tileserver:` that sends no CORS header does not merely block the export: with
+            // crossOrigin set, the request is refused outright and the map shows nothing. The
+            // display always wins — withdraw the option, keep the map, and give up rasterising
+            // this one. Two failures rather than one: a lone tile fails at the edge of the world.
+            if (custom && !corsWithdrawn && !anyTileLoaded && tileErrors >= 2) {
+              corsWithdrawn = true;
+              tileErrors = 0;
+              el.setAttribute('data-tiles-exportable', '0');
+              map.removeLayer(layer);
+              var plain = customLayer(false);
+              watchTiles(plain);
+              plain.addTo(map);
+              return;
+            }
+
+            // navigator.onLine only reports a link, not reachability: a captive portal or a dead
+            // tile CDN still ends in a grey rectangle. A single failed tile means nothing;
+            // several with not one loaded is a verdict.
+            if (anyTileLoaded || tileErrors < 4) return;
+            giveUp();
+          });
+        });   // parts.forEach
       }
 
       watchTiles(base);
       base.addTo(map);
 
-      if (!cfg.defaultTiles) {
+      if (!cfg.defaultTiles && canVector) {
         L.control.layers({ 'Clair': light, 'Sombre': dark, 'OpenStreetMap': osm },
                          null, { position: 'topright' }).addTo(map);
+        // Each background builds its own GL map when it is added, and drops it when it is
+        // removed: the export needs the one that is on screen now, not the one built first.
+        map.on('baselayerchange', function (e) {
+          el._okiaGL = null;
+          tileErrors = 0;
+          watchTiles(e.layer);
+        });
       }
 
       var icon = leafletMarkerIcon();
@@ -1097,6 +1189,12 @@
     return new Promise(function (resolve) {
       var deadline = Date.now() + (timeoutMs || 5000);
       (function poll() {
+        // A vector background answers for itself: loaded() is true once the style is up and
+        // every visible tile has been drawn into the frame we are about to copy.
+        if (el._okiaGL) {
+          if (el._okiaGL.loaded() || Date.now() > deadline) return resolve();
+          return setTimeout(poll, 150);
+        }
         var tiles = el.querySelectorAll('img.leaflet-tile');
         var pending = 0;
         for (var i = 0; i < tiles.length; i++) if (!tiles[i].complete) pending++;
@@ -1142,6 +1240,10 @@
     if (el.getAttribute('data-tiles-exportable') === '0') return Promise.resolve(null);
 
     return tilesSettled(el).then(function () {
+      // A vector background that still has not finished drawing — an off-screen container
+      // where nothing composites, a style that never arrived — would copy as an empty
+      // rectangle under the pins. The marker list is the better answer.
+      if (el._okiaGL && !el._okiaGL.loaded()) return null;
       try {
         var scale = 2;
         var box = el.getBoundingClientRect();
@@ -1160,8 +1262,13 @@
           return true;
         }
 
-        // Leaflet keeps a ring of tiles beyond the frame; the canvas clips them for us.
-        var drawn = 0, tiles = el.querySelectorAll('img.leaflet-tile');
+        // Two shapes of background, one rectangle each way: MapLibre hands over a single
+        // WebGL canvas, a raster layer a ring of tiles that reaches past the frame. Either
+        // way the export canvas clips what falls outside.
+        var drawn = 0;
+        var glCanvas = el.querySelector('.leaflet-gl-layer canvas');
+        if (glCanvas && paint(glCanvas)) drawn++;
+        var tiles = el.querySelectorAll('img.leaflet-tile');
         for (var i = 0; i < tiles.length; i++) {
           if (tiles[i].complete && tiles[i].naturalWidth) { if (paint(tiles[i])) drawn++; }
         }
@@ -1169,8 +1276,8 @@
 
         // The marker pins are DRAWN, not copied from their <img>. Counter-intuitive but
         // verified on iOS: a page served from file:// gets an opaque origin per file, so
-        // drawing the bundled marker-icon.png taints the canvas — while the remote CARTO
-        // tile, fetched with CORS, does not. The local image is the unsafe one here.
+        // drawing the bundled marker-icon.png taints the canvas — while the remote map
+        // imagery, fetched with CORS, does not. The local image is the unsafe one here.
         var marks = el.querySelectorAll('img.leaflet-marker-icon');
         for (var j = 0; j < marks.length; j++) {
           var mr = marks[j].getBoundingClientRect();
@@ -1180,8 +1287,8 @@
                        (mr.bottom - box.top) * scale, scale);
         }
 
-        // CARTO and OpenStreetMap both require attribution wherever the map is shown — a
-        // Word document included. Leaflet already composed the wording; reuse it verbatim.
+        // OpenStreetMap's licence requires attribution wherever the map is shown — a Word
+        // document included. Leaflet already composed the wording; reuse it verbatim.
         var attr = el.querySelector('.leaflet-control-attribution');
         var credit = attr ? attr.textContent.trim().replace(/\s+/g, ' ') : '';
         if (credit) {
