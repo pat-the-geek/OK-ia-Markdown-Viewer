@@ -21,7 +21,7 @@ Justification (faits vérifiés dans le code) :
 
 ### Point d'attention — accès réseau tiers (à mentionner, mais ce n'est PAS de la collecte)
 L'app effectue des requêtes réseau dans deux cas, **à l'initiative de l'utilisateur** :
-- **Tuiles de fond de carte** (Leaflet) : `*.basemaps.cartocdn.com`, `*.tile.openstreetmap.org`.
+- **Tuiles de fond de carte** (Leaflet/MapLibre) : `tiles.openfreemap.org`, `*.tile.openstreetmap.org`.
 - **Téléchargement d'un rapport** quand l'utilisateur ouvre une URL `https` (`mdviewer://open?url=…`)
   et images distantes contenues dans un document.
 
@@ -62,10 +62,10 @@ et ne transmet aucune donnée personnelle à OK-ia ou à des tiers à des fins d
 ## Accès réseau
 L'application se connecte à Internet uniquement lorsque **vous** le déclenchez :
 - pour afficher les **fonds de carte** des documents contenant une carte (fournis par
-  OpenStreetMap et CARTO) ;
+  OpenFreeMap et OpenStreetMap) ;
 - pour **télécharger un rapport** ou une image lorsque vous ouvrez un lien `https`.
 Ces services tiers peuvent recevoir votre adresse IP, comme pour tout chargement de page web.
-Consultez leurs politiques : OpenStreetMap, CARTO.
+Consultez leurs politiques : OpenFreeMap, OpenStreetMap.
 
 ## Intelligence artificielle
 La fonction « Résumé du document » utilise **Apple Intelligence sur l'appareil**. Le contenu de

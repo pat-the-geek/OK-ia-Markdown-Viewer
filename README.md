@@ -40,10 +40,12 @@ Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent 
   séparé par `---`, façon Keynote/PowerPoint (mise à l'échelle adaptative, 5 transitions, navigateur
   de vignettes). Voir la section dédiée plus bas.
 - **Cartes géographiques Leaflet** (à la façon du plugin Obsidian Leaflet) : bloc <code>```leaflet</code>
-  avec `marker: lat, long, [[Lien]]`, fonds de carte CARTO clair/sombre + OpenStreetMap, popups,
+  avec `marker: lat, long, [[Lien]]`, fonds de carte OpenFreeMap clair/sombre + OpenStreetMap, popups,
   cadrage auto sur les points. Bouton **plein écran ⛶** pour panner/zoomer en portrait ou paysage.
-  Leaflet est **bundlé offline** (`Web/vendor/leaflet.{js,css}` + `images/`) ; seules les tuiles
-  nécessitent le réseau. Sans connexion, la carte affiche **« Carte indisponible hors connexion »**
+  Leaflet et MapLibre sont **bundlés offline** (`Web/vendor/leaflet.{js,css}`, `images/`,
+  `maplibre-gl.{js,css}`, `leaflet-maplibre-gl.js`) ; seules les tuiles nécessitent le réseau.
+  Les fonds clair/sombre sont les styles vectoriels `positron` et `dark` d'OpenFreeMap — ni clé,
+  ni quota, ni compte — dessinés par MapLibre dans un calque Leaflet. Sans connexion, la carte affiche **« Carte indisponible hors connexion »**
   et la **liste des marqueurs** plutôt qu'un rectangle gris muet — déclenché par `navigator.onLine`
   et, parce que celui-ci ne signale qu'un lien et non une joignabilité (portail captif, CDN mort),
   aussi par les erreurs de tuiles.

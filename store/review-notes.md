@@ -18,7 +18,7 @@ COMMENT TESTER
 
 ACCÈS RÉSEAU
 • L'app fonctionne hors-ligne. Le réseau n'est utilisé que pour :
-  - les tuiles de fond de carte des documents contenant une carte (OpenStreetMap / CARTO) ;
+  - les tuiles de fond de carte des documents contenant une carte (OpenFreeMap / OpenStreetMap) ;
   - le téléchargement d'un document si l'utilisateur ouvre un lien https.
 • Aucune donnée utilisateur n'est collectée ni transmise (voir l'étiquette de confidentialité).
 
@@ -47,7 +47,7 @@ HOW TO TEST
 • You can also open any .md file via "Ouvrir un fichier" (Files app).
 
 NETWORK
-• The app works offline. Network is only used for map tiles (OpenStreetMap / CARTO) in documents
+• The app works offline. Network is only used for map tiles (OpenFreeMap / OpenStreetMap) in documents
   that contain a map, and to download a document when the user opens an https link.
 • No user data is collected or transmitted.
 

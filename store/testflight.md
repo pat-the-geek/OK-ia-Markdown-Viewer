@@ -65,7 +65,7 @@ DIVERS
 ```
 Aucun compte requis. Touchez « Voir un exemple » pour un document de démo couvrant toutes les
 fonctionnalités. L'app fonctionne hors-ligne ; le réseau ne sert qu'aux tuiles de carte
-(OpenStreetMap/CARTO) et au téléchargement d'un document via lien https. Le résumé utilise Apple
+(OpenFreeMap/OpenStreetMap) et au téléchargement d'un document via lien https. Le résumé utilise Apple
 Intelligence ON-DEVICE (aucune donnée envoyée) et n'apparaît que sur appareil compatible.
 ```
 

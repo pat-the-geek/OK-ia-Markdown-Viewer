@@ -31,7 +31,7 @@ same typography, same colours, same rendering pipeline.
 FEATURES
 • Faithful Markdown rendering (headings, tables, lists, quotes)
 • Mermaid diagrams: flowchart, sequence, gantt, pie, mindmap — with full-screen zoom
-• Leaflet maps (Obsidian plugin style): positioned markers, CARTO/OSM base maps,
+• Leaflet maps (Obsidian plugin style): positioned markers, OpenFreeMap/OSM base maps,
   full-screen button for portrait or landscape navigation
 • Obsidian callouts (note, tip, warning, bug…), wiki-links, entity highlighting (NER)
 • Document summary by Apple Intelligence — on-device, properly formatted (chapters, bold, lists)

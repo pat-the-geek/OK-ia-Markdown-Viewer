@@ -27,7 +27,7 @@ typographie, couleurs et pipeline de rendu identiques.
 FONCTIONNALITÉS
 • Rendu Markdown fidèle (titres, tableaux, listes, citations)
 • Diagrammes Mermaid : flowchart, séquence, gantt, pie, mindmap — avec zoom plein écran
-• Cartes géographiques Leaflet (style plugin Obsidian) : marqueurs positionnés, fonds CARTO/OSM,
+• Cartes géographiques Leaflet (style plugin Obsidian) : marqueurs positionnés, fonds OpenFreeMap/OSM,
   bouton plein écran pour naviguer en portrait ou paysage
 • Callouts Obsidian (note, tip, warning, bug…), wiki-links, coloration des entités (NER)
 • Résumé du document par Apple Intelligence — sur l'appareil, mis en forme (chapitres, gras, listes)
