@@ -343,9 +343,11 @@ contrôle serait vide — le script s'arrête plutôt que d'afficher un feu vert
    cible *OKiaMarkdownViewer* → **Signing & Capabilities** que **Automatically manage signing** est
    coché, la Team sélectionnée, et qu'aucune erreur de provisioning ne s'affiche (Xcode crée au besoin
    le certificat *Apple Distribution* et le profil App Store à la première archive).
-2. **Versions** : `MARKETING_VERSION` = 1.1.0, `CURRENT_PROJECT_VERSION` incrémenté à chaque archive
-   (build **21** au moment de la rédaction ; 1.0.0 (19) est la version publiée sur l'App Store).
-   App Store Connect refuse un build dont le numéro existe
+2. **Versions** : `MARKETING_VERSION` = 1.1.1, `CURRENT_PROJECT_VERSION` incrémenté à chaque archive
+   (build **28** au moment de la rédaction ; 1.1.0 est la version publiée sur l'App Store). Un train
+   déjà approuvé est fermé : réutiliser sa `MARKETING_VERSION` fait rejeter l'envoi (90062/90186), il
+   faut monter la version marketing et pas seulement le build.
+   App Store Connect refuse aussi un build dont le numéro existe
    déjà : si l'upload signale « build already exists », **incrémentez `CURRENT_PROJECT_VERSION`** dans
    [`project.yml`](project.yml) (source de vérité ; le `.xcodeproj` est généré et non commité) — ou
    directement via *Xcode → General → Build*.

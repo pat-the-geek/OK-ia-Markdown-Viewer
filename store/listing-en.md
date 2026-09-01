@@ -79,7 +79,24 @@ markdown,mermaid,diagram,leaflet,map,obsidian,callout,report,summary,ai,pdf,md,v
 ## Price
 - **Free** ✅ — no limited availability, available in every country.
 
-## What's new in this version (release notes 1.1.0)
+## What's new in this version (release notes 1.1.1)
+```
+Maps get a clean background again.
+
+FIXED
+• The map background had been showing a watermark across it ever since its
+  supplier closed free access. It gives way to clean light and dark backgrounds,
+  served by OpenFreeMap from OpenStreetMap data
+• Place names are now drawn on the fly: they stay sharp at every zoom level and
+  no longer appear twice, in two alphabets
+• Maps exported to PDF, Word and PowerPoint carry the new background too
+
+Nothing else changes in this version.
+```
+
+<details>
+<summary>Archive — release notes 1.1.0</summary>
+
 ```
 Five languages, and your reports become conversational.
 
@@ -107,6 +124,8 @@ The summary and the chat require an Apple Intelligence-capable device (iOS 26 or
 later). Like the rest of the app, they run on the device: no text is sent
 anywhere.
 ```
+
+</details>
 
 <details>
 <summary>Archive — release notes 1.0.0</summary>

@@ -75,7 +75,24 @@ markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pd
 ## Prix
 - **Gratuit** ✅ — aucune disponibilité limitée, disponible dans tous les pays.
 
-## Nouveautés de cette version (release notes 1.1.0)
+## Nouveautés de cette version (release notes 1.1.1)
+```
+Les cartes retrouvent un fond net.
+
+CORRIGÉ
+• Le fond des cartes s'affichait barré d'un filigrane depuis que son fournisseur
+  a fermé son accès libre. Il laisse place à un fond clair et un fond sombre
+  nets, servis par OpenFreeMap à partir des données OpenStreetMap
+• Les noms de lieux sont désormais dessinés à la volée : ils restent nets à tous
+  les niveaux de zoom et ne s'affichent plus en double, dans deux alphabets
+• Les cartes exportées en PDF, en Word et en PowerPoint reprennent ce fond
+
+Rien d'autre ne change dans cette version.
+```
+
+<details>
+<summary>Archive — release notes 1.1.0</summary>
+
 ```
 Cinq langues, et vos rapports deviennent conversationnels.
 
@@ -106,6 +123,8 @@ Le résumé et la discussion nécessitent un appareil compatible Apple Intellige
 (iOS 26 ou ultérieur). Comme le reste de l'app, ils fonctionnent sur l'appareil :
 aucun texte n'est envoyé nulle part.
 ```
+
+</details>
 
 <details>
 <summary>Archive — release notes 1.0.0</summary>

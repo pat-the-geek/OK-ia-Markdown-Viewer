@@ -25,10 +25,23 @@ Cette bêta sert à valider le rendu, la navigation et la stabilité sur iPhone,
 
 ---
 
-## What to Test — build 1.0.0 (18)
+## What to Test — 1.1.1 (28)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
+
+DANS CETTE VERSION — LES CARTES
+• Ouvrez le document de démonstration, section « Carte géographique » : le fond
+  doit être net, sans filigrane en travers, avec les noms de villes lisibles.
+• Bouton des couches (en haut à droite de la carte) : basculez Clair / Sombre /
+  OpenStreetMap. Les trois doivent se dessiner, et les marqueurs rester en place.
+• Zoomez à fond, puis dézoomez : les noms restent nets, jamais pixelisés, et
+  aucun lieu ne s'affiche deux fois dans deux alphabets.
+• Bouton plein écran (⛶), en portrait ET en paysage.
+• Exportez en PDF puis en Word : la carte doit y figurer entière, avec ses
+  marqueurs et la mention de source en bas.
+• En mode Avion : la carte annonce son indisponibilité et liste ses marqueurs,
+  plutôt qu'un cadre vide.
 
 OUVERTURE
 • « Voir un exemple » pour charger le document de démonstration.
@@ -36,7 +49,7 @@ OUVERTURE
 
 RENDU
 • Lecture fidèle (titres, tableaux, listes, citations) ; le titre du document ne doit PAS
-  être coupé sous la barre d'outils (correctif de cette version).
+  être coupé sous la barre d'outils.
 • Diagrammes Mermaid + zoom plein écran.
 • Cartes Leaflet : marqueurs, fonds de carte, bouton plein écran (portrait ET paysage).
 • Callouts (note/tip/warning/bug) et coloration des entités.
@@ -50,7 +63,7 @@ SIRI / SPOTLIGHT / RACCOURCIS
   dossier de coffre configuré).
 
 DIVERS
-• Bouton « Ouvrir un fichier » (doit ouvrir le sélecteur — correctif de cette version).
+• Bouton « Ouvrir un fichier » (doit ouvrir le sélecteur).
 • Mode sombre, rotation, export PDF, recherche, sommaire.
 • iPhone, iPad et Mac.
 ```
