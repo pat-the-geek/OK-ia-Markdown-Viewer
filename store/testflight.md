@@ -58,6 +58,19 @@ RÉSUMÉ APPLE INTELLIGENCE (appareils compatibles)
 • Bouton ✦ dans la barre du lecteur → « Résumé du document » : le résumé doit être structuré
   (chapitres, gras, listes). Le bouton est masqué si Apple Intelligence n'est pas disponible.
 
+DISCUTER AVEC LE DOCUMENT (appareils compatibles)
+• Bouton ✦ → « Discuter avec le document » : l'écran d'accueil propose des questions tirées
+  du document lui-même, et pas seulement « Résume ce document ». Touchez-en une.
+• Posez ensuite votre propre question : la réponse doit s'appuyer sur le seul contenu du
+  rapport et rester structurée. Une question à laquelle le document ne répond pas doit être
+  déclinée, pas inventée.
+• Ouvrez un rapport rédigé dans une autre langue que l'app : les réponses doivent rester
+  dans la langue de l'app.
+• Changez la langue de l'app pendant une conversation : elle doit être réinitialisée, et
+  l'app doit le dire.
+• Bouton « Nouvelle conversation ». Enchaînez ensuite une dizaine de questions : quand
+  l'historique devient trop long, l'app doit l'annoncer et poursuivre, pas se bloquer.
+
 SIRI / SPOTLIGHT / RACCOURCIS
 • « Ouvre le dernier rapport dans md Viewer », « Résume un rapport dans md Viewer » (nécessite un
   dossier de coffre configuré).
