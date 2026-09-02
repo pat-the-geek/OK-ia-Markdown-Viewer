@@ -336,6 +336,23 @@ contrôle serait vide — le script s'arrête plutôt que d'afficher un feu vert
 > envoi depuis Xcode Organizer en « TestFlight Internal Only », qui produit des builds
 > **inéligibles à l'App Store** — le piège qui a bloqué les builds 9 à 18.
 
+### Métadonnées de la fiche
+
+`altool` envoie le binaire et s'arrête là : il ne sait rien dire de la fiche App Store.
+`scripts/asc.py` couvre l'autre moitié — créer une version, écrire les notes de version,
+rattacher un build :
+
+```bash
+scripts/asc.py GET  "/v1/apps/6781039895/appStoreVersions?filter[platform]=IOS"
+scripts/asc.py POST /v1/appStoreVersions '{"data": {…}}'
+```
+
+Mêmes identifiants que le script de livraison (`scripts/deploy.env`), même clé privée dans
+`~/.appstoreconnect/private_keys/` — lue seulement pour signer le jeton, jamais affichée.
+Un rappel qui a coûté un envoi : **une version marketing déjà approuvée ferme son train**.
+Réutiliser sa `MARKETING_VERSION` fait rejeter le binaire (erreurs 90062 et 90186) ; il faut
+monter la version marketing, pas seulement le numéro de build.
+
 ### À la main
 
 1. **Signature** : la **Team** payante (`72NVM63N83`) et le **Bundle Identifier**
