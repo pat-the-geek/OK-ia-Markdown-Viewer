@@ -313,6 +313,21 @@ pre.mermaid.mermaid-error::after { content: none; }
   font-size: 0.95rem;
 }
 .okia-map-offline-title { display: block; font-weight: 700; margin-bottom: 0.5em; }
+
+/* Le fond vectoriel n'apparaît qu'une fois tout reçu : sans cette mention, l'attente est
+   un cadre gris muet. Au-dessus des panneaux Leaflet, mais transparente aux gestes. */
+.okia-map-loading {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 450;
+  padding: 0.5em 1em;
+  border-radius: 999px;
+  background: rgba(250, 250, 248, 0.85);
+  color: var(--muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
 .okia-map-offline ul { list-style: none; margin: 0; padding: 0; }
 .okia-map-offline li { padding: 0.15em 0; }
 

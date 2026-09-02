@@ -26,7 +26,10 @@
         es: 'Documento voluminoso, procesando…', it: 'Documento voluminoso, rendering in corso…' },
     'Carte indisponible hors connexion':
       { en: 'Map unavailable offline', de: 'Karte offline nicht verfügbar',
-        es: 'Mapa no disponible sin conexión', it: 'Mappa non disponibile offline' }
+        es: 'Mapa no disponible sin conexión', it: 'Mappa non disponibile offline' },
+    'Chargement de la carte…':
+      { en: 'Loading the map…', de: 'Karte wird geladen…',
+        es: 'Cargando el mapa…', it: 'Caricamento della mappa…' }
   };
   function TXT(fr) {
     var entry = STRINGS[fr];
@@ -671,6 +674,18 @@
     el.setAttribute('data-offline', '1');
   }
 
+  // Un fond vectoriel ne peint rien tant qu'il n'a pas tout reçu — style, index des tuiles,
+  // sprites, polices, tuiles — puis apparaît d'un coup. Sur un lien lent, cela fait plusieurs
+  // secondes de cadre gris que rien n'explique ; un fond raster, lui, se remplit tuile à tuile
+  // et se raconte tout seul. D'où cette mention, retirée à la première image dessinée.
+  function mapLoadingNote(el) {
+    var note = document.createElement('div');
+    note.className = 'okia-map-loading';
+    note.textContent = TXT('Chargement de la carte…');
+    el.appendChild(note);
+    return function () { if (note.parentNode) note.parentNode.removeChild(note); };
+  }
+
   function renderLeafletMaps(container) {
     if (typeof L === 'undefined') return;
     var maps = Array.prototype.slice.call(container.querySelectorAll('.okia-map'));
@@ -777,6 +792,9 @@
       el.setAttribute('data-tiles-exportable', '1');
 
       var tileErrors = 0, anyTileLoaded = false, corsWithdrawn = false;
+      var clearLoadingNote = mapLoadingNote(el);
+
+      function drawnAtLast() { anyTileLoaded = true; clearLoadingNote(); }
 
       // The map is gone for good: say so with the marker labels, which still mean something.
       function giveUp() {
@@ -795,7 +813,7 @@
         var gl = layer.getMaplibreMap();
         if (!gl) return;
         el._okiaGL = gl;    // read at export time to know when the frame is complete
-        gl.on('load', function () { anyTileLoaded = true; latinLabels(gl); });
+        gl.on('load', function () { drawnAtLast(); latinLabels(gl); });
         gl.on('error', function () {
           if (anyTileLoaded || corsWithdrawn) return;
           if (tileErrors++) return;               // already armed
@@ -811,7 +829,7 @@
         // the tile layers, the removal below on the whole background.
         var parts = typeof layer.getLayers === 'function' ? layer.getLayers() : [layer];
         parts.forEach(function (part) {
-          part.on('tileload', function () { anyTileLoaded = true; });
+          part.on('tileload', drawnAtLast);
           part.on('tileerror', function () {
             tileErrors++;
 
@@ -839,8 +857,25 @@
         });   // parts.forEach
       }
 
+      // Passé ce délai sans une seule image, impossible de savoir si le fond vectoriel finit
+      // par arriver ou ne viendra jamais — et le lecteur, lui, n'a qu'un cadre gris. Le fond
+      // raster se remplit tuile à tuile : il montre au moins que quelque chose avance. Ne
+      // s'applique qu'au fond initial : un fond choisi à la main dans le sélecteur reste
+      // celui qu'on a demandé, lent ou pas.
+      function fallBackToRasterIfNothingDrawn(layer) {
+        setTimeout(function () {
+          if (anyTileLoaded || !el._leafletMap || !map.hasLayer(layer)) return;
+          map.removeLayer(layer);
+          el._okiaGL = null;
+          tileErrors = 0;
+          watchTiles(osm);
+          osm.addTo(map);
+        }, 6000);
+      }
+
       watchTiles(base);
       base.addTo(map);
+      if (!cfg.defaultTiles && canVector) fallBackToRasterIfNothingDrawn(base);
 
       if (!cfg.defaultTiles && canVector) {
         L.control.layers({ 'Clair': light, 'Sombre': dark, 'OpenStreetMap': osm },
