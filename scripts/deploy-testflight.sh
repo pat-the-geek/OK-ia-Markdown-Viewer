@@ -7,9 +7,15 @@
 #   ASC_ISSUER_ID  App Store Connect issuer id
 #
 # Usage:
-#   scripts/deploy-testflight.sh              archive + export + upload with the current build number
+#   scripts/deploy-testflight.sh              iOS, with the current build number
 #   scripts/deploy-testflight.sh --bump       increment CURRENT_PROJECT_VERSION first
-#   scripts/deploy-testflight.sh --no-upload  stop after the checks, keep the .ipa
+#   scripts/deploy-testflight.sh --mac        Mac Catalyst instead of iOS (.pkg)
+#   scripts/deploy-testflight.sh --both       iOS then Mac, from a single build number
+#   scripts/deploy-testflight.sh --no-upload  stop after the checks, keep the artefact
+#
+# --both exists because the two platforms are one product and forgetting the Mac is silent:
+# the app shipped three weeks of iOS builds while the Mac stayed on an older one, watermarked
+# map included. A single flag now covers both.
 #
 # The upload goes out as STANDARD App Store distribution. This matters: builds sent from
 # Xcode Organizer as "TestFlight Internal Only" come back App-Store-ineligible, which is
@@ -26,11 +32,14 @@ LANGS="de en es fr it"
 
 BUMP=0
 UPLOAD=1
+PLATFORMS="ios"
 for arg in "$@"; do
   case "$arg" in
     --bump)      BUMP=1 ;;
     --no-upload) UPLOAD=0 ;;
-    -h|--help)   sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --mac)       PLATFORMS="mac" ;;
+    --both)      PLATFORMS="ios mac" ;;
+    -h|--help)   sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)           printf 'argument inconnu : %s\n' "$arg" >&2; exit 2 ;;
   esac
 done
@@ -69,18 +78,46 @@ step "Génération du projet Xcode"
 xcodegen generate >/dev/null
 ok "project.yml → $PROJECT"
 
-step "Archive (Release, generic/platform=iOS)"
-rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR"
-xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
-  -destination 'generic/platform=iOS' \
-  -archivePath "$BUILD_DIR/$SCHEME.xcarchive" \
-  -allowProvisioningUpdates archive >"$BUILD_DIR/archive.log" 2>&1 \
-  || { grep -E 'error:' "$BUILD_DIR/archive.log" | head -20; die "archive échouée — log : $BUILD_DIR/archive.log"; }
-ok "$BUILD_DIR/$SCHEME.xcarchive"
+# Une plateforme, de l'archive à l'envoi. Tout ce qui diffère entre iOS et Mac tient dans
+# les cinq variables ci-dessous ; les contrôles, eux, sont les mêmes des deux côtés — ils
+# valent précisément parce qu'on ne les allège pas pour la plateforme qu'on livre moins
+# souvent.
+deliver() {
+  local platform="$1" dest label out product altool_type
+  local dir="$BUILD_DIR/$platform"
 
-step "Export en distribution App Store"
-cat > "$BUILD_DIR/exportOptions.plist" <<PLIST
+  case "$platform" in
+    ios)
+      dest='generic/platform=iOS'
+      label='iOS'
+      product="$dir/export/$SCHEME.ipa"
+      altool_type='ios'
+      ;;
+    mac)
+      # Catalyst exige l'équipe en clair : la signature automatique ne la devine pas ici.
+      dest='generic/platform=macOS,variant=Mac Catalyst'
+      label='Mac Catalyst'
+      product="$dir/export/$SCHEME.pkg"
+      altool_type='macos'
+      ;;
+    *) die "plateforme inconnue : $platform" ;;
+  esac
+
+  printf '\n\033[1m━━ %s ━━\033[0m\n' "$label"
+
+  step "Archive (Release, $dest)"
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release \
+    -destination "$dest" \
+    -archivePath "$dir/$SCHEME.xcarchive" \
+    DEVELOPMENT_TEAM="$TEAM_ID" \
+    -allowProvisioningUpdates archive >"$dir/archive.log" 2>&1 \
+    || { grep -E 'error:' "$dir/archive.log" | head -20; die "archive échouée — log : $dir/archive.log"; }
+  ok "$dir/$SCHEME.xcarchive"
+
+  step "Export en distribution App Store"
+  cat > "$dir/exportOptions.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -93,81 +130,111 @@ cat > "$BUILD_DIR/exportOptions.plist" <<PLIST
 </dict>
 </plist>
 PLIST
-xcodebuild -exportArchive \
-  -archivePath "$BUILD_DIR/$SCHEME.xcarchive" \
-  -exportOptionsPlist "$BUILD_DIR/exportOptions.plist" \
-  -exportPath "$BUILD_DIR/export" \
-  -allowProvisioningUpdates >"$BUILD_DIR/export.log" 2>&1 \
-  || { tail -20 "$BUILD_DIR/export.log"; die "export échoué — log : $BUILD_DIR/export.log"; }
+  xcodebuild -exportArchive \
+    -archivePath "$dir/$SCHEME.xcarchive" \
+    -exportOptionsPlist "$dir/exportOptions.plist" \
+    -exportPath "$dir/export" \
+    -allowProvisioningUpdates >"$dir/export.log" 2>&1 \
+    || { tail -20 "$dir/export.log"; die "export échoué — log : $dir/export.log"; }
 
-IPA="$BUILD_DIR/export/$SCHEME.ipa"
-[ -f "$IPA" ] || die "IPA introuvable après l'export"
-ok "$IPA ($(du -h "$IPA" | cut -f1))"
+  [ -f "$product" ] || die "artefact introuvable après l'export : $product"
+  ok "$product ($(du -h "$product" | cut -f1))"
 
-# --- preflight -----------------------------------------------------------------------
-# These four checks each catch a failure that is silent at build time and expensive later:
-# a Development-signed IPA rejected by App Store Connect, a Debug harness shipped to
-# testers, a lost localisation, or an .ipa that isn't the version just built.
-step "Contrôles avant envoi"
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
-unzip -q "$IPA" -d "$TMP"
-APP="$TMP/Payload/$SCHEME.app"
-[ -d "$APP" ] || die "Payload/$SCHEME.app absent de l'IPA"
+  # --- preflight ---------------------------------------------------------------------
+  # Ces quatre contrôles rattrapent chacun une panne muette au build et coûteuse plus tard :
+  # une signature de développement refusée par App Store Connect, un harnais de debug livré
+  # aux testeurs, une localisation perdue, ou un artefact qui n'est pas la version qu'on
+  # croit envoyer.
+  step "Contrôles avant envoi"
+  local tmp app plist resources
+  tmp="$(mktemp -d)"
 
-# Both checks write to a file before grepping. Piping a long-running producer into
-# `grep -q` kills it with SIGPIPE as soon as grep matches, and under `set -o pipefail`
-# that 141 becomes the pipeline's status — which would fail the signature check on a
-# perfectly good IPA and, worse, make the debug-harness check pass without ever looking.
-codesign -dvvv "$APP" >"$TMP/codesign.txt" 2>&1 || die "codesign a échoué sur $APP"
-grep -q '^Authority=Apple Distribution' "$TMP/codesign.txt" \
-  || die "l'IPA n'est pas signée « Apple Distribution » — App Store Connect la refusera"
-ok "signature Apple Distribution"
+  case "$platform" in
+    ios)
+      unzip -q "$product" -d "$tmp"
+      app="$tmp/Payload/$SCHEME.app"
+      plist="$app/Info.plist"
+      resources="$app"
+      ;;
+    mac)
+      # Le .pkg n'est pas inspectable tel quel : on le déplie pour retrouver le .app livré,
+      # celui-là même qui sera installé — pas celui de l'archive, qui n'a pas la signature
+      # de distribution.
+      pkgutil --expand-full "$product" "$tmp/pkg" >/dev/null
+      app="$(find "$tmp/pkg" -maxdepth 3 -name "$SCHEME.app" -type d | head -1)"
+      [ -n "$app" ] || die "aucun $SCHEME.app dans le paquet déplié"
+      plist="$app/Contents/Info.plist"
+      resources="$app/Contents/Resources"
+      ;;
+  esac
+  [ -d "$app" ] || die "$SCHEME.app absent de l'artefact"
 
-# Scan every executable in the bundle, not just the main binary: Xcode 16 already moves
-# Debug code into a companion md\ Viewer.debug.dylib, and a check that reads one file
-# would miss it entirely.
-find "$APP" -type f \( -perm -u+x -o -name '*.dylib' \) -print0 \
-  | xargs -0 strings -a >"$TMP/strings.txt"
+  # Les deux contrôles écrivent dans un fichier avant de grepper. Enchaîner un producteur
+  # long dans `grep -q` le tue par SIGPIPE dès que grep trouve, et sous `set -o pipefail`
+  # ce 141 devient le statut du pipeline — ce qui ferait échouer la vérification de
+  # signature sur un artefact parfaitement sain et, pire, passer celle du harnais sans
+  # rien avoir regardé.
+  codesign -dvvv "$app" >"$tmp/codesign.txt" 2>&1 || die "codesign a échoué sur $app"
+  grep -q '^Authority=Apple Distribution' "$tmp/codesign.txt" \
+    || die "l'artefact n'est pas signé « Apple Distribution » — App Store Connect le refusera"
+  ok "signature Apple Distribution"
 
-# Canary. OKIA_LANG is injected by the reader in every build, so it MUST be found here.
-# If it isn't, `strings` is not seeing the binary's literals and the harness check below
-# would pass without inspecting anything — a green light that means nothing.
-grep -q 'OKIA_LANG' "$TMP/strings.txt" \
-  || die "contrôle inopérant : aucune chaîne connue trouvée dans le binaire (le test du harnais serait vide)"
+  # Tous les exécutables du bundle, pas seulement le binaire principal : Xcode 16 déplace
+  # déjà le code Debug dans un md\ Viewer.debug.dylib compagnon, qu'un contrôle lisant un
+  # seul fichier manquerait.
+  find "$app" -type f \( -perm -u+x -o -name '*.dylib' \) -print0 \
+    | xargs -0 strings -a >"$tmp/strings.txt"
 
-for marker in OKIA_FAKE_AI OKIA_RENDER_CONTENT OKIA_SHOT_SIZE; do
-  # `if` rather than `grep ... && die`: a non-matching grep would leave the loop with a
-  # non-zero status and `set -e` would abort the script on a clean binary.
-  if grep -q "$marker" "$TMP/strings.txt"; then
-    die "harnais de debug « $marker » présent dans le binaire de production"
+  # Canari. OKIA_LANG est injecté par le lecteur dans tous les builds, il DOIT être trouvé
+  # ici. S'il ne l'est pas, `strings` ne voit pas les littéraux du binaire et le contrôle
+  # suivant passerait sans rien inspecter — un feu vert qui ne veut rien dire.
+  grep -q 'OKIA_LANG' "$tmp/strings.txt" \
+    || die "contrôle inopérant : aucune chaîne connue trouvée dans le binaire (le test du harnais serait vide)"
+
+  for marker in OKIA_FAKE_AI OKIA_RENDER_CONTENT OKIA_SHOT_SIZE; do
+    # `if` plutôt que `grep ... && die` : un grep sans correspondance sortirait de la boucle
+    # avec un statut non nul et `set -e` arrêterait le script sur un binaire sain.
+    if grep -q "$marker" "$tmp/strings.txt"; then
+      die "harnais de debug « $marker » présent dans le binaire de production"
+    fi
+  done
+  ok "aucun harnais de debug dans le binaire"
+
+  for lang in $LANGS; do
+    [ -d "$resources/$lang.lproj" ] || die "localisation manquante : $lang.lproj"
+  done
+  ok "langues embarquées : $LANGS"
+
+  local v b
+  v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")"
+  b="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")"
+  [ "$v" = "$MARKETING" ] && [ "$b" = "$BUILD" ] \
+    || die "l'artefact annonce $v ($b), project.yml dit $MARKETING ($BUILD)"
+  ok "version conforme : $v ($b)"
+
+  rm -rf "$tmp"
+
+  # --- upload ------------------------------------------------------------------------
+  if [ "$UPLOAD" = 0 ]; then
+    printf '  \033[1marrêt avant envoi (--no-upload)\033[0m — artefact prêt : %s\n' "$product"
+    return 0
   fi
+
+  step "Envoi à App Store Connect ($altool_type)"
+  xcrun altool --upload-app -f "$product" -t "$altool_type" \
+    --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee "$dir/upload.log" | tail -8
+
+  grep -q 'UPLOAD SUCCEEDED' "$dir/upload.log" \
+    || die "envoi échoué — log : $dir/upload.log"
+  ok "$label envoyé"
+}
+
+for platform in $PLATFORMS; do
+  deliver "$platform"
 done
-ok "aucun harnais de debug dans le binaire"
 
-for lang in $LANGS; do
-  [ -d "$APP/$lang.lproj" ] || die "localisation manquante : $lang.lproj"
-done
-ok "langues embarquées : $LANGS"
-
-ipa_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")"
-ipa_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")"
-[ "$ipa_version" = "$MARKETING" ] && [ "$ipa_build" = "$BUILD" ] \
-  || die "l'IPA annonce $ipa_version ($ipa_build), project.yml dit $MARKETING ($BUILD)"
-ok "version conforme : $ipa_version ($ipa_build)"
-
-# --- upload --------------------------------------------------------------------------
-if [ "$UPLOAD" = 0 ]; then
-  printf '\n\033[1mArrêt avant envoi (--no-upload).\033[0m IPA prête : %s\n' "$IPA"
-  exit 0
+if [ "$UPLOAD" = 1 ]; then
+  printf '\n\033[32m✓ %s (%s) envoyé — %s.\033[0m Apple traite le binaire 5 à 15 minutes\n' \
+    "$MARKETING" "$BUILD" "$PLATFORMS"
+  printf '  avant qu%s apparaisse dans TestFlight.\n' "'il"
 fi
-
-step "Envoi à App Store Connect"
-xcrun altool --upload-app -f "$IPA" -t ios \
-  --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee "$BUILD_DIR/upload.log" | tail -8
-
-grep -q 'UPLOAD SUCCEEDED' "$BUILD_DIR/upload.log" \
-  || die "envoi échoué — log : $BUILD_DIR/upload.log"
-
-printf '\n\033[32m✓ %s (%s) envoyé.\033[0m Apple traite le binaire 5 à 15 minutes\n' "$MARKETING" "$BUILD"
-printf '  avant qu%s apparaisse dans TestFlight.\n' "'il"

@@ -314,12 +314,22 @@ L'app enregistre le schéma d'URL `mdviewer://` (`CFBundleURLTypes` dans `Info.p
 ### En une commande
 
 ```bash
-scripts/deploy-testflight.sh --bump
+scripts/deploy-testflight.sh --bump --both
 ```
 
 Enchaîne incrément du build → `xcodegen` → archive Release → export App Store → **contrôles** →
-envoi via `xcrun altool`. Sans `--bump`, réutilise le numéro courant ; avec `--no-upload`,
-s'arrête après les contrôles et laisse l'`.ipa`.
+envoi via `xcrun altool`, pour chaque plateforme demandée. Sans `--bump`, réutilise le numéro
+courant ; avec `--no-upload`, s'arrête après les contrôles et laisse l'artefact.
+
+| Option | Livre |
+|---|---|
+| *(aucune)* | iOS seul — iPhone et iPad partagent le même binaire universel |
+| `--mac` | Mac Catalyst seul (`.pkg`) |
+| `--both` | iOS puis Mac, à partir d'un **seul** numéro de build |
+
+`--both` n'est pas un confort. Oublier le Mac ne fait aucun bruit : l'app a livré trois semaines
+de builds iOS pendant que le Mac restait sur un plus ancien, filigrane sur les cartes compris.
+Un seul drapeau couvre désormais les deux.
 
 Les identifiants viennent de `scripts/deploy.env` (non commité — voir `deploy.env.example`) :
 `ASC_KEY_ID` et `ASC_ISSUER_ID`. La clé privée reste dans
