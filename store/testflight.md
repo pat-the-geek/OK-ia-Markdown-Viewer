@@ -25,7 +25,7 @@ Cette bêta sert à valider le rendu, la navigation et la stabilité sur iPhone,
 
 ---
 
-## What to Test — 1.1.1 (28)
+## What to Test — 1.1.1 (29)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
@@ -42,6 +42,10 @@ DANS CETTE VERSION — LES CARTES
   marqueurs et la mention de source en bas.
 • En mode Avion : la carte annonce son indisponibilité et liste ses marqueurs,
   plutôt qu'un cadre vide.
+• Sur un réseau lent (cellulaire, loin du wifi) : pendant que la carte charge, le cadre
+  doit afficher « Chargement de la carte… » — et jamais rester gris et muet. Si c'est
+  vraiment long, l'app bascule d'elle-même sur le fond OpenStreetMap, qui se remplit
+  case par case.
 
 OUVERTURE
 • « Voir un exemple » pour charger le document de démonstration.
