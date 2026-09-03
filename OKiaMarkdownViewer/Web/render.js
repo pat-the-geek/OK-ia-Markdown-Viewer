@@ -813,7 +813,12 @@
         var gl = layer.getMaplibreMap();
         if (!gl) return;
         el._okiaGL = gl;    // read at export time to know when the frame is complete
+        // « load » n'est pas fiable comme seul signal : selon la fenêtre et le moment,
+        // MapLibre peut dessiner sans jamais l'émettre — vérifié en le prenant sur le fait.
+        // « idle » complète, et la question décisive — la carte a-t-elle de quoi s'afficher ?
+        // — se pose directement au moteur, avant tout basculement.
         gl.on('load', function () { drawnAtLast(); latinLabels(gl); });
+        gl.on('idle', function () { drawnAtLast(); latinLabels(gl); });
         gl.on('error', function () {
           if (anyTileLoaded || corsWithdrawn) return;
           if (tileErrors++) return;               // already armed
@@ -865,6 +870,10 @@
       function fallBackToRasterIfNothingDrawn(layer) {
         setTimeout(function () {
           if (anyTileLoaded || !el._leafletMap || !map.hasLayer(layer)) return;
+          // Le style est chargé et ses tuiles sont là : la carte s'affiche, ou s'affichera
+          // dans l'instant. La remplacer serait défaire un travail qui a abouti.
+          var gl = el._okiaGL;
+          try { if (gl && gl.isStyleLoaded() && gl.areTilesLoaded()) return; } catch (e) {}
           map.removeLayer(layer);
           el._okiaGL = null;
           tileErrors = 0;
