@@ -79,6 +79,8 @@
                 border-radius: 4px; padding: 0.1em 0.4em; white-space: nowrap; }
     .mdv-exemples { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
                     gap: 1rem; margin-top: 1.4rem; }
+    .mdv-etapes { margin: 1.2rem 0 0; padding-left: 1.25rem; }
+    .mdv-etapes li { margin: 0.6rem 0; }
     .mdv-exemple-card { border: 1px solid var(--border); border-radius: 6px; background: #fff;
                         padding: 1.4rem 1.5rem 1.5rem; display: flex; flex-direction: column;
                         gap: 0.45rem; }
@@ -792,6 +794,28 @@
     </div>
   </section>
 
+  <!-- Windows / navigateur -->
+  <section id="windows">
+    <h2>Sous Windows, Linux, ou sans rien installer</h2>
+    <p>L'application existe pour iPhone, iPad et Mac. Ailleurs — ou pour un collègue qui
+    doit juste <strong>lire un rapport que vous lui envoyez</strong> — le lecteur en ligne
+    affiche les mêmes documents : diagrammes, cartes, callouts, entités colorées. Les
+    fichiers ne quittent pas la machine : ils sont lus par le navigateur, rien n'est
+    téléversé.</p>
+    <p><a class="fw-btn" href="/rapport.html">Ouvrir le lecteur en ligne</a></p>
+    <ol class="mdv-etapes">
+      <li><strong>Ouvrir un fichier</strong> — bouton « Ouvrir un fichier… », ou glissez
+      simplement votre <span class="mdv-code">.md</span> sur la page.</li>
+      <li><strong>L'installer comme application</strong> — dans Edge ou Chrome, menu
+      <strong>⋯</strong> puis <em>Applications › Installer ce site en tant qu'application</em>.
+      Le lecteur s'ouvre alors dans sa propre fenêtre depuis le menu Démarrer, fonctionne
+      sans connexion, et double-cliquer un <span class="mdv-code">.md</span> dans
+      l'Explorateur l'ouvre directement.</li>
+      <li><strong>Enregistrer en PDF</strong> — bouton « Imprimer / PDF », puis
+      « Enregistrer au format PDF ». Cartes et diagrammes y figurent entiers.</li>
+    </ol>
+  </section>
+
   <!-- Fonctionnalités -->
   <section>
     <h2>Et aussi</h2>
@@ -1034,6 +1058,26 @@
         <a class="fw-btn fw-btn-secondaire" href="exemples/presentation-exemple.md" download>Download the .md</a>
       </div>
     </div>
+  </section>
+
+  <!-- Windows / browser -->
+  <section id="windows-en">
+    <h2>On Windows, Linux, or without installing anything</h2>
+    <p>The app exists for iPhone, iPad and Mac. Anywhere else — or for a colleague who
+    simply needs to <strong>read a report you sent them</strong> — the online reader shows
+    the same documents: diagrams, maps, callouts, highlighted entities. Files never leave
+    the machine: the browser reads them, nothing is uploaded.</p>
+    <p><a class="fw-btn" href="/rapport.html">Open the online reader</a></p>
+    <ol class="mdv-etapes">
+      <li><strong>Open a file</strong> — the « Ouvrir un fichier… » button, or just drag
+      your <span class="mdv-code">.md</span> onto the page.</li>
+      <li><strong>Install it as an app</strong> — in Edge or Chrome, the <strong>⋯</strong>
+      menu, then <em>Apps › Install this site as an app</em>. The reader then opens in its
+      own window from the Start menu, works offline, and double-clicking a
+      <span class="mdv-code">.md</span> in File Explorer opens it straight away.</li>
+      <li><strong>Save as PDF</strong> — the « Imprimer / PDF » button, then « Save as
+      PDF ». Maps and diagrams appear whole.</li>
+    </ol>
   </section>
 
   <!-- Features -->
