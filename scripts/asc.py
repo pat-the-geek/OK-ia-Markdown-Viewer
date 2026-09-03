@@ -87,7 +87,13 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         sys.exit(__doc__)
     method, path = sys.argv[1].upper(), sys.argv[2]
-    body = json.loads(sys.argv[3]) if len(sys.argv) > 3 else None
+    # Un corps qui contient des retours à la ligne ou des accents passe mal en argument de
+    # shell : « @fichier.json » le lit depuis un fichier.
+    body = None
+    if len(sys.argv) > 3:
+        arg = sys.argv[3]
+        raw = pathlib.Path(arg[1:]).read_text(encoding="utf-8") if arg.startswith("@") else arg
+        body = json.loads(raw)
     code, data = call(method, path, body)
     print(f"HTTP {code}")
     print(json.dumps(data, ensure_ascii=False, indent=1)[:6000])
