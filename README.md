@@ -427,3 +427,37 @@ ou, dans Xcode, choisir la destination **« Mac (Mac Catalyst) »** puis **Run**
 | 8 | macOS (Mac Catalyst) | ✅ build + lancement OK ; menu ⌘O, drag&drop, fenêtre redimensionnable |
 | 9 | Mode Diaporama (plein écran, transitions, navigateur de vignettes, image plein écran) | ✅ découpe `---`, toile adaptative, 5 transitions Keynote, grille de vignettes, clavier/balayage/Échap |
 | 10 | Export Word (.docx) & PowerPoint (.pptx mixte, tableaux éditables) | ✅ OOXML maison ; validé `textutil`/QuickLook ; ouverture Word/Pages & PowerPoint/Keynote (test final sur appareil) |
+
+---
+
+## À faire
+
+### Windows : faire du lecteur en ligne la réponse
+
+**Décidé le 2026-09-03, reporté.** Pas d'application Windows native : on rend le lecteur web
+capable de tenir ce rôle.
+
+**Pourquoi ce choix.** Tout le rendu est déjà portable — `Web/render.js` et ses 3 500 lignes
+(Markdown, Mermaid, callouts, wiki-links, entités, cartes, diaporama, modèle d'export) tournent
+déjà sous Windows dans n'importe quel navigateur, sur `ok-ia.ch/rapport.html`. Ce qui ne se porte
+pas, c'est le Swift : Apple Intelligence, Siri, Spotlight, les signets du coffre, et les 731 lignes
+de `OOXMLExport.swift`. Or le résumé et le chat **sur l'appareil** sont la promesse qui distingue
+md Viewer ; sans eux, il resterait un bon lecteur Markdown sur un terrain déjà occupé par Obsidian,
+VS Code et Typora, gratuits. Le marché visé (PME et administrations romandes) est bien sous
+Windows, mais son besoin est d'**ouvrir un rapport reçu** — un lien, pas une installation.
+
+**Ce qu'il y a à faire**, dans le dépôt du site (`pat-the-geek/OK-ia`, `public/rapport.html`) :
+
+1. ouvrir un `.md` local depuis le disque — API d'accès aux fichiers, disponible dans Edge et
+   Chrome ; garder `?doc=` et `?f=` pour les documents du site ;
+2. rendre la page installable comme application (manifeste + service worker), pour un lancement
+   depuis le menu Démarrer et une lecture hors connexion ;
+3. impression PDF par le navigateur, avec une feuille de style d'impression — les cartes et les
+   diagrammes doivent y figurer entiers, comme dans l'app.
+
+Quelques jours de travail. Ni certificat, ni boutique, ni chaîne de mise à jour à construire.
+
+**Escalade, si l'usage montre une vraie demande** : Tauri autour du même `render.js` — bon marché
+précisément parce que le moteur est partagé. Il faudra alors rebâtir l'export Word/PowerPoint en
+JS, trancher la question de l'IA (modèle local à installer, ou API distante — et la promesse « rien
+ne sort de l'appareil » tombe), et affronter la signature de code Windows.
