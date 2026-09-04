@@ -68,9 +68,15 @@ Ouvrez un .md depuis Fichiers, le partage iOS, une autre app, ou un lien web (md
 
 ## Mots-clés (100 car. max, séparés par des virgules, sans espaces superflus)
 ```
-diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pdf,visionneuse,readme,docx,diaporama
+diagramme,leaflet,carte,obsidian,callout,mermaid,résumé,ia,pdf,visionneuse,readme,docx,diaporama
 ```
-(~95 car. — ajuster si besoin ; « siri/raccourcis » sont indexés via les phrases App Shortcuts)
+(96 car. — « rapport » est sorti : « Rapports fidèles, hors ligne » l'indexe déjà comme
+sous-titre, et Apple lit le nom, le sous-titre et les mots-clés comme un seul sac. « siri » et
+« raccourcis » sont indexés via les phrases App Shortcuts.)
+
+> ⚠️ « mermaid » figure aussi dans le nom (« md Viewer : Markdown & Mermaid ») : il est donc
+> indexé deux fois et n'élargit rien. Il est là par choix explicite ; la place rendue par
+> « rapport » pourrait sinon aller à un terme non encore couvert — « flowchart », « gantt ».
 
 ## URLs
 - **URL d'assistance** (obligatoire) : `https://ok-ia.ch` ✅
