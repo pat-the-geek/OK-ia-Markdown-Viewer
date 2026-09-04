@@ -24,3 +24,7 @@ build/
 # Identifiants de déploiement (jamais commités)
 scripts/deploy.env
 scripts/deploy-site.env
+
+# Caches Python (scripts/asc.py importé par un utilitaire)
+__pycache__/
+*.pyc
