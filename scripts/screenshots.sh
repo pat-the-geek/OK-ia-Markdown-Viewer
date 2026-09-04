@@ -42,7 +42,7 @@ harnais_de() {
     *)  question="Quels domaines comptent le plus d'initiatives ?" ;;
   esac
   case "$1" in
-    4-presentation) echo "OKIA_PRESENT=1" ;;
+    4-presentation) echo "OKIA_OPEN_SLIDES=1" ;;
     5-resume)       echo "OKIA_AI=summary" ;;
     6-discussion)
       echo "OKIA_AI=chat"
@@ -242,8 +242,18 @@ capture_mac() {
   FENETRE="${fen_l}x${fen_h}"
   defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "0 0 $fen_l $fen_h $ecran "
   defaults write "$BUNDLE" okia.fontScale -float 1.0
-  caffeinate -u -t 300 &
+  # Le réveil doit tenir toute la passe, pas cinq minutes : à l'expiration, l'écran
+  # s'éteignait au milieu du travail et l'app n'ouvrait plus aucune fenêtre — les scènes
+  # restantes échouaient sur « aucune fenêtre trouvée », sans rapport avec elles. Sans
+  # limite ici : la boucle tue le processus en sortant, y compris en cas d'erreur.
+  # Écran éteint = aucune fenêtre : l'app se lance, tourne, et n'affiche rien. Deux gestes
+  # distincts sont nécessaires — « -u -t 1 » réveille l'écran s'il dort déjà, « -d » l'empêche
+  # de se rendormir. Sans le premier, une passe lancée sur une machine au repos échouait sur
+  # toutes ses scènes ; sans le second, elle échouait à partir de la cinquième minute.
+  caffeinate -u -t 5
+  caffeinate -d -u &
   local veille=$!
+  trap 'kill "$veille" 2>/dev/null || true' RETURN
   mkdir -p "store/screenshots/$dossier/$LANGUE"
 
   for scene in store/scenes/"$LANGUE"/*.md; do
@@ -257,19 +267,29 @@ capture_mac() {
     launchctl setenv OKIA_SHOT_SIZE "$FENETRE"
     # Le harnais éventuel de la scène : sans lui il faudrait cliquer, ce qu'une capture
     # headless ne sait pas faire.
-    for v in OKIA_PRESENT OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
+    for v in OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
     while IFS= read -r paire; do
       [ -n "$paire" ] && launchctl setenv "${paire%%=*}" "${paire#*=}"
     done < <(harnais_de "$base" mac)
-    open -n "$bin_app"
     # Attendre la fenêtre plutôt qu'un délai fixe : selon la charge, elle apparaît en deux
     # secondes ou en douze, et un délai constant rate l'une ou l'autre. Puis laisser le
     # contenu se dessiner — tuiles vectorielles et Mermaid arrivent après la fenêtre.
+    #
+    # Deux tentatives : une fois sur six environ, « open -n » rend la main sans qu'aucune
+    # fenêtre n'apparaisse — l'instance précédente n'a pas fini de rendre l'âme. Le second
+    # essai passe toujours, et laisser tomber la scène coûtait une passe entière.
     id=""
-    for _ in $(seq 1 30); do
-      id="$("$HELPER" "$SCHEME" 2>/dev/null | cut -d' ' -f1 || true)"
+    for essai in 1 2; do
+      open -n "$bin_app"
+      for _ in $(seq 1 30); do
+        id="$("$HELPER" "$SCHEME" 2>/dev/null | cut -d' ' -f1 || true)"
+        [ -n "$id" ] && break
+        sleep 1
+      done
       [ -n "$id" ] && break
-      sleep 1
+      printf '  \033[33m…\033[0m %s — pas de fenêtre, seconde tentative\n' "$base"
+      pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
+      sleep 3
     done
     if [ -z "$id" ]; then printf '  \033[31m✗\033[0m %s — aucune fenêtre trouvée\n' "$base"; continue; fi
     sleep "$(attente_de "$base")"
@@ -280,7 +300,7 @@ capture_mac() {
 
   pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
   kill "$veille" 2>/dev/null || true
-  for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_SHOT_SIZE OKIA_PRESENT OKIA_AI \
+  for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI \
            OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
   # On rend la machine dans l'état où on l'a trouvée.
   [ -n "$ancien_scale" ] && defaults write "$BUNDLE" okia.fontScale -float "$ancien_scale"

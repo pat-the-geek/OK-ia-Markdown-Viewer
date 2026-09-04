@@ -90,13 +90,13 @@ struct ReaderView: View {
             PresentationView(document: document)
         }
         #if DEBUG
-        // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_PRESENT
+        // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_OPEN_SLIDES
         // ouvre le diaporama dès l'affichage, ce qu'aucune variable ne savait faire — la
         // présentation n'était atteignable que par un bouton, donc impossible à capturer
         // sans piloter l'interface.
         .onAppear {
             let env = ProcessInfo.processInfo.environment
-            if env["OKIA_PRESENT"] != nil && hasSlides {
+            if env["OKIA_OPEN_SLIDES"] != nil && hasSlides {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { presenting = true }
             }
             // OKIA_AI ouvre le résumé ou la discussion au lancement. Le contenu affiché

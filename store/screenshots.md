@@ -39,7 +39,7 @@ quels — ils sont conservés le temps de décider si ces trois scènes revienne
 | `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` | rend ce Markdown directement dans le lecteur |
 | `OKIA_UI_LANG` | fixe la langue de l'interface (`fr`, `en`, `de`, `es`, `it`) |
 | `OKIA_SHOT_SIZE` | taille de la fenêtre Mac, en points : `1657x1036` ici |
-| `OKIA_PRESENT` | ouvre le diaporama au lancement |
+| `OKIA_OPEN_SLIDES` | ouvre le diaporama au lancement |
 | `OKIA_AI=summary\|chat` | ouvre la feuille de résumé ou de discussion |
 | `OKIA_AI_QUESTION` | pose cette question dans la discussion |
 | `OKIA_FAKE_AI` | **doublure** : force la disponibilité et sert une réponse pré-écrite |
