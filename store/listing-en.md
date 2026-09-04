@@ -33,29 +33,35 @@ Paste into App Store Connect → *App Information* and *Version*, English locali
 
 ## Description
 ```
-OK-ia Markdown Viewer displays your Markdown files exactly as the ok-ia.ch viewer does —
-same typography, same colours, same rendering pipeline.
+md Viewer displays your Markdown files as real documents: diagrams, maps, callouts and highlighted entities, with the typography and colours of the ok-ia.ch design language.
 
 FEATURES
 • Faithful Markdown rendering (headings, tables, lists, quotes)
 • Mermaid diagrams: flowchart, sequence, gantt, pie, mindmap — with full-screen zoom
-• Leaflet maps (Obsidian plugin style): positioned markers, OpenFreeMap/OSM base maps,
-  full-screen button for portrait or landscape navigation
+• Leaflet maps (Obsidian plugin style): positioned markers, OpenFreeMap/OSM base maps, full-screen button for portrait or landscape
 • Obsidian callouts (note, tip, warning, bug…), wiki-links, entity highlighting (NER)
-• Document summary by Apple Intelligence — on-device, properly formatted (chapters, bold, lists)
-• Chat with the document: ask questions, structured answers grounded in its content alone,
-  generated on-device (summary and chat require an Apple Intelligence capable device)
+• Presentation mode: your document becomes a full-screen slideshow, split on ---, with transitions, a thumbnail browser and five colour themes
+• Vault: point the app once at your reports folder and it finds them — so does Siri
 • Siri, Spotlight and Shortcuts: “Open the latest report”, “Summarise a report”…
 • Automatic table of contents, in-document search, adjustable text size
-• Paginated PDF export (A4 or Letter), Word and PowerPoint; .md file sharing
+• Paginated PDF export (A4 or Letter), Word and PowerPoint; share the .md file
+• Interface in 5 languages: English, French, German, Spanish, Italian
 • Dark mode, portrait and landscape, iPhone + iPad + Mac
-• Interface in French, English, German, Spanish and Italian
-• 100% offline: rendering, diagrams, callouts and the AI summary need no connection
-  (only the map base tiles load online)
 
-Open a .md file from Files, the iOS share sheet, another app, or a web link (mdviewer://).
+AI, ON YOUR DEVICE
+• Document summary, properly structured: a direct answer, chapters, lists — not a wall of text
+• Chat with the document: the opening screen offers questions drawn from the report itself, about its own subjects
+• Answers draw on its content alone; when the answer is not in it, the app says so instead of inventing one
+• They are written in the app's language, even when the report is written in another
+• The document is treated as data, never as a command: an instruction slipped into a report is not carried out
+• Everything runs on the device: no account, nothing uploaded, no text leaving it (requires an Apple Intelligence-capable device)
 
-“What the algorithms still miss.” — ok-ia.ch
+100% OFFLINE
+Rendering, diagrams, callouts, exports and the AI need no connection. Only map tiles load online.
+
+Open a .md from Files, the iOS share sheet, another app, or a web link (mdviewer://).
+
+“What algorithms don't know yet.” — ok-ia.ch
 ```
 
 ## Keywords (100 char. max, comma-separated, no stray spaces)

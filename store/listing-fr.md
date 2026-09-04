@@ -35,26 +35,31 @@ déjà « Markdown » et y caser « Mermaid » coûterait « OK-ia » ou « View
 
 ## Description
 ```
-OK-ia Markdown Viewer affiche vos fichiers Markdown exactement selon la charte du viewer ok-ia.ch —
-typographie, couleurs et pipeline de rendu identiques.
+md Viewer affiche vos fichiers Markdown comme un vrai document : diagrammes, cartes, callouts et entités colorées, avec la typographie et les couleurs de la charte ok-ia.ch.
 
 FONCTIONNALITÉS
 • Rendu Markdown fidèle (titres, tableaux, listes, citations)
 • Diagrammes Mermaid : flowchart, séquence, gantt, pie, mindmap — avec zoom plein écran
-• Cartes géographiques Leaflet (style plugin Obsidian) : marqueurs positionnés, fonds OpenFreeMap/OSM,
-  bouton plein écran pour naviguer en portrait ou paysage
+• Cartes géographiques Leaflet (style plugin Obsidian) : marqueurs positionnés, fonds OpenFreeMap/OSM, bouton plein écran pour naviguer en portrait ou paysage
 • Callouts Obsidian (note, tip, warning, bug…), wiki-links, coloration des entités (NER)
-• Résumé du document par Apple Intelligence — sur l'appareil, mis en forme (chapitres, gras, listes)
-• Discuter avec le document : posez vos questions, réponses structurées fondées sur son seul
-  contenu, générées sur l'appareil (résumé et discussion nécessitent un appareil compatible
-  Apple Intelligence)
+• Mode Présentation : le document devient un diaporama plein écran, découpé sur ---, avec transitions, navigateur de vignettes et cinq thèmes de couleurs
+• Coffre : désignez une fois votre dossier de rapports, l'app les retrouve — et Siri aussi
 • Siri, Spotlight et Raccourcis : « Ouvre le dernier rapport », « Résume un rapport »…
 • Sommaire automatique, recherche dans le document, taille de texte ajustable
 • Export PDF paginé (A4 ou Letter), Word et PowerPoint ; partage du fichier .md
 • Interface en 5 langues : français, anglais, allemand, espagnol, italien
 • Mode sombre, portrait et paysage, iPhone + iPad + Mac
-• 100 % hors-ligne : le rendu, les diagrammes, les callouts et le résumé IA ne nécessitent aucune
-  connexion (seules les tuiles de fond de carte se chargent en ligne)
+
+L'IA, SUR VOTRE APPAREIL
+• Résumé du document, mis en forme : réponse directe, chapitres, listes — pas un pavé
+• Discuter avec le document : l'écran d'accueil propose des questions tirées du rapport lui-même, sur ses propres sujets
+• Les réponses s'appuient sur son seul contenu ; quand la réponse ne s'y trouve pas, l'app le dit plutôt que d'inventer
+• Elles sont rédigées dans la langue de l'app, même si le rapport est écrit dans une autre
+• Le document est traité comme une donnée, jamais comme une consigne : une instruction glissée dans un rapport n'est pas exécutée
+• Tout se passe sur l'appareil : aucun compte, aucun envoi, aucun texte qui sort (nécessite un appareil compatible Apple Intelligence)
+
+100 % HORS-LIGNE
+Le rendu, les diagrammes, les callouts, les exports et l'IA ne nécessitent aucune connexion. Seules les tuiles de fond de carte se chargent en ligne.
 
 Ouvrez un .md depuis Fichiers, le partage iOS, une autre app, ou un lien web (mdviewer://).
 
