@@ -50,6 +50,15 @@ final class Localization: ObservableObject {
     private init() {
         let raw = UserDefaults.standard.string(forKey: Self.defaultsKey)
         language = raw.flatMap(AppLanguage.init(rawValue:)) ?? .system
+        #if DEBUG
+        // Harnais de capture : une app sandboxée ne voit pas les préférences écrites de
+        // l'extérieur, donc un lancement scripté n'a que l'environnement pour fixer la
+        // langue. Après la lecture ci-dessus pour que le réglage reste la source normale.
+        if let forcee = ProcessInfo.processInfo.environment["OKIA_UI_LANG"],
+           let choix = AppLanguage(rawValue: forcee) {
+            language = choix
+        }
+        #endif
     }
 
     /// The device's preferred language, when the app speaks it — English otherwise.

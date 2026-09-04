@@ -445,8 +445,9 @@ struct DocumentChatView: View {
             }
             #if DEBUG
             // Harness: seed one question so the answered state can be captured headlessly.
+            // Le modèle répond pour de vrai — seul OKIA_FAKE_AI le remplace par une doublure.
             .task {
-                if let seeded = ProcessInfo.processInfo.environment["OKIA_FAKE_AI_QUESTION"],
+                if let seeded = ProcessInfo.processInfo.environment["OKIA_AI_QUESTION"],
                    !seeded.isEmpty, chat.isEmpty {
                     chat.ask(seeded)
                 }

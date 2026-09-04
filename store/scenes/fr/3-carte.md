@@ -1,7 +1,7 @@
 # Cartes géographiques
 
 Bloc `leaflet` façon Obsidian : marqueurs positionnés, fond de carte OpenFreeMap,
-bouton plein écran (⛶) pour naviguer en portrait ou paysage.
+bouton plein écran pour naviguer en portrait ou paysage.
 
 ```leaflet
 id: capture-afrique-est

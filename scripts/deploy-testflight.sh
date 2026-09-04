@@ -191,7 +191,7 @@ PLIST
   grep -q 'OKIA_LANG' "$tmp/strings.txt" \
     || die "contrôle inopérant : aucune chaîne connue trouvée dans le binaire (le test du harnais serait vide)"
 
-  for marker in OKIA_FAKE_AI OKIA_RENDER_CONTENT OKIA_SHOT_SIZE; do
+  for marker in OKIA_FAKE_AI OKIA_RENDER_CONTENT OKIA_SHOT_SIZE OKIA_PRESENT OKIA_AI OKIA_UI_LANG; do
     # `if` plutôt que `grep ... && die` : un grep sans correspondance sortirait de la boucle
     # avec un statut non nul et `set -e` arrêterait le script sur un binaire sain.
     if grep -q "$marker" "$tmp/strings.txt"; then

@@ -89,6 +89,27 @@ struct ReaderView: View {
         .fullScreenCover(isPresented: $presenting) {
             PresentationView(document: document)
         }
+        #if DEBUG
+        // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_PRESENT
+        // ouvre le diaporama dès l'affichage, ce qu'aucune variable ne savait faire — la
+        // présentation n'était atteignable que par un bouton, donc impossible à capturer
+        // sans piloter l'interface.
+        .onAppear {
+            let env = ProcessInfo.processInfo.environment
+            if env["OKIA_PRESENT"] != nil && hasSlides {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { presenting = true }
+            }
+            // OKIA_AI ouvre le résumé ou la discussion au lancement. Le contenu affiché
+            // reste celui du vrai modèle : le harnais ouvre la porte, il n'écrit pas la
+            // réponse — contrairement à OKIA_FAKE_AI, dont le texte est fabriqué et n'a
+            // donc rien à faire sur une capture publiée.
+            switch env["OKIA_AI"] {
+            case "summary": DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showSummary = true }
+            case "chat":    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showChat = true }
+            default: break
+            }
+        }
+        #endif
         .sheet(isPresented: $showTOC) {
             TableOfContentsView(items: web.toc) { item in web.scrollToHeading(item.id) }
         }
@@ -123,11 +144,6 @@ struct ReaderView: View {
         // An App Intent (Siri/Shortcuts) asked to summarise the opened report.
         .onAppear {
             if store.summaryRequested { showSummary = true; store.summaryRequested = false }
-            #if DEBUG
-            // Harness: OKIA_FAKE_AI=chat opens the chat sheet straight away, the same way an
-            // App Intent auto-opens the summary — lets the screen be captured headlessly.
-            if ProcessInfo.processInfo.environment["OKIA_FAKE_AI"] == "chat" { showChat = true }
-            #endif
         }
         .onChange(of: store.summaryRequested) { _, requested in
             if requested { showSummary = true; store.summaryRequested = false }
@@ -359,7 +375,8 @@ final class DocumentSummarizer: ObservableObject {
         // screens. This flag shows them with canned content. Absent from release builds.
         // "off" forces the unavailable state — the simulator reports Apple Intelligence as
         // available (it borrows the host Mac's model) yet generation fails there, so this is
-        // the only way to exercise the hidden-options path.
+        // the only way to exercise the hidden-options path. Ce drapeau ne fait que doubler le
+        // modèle : c'est OKIA_AI qui ouvre l'écran.
         if let flag = ProcessInfo.processInfo.environment["OKIA_FAKE_AI"], !flag.isEmpty {
             return flag != "off"
         }

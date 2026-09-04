@@ -1,31 +1,51 @@
 # Captures d'écran — App Store
 
-## ✅ Captures générées (13 juillet 2026)
+## Jeu courant (4 septembre 2026)
 
-Jeu prêt à téléverser dans `store/screenshots/` — toutes aux tailles exactes requises :
+`scripts/screenshots.sh <langue> [iphone|ipad|mac]` régénère tout, sans un clic. Deux langues
+sont tenues à jour, `fr` et `en` ; les scènes vivent dans `store/scenes/<langue>/`.
 
 | Dossier | Taille | Scènes |
 |---|---|---|
-| `screenshots/iphone-6.9/` | **1320×2868** | accueil · lecteur · Mermaid · carte Leaflet · mode sombre |
-| `screenshots/ipad-13/`    | **2064×2752** | accueil · lecteur · Mermaid · carte Leaflet · mode sombre |
-| `screenshots/mac/`        | **2880×1800** | accueil · lecteur · Mermaid · carte Leaflet · **callouts + entités** |
+| `screenshots/iphone-6.9/` | **1320×2868** | lecteur · Mermaid · carte |
+| `screenshots/ipad-13/`    | **2064×2752** | lecteur · Mermaid · carte |
+| `screenshots/mac/`        | **2880×1800** | lecteur · Mermaid · carte · diaporama · résumé IA · discussion IA |
 
-- Générées **headless** : iPhone/iPad via `simctl` (framebuffer natif), Mac Catalyst via
-  `screencapture` de la fenêtre puis normalisation `sips` (fenêtre posée sur fond crème #FAFAF8).
-- Chaque scène est chargée par un **hook de debug** (`#if DEBUG`, variables d'env
-  `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` ; taille de fenêtre Mac via `OKIA_SHOT_SIZE`) —
-  **absent du build de production**.
-- 🆕 **Écrans Apple Intelligence en simulateur** : `OKIA_FAKE_AI` (Debug uniquement) force
-  la disponibilité et sert une réponse pré-écrite, ce qui rend ces écrans capturables sans
-  appareil compatible. `OKIA_FAKE_AI=chat` ouvre directement la feuille de discussion et
-  `OKIA_FAKE_AI_QUESTION="…"` y pose la question ; `OKIA_FAKE_AI=off` force l'état
-  *indisponible* pour vérifier que le menu ✦ disparaît bien.
-  ⚠️ Le **contenu** reste une réponse factice : à ne pas téléverser comme capture store sans
-  l'avoir rejouée sur un vrai appareil.
-- ⚠️ **Non incluses** (impossibles en simulateur) : le **résumé Apple Intelligence** (nécessite
-  Foundation Models = vrai appareil compatible) et les **callouts iOS** (les emoji d'icône
-  s'affichent en « ? » dans le WebView du simulateur — nets sur vrai appareil et sur Mac).
-  → à capturer sur un iPhone/iPad réel avant soumission si tu veux ces scènes côté iOS.
+Trois scènes sont réservées au Mac. Les deux d'IA parce que le simulateur n'a pas de modèle
+Apple Intelligence — on n'y capturerait qu'un écran d'indisponibilité. Le diaporama parce
+que ses glyphes de commande (⚙ ▦ ✕) y sortent en « ? », comme les emoji de callout ; sur
+Mac et sur appareil réel ils sont nets.
+
+⚠️ Les fichiers restés **à plat** dans `screenshots/<appareil>/` (sans sous-dossier de
+langue) sont le jeu de juillet, livré avec 1.1.0 : fonds de carte CARTO, scènes « accueil »,
+« mode sombre » et « callouts » que le script ne produit plus. À ne pas téléverser tels
+quels — ils sont conservés le temps de décider si ces trois scènes reviennent.
+
+- **Headless** : iPhone/iPad via `simctl` (framebuffer natif), Mac Catalyst via
+  `screencapture` de la fenêtre puis normalisation `sips` (fond crème #FAFAF8).
+- Le script **rend la machine dans l'état où il l'a trouvée** : taille de texte et cadre de
+  fenêtre sont relus avant, réécrits après.
+
+### Hooks de capture (`#if DEBUG`, absents du build de production)
+
+| Variable | Effet |
+|---|---|
+| `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` | rend ce Markdown directement dans le lecteur |
+| `OKIA_UI_LANG` | fixe la langue de l'interface (`fr`, `en`, `de`, `es`, `it`) |
+| `OKIA_SHOT_SIZE` | taille de fenêtre Mac |
+| `OKIA_PRESENT` | ouvre le diaporama au lancement |
+| `OKIA_AI=summary\|chat` | ouvre la feuille de résumé ou de discussion |
+| `OKIA_AI_QUESTION` | pose cette question dans la discussion |
+| `OKIA_FAKE_AI` | **doublure** : force la disponibilité et sert une réponse pré-écrite |
+
+`scripts/deploy-testflight.sh` refuse de livrer un binaire où l'une de ces chaînes apparaît.
+
+⚠️ La langue **doit** passer par `OKIA_UI_LANG` : une app sandboxée ne voit pas les
+préférences écrites de l'extérieur par `defaults write`, et les captures sortaient en
+français quelle que soit la langue demandée.
+
+⚠️ `OKIA_FAKE_AI` produit du **contenu fabriqué** : utile pour vérifier une mise en page,
+jamais à téléverser. Les captures d'IA du jeu courant viennent du vrai modèle sur ce Mac.
 
 ---
 
@@ -47,28 +67,24 @@ demandées le jour J dans App Store Connect (Apple les ajuste).
 - 1 à 10 captures par plateforme. Vise **5–6** qui racontent les fonctionnalités.
 - Tu peux capturer sur **simulateur** (iPhone/iPad) et sur **Mac Catalyst** directement.
 
-## Plan de capture (mêmes 6 scènes sur chaque plateforme)
+## Ajouter ou changer une scène
 
-Utilise le document d'exemple intégré (**« Voir un exemple »**) — il contient déjà tout.
+Une scène est un fichier Markdown dans `store/scenes/<langue>/<n>-<nom>.md` ; la capture
+prend le même nom. Le premier titre `#` devient le nom de document affiché dans la barre.
+Une scène qui a besoin d'un écran particulier se déclare dans `harnais_de()`, en tête de
+`scripts/screenshots.sh` — c'est le seul endroit à toucher.
 
-1. **Lecteur** — un rapport rendu (titre Nunito, méta, texte) → montre la fidélité ok-ia.ch.
-2. **Diagramme Mermaid** — un flowchart/mindmap rendu (ou le zoom plein écran).
-3. **Carte Leaflet** — la carte avec marqueurs, idéalement en **plein écran** (bouton ⛶).
-4. **Callouts + entités** — un callout coloré (`[!tip]`/`[!bug]`) + coloration NER.
-5. **Résumé Apple Intelligence** — la feuille « Résumé du document » (formaté, glyphe ✦).
-   *(à capturer sur un appareil/Mac avec Apple Intelligence actif)*
-6. **Accueil / Coffre** — l'écran d'accueil avec Récents + Coffre (montre l'ouverture de rapports).
+Deux pièges rencontrés, à ne pas réintroduire :
 
-## Astuces de capture
-
-- **iOS/iPadOS simulateur** : `⌘S` enregistre une capture à la bonne résolution dans le bureau.
-- **Mac (Catalyst)** : `⌘⇧4` puis espace → clic sur la fenêtre (capture la fenêtre seule).
-- Reproduis les **mêmes scènes** en clair et, si tu veux, en **mode sombre** (plus joli pour Mermaid).
-- Évite d'afficher des données sensibles réelles du coffre → privilégie le document d'exemple.
+- le WebView du simulateur rend en « ? » les **emoji de callout** et les **glyphes de
+  commande du diaporama** (nets sur appareil réel et sur Mac) : les scènes iOS n'en
+  contiennent pas, et `scene_reservee_au_mac()` écarte le diaporama ;
+- une capture prise trop tôt attrape une carte vide ou un diagramme non rendu — le script
+  attend la fenêtre, puis laisse le contenu se dessiner (30 s pour une réponse du modèle).
 
 ## Optionnel mais recommandé
 
-- **Texte promotionnel sur les captures** (overlay) : 1 phrase courte par image (« Cartes Leaflet »,
+- **Texte promotionnel sur les captures** (overlay) : 1 phrase courte par image (« Cartes OpenFreeMap »,
   « Résumé par Apple Intelligence »…). Sinon, captures brutes acceptées.
 - **App Preview** (vidéo 15–30 s) : facultatif ; un court écran du zoom diagramme + carte plein écran
   rend très bien.

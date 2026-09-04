@@ -1,7 +1,7 @@
 # Geographic maps
 
 An Obsidian-style `leaflet` block: positioned markers, OpenFreeMap base map,
-full-screen button (⛶) to pan and zoom in portrait or landscape.
+full-screen button to pan and zoom in portrait or landscape.
 
 ```leaflet
 id: capture-east-africa
