@@ -412,7 +412,13 @@ final class DocumentSummarizer: ObservableObject {
         do {
             let session = LanguageModelSession(instructions: Self.instructions(partial: partialDocument))
             let prompt = tr("Voici le document à résumer :")
-            let response = try await session.respond(to: "\(prompt)\n\n\(text)")
+            // La règle de langue est répétée *après* le document, comme dans la discussion :
+            // les instructions la posent une fois, mais un document rédigé dans une autre
+            // langue tire fortement le modèle vers elle — un résumé demandé en français sur
+            // un rapport anglais revenait moitié-moitié, « Introduction » puis « Field
+            // Overview ». La dernière ligne lue est celle qui pèse le plus.
+            let response = try await session.respond(
+                to: "\(prompt)\n\n\(text)\n\n(\(DocumentChat.languageRule))")
             // Same stutter guard as the chat: asked for 3 to 5 chapters, the on-device model
             // can emit one of them several times over.
             state = .done(DocumentChat.dropRepeatedSections(Self.cleanMarkdown(response.content)))

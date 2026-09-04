@@ -79,6 +79,23 @@ normaliser() {
   if [ "$cl" -gt "$l" ]; then cl="$l"; ch=$(( l * 10 / 16 )); fi
   sips -c "$ch" "$cl" "$f" >/dev/null 2>&1
   sips -z "$MAC_CIBLE_H" "$MAC_CIBLE_L" "$f" >/dev/null 2>&1
+  aplatir "$f"
+}
+
+# Apple refuse la transparence, et les coins arrondis de la fenêtre en laissent : sips ne
+# sait pas aplatir (« padToHeightWidth » garde le canal alpha), d'où ce passage par Pillow.
+aplatir() {
+  python3 - "$1" <<'PYTHON' || die "aplatissement impossible — Pillow manquant ? (python3 -m pip install pillow)"
+import sys
+from PIL import Image
+chemin = sys.argv[1]
+im = Image.open(chemin)
+if im.mode in ("RGBA", "LA", "P"):
+    im = im.convert("RGBA")
+    fond = Image.new("RGB", im.size, (0xFA, 0xFA, 0xF8))
+    fond.paste(im, mask=im.getchannel("A"))
+    fond.save(chemin)
+PYTHON
 }
 
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
@@ -136,6 +153,8 @@ capture_appareil() {
       xcrun simctl launch "$dev" "$BUNDLE" >/dev/null
     sleep "$ATTENTE"
     xcrun simctl io "$dev" screenshot "store/screenshots/$dossier/$LANGUE/$base.png" >/dev/null 2>&1
+    # Le framebuffer du simulateur est opaque mais garde un canal alpha, qu'Apple ne veut pas.
+    aplatir "store/screenshots/$dossier/$LANGUE/$base.png"
     ok "$base.png"
   done
   xcrun simctl terminate "$dev" "$BUNDLE" >/dev/null 2>&1 || true
