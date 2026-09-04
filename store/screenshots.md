@@ -27,7 +27,7 @@ quels — ils sont conservés le temps de décider si ces trois scènes revienne
   vaut 1,54 : viser « 1440 × 900 points = 2880 × 1800 pixels » donnait une fenêtre de
   2094 × 1326 que `sips` complétait en crème — la moitié de l'image était du fond. Le script
   déduit maintenant la plus grande fenêtre 16:10 qui tient sous la barre des menus, la passe
-  à l'app par `OKIA_SHOT_SIZE=<largeur>x<hauteur>` (en points), et descend vers une taille
+  à l'app par `OKIA_SHOT_SIZE=<largeur>x<hauteur>` (en points, 1657x1036 sur cet écran), et descend vers une taille
   acceptée par Apple plutôt que d'agrandir — un agrandissement rendrait la capture floue.
 - Le script **rend la machine dans l'état où il l'a trouvée** : taille de texte et cadre de
   fenêtre sont relus avant, réécrits après.
@@ -38,7 +38,7 @@ quels — ils sont conservés le temps de décider si ces trois scènes revienne
 |---|---|
 | `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` | rend ce Markdown directement dans le lecteur |
 | `OKIA_UI_LANG` | fixe la langue de l'interface (`fr`, `en`, `de`, `es`, `it`) |
-| `OKIA_SHOT_SIZE` | taille de la fenêtre Mac, en points : `1673x1046` |
+| `OKIA_SHOT_SIZE` | taille de la fenêtre Mac, en points : `1657x1036` ici |
 | `OKIA_PRESENT` | ouvre le diaporama au lancement |
 | `OKIA_AI=summary\|chat` | ouvre la feuille de résumé ou de discussion |
 | `OKIA_AI_QUESTION` | pose cette question dans la discussion |
