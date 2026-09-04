@@ -220,7 +220,12 @@
     }
 
     // 2. Scale the whole canvas to fill the viewport (this is the "fill" step).
-    var s = vh / CH;   // == vw/CW by construction → fills exactly
+    // vh/CH and vw/CW are equal by construction — EXCEPT when the 640 floor above kicks
+    // in, which happens on any viewport narrower than 0.89 × its height: a phone held
+    // upright. The canvas is then wider than the screen, and scaling by height alone cut
+    // the slide off on both sides (measured: 640 wide in a 390 window, 138 px lost each
+    // side). Fitting the tighter of the two letterboxes instead of cropping.
+    var s = Math.min(vh / CH, vw / CW);
     canvas.style.transform = 'scale(' + s.toFixed(4) + ')';
   }
 
