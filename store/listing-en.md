@@ -104,8 +104,8 @@ FIXED
 • Place names are now drawn on the fly: they stay sharp at every zoom level and
   no longer appear twice, in two alphabets
 • Maps exported to PDF, Word and PowerPoint carry the new background too
-
-Nothing else changes in this version.
+• Slides are no longer cut off at the sides when presenting from an iPhone held
+  upright
 ```
 
 <details>

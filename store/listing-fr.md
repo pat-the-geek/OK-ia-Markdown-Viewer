@@ -105,8 +105,8 @@ CORRIGÉ
 • Les noms de lieux sont désormais dessinés à la volée : ils restent nets à tous
   les niveaux de zoom et ne s'affichent plus en double, dans deux alphabets
 • Les cartes exportées en PDF, en Word et en PowerPoint reprennent ce fond
-
-Rien d'autre ne change dans cette version.
+• Les diapositives ne sont plus coupées sur les côtés quand on présente depuis un
+  iPhone tenu droit
 ```
 
 <details>
