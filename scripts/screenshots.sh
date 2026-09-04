@@ -66,6 +66,21 @@ scene_reservee_au_mac() { case "$1" in 5-resume) return 0 ;; *) return 1 ;; esac
 # Région du simulateur : le format de date suit la locale, pas seulement la langue.
 locale_systeme() { case "$LANGUE" in en) echo en_US ;; *) echo "${LANGUE}_CH" ;; esac; }
 
+# Apple accepte 2880×1800, 2560×1600, 1440×900 ou 1280×800 pour le Mac. On recadre au
+# format 16:10 — quelques pixels au plus — puis on va chercher la taille acceptée la plus
+# proche par le dessous : agrandir une capture la rendrait floue.
+MAC_CIBLE_L=2560
+MAC_CIBLE_H=1600
+normaliser() {
+  local f="$1" l h cl ch
+  l="$(sips -g pixelWidth "$f" | awk '/pixelWidth/{print $2}')"
+  h="$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')"
+  cl=$(( h * 16 / 10 )); ch="$h"
+  if [ "$cl" -gt "$l" ]; then cl="$l"; ch=$(( l * 10 / 16 )); fi
+  sips -c "$ch" "$cl" "$f" >/dev/null 2>&1
+  sips -z "$MAC_CIBLE_H" "$MAC_CIBLE_L" "$f" >/dev/null 2>&1
+}
+
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
 die()  { printf '\033[31m✗ %s\033[0m\n' "$1" >&2; exit 1; }
@@ -170,7 +185,7 @@ ok "$(basename "$APP")"
 # LaunchServices), d'où le détour par `launchctl setenv` ; et lancer le binaire directement
 # ne crée aucune fenêtre. L'écran doit par ailleurs être réveillé, sinon la capture est noire.
 capture_mac() {
-  local bin_app dossier="mac" id largeur
+  local bin_app dossier="mac" id largeur FENETRE
   step "Mac Catalyst — $LANGUE"
 
   xcodebuild -project "$PROJECT" -scheme "$SCHEME" \
@@ -191,10 +206,22 @@ capture_mac() {
   ancien_cadre="$(defaults read "$BUNDLE" "NSWindow Frame MainSceneWindow" 2>/dev/null || true)"
   # Le cadre de fenêtre est le seul levier fiable : les restrictions de taille ne
   # redimensionnent pas une fenêtre restaurée, et la demande de géométrie est ignorée.
-  # 1440 × 900 points = 2880 × 1800 pixels sur un écran Retina, la taille exacte attendue.
+  #
+  # La taille visée est la plus grande fenêtre 16:10 qui tient sous la barre des menus. Un
+  # point ne vaut pas partout deux pixels — sur un écran en résolution ajustée il en vaut
+  # 1,54 — donc viser « 1440 × 900 points = 2880 × 1800 pixels » était faux : la capture
+  # sortait à 2094 × 1326 et sips complétait le reste en crème. La moitié de l'image était
+  # du fond. On prend l'écran, et le redimensionnement final va chercher la taille d'Apple.
   ecran="$(printf '%s' "$ancien_cadre" | awk '{print $5, $6, $7, $8}')"
   [ -n "$ecran" ] || ecran="0 0 1710 1073"
-  defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "0 0 1440 900 $ecran "
+  local ecran_l ecran_h fen_l fen_h
+  ecran_l="$(printf '%s' "$ecran" | awk '{print $3}')"
+  ecran_h="$(printf '%s' "$ecran" | awk '{print $4}')"
+  fen_h=$(( ecran_h - 37 ))                 # la barre des menus
+  fen_l=$(( fen_h * 16 / 10 ))
+  if [ "$fen_l" -gt "$ecran_l" ]; then fen_l="$ecran_l"; fen_h=$(( fen_l * 10 / 16 )); fi
+  FENETRE="${fen_l}x${fen_h}"
+  defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "0 0 $fen_l $fen_h $ecran "
   defaults write "$BUNDLE" okia.fontScale -float 1.0
   caffeinate -u -t 300 &
   local veille=$!
@@ -208,7 +235,7 @@ capture_mac() {
     sleep 1
     launchctl setenv OKIA_RENDER_CONTENT "$(cat "$scene")"
     launchctl setenv OKIA_RENDER_NAME "$titre.md"
-    launchctl setenv OKIA_SHOT_SIZE 1
+    launchctl setenv OKIA_SHOT_SIZE "$FENETRE"
     # Le harnais éventuel de la scène : sans lui il faudrait cliquer, ce qu'une capture
     # headless ne sait pas faire.
     for v in OKIA_PRESENT OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
@@ -228,9 +255,7 @@ capture_mac() {
     if [ -z "$id" ]; then printf '  \033[31m✗\033[0m %s — aucune fenêtre trouvée\n' "$base"; continue; fi
     sleep "$(attente_de "$base")"
     screencapture -x -o -l"$id" "store/screenshots/$dossier/$LANGUE/$base.png"
-    # Apple veut 2880×1800 sans transparence : la fenêtre est posée sur le fond crème.
-    sips --padToHeightWidth 1800 2880 --padColor FAFAF8 \
-         "store/screenshots/$dossier/$LANGUE/$base.png" >/dev/null 2>&1
+    normaliser "store/screenshots/$dossier/$LANGUE/$base.png"
     ok "$base.png"
   done
 

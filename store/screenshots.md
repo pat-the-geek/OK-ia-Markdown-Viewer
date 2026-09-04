@@ -9,7 +9,7 @@ sont tenues à jour, `fr` et `en` ; les scènes vivent dans `store/scenes/<langu
 |---|---|---|
 | `screenshots/iphone-6.9/` | **1320×2868** | lecteur · Mermaid · carte · diaporama · discussion IA |
 | `screenshots/ipad-13/`    | **2064×2752** | lecteur · Mermaid · carte · diaporama · discussion IA |
-| `screenshots/mac/`        | **2880×1800** | les mêmes, plus le résumé IA et une question posée |
+| `screenshots/mac/`        | **2560×1600** | les mêmes, plus le résumé IA et une question posée |
 
 Une seule scène reste réservée au Mac : le **résumé**. Le simulateur annonce Apple
 Intelligence disponible — il emprunte le modèle du Mac hôte — mais la génération y échoue
@@ -22,7 +22,13 @@ langue) sont le jeu de juillet, livré avec 1.1.0 : fonds de carte CARTO, scène
 quels — ils sont conservés le temps de décider si ces trois scènes reviennent.
 
 - **Headless** : iPhone/iPad via `simctl` (framebuffer natif), Mac Catalyst via
-  `screencapture` de la fenêtre puis normalisation `sips` (fond crème #FAFAF8).
+  `screencapture` de la fenêtre, recadrée au format 16:10 puis ramenée à 2560×1600.
+- ⚠️ **Un point ne vaut pas partout deux pixels.** Sur un écran en résolution ajustée il en
+  vaut 1,54 : viser « 1440 × 900 points = 2880 × 1800 pixels » donnait une fenêtre de
+  2094 × 1326 que `sips` complétait en crème — la moitié de l'image était du fond. Le script
+  déduit maintenant la plus grande fenêtre 16:10 qui tient sous la barre des menus, la passe
+  à l'app par `OKIA_SHOT_SIZE=<largeur>x<hauteur>` (en points), et descend vers une taille
+  acceptée par Apple plutôt que d'agrandir — un agrandissement rendrait la capture floue.
 - Le script **rend la machine dans l'état où il l'a trouvée** : taille de texte et cadre de
   fenêtre sont relus avant, réécrits après.
 
@@ -32,7 +38,7 @@ quels — ils sont conservés le temps de décider si ces trois scènes revienne
 |---|---|
 | `OKIA_RENDER_CONTENT` / `OKIA_RENDER_NAME` | rend ce Markdown directement dans le lecteur |
 | `OKIA_UI_LANG` | fixe la langue de l'interface (`fr`, `en`, `de`, `es`, `it`) |
-| `OKIA_SHOT_SIZE` | taille de fenêtre Mac |
+| `OKIA_SHOT_SIZE` | taille de la fenêtre Mac, en points : `1673x1046` |
 | `OKIA_PRESENT` | ouvre le diaporama au lancement |
 | `OKIA_AI=summary\|chat` | ouvre la feuille de résumé ou de discussion |
 | `OKIA_AI_QUESTION` | pose cette question dans la discussion |
