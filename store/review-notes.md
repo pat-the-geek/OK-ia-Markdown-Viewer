@@ -12,9 +12,11 @@ md Viewer est un lecteur de fichiers Markdown (rapports). Aucune connexion ni co
 
 COMMENT TESTER
 • À l'ouverture, touchez « Voir un exemple » : un document de démonstration intégré s'affiche et
-  illustre toutes les fonctionnalités (rendu Markdown, diagrammes Mermaid, carte Leaflet, callouts,
+  illustre toutes les fonctionnalités (rendu Markdown, diagrammes Mermaid, carte, callouts,
   coloration d'entités).
 • Vous pouvez aussi ouvrir n'importe quel fichier .md via « Ouvrir un fichier » (app Fichiers).
+• Un document contenant --- se présente en diaporama plein écran par le bouton ▶ de la barre
+  d'outils.
 
 ACCÈS RÉSEAU
 • L'app fonctionne hors-ligne. Le réseau n'est utilisé que pour :
@@ -23,9 +25,11 @@ ACCÈS RÉSEAU
 • Aucune donnée utilisateur n'est collectée ni transmise (voir l'étiquette de confidentialité).
 
 APPLE INTELLIGENCE (facultatif)
-• La fonction « Résumé du document » utilise Foundation Models ON-DEVICE. Le bouton n'apparaît que
-  si Apple Intelligence est disponible (iOS 26 / macOS 26+, appareil compatible). Sur un appareil
-  sans Apple Intelligence, la fonction est simplement masquée — le reste de l'app fonctionne.
+• Deux fonctions utilisent Foundation Models ON-DEVICE : « Résumé du document » et « Discuter avec
+  le document », qui répond à partir du seul contenu du document ouvert. Aucun texte ne quitte
+  l'appareil.
+• Le menu ✦ n'apparaît que si Apple Intelligence est disponible (iOS 26 / macOS 26+, appareil
+  compatible). Sinon les deux fonctions sont simplement masquées — le reste de l'app fonctionne.
 
 SIRI / RACCOURCIS (App Intents)
 • L'app expose des actions « Ouvrir un rapport », « Ouvrir le dernier rapport » et « Résumer un
@@ -43,7 +47,7 @@ md Viewer is a Markdown file (report) reader. No account or login is required.
 
 HOW TO TEST
 • On launch, tap "Voir un exemple" to load a bundled demo document showcasing every feature
-  (Markdown rendering, Mermaid diagrams, a Leaflet map, callouts, entity highlighting).
+  (Markdown rendering, Mermaid diagrams, a map, callouts, entity highlighting).
 • You can also open any .md file via "Ouvrir un fichier" (Files app).
 
 NETWORK

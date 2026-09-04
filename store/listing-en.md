@@ -1,4 +1,4 @@
-# App Store listing (EN) — OK-ia Markdown Viewer
+# App Store listing (EN) — md Viewer: Markdown & Mermaid
 
 Secondary App Store language: **English**. Applies to **iOS** and **macOS** (same texts).
 Mirror of [`listing-fr.md`](listing-fr.md) — keep both in sync when either changes.
@@ -10,13 +10,18 @@ Paste into App Store Connect → *App Information* and *Version*, English locali
 ---
 
 ## App name (30 char. max)
-**`OK-ia Markdown Viewer`** (21) ✅ — same name in every language, no translation.
+**`md Viewer: Markdown & Mermaid`** (29) ✅ — mirrors the French name, which carries the same
+two search terms.
+
+> The previous name, `OK-ia Markdown Viewer`, spent its space on the publisher and repeated
+> “Markdown” in the subtitle: Apple indexes name and subtitle as one bag, so the word was paid
+> for twice and “Mermaid” was missing from the name entirely.
 
 > The on-device display name stays **“md Viewer”** (`CFBundleDisplayName`), independent of the
 > store name.
 
 ## Subtitle (30 char. max)
-- `Markdown & Mermaid reader` (25) ✅
+- `Faithful reports, offline` (25) ✅ — mirrors « Rapports fidèles, hors ligne »
 - alt: `Offline Markdown reports` (24)
 
 ## Promotional text (170 char. — editable without review)
@@ -66,9 +71,11 @@ Open a .md from Files, the iOS share sheet, another app, or a web link (mdviewer
 
 ## Keywords (100 char. max, comma-separated, no stray spaces)
 ```
-diagram,leaflet,map,obsidian,callout,report,summary,ai,pdf,md,offline,readme,docx,slides,notes
+diagram,leaflet,map,obsidian,callout,summary,ai,pdf,md,readme,docx,slides,notes,flowchart,gantt
 ```
-(~93 char. — trim if needed; “siri/shortcuts” are indexed through the App Shortcuts phrases)
+(95 char. — “report” and “offline” dropped: both now sit in the subtitle, and a word indexed
+from name or subtitle is wasted here. “siri/shortcuts” are indexed through the App Shortcuts
+phrases.)
 
 ## URLs
 - **Support URL** (required): `https://ok-ia.ch` ✅
