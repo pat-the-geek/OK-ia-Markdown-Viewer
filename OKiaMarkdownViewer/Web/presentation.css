@@ -4,7 +4,10 @@
    progress line, transparent navigation arrows and an end button.
    =========================================================================== */
 
-html, body.present-body {
+/* « html » n'est verrouillé que par la classe : la même feuille sert au lecteur en ligne,
+   où un overflow:hidden sur la racine empêchait de faire défiler le document. Ici la page
+   est dédiée au diaporama, elle porte la classe dans son balisage. */
+html.present-html, body.present-body {
   margin: 0;
   height: 100%;
   width: 100%;
