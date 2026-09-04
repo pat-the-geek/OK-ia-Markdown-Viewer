@@ -32,10 +32,10 @@ CIBLE="${2:-tout}"
 # geste atteindrait. La règle vit ici, une fois, pour les deux plateformes.
 #   4-presentation → le diaporama          5-resume → le résumé IA
 #                                          6-discussion → la discussion IA, une question posée
-# Une variable par ligne — une valeur peut contenir des espaces. La question est dans la
-# langue de la scène, et le modèle y répond réellement : rien n'est fabriqué ici.
+# Une variable par ligne — une valeur peut contenir des espaces. Deuxième argument : la
+# plateforme, « mac » ou « sim », car toutes deux n'ouvrent pas le même écran d'IA.
 harnais_de() {
-  local question
+  local question plateforme="${2:-mac}"
   echo "OKIA_UI_LANG=$LANGUE"
   case "$LANGUE" in
     en) question="Which fields have the most initiatives?" ;;
@@ -44,7 +44,13 @@ harnais_de() {
   case "$1" in
     4-presentation) echo "OKIA_PRESENT=1" ;;
     5-resume)       echo "OKIA_AI=summary" ;;
-    6-discussion)   printf 'OKIA_AI=chat\nOKIA_AI_QUESTION=%s\n' "$question" ;;
+    6-discussion)
+      echo "OKIA_AI=chat"
+      # La question n'a de sens que là où le modèle répond. En simulateur la génération
+      # échoue (GenerationError -1) : on s'en tient au premier écran de la discussion, dont
+      # les questions proposées sortent du document lui-même — rien de fabriqué.
+      if [ "$plateforme" = mac ]; then printf 'OKIA_AI_QUESTION=%s\n' "$question"; fi
+      ;;
     *)              echo "" ;;
   esac
 }
@@ -52,14 +58,13 @@ harnais_de() {
 # Une réponse du modèle met plus longtemps à venir qu'une page à se dessiner.
 attente_de() { case "$1" in 5-resume|6-discussion) echo 30 ;; *) echo "$ATTENTE" ;; esac; }
 
-# Deux familles de scènes ne valent rien en simulateur :
-#   — les écrans d'IA, faute de modèle Apple Intelligence : on n'y capturerait qu'un écran
-#     d'indisponibilité ;
-#   — le diaporama, dont les glyphes de commande (⚙ ▦ ✕) sortent en « ? » dans le WebView du
-#     simulateur, comme les emoji de callout. Ils sont nets sur Mac et sur appareil réel.
-scene_reservee_au_mac() {
-  case "$1" in 4-presentation|5-resume|6-discussion) return 0 ;; *) return 1 ;; esac
-}
+# Le résumé demande une génération, et le simulateur en est incapable : Apple Intelligence
+# s'y annonce disponible (il emprunte le modèle du Mac hôte) mais la génération échoue.
+# Cette scène-là reste au Mac.
+scene_reservee_au_mac() { case "$1" in 5-resume) return 0 ;; *) return 1 ;; esac; }
+
+# Région du simulateur : le format de date suit la locale, pas seulement la langue.
+locale_systeme() { case "$LANGUE" in en) echo en_US ;; *) echo "${LANGUE}_CH" ;; esac; }
 
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
@@ -76,6 +81,18 @@ capture_appareil() {
   step "$nom — $LANGUE"
 
   xcrun simctl bootstatus "$dev" -b >/dev/null 2>&1 || xcrun simctl boot "$dev" >/dev/null 2>&1 || true
+
+  # La langue du simulateur, pas seulement celle de l'app : la barre d'état de l'iPad porte
+  # la date, écrite par SpringBoard dans la langue du système — un simulateur laissé en
+  # espagnol donnait « Viernes 4 de septiembre » sur une capture anglaise. Le changement ne
+  # prend qu'au redémarrage de SpringBoard.
+  if [ "$(xcrun simctl spawn "$dev" defaults read -g AppleLanguages 2>/dev/null | tr -d ' \n(),"' )" != "$LANGUE" ]; then
+    xcrun simctl spawn "$dev" defaults write -g AppleLanguages -array "$LANGUE" >/dev/null 2>&1 || true
+    xcrun simctl spawn "$dev" defaults write -g AppleLocale -string "$(locale_systeme)" >/dev/null 2>&1 || true
+    xcrun simctl shutdown "$dev" >/dev/null 2>&1 || true
+    xcrun simctl bootstatus "$dev" -b >/dev/null 2>&1 || true
+  fi
+
   xcrun simctl install "$dev" "$APP" >/dev/null
 
   # Barre d'état figée : l'usage App Store veut une heure neutre, du wifi plein et une
@@ -95,7 +112,7 @@ capture_appareil() {
     local -a sim_extra=()
     while IFS= read -r paire; do
       [ -n "$paire" ] && sim_extra+=("SIMCTL_CHILD_$paire")
-    done < <(harnais_de "$base")
+    done < <(harnais_de "$base" sim)
     xcrun simctl terminate "$dev" "$BUNDLE" >/dev/null 2>&1 || true
     # (l'expansion protégée : un tableau vide fait échouer set -u en bash 3.2)
     env ${sim_extra[@]+"${sim_extra[@]}"} \
@@ -197,7 +214,7 @@ capture_mac() {
     for v in OKIA_PRESENT OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
     while IFS= read -r paire; do
       [ -n "$paire" ] && launchctl setenv "${paire%%=*}" "${paire#*=}"
-    done < <(harnais_de "$base")
+    done < <(harnais_de "$base" mac)
     open -n "$bin_app"
     # Attendre la fenêtre plutôt qu'un délai fixe : selon la charge, elle apparaît en deux
     # secondes ou en douze, et un délai constant rate l'une ou l'autre. Puis laisser le

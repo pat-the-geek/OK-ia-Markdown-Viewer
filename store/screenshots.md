@@ -7,14 +7,14 @@ sont tenues à jour, `fr` et `en` ; les scènes vivent dans `store/scenes/<langu
 
 | Dossier | Taille | Scènes |
 |---|---|---|
-| `screenshots/iphone-6.9/` | **1320×2868** | lecteur · Mermaid · carte |
-| `screenshots/ipad-13/`    | **2064×2752** | lecteur · Mermaid · carte |
-| `screenshots/mac/`        | **2880×1800** | lecteur · Mermaid · carte · diaporama · résumé IA · discussion IA |
+| `screenshots/iphone-6.9/` | **1320×2868** | lecteur · Mermaid · carte · diaporama · discussion IA |
+| `screenshots/ipad-13/`    | **2064×2752** | lecteur · Mermaid · carte · diaporama · discussion IA |
+| `screenshots/mac/`        | **2880×1800** | les mêmes, plus le résumé IA et une question posée |
 
-Trois scènes sont réservées au Mac. Les deux d'IA parce que le simulateur n'a pas de modèle
-Apple Intelligence — on n'y capturerait qu'un écran d'indisponibilité. Le diaporama parce
-que ses glyphes de commande (⚙ ▦ ✕) y sortent en « ? », comme les emoji de callout ; sur
-Mac et sur appareil réel ils sont nets.
+Une seule scène reste réservée au Mac : le **résumé**. Le simulateur annonce Apple
+Intelligence disponible — il emprunte le modèle du Mac hôte — mais la génération y échoue
+(`GenerationError -1`). La **discussion** s'y capture quand même, à son premier écran :
+les questions proposées sortent du document, aucune génération n'est nécessaire.
 
 ⚠️ Les fichiers restés **à plat** dans `screenshots/<appareil>/` (sans sous-dossier de
 langue) sont le jeu de juillet, livré avec 1.1.0 : fonds de carte CARTO, scènes « accueil »,
@@ -76,9 +76,9 @@ Une scène qui a besoin d'un écran particulier se déclare dans `harnais_de()`,
 
 Deux pièges rencontrés, à ne pas réintroduire :
 
-- le WebView du simulateur rend en « ? » les **emoji de callout** et les **glyphes de
-  commande du diaporama** (nets sur appareil réel et sur Mac) : les scènes iOS n'en
-  contiennent pas, et `scene_reservee_au_mac()` écarte le diaporama ;
+- le WebView du simulateur rend en « ? » les caractères absents de sa police : les **emoji
+  de callout** (les scènes iOS n'en contiennent pas) et, jusqu'ici, les **commandes du
+  diaporama** — ✕ ⚙ ▦ sont devenus des SVG inline, qui se dessinent partout pareil ;
 - une capture prise trop tôt attrape une carte vide ou un diagramme non rendu — le script
   attend la fenêtre, puis laisse le contenu se dessiner (30 s pour une réponse du modèle).
 

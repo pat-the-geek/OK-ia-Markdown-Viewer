@@ -509,3 +509,21 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   opacity: 0.7;
   pointer-events: none;
 }
+
+/* ---- icônes des commandes : des tracés, pas des glyphes ------------------ */
+/* Les caractères ✕ ⚙ ▦ manquaient à la police du WebView en simulateur et sortaient en
+   « ? » — jusque sur les captures store. Un SVG inline se dessine partout pareil. */
+.present-end, .present-menu-btn, .present-grid-btn, .overview-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.present-end svg, .present-menu-btn svg, .present-grid-btn svg, .overview-close svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
