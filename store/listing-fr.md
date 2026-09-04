@@ -16,8 +16,16 @@ Replis si déjà pris : `OK-ia — Markdown` / `md Viewer OK-ia`.
 - alt : `Rapports Markdown hors-ligne` (28)
 
 ## Texte promotionnel (170 car. — modifiable sans review)
+> Diagrammes Mermaid, cartes, callouts : vos rapports Markdown rendus fidèlement, hors ligne.
+> Résumé et discussion sur l'appareil, export PDF, Word et PowerPoint.
+
+<details>
+<summary>Version précédente, jamais publiée</summary>
+
 > Ouvrez vos fichiers Markdown avec diagrammes Mermaid, cartes Leaflet, callouts et coloration
 > d'entités — fidèle à ok-ia.ch, 100 % hors-ligne.
+
+</details>
 
 ## Description
 ```

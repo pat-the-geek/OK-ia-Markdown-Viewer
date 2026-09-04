@@ -20,8 +20,16 @@ Paste into App Store Connect → *App Information* and *Version*, English locali
 - alt: `Offline Markdown reports` (24)
 
 ## Promotional text (170 char. — editable without review)
+> Mermaid diagrams, maps, callouts: your Markdown reports faithfully rendered, offline.
+> On-device summary and chat, export to PDF, Word and PowerPoint.
+
+<details>
+<summary>Previous wording, never published</summary>
+
 > Open your Markdown files with Mermaid diagrams, Leaflet maps, callouts and entity
 > highlighting — faithful to ok-ia.ch, 100% offline.
+
+</details>
 
 ## Description
 ```
