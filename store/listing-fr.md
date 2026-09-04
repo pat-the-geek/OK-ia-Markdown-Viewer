@@ -6,14 +6,20 @@ Copier-coller dans App Store Connect → *Informations sur l'app* et *Version*.
 ---
 
 ## Nom de l'app (30 car. max)
-**`OK-ia Markdown Viewer`** (24) ✅ retenu — doit être **unique** sur l'App Store.
-Replis si déjà pris : `OK-ia — Markdown` / `md Viewer OK-ia`.
+**`md Viewer : Markdown & Mermaid`** (30) ✅ publié — nom **français**.
+En anglais : `OK-ia Markdown Viewer` (21), inchangé.
 
 > Le nom d'affichage sur l'appareil reste **« md Viewer »** (`CFBundleDisplayName`), indépendant du nom store.
 
+Pourquoi ce rallongement : Apple indexe le nom, le sous-titre et les mots-clés **ensemble**,
+et le nom pèse le plus lourd. Le nom français n'occupait que 9 des 30 caractères ; les deux
+termes qui décrivent le produit y gagnent la place la plus forte. En anglais le nom contient
+déjà « Markdown » et y caser « Mermaid » coûterait « OK-ia » ou « Viewer » — on n'y touche pas.
+
 ## Sous-titre (30 car. max)
-- `Lecteur Markdown & Mermaid` (26) ✅
-- alt : `Rapports Markdown hors-ligne` (28)
+- FR : `Rapports fidèles, hors ligne` (28) ✅ publié — le nom portant déjà « Markdown & Mermaid »,
+  le sous-titre sert à dire autre chose plutôt qu'à répéter.
+- EN : `Markdown & Mermaid reader` (25) ✅ — ici « Mermaid » n'est nulle part ailleurs, il reste.
 
 ## Texte promotionnel (170 car. — modifiable sans review)
 > Diagrammes Mermaid, cartes, callouts : vos rapports Markdown rendus fidèlement, hors ligne.
@@ -57,7 +63,7 @@ Ouvrez un .md depuis Fichiers, le partage iOS, une autre app, ou un lien web (md
 
 ## Mots-clés (100 car. max, séparés par des virgules, sans espaces superflus)
 ```
-markdown,mermaid,diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pdf,md
+diagramme,leaflet,carte,obsidian,callout,rapport,résumé,ia,pdf,visionneuse,readme,docx,diaporama
 ```
 (~95 car. — ajuster si besoin ; « siri/raccourcis » sont indexés via les phrases App Shortcuts)
 

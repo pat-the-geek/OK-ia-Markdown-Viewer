@@ -60,7 +60,7 @@ Open a .md file from Files, the iOS share sheet, another app, or a web link (mdv
 
 ## Keywords (100 char. max, comma-separated, no stray spaces)
 ```
-markdown,mermaid,diagram,leaflet,map,obsidian,callout,report,summary,ai,pdf,md,viewer,offline
+diagram,leaflet,map,obsidian,callout,report,summary,ai,pdf,md,offline,readme,docx,slides,notes
 ```
 (~93 char. — trim if needed; “siri/shortcuts” are indexed through the App Shortcuts phrases)
 
