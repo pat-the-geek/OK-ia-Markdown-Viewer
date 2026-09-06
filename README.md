@@ -461,3 +461,37 @@ Quelques jours de travail. Ni certificat, ni boutique, ni chaîne de mise à jou
 précisément parce que le moteur est partagé. Il faudra alors rebâtir l'export Word/PowerPoint en
 JS, trancher la question de l'IA (modèle local à installer, ou API distante — et la promesse « rien
 ne sort de l'appareil » tombe), et affronter la signature de code Windows.
+
+### 1.2 — Traduction automatique des documents
+
+**Décidé le 2026-09-06.** Une option `auto-traduction` (vrai/faux) dans les Réglages, à côté du
+choix de langue. Activée, un document ouvert dans une autre langue que celle de l'app est traduit
+avant d'être rendu ; désactivée — la valeur par défaut — rien ne change.
+
+**Pourquoi.** L'app parle déjà cinq langues et le résumé comme la discussion répondent dans celle
+que le lecteur a choisie, quelle que soit la langue du rapport. Le document, lui, reste dans la
+sienne : un lecteur germanophone à qui l'on transmet un rapport français lit l'interface en
+allemand et le contenu en français. La traduction ferme cet écart.
+
+**Ce qu'il faut trancher avant d'écrire une ligne :**
+
+1. **Le moteur.** Le framework `Translation` d'Apple est fait pour cela — modèles téléchargeables,
+   hors ligne, sans coût par appel — là où `FoundationModels`, déjà en place pour le résumé,
+   traduirait au prix d'une génération complète et d'une dérive possible du texte. À vérifier :
+   la couverture des cinq langues de l'app et la disponibilité sur Mac Catalyst.
+2. **Ce qui ne doit pas être traduit.** C'est le vrai travail, et il n'a rien de linguistique :
+   blocs de code, syntaxe Mermaid (les libellés se traduisent, `flowchart TD` non), blocs
+   `leaflet` (les coordonnées et les identifiants restent, les libellés de marqueurs suivent),
+   cibles des wiki-liens `[[Entité]]` — les traduire casserait le coffre et la coloration
+   d'entités — URL, et clés du frontmatter YAML dont seules les valeurs textuelles se traduisent.
+   Il faut donc traduire l'**arbre** du document, pas sa chaîne de caractères.
+3. **La longueur.** Le résumé travaille sur 8 000 caractères condensés ; un rapport entier en fait
+   dix fois plus. Découpage par blocs, traduction paresseuse de ce qui est à l'écran, et cache par
+   document — sans quoi l'ouverture d'un long rapport se paierait en secondes.
+4. **Ce qui sort de l'app.** Un export PDF, Word ou PowerPoint d'un document traduit doit-il
+   porter la traduction ou l'original ? Et le titre affiché dans le coffre et les Récents ?
+5. **Le dire.** Une traduction automatique se signale, comme le résumé le fait déjà : une mention
+   discrète, et le moyen de revenir à l'original en un geste.
+
+**Ce qui ne change pas** : tout se passe sur l'appareil, rien ne sort. Une traduction par API
+distante contredirait la promesse qui distingue l'app, et ne se justifierait pas ici.
