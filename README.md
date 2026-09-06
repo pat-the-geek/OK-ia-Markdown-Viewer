@@ -430,37 +430,38 @@ ou, dans Xcode, choisir la destination **« Mac (Mac Catalyst) »** puis **Run**
 
 ---
 
-## À faire
+## Feuille de route
 
-### Windows : faire du lecteur en ligne la réponse
+Les décisions de fond et leur état. La version publique, allégée de ce qui ne regarde que nous,
+vit sur [ok-ia.ch/mdviewer/roadmap.html](https://ok-ia.ch/mdviewer/roadmap.html).
 
-**Décidé le 2026-09-03, reporté.** Pas d'application Windows native : on rend le lecteur web
-capable de tenir ce rôle.
+### Windows : le lecteur en ligne tient le rôle — livré
 
-**Pourquoi ce choix.** Tout le rendu est déjà portable — `Web/render.js` et ses 3 500 lignes
+**Décidé le 2026-09-03, livré le 2026-09-03.** Pas d'application Windows native : le lecteur web
+en fait office, et les trois pièces qui manquaient sont en place sur `ok-ia.ch/rapport.html`.
+
+**Pourquoi ce choix.** Tout le rendu était déjà portable — `Web/render.js` et ses 3 500 lignes
 (Markdown, Mermaid, callouts, wiki-links, entités, cartes, diaporama, modèle d'export) tournent
-déjà sous Windows dans n'importe quel navigateur, sur `ok-ia.ch/rapport.html`. Ce qui ne se porte
-pas, c'est le Swift : Apple Intelligence, Siri, Spotlight, les signets du coffre, et les 731 lignes
-de `OOXMLExport.swift`. Or le résumé et le chat **sur l'appareil** sont la promesse qui distingue
-md Viewer ; sans eux, il resterait un bon lecteur Markdown sur un terrain déjà occupé par Obsidian,
-VS Code et Typora, gratuits. Le marché visé (PME et administrations romandes) est bien sous
-Windows, mais son besoin est d'**ouvrir un rapport reçu** — un lien, pas une installation.
+dans n'importe quel navigateur. Ce qui ne se porte pas, c'est le Swift : Apple Intelligence, Siri,
+Spotlight, les signets du coffre, et les 731 lignes de `OOXMLExport.swift`. Or le résumé et le chat
+**sur l'appareil** sont la promesse qui distingue md Viewer ; sans eux, il resterait un bon lecteur
+Markdown sur un terrain déjà occupé par Obsidian, VS Code et Typora, gratuits. Le marché visé (PME
+et administrations romandes) est bien sous Windows, mais son besoin est d'**ouvrir un rapport
+reçu** — un lien, pas une installation.
 
-**Ce qu'il y a à faire**, dans le dépôt du site (`pat-the-geek/OK-ia`, `public/rapport.html`) :
+**Ce qui a été fait**, dans le dépôt du site (`pat-the-geek/OK-ia`, `public/rapport.html`) :
 
-1. ouvrir un `.md` local depuis le disque — API d'accès aux fichiers, disponible dans Edge et
-   Chrome ; garder `?doc=` et `?f=` pour les documents du site ;
-2. rendre la page installable comme application (manifeste + service worker), pour un lancement
-   depuis le menu Démarrer et une lecture hors connexion ;
-3. impression PDF par le navigateur, avec une feuille de style d'impression — les cartes et les
-   diagrammes doivent y figurer entiers, comme dans l'app.
-
-Quelques jours de travail. Ni certificat, ni boutique, ni chaîne de mise à jour à construire.
+1. ouverture d'un `.md` local — `showOpenFilePicker` et `launchQueue`, donc aussi par
+   double-clic une fois la page installée ; `?doc=` et `?f=` restent pour les documents du site ;
+2. installation comme application — manifeste, `file_handlers` et service worker, lancement
+   depuis le menu Démarrer et lecture hors connexion ;
+3. impression PDF par le navigateur, feuille de style dédiée, cartes et diagrammes entiers.
 
 **Escalade, si l'usage montre une vraie demande** : Tauri autour du même `render.js` — bon marché
 précisément parce que le moteur est partagé. Il faudra alors rebâtir l'export Word/PowerPoint en
 JS, trancher la question de l'IA (modèle local à installer, ou API distante — et la promesse « rien
-ne sort de l'appareil » tombe), et affronter la signature de code Windows.
+ne sort de l'appareil » tombe), et affronter la signature de code Windows. Rien ne l'indique
+aujourd'hui.
 
 ### 1.2 — Traduction automatique des documents
 
