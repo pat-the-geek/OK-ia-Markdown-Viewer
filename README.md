@@ -537,3 +537,35 @@ s'ajoute qu'après, s'il manque quelque chose.
 requête, ou une séquence asynchrone qui rend les résultats au fil de l'eau), sa disponibilité sur
 Mac Catalyst, et le téléchargement du dictionnaire de langue à la première utilisation — c'est une
 invite système, elle doit tomber au bon moment, pas au milieu d'une lecture.
+
+##### La calque de transition : oui, mais par bloc
+
+**Proposé le 2026-09-06.** Faire l'effet sur une copie du texte affichée par-dessus la page, et
+n'écrire la traduction dans le document réel qu'à la fin.
+
+L'idée est juste, et elle règle de vrais problèmes : le document réel n'est pas touché pendant
+l'animation, donc pas de recalcul de mise en page à chaque mot, pas de sélection perdue, pas de
+surlignage de recherche cassé, pas de diagramme redessiné. Un seul remplacement, à la fin.
+
+**Mais pas à l'échelle de la page.** Une copie ne peut montrer qu'une chose : la mise en page de
+l'original. Or la traduction n'a pas la même longueur — de l'ordre de +20 % vers l'allemand. Les
+mots traduits animés dans la mise en page d'origine ne tiendraient pas dans leurs lignes, et le
+calque se remettrait à couler tout seul : on aurait déplacé le problème, pas résolu. S'ajoutent le
+coût de cloner un document de plusieurs dizaines de milliers de pixels — SVG Mermaid et toiles
+Leaflet comprises — et un calque à faire suivre si le lecteur défile pendant l'effet.
+
+**La bonne échelle est le bloc.** Pour chaque paragraphe dont la traduction arrive :
+
+1. cloner le bloc et poser le clone exactement par-dessus, en position absolue ;
+2. écrire la traduction dans le bloc réel, sous le clone — le lecteur ne voit rien, le clone le
+   masque ;
+3. animer la hauteur du bloc réel vers sa nouvelle hauteur, et faire disparaître le clone en
+   fondu.
+
+Le changement de longueur est alors absorbé par une transition de hauteur au lieu d'un saut, et
+chaque bloc coûte un clone éphémère au lieu d'une copie de la page. Un `aria-hidden` sur le clone,
+sans quoi un lecteur d'écran lirait tout en double.
+
+Reste une question ouverte : pendant la vague, faut-il ancrer le défilement sur le premier bloc
+visible ? Tant qu'on traduit ce qui est à l'écran d'abord, les hauteurs changent au-dessus de la
+ligne de lecture — c'est précisément là que cela se remarque.
