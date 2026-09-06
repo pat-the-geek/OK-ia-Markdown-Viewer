@@ -524,8 +524,7 @@ s'ajoute qu'après, s'il manque quelque chose.
 
 1. **Le texte saute.** Une traduction n'a pas la longueur de l'original — de l'ordre de +20 % vers
    l'allemand. Chaque bloc qui bascule change de hauteur et pousse la suite : le lecteur perd sa
-   ligne. Il faut ancrer le défilement sur le premier bloc visible pendant la vague, ou réserver
-   la hauteur le temps du remplacement.
+   ligne. C'est le calque de transition qui répond à cela, plus bas.
 2. **Le pont Swift ↔ JS.** La traduction se calcule côté Swift, l'affichage vit dans le WebView.
    Il faut donc numéroter les nœuds de texte au rendu et que Swift réponde « nœud 42 → ce texte ».
    Sans identifiant stable, rien de tout cela ne tient.
@@ -538,7 +537,7 @@ requête, ou une séquence asynchrone qui rend les résultats au fil de l'eau), 
 Mac Catalyst, et le téléchargement du dictionnaire de langue à la première utilisation — c'est une
 invite système, elle doit tomber au bon moment, pas au milieu d'une lecture.
 
-##### La calque de transition : oui, mais par bloc
+##### Le calque de transition : oui, mais par bloc
 
 **Proposé le 2026-09-06.** Faire l'effet sur une copie du texte affichée par-dessus la page, et
 n'écrire la traduction dans le document réel qu'à la fin.
@@ -566,9 +565,11 @@ Le changement de longueur est alors absorbé par une transition de hauteur au li
 chaque bloc coûte un clone éphémère au lieu d'une copie de la page. Un `aria-hidden` sur le clone,
 sans quoi un lecteur d'écran lirait tout en double.
 
-Reste une question ouverte : pendant la vague, faut-il ancrer le défilement sur le premier bloc
-visible ? Tant qu'on traduit ce qui est à l'écran d'abord, les hauteurs changent au-dessus de la
-ligne de lecture — c'est précisément là que cela se remarque.
+**Cela ne suffit pas pour ce qui se passe au-dessus.** La transition adoucit le bloc qui bascule ;
+elle n'empêche pas la page de remonter sous les yeux du lecteur quand un bloc situé plus haut
+change de hauteur. Or c'est exactement ce que produit la reprise silencieuse de ce qui précède
+l'écran. Il faut donc **ancrer le défilement sur le premier bloc visible** tant que la vague
+tourne — et c'est là, pas dans le clone, que se joue le confort de lecture.
 
 ##### La vague : de haut en bas, mais à partir de l'écran
 
