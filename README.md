@@ -486,12 +486,13 @@ allemand et le contenu en français. La traduction ferme cet écart.
    d'entités — URL, et clés du frontmatter YAML dont seules les valeurs textuelles se traduisent.
    Il faut donc traduire l'**arbre** du document, pas sa chaîne de caractères.
 3. **La longueur.** Le résumé travaille sur 8 000 caractères condensés ; un rapport entier en fait
-   dix fois plus. Découpage par blocs, traduction paresseuse de ce qui est à l'écran, et cache par
-   document — sans quoi l'ouverture d'un long rapport se paierait en secondes.
+   dix fois plus. Découpage par blocs, ce qui est à l'écran d'abord et le reste ensuite — tout le
+   document y passe, l'ordre seul change — et cache par document, sans quoi l'ouverture d'un long
+   rapport se paierait en secondes.
 4. **Ce qui sort de l'app.** Un export PDF, Word ou PowerPoint d'un document traduit doit-il
    porter la traduction ou l'original ? Et le titre affiché dans le coffre et les Récents ?
-5. **Le dire.** Une traduction automatique se signale, comme le résumé le fait déjà : une mention
-   discrète, et le moyen de revenir à l'original en un geste.
+5. **Le dire.** Une traduction automatique se signale, comme le résumé le fait déjà, et l'original
+   reste à un geste. La forme que prend cette annonce est traitée plus bas, avec l'effet.
 
 **Ce qui ne change pas** : tout se passe sur l'appareil, rien ne sort. Une traduction par API
 distante contredirait la promesse qui distingue l'app, et ne se justifierait pas ici.
