@@ -569,3 +569,24 @@ sans quoi un lecteur d'écran lirait tout en double.
 Reste une question ouverte : pendant la vague, faut-il ancrer le défilement sur le premier bloc
 visible ? Tant qu'on traduit ce qui est à l'écran d'abord, les hauteurs changent au-dessus de la
 ligne de lecture — c'est précisément là que cela se remarque.
+
+##### La vague : de haut en bas, mais à partir de l'écran
+
+**Précisé le 2026-09-06.** Une passe descendante traduit le document, bloc après bloc.
+
+C'est la bonne mise en scène, et pour une raison qui n'est pas décorative : une direction se lit.
+Le lecteur comprend en une seconde ce qui se passe, où en est le travail et qu'il aura une fin.
+Un ordre optimisé — les blocs les plus courts d'abord, ou ceux dont la traduction revient le plus
+vite — irait plus vite et ressemblerait à du désordre.
+
+**Deux réglages à trancher, et le second est un piège :**
+
+1. **D'où part la vague.** De haut en bas, oui, mais depuis le **premier bloc visible**, pas depuis
+   le début du fichier. Un rapport rouvert à la page 7 ne doit pas faire attendre six pages qu'on
+   ne regarde pas. Ce qui reste au-dessus se traduit ensuite, en silence et sans animation — le
+   lecteur n'y est pas.
+2. **La cadence.** Le modèle rendra souvent plus vite que l'œil ne suit : la vague deviendrait un
+   éclair, et l'effet ne dirait plus rien. Un intervalle minimal entre blocs — quelques dizaines
+   de millisecondes — la rend lisible. Mais il ne freine que l'**animation**, jamais la
+   disponibilité du texte : un lecteur qui défile plus vite que la vague doit trouver ses
+   paragraphes déjà traduits, pas en attente d'un décompte cosmétique.
