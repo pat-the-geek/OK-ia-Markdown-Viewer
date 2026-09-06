@@ -590,3 +590,27 @@ vite — irait plus vite et ressemblerait à du désordre.
    de millisecondes — la rend lisible. Mais il ne freine que l'**animation**, jamais la
    disponibilité du texte : un lecteur qui défile plus vite que la vague doit trouver ses
    paragraphes déjà traduits, pas en attente d'un décompte cosmétique.
+
+##### Le marqueur d'avancement
+
+**Demandé le 2026-09-06.** Un repère visuel disant où en est la traduction.
+
+**Une barre fine en haut du lecteur**, du même trait que celle du diaporama
+(`.present-progress-bar`, déjà à la charte), qui se remplit et disparaît à la fin. C'est le
+repère qui ne ment pas : il reste visible où que soit le lecteur, alors qu'un trait posé à la
+frontière de la vague ne se voit que si l'on regarde précisément cet endroit — et il ne se voit
+plus du tout dès qu'on défile ailleurs.
+
+**Le trait de frontière** — une lisière en dégradé entre le traduit et le reste — peut s'ajouter,
+mais seulement quand la frontière est à l'écran, et à une condition : qu'il n'y en ait qu'une. Si
+la vague part du premier bloc visible et remonte ensuite ce qui est au-dessus, il y a **deux
+zones**, et un trait unique raconterait une histoire fausse.
+
+**Mesurer en caractères, pas en blocs.** Un titre et un paragraphe de trente lignes comptent
+pareil dans un décompte de blocs : la barre avancerait par à-coups, vite sur les titres et lente
+sur les paragraphes, sans rapport avec le temps restant. Le poids en caractères donne une
+progression régulière et honnête.
+
+**Prévoir la fin qui n'arrive pas.** Une langue non prise en charge, un dictionnaire interrompu,
+un bloc qui échoue : la barre ne doit pas rester bloquée à 98 % pour l'éternité. Il faut un état
+terminal — « traduit, sauf trois paragraphes » — et le moyen de voir lesquels.
