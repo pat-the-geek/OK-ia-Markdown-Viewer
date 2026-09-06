@@ -495,3 +495,45 @@ allemand et le contenu en français. La traduction ferme cet écart.
 
 **Ce qui ne change pas** : tout se passe sur l'appareil, rien ne sort. Une traduction par API
 distante contredirait la promesse qui distingue l'app, et ne se justifierait pas ici.
+
+#### Traduction par morceaux, et l'effet visuel qui va avec
+
+**Demandé le 2026-09-06.** Traduire bloc par bloc, et montrer le document se traduire au fur et
+à mesure plutôt que d'afficher un sablier.
+
+**Le découpage n'est pas un ornement, c'est la bonne architecture.** Un rapport fait dix fois la
+taille de ce que le résumé avale ; le traduire d'un bloc serait long et sans retour visible. Le
+découper en nœuds de texte — un paragraphe, une puce, une cellule, un titre — permet de traduire
+d'abord ce qui est à l'écran, de garder l'original à côté, et d'annuler sans rien recalculer.
+
+**Ce qui est réellement progressif, et ce qui ne l'est pas.** Le framework `Translation` rend une
+chaîne entière par requête ; il ne diffuse pas mot à mot. Deux niveaux d'effet, donc, et ils ne se
+valent pas :
+
+- **par bloc** — chaque paragraphe bascule quand sa traduction arrive, en fondu court. C'est
+  honnête : l'animation *est* l'avancement. Le document se traduit visiblement du haut vers le
+  bas, et le lecteur voit où en est le travail ;
+- **mot à mot dans un bloc** — révéler les mots traduits avec un décalage de quelques
+  millisecondes. C'est une décoration : le texte est déjà là, on le cache pour faire joli. À ne
+  faire, si on le fait, que sur le premier bloc visible, et brièvement.
+
+Recommandation : le fondu par bloc, ordonné par position dans le document. L'effet mot à mot ne
+s'ajoute qu'après, s'il manque quelque chose.
+
+**Les trois pièges, dans l'ordre où ils feront mal :**
+
+1. **Le texte saute.** Une traduction n'a pas la longueur de l'original — de l'ordre de +20 % vers
+   l'allemand. Chaque bloc qui bascule change de hauteur et pousse la suite : le lecteur perd sa
+   ligne. Il faut ancrer le défilement sur le premier bloc visible pendant la vague, ou réserver
+   la hauteur le temps du remplacement.
+2. **Le pont Swift ↔ JS.** La traduction se calcule côté Swift, l'affichage vit dans le WebView.
+   Il faut donc numéroter les nœuds de texte au rendu et que Swift réponde « nœud 42 → ce texte ».
+   Sans identifiant stable, rien de tout cela ne tient.
+3. **Ce qui se rend après coup.** Mermaid et les cartes se dessinent en différé : leurs libellés
+   doivent être traduits avant le rendu, sinon il faut les redessiner — et une carte qui se
+   redessine, cela se voit.
+
+**À vérifier avant de s'engager** : la diffusion des résultats par le framework (une réponse par
+requête, ou une séquence asynchrone qui rend les résultats au fil de l'eau), sa disponibilité sur
+Mac Catalyst, et le téléchargement du dictionnaire de langue à la première utilisation — c'est une
+invite système, elle doit tomber au bon moment, pas au milieu d'une lecture.
