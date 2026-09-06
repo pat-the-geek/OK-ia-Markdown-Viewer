@@ -16,10 +16,11 @@ Intelligence disponible — il emprunte le modèle du Mac hôte — mais la gén
 (`GenerationError -1`). La **discussion** s'y capture quand même, à son premier écran :
 les questions proposées sortent du document, aucune génération n'est nécessaire.
 
-⚠️ Les fichiers restés **à plat** dans `screenshots/<appareil>/` (sans sous-dossier de
-langue) sont le jeu de juillet, livré avec 1.1.0 : fonds de carte CARTO, scènes « accueil »,
-« mode sombre » et « callouts » que le script ne produit plus. À ne pas téléverser tels
-quels — ils sont conservés le temps de décider si ces trois scènes reviennent.
+Le jeu de juillet, livré avec 1.1.0, a été supprimé du dépôt une fois 1.1.1 en vente sur les
+deux plateformes : ses fonds de carte CARTO n'avaient plus lieu d'être, et il ne servait plus
+qu'à risquer un téléversement par mégarde. Il portait trois scènes que le script ne produit
+pas — **accueil**, **mode sombre**, **callouts**. Pour les reprendre, elles sont entières
+dans l'historique : `git show 05e17dc --stat`.
 
 - **Headless** : iPhone/iPad via `simctl` (framebuffer natif), Mac Catalyst via
   `screencapture` de la fenêtre, recadrée au format 16:10 puis ramenée à 2560×1600.
