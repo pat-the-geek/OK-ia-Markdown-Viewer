@@ -112,6 +112,67 @@ final class ReaderWebController: ObservableObject {
         eval("window.OKIA && window.OKIA.translation.restore()")
     }
 
+    /// Les libellés qui ne sont pas dans le texte courant : titres de nœuds Mermaid et
+    /// noms de marqueurs de cartes.
+    func collecterExtras(completion: @escaping ([String]) -> Void) {
+        guard let webView else { completion([]); return }
+        let js = """
+        if (!window.OKIA || !window.OKIA.translation) return null;
+        return JSON.stringify(window.OKIA.translation.collectExtras().map(function (e) {
+          return e.texte;
+        }));
+        """
+        webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { result in
+            guard case .success(let value) = result, let json = value as? String,
+                  let data = json.data(using: .utf8),
+                  let textes = try? JSONDecoder().decode([String].self, from: data) else {
+                completion([])
+                return
+            }
+            // Un même libellé peut servir deux fois : une requête suffit.
+            var vus = Set<String>()
+            completion(textes.filter { vus.insert($0).inserted })
+        }
+    }
+
+    /// Variante attendue par le traducteur. `collecterExtras` répond sur le fil
+    /// principal : l'attendre avec un sémaphore depuis ce même fil serait un interblocage
+    /// certain.
+    func collecterExtras() async -> [String] {
+        await withCheckedContinuation { suite in
+            collecterExtras { textes in suite.resume(returning: textes) }
+        }
+    }
+
+    /// Réécrit les libellés traduits. Les cartes ne bougent pas — une bulle de marqueur
+    /// ne s'ouvre qu'au clic ; les diagrammes sont redessinés une seule fois, tous
+    /// ensemble.
+    func appliquerExtras(_ table: [String: String]) {
+        if !table.isEmpty { tableExtras = table }
+        guard let data = try? JSONSerialization.data(withJSONObject: table),
+              let json = String(data: data, encoding: .utf8) else { return }
+        eval("window.OKIA && window.OKIA.translation.applyExtras(\(json))")
+    }
+
+    func restaurerExtras() {
+        eval("window.OKIA && window.OKIA.translation.restoreExtras()")
+    }
+
+    /// Remet les libellés traduits après un passage par l'original. La table est gardée
+    /// côté Swift : rien n'est retraduit.
+    private var tableExtras: [String: String] = [:]
+
+    func reappliquerExtras() {
+        guard !tableExtras.isEmpty else { return }
+        appliquerExtras(tableExtras)
+    }
+
+    /// Bascule entre l'original et la traduction déjà calculée. Instantané dans les deux
+    /// sens : les deux versions sont dans la page, la traduction n'est jamais refaite.
+    func afficherTraduction(_ traduit: Bool) {
+        eval("window.OKIA && window.OKIA.translation.toggle(\(traduit))")
+    }
+
     // MARK: Word (.docx) export
     /// Fetch the structured export model (blocks) from the rendered document.
     func buildExportModel(completion: @escaping ([[String: Any]]?) -> Void) {

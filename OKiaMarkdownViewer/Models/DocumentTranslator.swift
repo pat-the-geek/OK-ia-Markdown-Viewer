@@ -73,8 +73,17 @@ final class DocumentTranslator: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var demande: Demande?
 
+    /// La langue d'origine du document en cours, pour l'annoncer au lecteur. Elle survit
+    /// à la fin de la traduction, alors que `demande` retombe à nil.
+    @Published private(set) var demandeSource: String?
+
     /// Appelé pour chaque bloc traduit, dans l'ordre où la vague les traite.
     var onBloc: ((TranslatedBlock) -> Void)?
+
+    /// Les libellés hors texte — Mermaid, marqueurs de cartes — à traduire quand la vague
+    /// a fini. Ils passent en dernier : ce qui se lit d'abord, c'est la prose.
+    var extras: (() async -> [String])?
+    var onExtras: (([String: String]) -> Void)?
 
     private var file: [TranslationBlock] = []
     private var totalSignes = 0
@@ -141,6 +150,7 @@ final class DocumentTranslator: ObservableObject {
         echecs = 0
         state = .running(faits: 0, total: totalSignes)
         jeton += 1
+        demandeSource = source
         demande = Demande(source: source, cible: cible, jeton: jeton)
     }
 
@@ -157,6 +167,7 @@ final class DocumentTranslator: ObservableObject {
     func annuler() {
         file = []
         demande = nil
+        demandeSource = nil
         state = .idle
     }
 
@@ -219,6 +230,21 @@ extension DocumentTranslator {
             }
             avancer(bloc.signes)
         }
+        // Les libellés de diagrammes et de cartes en dernier : un diagramme se redessine,
+        // et mieux vaut que ce soit une fois, à la fin, sous le regard d'un lecteur qui a
+        // déjà son texte.
+        if !Task.isCancelled, let demande = await extras?(), !demande.isEmpty {
+            var table: [String: String] = [:]
+            for libelle in demande {
+                if Task.isCancelled { break }
+                if let reponse = try? await session.translate(libelle) {
+                    table[libelle] = reponse.targetText
+                }
+            }
+            Self.journal.debug("libellés hors texte : \(table.count)/\(demande.count)")
+            if !table.isEmpty { onExtras?(table) }
+        }
+
         Self.journal.debug("fin : \(rendus) blocs rendus")
         terminer(blocs: rendus)
     }

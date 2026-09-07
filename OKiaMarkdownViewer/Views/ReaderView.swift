@@ -32,6 +32,9 @@ struct ReaderView: View {
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     @AppStorage("okia.autoTranslate") private var autoTranslate = false
     @StateObject private var translator = DocumentTranslator()
+    /// Faux quand le lecteur a demandé à revoir l'original. La traduction reste en
+    /// mémoire : la bascule ne recalcule rien.
+    @State private var afficheTraduction = true
     @FocusState private var searchFocused: Bool
     @ObservedObject private var loc = Localization.shared
 
@@ -72,6 +75,7 @@ struct ReaderView: View {
             VStack(spacing: 0) {
                 titleBar
                 if isSearching { searchBar }
+                bandeauTraduction
             }
             // Measure the floating bar so the web content can inset below it.
             .background(
@@ -151,6 +155,8 @@ struct ReaderView: View {
             // Chaque bloc traduit se réécrit dès qu'il arrive : le document se traduit
             // sous les yeux du lecteur au lieu d'apparaître d'un coup après l'attente.
             translator.onBloc = { [weak web] bloc in web?.appliquerTraduction(bloc) }
+            translator.extras = { [weak web] in await web?.collecterExtras() ?? [] }
+            translator.onExtras = { [weak web] table in web?.appliquerExtras(table) }
             web.onRendered = { traduireSiDemandé() }
         }
         // Changer de langue ou décocher l'option en cours de lecture doit se voir tout de
@@ -173,6 +179,77 @@ struct ReaderView: View {
     }
 
     // MARK: Traduction
+
+    /// Une traduction automatique se signale — comme le résumé le fait déjà — et
+    /// l'original reste à un geste. Le bandeau dit trois choses et pas une de plus :
+    /// que le texte est traduit, d'où il vient, et que rien n'est sorti de l'appareil.
+    @ViewBuilder private var bandeauTraduction: some View {
+        switch translator.state {
+        case .running(let faits, let total):
+            bandeau(progression: total > 0 ? Double(faits) / Double(total) : 0,
+                    texte: tr("Traduction en cours…"))
+        case .finished(_, let echecs):
+            bandeau(progression: nil,
+                    texte: echecs == 0
+                        ? tr("Traduit sur l’appareil · %@", nomLangueSource)
+                        : tr("Traduit sauf %d passage(s)", echecs))
+        default:
+            EmptyView()
+        }
+    }
+
+    private func bandeau(progression: Double?, texte: String) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "character.book.closed")
+                    .font(.caption)
+                    .foregroundStyle(orange)
+                Text(texte)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Button(afficheTraduction ? tr("Voir l’original") : tr("Voir la traduction")) {
+                    afficheTraduction.toggle()
+                    web.afficherTraduction(afficheTraduction)
+                    // Les diagrammes et les marqueurs suivent : un document « original »
+                    // qui garderait ses libellés traduits ne serait pas l'original.
+                    if afficheTraduction { web.reappliquerExtras() } else { web.restaurerExtras() }
+                }
+                .font(.caption.weight(.medium))
+                .buttonStyle(.plain)
+                .foregroundStyle(orange)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+
+            // La barre du diaporama, au même trait : elle se remplit et disparaît à la
+            // fin. Elle mesure des caractères et non des blocs — un titre et un
+            // paragraphe de trente lignes ne pèsent pas pareil, et une barre qui avance
+            // par à-coups ne dit rien du temps restant.
+            if let p = progression {
+                GeometryReader { proxy in
+                    Rectangle()
+                        .fill(orange)
+                        .frame(width: proxy.size.width * max(0, min(1, p)))
+                        .animation(.linear(duration: 0.25), value: p)
+                }
+                .frame(height: 2)
+            }
+        }
+        .background(.bar)
+        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+    }
+
+    /// Le nom de la langue d'origine, dit dans la langue du lecteur.
+    private var nomLangueSource: String {
+        guard let code = translator.demandeSource else { return "" }
+        let locale = Locale(identifier: Localization.shared.code)
+        let nom = locale.localizedString(forLanguageCode: code) ?? code
+        // « français » en début de segment se capitalise, comme le fait le système.
+        return nom.prefix(1).uppercased() + nom.dropFirst()
+    }
+
 
     /// Décide s'il y a lieu de traduire, et lance la vague. Trois refus possibles, et
     /// chacun est un refus rapide : l'option est éteinte, le document est déjà dans la
@@ -206,6 +283,7 @@ struct ReaderView: View {
                 // `status(from:to:)` fait foi et répond en quelques dizaines de
                 // millisecondes ; il évite d'ouvrir une session qui ne mènerait à rien.
                 guard await DocumentTranslator.disponible(de: source, vers: cible) else { return }
+                afficheTraduction = true
                 translator.demarrer(blocs: blocs, defilement: defilement,
                                     source: source, cible: cible)
             }

@@ -519,3 +519,39 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   .okia-keep { break-inside: avoid; page-break-inside: avoid; }
   .okia-break-before { break-before: page !important; page-break-before: always !important; }
 }
+
+
+/* ===========================================================================
+   TRADUCTION — le calque de transition, à l'échelle du bloc.
+
+   Une traduction n'a pas la longueur de l'original — de l'ordre de +20 % vers
+   l'allemand. Chaque bloc qui bascule change de hauteur et pousse la suite : le
+   lecteur perd sa ligne. Le clone couvre le bloc pendant qu'on écrit dessous,
+   puis s'efface ; la hauteur, elle, se transitionne au lieu de sauter.
+
+   À l'échelle du bloc et pas de la page : une copie de la page entière ne
+   pourrait montrer que la mise en page de l'original, et se remettrait à couler
+   toute seule dès que les longueurs changent — le problème déplacé, pas résolu.
+   =========================================================================== */
+.okia-tr-clone {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 220ms ease-out;
+  will-change: opacity;
+}
+.okia-tr-clone.okia-tr-clone-parti { opacity: 0; }
+
+/* La hauteur s'anime, le texte se révèle. Le fondu est court : l'animation EST
+   l'avancement, elle n'a pas à être contemplée. */
+[data-okia-tr-anime] {
+  transition: height 220ms ease-out;
+  overflow: hidden;
+}
+[data-okia-tr-fait] > * { }
+
+@media (prefers-reduced-motion: reduce) {
+  .okia-tr-clone { transition: none; }
+  [data-okia-tr-anime] { transition: none; }
+}

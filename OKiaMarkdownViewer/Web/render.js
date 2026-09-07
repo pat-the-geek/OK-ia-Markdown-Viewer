@@ -900,10 +900,14 @@
 
       var icon = leafletMarkerIcon();
       var pts = [];
+      // Gardés pour la traduction : un libellé de marqueur vit dans une bulle qui ne
+      // s'ouvre qu'au clic, donc il se réécrit sans que la carte bouge d'un pixel.
+      el._okiaMarqueurs = [];
       (cfg.markers || []).forEach(function (mk) {
         var marker = L.marker([mk.lat, mk.lng], { icon: icon }).addTo(map);
         if (mk.label) {
           marker.bindPopup('<strong>' + escapeHtml(mk.label) + '</strong>');
+          el._okiaMarqueurs.push({ marker: marker, label: mk.label });
         }
         if (mk.link) {
           marker.on('click', function () { post('wikiTapped', { target: mk.link }); });
@@ -1656,7 +1660,16 @@
     return racine;
   }
 
-  var trEtat = { blocs: [], actif: false };
+  var trEtat = { blocs: [], actif: false, derniereAnimation: 0 };
+
+  /* Cadence minimale entre deux fondus. Elle ne freine que l'animation, jamais la
+     disponibilité du texte : un bloc qui arrive trop vite après le précédent est écrit
+     immédiatement, simplement sans fondu. Rien n'attend un décompte cosmétique.
+
+     En pratique le modèle rend un bloc par seconde environ — mesuré au banc, 171
+     caractères par seconde — donc ce garde-fou ne sert que pour une rafale de blocs
+     courts : une ligne de tableau, une suite de titres. */
+  var TR_CADENCE_MS = 50;
 
   /* Numérote les blocs et rend la liste de ce qu'il y a à traduire, dans l'ordre du
      document. `haut` sert à ordonner la vague depuis le premier bloc visible, et
@@ -1795,26 +1808,112 @@
     });
   }
 
+  /* Le calque de transition, à l'échelle du bloc.
+
+     Trois temps : cloner le bloc et poser le clone exactement par-dessus ; écrire la
+     traduction dans le bloc réel, sous le clone, que le lecteur ne voit donc pas
+     changer ; animer la hauteur vers sa nouvelle valeur et effacer le clone en fondu.
+     Le changement de longueur est absorbé par une transition au lieu d'un saut.
+
+     `aria-hidden` sur le clone, sans quoi un lecteur d'écran lirait tout en double. */
+  function trAnimer(bloc, ecrire) {
+    // Un lecteur qui a demandé moins d'animations n'en veut pas non plus ici.
+    var sobre = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (sobre || !bloc.getBoundingClientRect) { ecrire(); return; }
+
+    var rect = bloc.getBoundingClientRect();
+    var hauteurAvant = rect.height;
+
+    var clone = bloc.cloneNode(true);
+    clone.className = (clone.className ? clone.className + ' ' : '') + 'okia-tr-clone';
+    clone.setAttribute('aria-hidden', 'true');
+    clone.removeAttribute('id');
+    clone.removeAttribute('data-okia-tr');
+    clone.style.left = (bloc.offsetLeft) + 'px';
+    clone.style.top = (bloc.offsetTop) + 'px';
+    clone.style.width = rect.width + 'px';
+    clone.style.height = hauteurAvant + 'px';
+    var hote = bloc.offsetParent || bloc.parentNode;
+    hote.appendChild(clone);
+
+    ecrire();
+
+    // Mesurer la nouvelle hauteur sans la montrer : on fige l'ancienne, on lit la
+    // nouvelle, puis on laisse la transition faire le chemin.
+    bloc.setAttribute('data-okia-tr-anime', '1');
+    bloc.style.height = hauteurAvant + 'px';
+    var hauteurApres = bloc.scrollHeight;
+    // Forcer un reflow, sinon le navigateur groupe les deux hauteurs et rien ne bouge.
+    void bloc.offsetHeight;
+    bloc.style.height = hauteurApres + 'px';
+    clone.classList.add('okia-tr-clone-parti');
+
+    window.setTimeout(function () {
+      bloc.style.height = '';
+      bloc.removeAttribute('data-okia-tr-anime');
+      if (clone.parentNode) clone.parentNode.removeChild(clone);
+    }, 240);
+  }
+
   /* Réécrit un bloc. `sequence` arrive dans l'ordre du texte traduit, pas dans celui du
      document. Les morceaux protégés y figurent — c'est ainsi qu'on sait où ils ont
      atterri — mais leur texte n'est jamais réécrit : ils sont revenus intacts ou ils sont
      revenus faux, et dans les deux cas l'original est la bonne valeur. */
-  function trAppliquer(id, sequence, reordonner) {
+  function trAppliquer(id, sequence, reordonner, anime) {
     var b = trEtat.blocs[id];
     if (!b || !sequence) return false;
-    for (var k = 0; k < sequence.length; k++) {
-      var j = sequence[k].i;
-      if (typeof j !== 'number' || j < 0 || j >= b.noeuds.length) continue;
-      if (b.protege[j]) continue;
-      b.noeuds[j].nodeValue = String(sequence[k].texte);
+    var ecrire = function () {
+      for (var k = 0; k < sequence.length; k++) {
+        var j = sequence[k].i;
+        if (typeof j !== 'number' || j < 0 || j >= b.noeuds.length) continue;
+        if (b.protege[j]) continue;
+        b.noeuds[j].nodeValue = String(sequence[k].texte);
+      }
+      // `reordonner` vaut faux quand un nœud a reçu du texte à deux endroits de la
+      // phrase : le DOM ne sait pas le représenter, et l'ordre du français reste alors
+      // le moins mauvais — entier, quoique dans la syntaxe de départ.
+      if (reordonner !== false) trReordonner(b, sequence);
+    };
+    var r = b.el.getBoundingClientRect();
+    var visible = r.bottom > 0 && r.top < (window.innerHeight || 0);
+
+    if (anime === false || !visible) {
+      // Hors de l'écran, l'animation ne dit rien à personne — et au-dessus, elle ferait
+      // pire : un bloc qui grandit là pousse tout le reste et le lecteur perd sa ligne.
+      // La reprise silencieuse de ce qui précède l'écran est exactement ce cas. On écrit
+      // d'un coup et on rend au lecteur les pixels que le texte vient de lui prendre.
+      var hautAvant = b.el.getBoundingClientRect().height;
+      ecrire();
+      var auDessus = b.el.getBoundingClientRect().bottom <= 0;
+      var delta = b.el.getBoundingClientRect().height - hautAvant;
+      if (auDessus && Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+    } else if (Date.now() - trEtat.derniereAnimation < TR_CADENCE_MS) {
+      ecrire();
+    } else {
+      trEtat.derniereAnimation = Date.now();
+      trAnimer(b.el, ecrire);
     }
-    // `reordonner` vaut faux quand un nœud a reçu du texte à deux endroits de la phrase :
-    // le DOM ne sait pas le représenter, et l'ordre du français reste alors le moins
-    // mauvais — entier, quoique dans la syntaxe de départ.
-    if (reordonner !== false) trReordonner(b, sequence);
+    // Mémorisé pour la bascule : revenir à la traduction ne doit rien recalculer, la
+    // traduction a déjà coûté ses secondes.
+    b.traduit = { sequence: sequence, reordonner: reordonner !== false };
     b.el.setAttribute('data-okia-tr-fait', '1');
     trEtat.actif = true;
     return true;
+  }
+
+  /* Bascule entre l'original et la traduction. C'est la contrepartie d'une traduction
+     automatique annoncée : l'original reste à un geste, et le geste est instantané —
+     les deux versions sont là, rien n'est refait. */
+  function trBasculer(traduit) {
+    if (traduit) {
+      trEtat.blocs.forEach(function (b, i) {
+        if (b.traduit) trAppliquer(i, b.traduit.sequence, b.traduit.reordonner, false);
+      });
+      trEtat.actif = true;
+    } else if (trEtat.actif) {
+      trRestaurer();
+    }
+    return trEtat.actif;
   }
 
   /* L'original reste à un geste : c'est la contrepartie d'une traduction automatique
@@ -1831,6 +1930,7 @@
       }
       b.el.removeAttribute('data-okia-tr-fait');
     });
+    // `b.traduit` survit : c'est ce qui permet de revenir à la traduction sans la refaire.
     trEtat.actif = false;
     return trEtat.blocs.length;
   }
@@ -1844,6 +1944,133 @@
       actif: trEtat.actif,
       blocs: trEtat.blocs.length
     };
+  }
+
+  /* =========================================================================
+     TRADUCTION — les libellés qui ne sont pas dans le texte : Mermaid et cartes.
+
+     Le README prévient : ces deux-là se dessinent en différé, et leurs libellés
+     doivent être traduits avant le rendu, sinon il faut redessiner — « et une carte
+     qui se redessine, cela se voit ». Chacun s'en tire autrement.
+
+     Une carte ne se redessine pas du tout : le libellé d'un marqueur vit dans une
+     bulle qui ne s'ouvre qu'au clic. On réécrit la bulle, la carte ne bouge pas.
+
+     Un diagramme, lui, doit être redessiné — mais c'est un SVG statique, pas une
+     carte vivante : le fondu du bloc couvre le remplacement. On traduit les seuls
+     libellés, jamais la syntaxe : `flowchart TD` reste `flowchart TD`, et le banc a
+     montré qu'une traduction du texte brut le retournait en « Flowchart TD ».
+     ========================================================================= */
+
+  /* Les libellés d'une source Mermaid : ce qui est entre crochets, accolades,
+     parenthèses ou barres verticales. Le reste — mots-clés, identifiants de nœuds,
+     flèches — n'est pas de la langue. */
+  var TR_MERMAID_RE = /(\[|\{\{|\{|\(\(|\(|\|)([^\[\]\{\}\(\)\|\n]{2,})(\]|\}\}|\}|\)\)|\)|\|)/g;
+
+  function trLibellesMermaid(src) {
+    var libelles = [];
+    src.replace(TR_MERMAID_RE, function (tout, ouvre, texte, ferme) {
+      var net = texte.trim();
+      // Ce qui est entre délimiteurs EST un libellé : les identifiants de nœuds se
+      // tiennent devant le crochet, jamais dedans. Écarter ici ce qui « ressemble à un
+      // identifiant » coûtait les libellés d'un seul mot — « Oui », « Non » — qui sont
+      // précisément ceux des branches d'un organigramme.
+      if (net && /[A-Za-zÀ-ÿ]/.test(net)) libelles.push(net);
+      return tout;
+    });
+    return libelles;
+  }
+
+  function trRemplacerLibelles(src, table) {
+    return src.replace(TR_MERMAID_RE, function (tout, ouvre, texte, ferme) {
+      var net = texte.trim();
+      if (Object.prototype.hasOwnProperty.call(table, net)) {
+        return ouvre + table[net] + ferme;
+      }
+      return tout;
+    });
+  }
+
+  /* Rend la liste de ce qui reste à traduire hors du texte courant : un tableau
+     d'entrées { genre, cle, texte }. Swift les traite comme des blocs ordinaires. */
+  function trCollecterExtras() {
+    var container = document.getElementById('content');
+    if (!container) return [];
+    var extras = [];
+
+    container.querySelectorAll('pre.mermaid').forEach(function (pre, i) {
+      var src = pre.getAttribute('data-okia-src') || '';
+      var vus = {};
+      trLibellesMermaid(src).forEach(function (texte) {
+        if (vus[texte]) return;
+        vus[texte] = true;
+        extras.push({ genre: 'mermaid', cle: 'm' + i, texte: texte });
+      });
+    });
+
+    container.querySelectorAll('.okia-map').forEach(function (el, i) {
+      (el._okiaMarqueurs || []).forEach(function (m, j) {
+        extras.push({ genre: 'carte', cle: 'c' + i + '.' + j, texte: m.label });
+      });
+    });
+
+    return extras;
+  }
+
+  /* Réécrit les libellés traduits. `table` associe le texte d'origine à sa traduction. */
+  function trAppliquerExtras(table) {
+    var container = document.getElementById('content');
+    if (!container) return Promise.resolve(0);
+    var faits = 0;
+
+    container.querySelectorAll('.okia-map').forEach(function (el) {
+      (el._okiaMarqueurs || []).forEach(function (m) {
+        var trad = table[m.label];
+        if (!trad) return;
+        m.marker.setPopupContent('<strong>' + escapeHtml(trad) + '</strong>');
+        faits++;
+      });
+    });
+
+    var diagrammes = [];
+    container.querySelectorAll('pre.mermaid').forEach(function (pre) {
+      var src = pre.getAttribute('data-okia-src') || '';
+      var nouveau = trRemplacerLibelles(src, table);
+      if (nouveau === src) return;
+      if (!pre.hasAttribute('data-okia-src-fr')) pre.setAttribute('data-okia-src-fr', src);
+      pre.setAttribute('data-okia-src', nouveau);
+      pre.removeAttribute('data-processed');
+      pre.textContent = nouveau;
+      diagrammes.push(pre);
+      faits++;
+    });
+
+    if (!diagrammes.length) return Promise.resolve(faits);
+    // Un seul redessin, pour tous les diagrammes à la fois.
+    return renderMermaid(container, '').then(function () { return faits; });
+  }
+
+  /* Rend aux diagrammes leur source d'origine — pendant du retour à l'original. */
+  function trRestaurerExtras(tableInverse) {
+    var container = document.getElementById('content');
+    if (!container) return Promise.resolve(0);
+
+    container.querySelectorAll('.okia-map').forEach(function (el) {
+      (el._okiaMarqueurs || []).forEach(function (m) {
+        m.marker.setPopupContent('<strong>' + escapeHtml(m.label) + '</strong>');
+      });
+    });
+
+    var diagrammes = [];
+    container.querySelectorAll('pre.mermaid[data-okia-src-fr]').forEach(function (pre) {
+      var origine = pre.getAttribute('data-okia-src-fr');
+      pre.setAttribute('data-okia-src', origine);
+      pre.removeAttribute('data-processed');
+      pre.textContent = origine;
+      diagrammes.push(pre);
+    });
+    if (!diagrammes.length) return Promise.resolve(0);
+    return renderMermaid(container, '').then(function () { return diagrammes.length; });
   }
 
   window.OKIA = {
@@ -1865,7 +2092,11 @@
       collect: trCollecter,
       apply: trAppliquer,
       restore: trRestaurer,
-      view: trVue
+      toggle: trBasculer,
+      view: trVue,
+      collectExtras: trCollecterExtras,
+      applyExtras: trAppliquerExtras,
+      restoreExtras: trRestaurerExtras
     }
   };
   post('ready', {});
