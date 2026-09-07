@@ -475,6 +475,27 @@ précédentes l'ont été avec Xcode 26. Ce n'est pas un détail d'intendance : 
 `skipsTranslation`, les variantes `AttributedString` et le choix de stratégie — et c'est le SDK,
 pas seulement l'appareil, qui décide de ce que l'on peut appeler.
 
+**La cible macOS passe à 26.** `Translation` n'existe sur Mac Catalyst qu'à partir de
+`macCatalyst 26.0`, alors que le projet visait macOS 14. L'autre voie — un `#available` qui
+aurait gardé macOS 14 et 15 — laissait sur le Mac une app qui lit sans traduire, c'est-à-dire
+précisément l'écart que 1.2 doit fermer ; et elle aurait fait vivre deux comportements dans le
+même binaire pour un gain qui n'a jamais été mesuré. Les Mac restés sous macOS 14 ou 15 gardent
+la 1.1.1, qui ne cesse pas de fonctionner. L'app iOS ne bouge pas : elle reste en 17.0.
+
+Le réglage lui-même est un piège, et il a coûté un aller-retour : `MACOSX_DEPLOYMENT_TARGET`
+ne suffit pas. Sur Catalyst, Xcode dérive `LSMinimumSystemVersion` — et la disponibilité que
+voit le compilateur — de la cible **iOS**. Il faut donc aussi
+`IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]: "26.0"` ; sans elle, l'app se déclare encore macOS
+14.0 et le framework reste hors d'atteinte alors que tout semble configuré. La vérification
+qui ne ment pas est le binaire produit : `vtool -show-build-version` doit annoncer
+`platform MACCATALYST` et `minos 26.0`.
+
+**Le banc d'essai est conservé** dans `tools/TranslationBench/` — une app à part, hors de la
+cible livrée, qui interroge le framework et écrit ce qu'elle trouve. Elle a servi à trancher
+les trois questions ci-dessus avant d'écrire une ligne dans le lecteur, et elle sert à
+revérifier à chaque changement de SDK : la couverture des langues, la diffusion des résultats,
+le débit, la survie de la syntaxe Markdown. Ses conclusions sont dans son propre `README.md`.
+
 **Pourquoi.** L'app parle déjà cinq langues et le résumé comme la discussion répondent dans celle
 que le lecteur a choisie, quelle que soit la langue du rapport. Le document, lui, reste dans la
 sienne : un lecteur germanophone à qui l'on transmet un rapport français lit l'interface en

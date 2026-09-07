@@ -49,7 +49,16 @@ targets:
         SUPPORTS_MACCATALYST: YES                    # macOS via Mac Catalyst
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO    # true Catalyst app (not "Designed for iPad")
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO  # same bundle id on Mac
-        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        # macOS 26 depuis la 1.2 : le framework Translation n'existe sur Mac Catalyst qu'à
+        # partir de macCatalyst 26.0. Un #available aurait gardé macOS 14 et 15 au prix
+        # d'un Mac qui lit sans traduire — c'est précisément l'écart que 1.2 doit fermer.
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        # Les deux clés sont nécessaires, et c'est la seconde qui décide. Sur Catalyst, Xcode
+        # dérive LSMinimumSystemVersion — et la disponibilité vue par le compilateur — de la
+        # cible iOS, pas de MACOSX_DEPLOYMENT_TARGET : sans cette ligne, l'app se déclarait
+        # encore macOS 14.0 et `Translation` restait hors d'atteinte. iOS 26 ↔ macOS 26 ;
+        # restreinte au SDK macosx, elle ne touche pas l'app iOS, qui reste en 17.0.
+        IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]: "26.0"
         # NOTE: local Mac run used CODE_SIGN_IDENTITY[sdk=macosx*]: "-" (ad-hoc); temporarily
         # removed for Mac App Store distribution archive (automatic signing picks Apple Distribution).
         # App Sandbox entitlements (mandatory for the Mac App Store) — macOS/Catalyst only, iOS untouched.
