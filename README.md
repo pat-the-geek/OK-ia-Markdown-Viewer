@@ -469,6 +469,12 @@ aujourd'hui.
 choix de langue. Activée, un document ouvert dans une autre langue que celle de l'app est traduit
 avant d'être rendu ; désactivée — la valeur par défaut — rien ne change.
 
+**Chaîne de compilation : Xcode 27.** La version 1.2 se compile avec Xcode 27 ; les versions
+précédentes l'ont été avec Xcode 26. Ce n'est pas un détail d'intendance : le framework
+`Translation` n'expose ses pièces les plus utiles ici qu'à partir de macOS/iOS 26.4 — l'attribut
+`skipsTranslation`, les variantes `AttributedString` et le choix de stratégie — et c'est le SDK,
+pas seulement l'appareil, qui décide de ce que l'on peut appeler.
+
 **Pourquoi.** L'app parle déjà cinq langues et le résumé comme la discussion répondent dans celle
 que le lecteur a choisie, quelle que soit la langue du rapport. Le document, lui, reste dans la
 sienne : un lecteur germanophone à qui l'on transmet un rapport français lit l'interface en
