@@ -3747,6 +3747,41 @@
         }
       }
     },
+    "Traduit automatiquement sur l’appareil · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduit automatiquement sur l’appareil · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically translated on device · %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch auf dem Gerät übersetzt · %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducido automáticamente en el dispositivo · %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tradotto automaticamente sul dispositivo · %@"
+          }
+        }
+      }
+    },
     "Traduit sauf %d passage(s)": {
       "extractionState": "manual",
       "localizations": {

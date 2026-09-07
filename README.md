@@ -522,6 +522,25 @@ allemand et le contenu en français. La traduction ferme cet écart.
 5. **Le dire.** Une traduction automatique se signale, comme le résumé le fait déjà, et l'original
    reste à un geste. La forme que prend cette annonce est traitée plus bas, avec l'effet.
 
+**Réponse aux points 4 et 5, tranchée le 2026-09-07 à l'écriture.**
+
+*Ce qui sort de l'app.* Un export PDF ou Word porte **ce que le lecteur voit**. C'est la
+règle la moins surprenante, et la bascule « Voir l'original » la rend explicite : ce qui est
+à l'écran est ce qui sortira. Mais un document exporté circule sans le bandeau qui l'annonce,
+donc la mention voyage avec lui — une ligne sous le titre, posée le temps de l'export
+seulement, comme les cartes gelées pour l'impression — et le nom du fichier porte la langue,
+pour que deux versions du même rapport ne se recouvrent pas dans un dossier de
+téléchargements. Le **Markdown partagé reste la source**, toujours : c'est le fichier
+lui-même, et il n'a pas changé de langue ; un `.md` traduit se ferait passer pour un original.
+Le diaporama et son export PowerPoint travaillent sur le Markdown source dans un autre
+moteur : ils ne sont pas traduits, et c'est à revoir si l'usage le demande.
+
+*Le titre.* La barre du lecteur **suit la traduction** : elle montre le titre du document, et
+laisser « Rapport annuel 2026 » au-dessus d'un « Jahresbericht 2026 » serait incohérent. Le
+coffre et les Récents, eux, **ne bougent pas** : ils indexent des fichiers par leur nom, et un
+titre traduit y ferait apparaître le même document sous deux noms selon un réglage — et
+introuvable sous celui qu'il porte vraiment.
+
 **Ce qui ne change pas** : tout se passe sur l'appareil, rien ne sort. Une traduction par API
 distante contredirait la promesse qui distingue l'app, et ne se justifierait pas ici.
 

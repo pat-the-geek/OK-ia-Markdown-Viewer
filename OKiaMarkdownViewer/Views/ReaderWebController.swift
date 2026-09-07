@@ -167,6 +167,25 @@ final class ReaderWebController: ObservableObject {
         appliquerExtras(tableExtras)
     }
 
+    /// Le titre tel qu'il s'affiche à cet instant : il suit la traduction.
+    func titreCourant(completion: @escaping (String) -> Void) {
+        guard let webView else { completion(""); return }
+        webView.evaluateJavaScript("window.OKIA ? window.OKIA.translation.title() : ''") { value, _ in
+            completion((value as? String) ?? "")
+        }
+    }
+
+    /// Pose la mention de traduction le temps d'un export, puis la retire. Un document
+    /// exporté circule sans le bandeau du lecteur : la mention doit voyager avec lui.
+    func avecMentionExport(_ texte: String?, _ corps: @escaping (@escaping () -> Void) -> Void) {
+        if let texte, !texte.isEmpty {
+            eval("window.OKIA && window.OKIA.translation.exportNote(\(jsString(texte)))")
+        }
+        corps { [weak self] in
+            self?.eval("window.OKIA && window.OKIA.translation.clearExportNote()")
+        }
+    }
+
     /// Bascule entre l'original et la traduction déjà calculée. Instantané dans les deux
     /// sens : les deux versions sont dans la page, la traduction n'est jamais refaite.
     func afficherTraduction(_ traduit: Bool) {

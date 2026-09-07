@@ -21,7 +21,7 @@
 <!-- Un document représentatif, dans l'état où le pipeline le laisse : callouts, entités
      surlignées, wiki-liens, code, carte, diagramme, tableau. -->
 <div id="content">
-  <h1>Rapport annuel 2026</h1>
+  <h1 class="okia-title">Rapport annuel 2026</h1>
   <p>Le conseil de <span class="wiki-link" data-wiki="Villeneuve">Villeneuve</span> a validé
      <strong>les comptes annuels</strong> avant le 30 juin.</p>
   <p>La commission <mark class="ner-tag">Commission de gestion</mark> a siégé sept fois.</p>
@@ -190,6 +190,23 @@ for (const x of postes) total += x</code></pre>
              apresDeux.textContent.indexOf('assainie') > apresDeux.textContent.indexOf('refait'),
              'obtenu « ' + apresDeux.textContent.replace(/\s+/g, ' ') + ' »');
   }
+
+  // -- titre courant et mention d'export ---------------------------------------------
+  verifier('title() rend le titre affiché', T.title() === 'Jahresbericht 2026',
+           'obtenu « ' + T.title() + ' »');
+
+  verifier('exportNote() pose la mention',
+           T.exportNote('Traduit automatiquement · Français') === true &&
+           document.querySelectorAll('#content .okia-tr-mention').length === 1);
+  verifier('exportNote() ne double jamais la mention',
+           T.exportNote('Traduit automatiquement · Français') === true &&
+           document.querySelectorAll('#content .okia-tr-mention').length === 1);
+  verifier('la mention suit le titre',
+           document.querySelector('#content .okia-tr-mention').previousElementSibling ===
+           document.querySelector('#content h1.okia-title'));
+  T.clearExportNote();
+  verifier('clearExportNote() la retire',
+           document.querySelectorAll('#content .okia-tr-mention').length === 0);
 
   // -- retour à l'original -----------------------------------------------------------
   T.restore();

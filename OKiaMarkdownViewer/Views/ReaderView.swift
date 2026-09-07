@@ -149,6 +149,15 @@ struct ReaderView: View {
         .onChange(of: document.id) { _, _ in
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
         }
+        .onChange(of: translator.state) { _, etat in
+            // La barre du lecteur montre le titre du document : quand le document passe
+            // en allemand, elle le suit. Le coffre et les Récents, eux, indexent des
+            // fichiers par leur nom — ils ne bougent pas, sans quoi le même document
+            // apparaîtrait sous deux noms selon un réglage.
+            if case .finished = etat {
+                web.titreCourant { t in if !t.isEmpty { title = t } }
+            }
+        }
         .onChange(of: fontScale) { _, v in web.setFontScale(v) }
         .task {
             web.setFontScale(fontScale)
@@ -215,6 +224,7 @@ struct ReaderView: View {
                     // Les diagrammes et les marqueurs suivent : un document « original »
                     // qui garderait ses libellés traduits ne serait pas l'original.
                     if afficheTraduction { web.reappliquerExtras() } else { web.restaurerExtras() }
+                    web.titreCourant { t in if !t.isEmpty { title = t } }
                 }
                 .font(.caption.weight(.medium))
                 .buttonStyle(.plain)
@@ -446,25 +456,53 @@ struct ReaderView: View {
 
     // MARK: Share actions
 
-    private func exportPDF() {
-        web.exportPDF { url in
-            if let url { sharePayload = SharePayload(url: url) }
-        }
+    /// Un export porte ce que le lecteur voit — c'est la règle la moins surprenante, et
+    /// la bascule « Voir l'original » la rend explicite : ce qui est à l'écran est ce qui
+    /// sortira. Mais un document exporté circule sans le bandeau qui l'annonce, alors la
+    /// mention voyage avec lui, et le nom du fichier porte la langue.
+    private var mentionExport: String? {
+        guard afficheTraduction, case .finished = translator.state,
+              let source = translator.demandeSource else { return nil }
+        let locale = Locale(identifier: Localization.shared.code)
+        let nom = locale.localizedString(forLanguageCode: source) ?? source
+        return tr("Traduit automatiquement sur l’appareil · %@", nom.prefix(1).uppercased() + nom.dropFirst())
     }
 
-    private func exportWord() {
-        let name = title.isEmpty ? document.filename.replacingOccurrences(of: ".md", with: "") : title
-        web.buildExportModel { model in
-            guard let model else { return }
-            OOXMLExportBridge.buildDocx(title: name, model: model) { data in
-                guard let data else { return }
-                let safe = name.replacingOccurrences(of: "/", with: "-")
-                let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).docx")
-                do { try data.write(to: url); sharePayload = SharePayload(url: url) } catch { /* ignore */ }
+    /// Le suffixe de langue du fichier exporté, pour que deux versions du même rapport ne
+    /// se recouvrent pas dans un dossier de téléchargements.
+    private var suffixeLangue: String {
+        mentionExport == nil ? "" : " (\(Localization.shared.code))"
+    }
+
+    private func exportPDF() {
+        web.avecMentionExport(mentionExport) { fini in
+            web.exportPDF { url in
+                fini()
+                if let url { sharePayload = SharePayload(url: url) }
             }
         }
     }
 
+    private func exportWord() {
+        let base = title.isEmpty ? document.filename.replacingOccurrences(of: ".md", with: "") : title
+        let name = base + suffixeLangue
+        web.avecMentionExport(mentionExport) { fini in
+            web.buildExportModel { model in
+                fini()
+                guard let model else { return }
+                OOXMLExportBridge.buildDocx(title: base, model: model) { data in
+                    guard let data else { return }
+                    let safe = name.replacingOccurrences(of: "/", with: "-")
+                    let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).docx")
+                    do { try data.write(to: url); sharePayload = SharePayload(url: url) } catch { /* ignore */ }
+                }
+            }
+        }
+    }
+
+    /// Le Markdown partagé reste la source, toujours : c'est le fichier lui-même, et il
+    /// n'a pas changé de langue. Exporter une traduction en .md ferait croire à un
+    /// original.
     private func shareMarkdown() {
         let name = document.filename.hasSuffix(".md") ? document.filename : document.filename + ".md"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)

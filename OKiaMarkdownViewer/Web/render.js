@@ -2073,6 +2073,37 @@
     return renderMermaid(container, '').then(function () { return diagrammes.length; });
   }
 
+  /* Le titre tel qu'il s'affiche à cet instant. La barre du lecteur montre le titre du
+     document : quand le document passe en allemand, elle le suit. Le coffre et les
+     Récents, eux, ne bougent pas — ils indexent des fichiers, pas des affichages. */
+  function trTitre() {
+    var h1 = document.querySelector('#content h1.okia-title') ||
+             document.querySelector('#content h1');
+    return h1 ? h1.textContent.trim() : '';
+  }
+
+  /* Un export circule sans son bandeau : la mention doit voyager avec le document.
+     Insérée seulement le temps de l'export — comme les cartes gelées pour l'impression —
+     puis retirée, pour ne pas doubler à l'écran le bandeau qui le dit déjà. */
+  function trMentionExport(texte) {
+    trRetirerMention();
+    if (!texte) return false;
+    var titre = document.querySelector('#content h1.okia-title');
+    if (!titre) return false;
+    var note = document.createElement('div');
+    note.className = 'okia-tr-mention';
+    note.textContent = texte;
+    titre.parentNode.insertBefore(note, titre.nextSibling);
+    return true;
+  }
+
+  function trRetirerMention() {
+    var notes = document.querySelectorAll('.okia-tr-mention');
+    for (var i = 0; i < notes.length; i++) {
+      if (notes[i].parentNode) notes[i].parentNode.removeChild(notes[i]);
+    }
+  }
+
   window.OKIA = {
     render: render,
     renderPlain: renderPlain,
@@ -2094,6 +2125,9 @@
       restore: trRestaurer,
       toggle: trBasculer,
       view: trVue,
+      title: trTitre,
+      exportNote: trMentionExport,
+      clearExportNote: trRetirerMention,
       collectExtras: trCollecterExtras,
       applyExtras: trAppliquerExtras,
       restoreExtras: trRestaurerExtras

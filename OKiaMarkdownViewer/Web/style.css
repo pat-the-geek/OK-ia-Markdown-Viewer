@@ -555,3 +555,12 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   .okia-tr-clone { transition: none; }
   [data-okia-tr-anime] { transition: none; }
 }
+
+/* La mention de traduction, dans les exports seulement : un document qui circule doit
+   dire qu'il a été traduit par une machine, alors qu'à l'écran le bandeau le dit déjà. */
+.okia-tr-mention {
+  font-size: 0.8rem;
+  opacity: 0.62;
+  margin: -0.4rem 0 1.1rem;
+  font-style: italic;
+}
