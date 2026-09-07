@@ -26,6 +26,15 @@ let BLOCS: [String] = [
     "Annexes : comptes détaillés, tableau des amortissements, liste des subventions accordées.",
 ]
 
+
+// Un attribut à nous, pour marquer d'où vient chaque morceau. S'il survit à la traduction,
+// on peut réécrire les nœuds de texte du DOM un par un sans jamais reconstruire de HTML :
+// aucune balise perdue, aucune liste blanche d'éléments inline à tenir à jour.
+enum IndexNoeud: AttributedStringKey {
+    typealias Value = Int
+    static let name = "okiaIndexNoeud"
+}
+
 actor Minuterie {
     var fini = false
     func marquer() { fini = true }
@@ -394,6 +403,32 @@ final class Banc: ObservableObject {
             }
             self.dire("c) lien sur « la carte » au milieu de la phrase")
             await self.montrerRuns(session, c)
+
+            // d) un attribut à NOUS, pas un attribut de Foundation : survit-il ?
+            var d = AttributedString("Le conseil a validé les comptes. ")
+            d[IndexNoeud.self] = 1
+            var d2 = AttributedString("La commission a siégé sept fois. ")
+            d2[IndexNoeud.self] = 2
+            var d3 = AttributedString("Le budget est adopté.")
+            d3[IndexNoeud.self] = 3
+            d.append(d2); d.append(d3)
+            self.dire("d) attribut personnalisé (index de nœud) sur trois phrases")
+            do {
+                let r = try await session.translate(d)
+                self.dire("   TRAD : \(r.targetText)")
+                if let at = r.attributedTargetText {
+                    self.dire("   \(at.runs.count) segments :")
+                    for run in at.runs {
+                        let i = run[IndexNoeud.self]
+                        self.dire("     « \(String(at[run.range].characters)) »  index=\(i.map(String.init) ?? "PERDU")")
+                    }
+                } else {
+                    self.dire("   → pas d'attributedTargetText")
+                }
+            } catch {
+                self.dire("   ERREUR : \(error)")
+            }
+            self.dire("")
         }
         dire()
     }
