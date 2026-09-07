@@ -1594,6 +1594,164 @@
     });
   }
 
+  /* =========================================================================
+     TRADUCTION — collecte des blocs et réécriture en place.
+
+     Le principe tient en une phrase : on ne reconstruit jamais de HTML. Chaque
+     nœud de texte du document est un morceau numéroté ; la traduction revient
+     morceau par morceau et se réécrit à sa place exacte. L'arbre n'est pas
+     touché, donc rien de ce qui vit dedans ne se perd — ni le gras, ni les
+     liens, ni les images, ni les diagrammes.
+
+     Le détour par une chaîne Markdown, lui, ne survivrait pas : mesuré au banc
+     (`tools/TranslationBench`), traduire le texte brut retourne la cible d'un
+     [[wiki-lien]] en allemand, renomme un identifiant entre accents graves,
+     change la casse de `flowchart TD` et mange l'indentation. C'est l'arbre
+     qu'il faut traduire, pas la chaîne.
+
+     Ce qui se lit mais ne se traduit pas est signalé `protege` et transmis
+     quand même : le modèle a besoin de la phrase entière pour bien traduire ce
+     qui l'entoure, et il rend ces morceaux intacts.
+     ========================================================================= */
+
+  // Conteneurs dont le texte n'est pas de la prose. Le code et les diagrammes parlent
+  // une langue qui n'est celle de personne.
+  function trZoneExclue(el) {
+    while (el && el.nodeName !== 'BODY') {
+      var n = el.nodeName;
+      if (n === 'PRE' || n === 'SCRIPT' || n === 'STYLE' || n === 'SVG' || n === 'svg') return true;
+      if (el.classList && (el.classList.contains('mermaid') ||
+                           el.classList.contains('okia-map') ||
+                           el.classList.contains('ner-legend'))) return true;
+      el = el.parentNode;
+    }
+    return false;
+  }
+
+  // Ce qui se lit sans se traduire. Une cible de wiki-lien traduite casse le coffre,
+  // un nom d'entité traduit casse la coloration, une URL traduite casse le lien.
+  var TR_URL_RE = /^\s*(?:https?:\/\/|www\.|mailto:)\S+\s*$/i;
+
+  function trProtege(node) {
+    var p = node.parentNode;
+    if (!p) return true;
+    var n = p.nodeName;
+    if (n === 'CODE' || n === 'KBD' || n === 'SAMP' || n === 'VAR') return true;
+    if (p.classList && (p.classList.contains('wiki-link') ||
+                        p.classList.contains('ner-tag'))) return true;
+    return TR_URL_RE.test(node.nodeValue);
+  }
+
+  // Le bloc d'un nœud : son plus proche ancêtre qui se lit d'un seul tenant. C'est
+  // l'unité de traduction — une phrase coupée en deux requêtes se traduit deux fois
+  // moins bien — et l'unité d'animation.
+  var TR_BLOC_RE = /^(P|LI|H1|H2|H3|H4|H5|H6|TD|TH|DT|DD|FIGCAPTION|CAPTION|BLOCKQUOTE|DIV)$/;
+
+  function trBlocDe(node, racine) {
+    var el = node.parentNode;
+    while (el && el !== racine) {
+      if (el.nodeType === 1 && TR_BLOC_RE.test(el.nodeName)) return el;
+      el = el.parentNode;
+    }
+    return racine;
+  }
+
+  var trEtat = { blocs: [], actif: false };
+
+  /* Numérote les blocs et rend la liste de ce qu'il y a à traduire, dans l'ordre du
+     document. `haut` sert à ordonner la vague depuis le premier bloc visible, et
+     `signes` à mesurer l'avancement en caractères plutôt qu'en blocs — un titre et un
+     paragraphe de trente lignes ne pèsent pas pareil. */
+  function trCollecter() {
+    var container = document.getElementById('content');
+    trEtat = { blocs: [], actif: false };
+    if (!container) return [];
+
+    // Une recherche en cours a remplacé des nœuds de texte par des <mark> : nos
+    // références seraient périmées avant d'avoir servi.
+    clearSearch();
+    container.querySelectorAll('[data-okia-tr]').forEach(function (el) {
+      el.removeAttribute('data-okia-tr');
+      el.removeAttribute('data-okia-tr-fait');
+    });
+
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    var bruts = [], node;
+    while ((node = walker.nextNode())) {
+      if (!node.nodeValue || !/\S/.test(node.nodeValue)) continue;
+      if (trZoneExclue(node.parentNode)) continue;
+      var bloc = trBlocDe(node, container);
+      var rang = bloc.__okiaTrRang;
+      if (rang === undefined) {
+        rang = bruts.length;
+        bloc.__okiaTrRang = rang;
+        bruts.push({ el: bloc, noeuds: [], protege: [], originaux: [] });
+      }
+      bruts[rang].noeuds.push(node);
+      bruts[rang].protege.push(trProtege(node));
+      bruts[rang].originaux.push(node.nodeValue);
+    }
+    bruts.forEach(function (b) { delete b.el.__okiaTrRang; });
+
+    // Un bloc entièrement protégé — une ligne de code, un nom d'entité seul — n'a rien
+    // à faire dans la file : il coûterait une requête pour se rendre inchangé.
+    trEtat.blocs = bruts.filter(function (b) { return b.protege.indexOf(false) !== -1; });
+
+    return trEtat.blocs.map(function (b, i) {
+      b.el.setAttribute('data-okia-tr', String(i));
+      var rect = b.el.getBoundingClientRect();
+      var parts = [];
+      for (var j = 0; j < b.noeuds.length; j++) {
+        parts.push({ i: j, texte: b.originaux[j], protege: b.protege[j] });
+      }
+      return {
+        id: i,
+        haut: Math.round(rect.top + (window.scrollY || 0)),
+        signes: b.originaux.join('').length,
+        parts: parts
+      };
+    });
+  }
+
+  /* Réécrit un bloc. Les morceaux protégés sont ignorés même si la réponse en propose
+     une version : ils sont revenus intacts ou ils sont revenus faux, et dans les deux
+     cas l'original est la bonne valeur. */
+  function trAppliquer(id, parts) {
+    var b = trEtat.blocs[id];
+    if (!b || !parts) return false;
+    for (var k = 0; k < parts.length; k++) {
+      var j = parts[k].i;
+      if (typeof j !== 'number' || j < 0 || j >= b.noeuds.length) continue;
+      if (b.protege[j]) continue;
+      b.noeuds[j].nodeValue = String(parts[k].texte);
+    }
+    b.el.setAttribute('data-okia-tr-fait', '1');
+    trEtat.actif = true;
+    return true;
+  }
+
+  /* L'original reste à un geste : c'est la contrepartie d'une traduction automatique
+     annoncée. Rien n'est recalculé, les textes d'origine n'ont jamais quitté la page. */
+  function trRestaurer() {
+    trEtat.blocs.forEach(function (b) {
+      for (var j = 0; j < b.noeuds.length; j++) b.noeuds[j].nodeValue = b.originaux[j];
+      b.el.removeAttribute('data-okia-tr-fait');
+    });
+    trEtat.actif = false;
+    return trEtat.blocs.length;
+  }
+
+  /* Où en est le lecteur : de quoi ordonner la vague depuis le premier bloc visible
+     plutôt que depuis le début du fichier. */
+  function trVue() {
+    return {
+      defilement: Math.round(window.scrollY || 0),
+      hauteur: Math.round(window.innerHeight || 0),
+      actif: trEtat.actif,
+      blocs: trEtat.blocs.length
+    };
+  }
+
   window.OKIA = {
     render: render,
     renderPlain: renderPlain,
@@ -1608,7 +1766,13 @@
     search: search,
     searchNext: searchNext,
     searchPrev: searchPrev,
-    clearSearch: clearSearch
+    clearSearch: clearSearch,
+    translation: {
+      collect: trCollecter,
+      apply: trAppliquer,
+      restore: trRestaurer,
+      view: trVue
+    }
   };
   post('ready', {});
 })();

@@ -24,6 +24,18 @@
         "site"
       ],
       "port": 8766
+    },
+    {
+      "name": "okia-tests",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8767",
+        "--directory",
+        "."
+      ],
+      "port": 8767
     }
   ]
 }

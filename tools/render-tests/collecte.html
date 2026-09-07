@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Test — collecte de traduction</title>
+<style>
+  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; margin: 1.5rem; }
+  #resultats { white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; }
+  .ok  { color: #15803d; }
+  .ko  { color: #b91c1c; font-weight: 600; }
+  #content { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Test — collecte de traduction</h1>
+<p>Exerce <code>window.OKIA.translation</code> sur un document déjà rendu, sans passer par
+   Markdown : c'est l'arbre que la traduction manipule, c'est donc l'arbre qu'on lui donne.</p>
+<div id="resultats">Chargement…</div>
+
+<!-- Un document représentatif, dans l'état où le pipeline le laisse : callouts, entités
+     surlignées, wiki-liens, code, carte, diagramme, tableau. -->
+<div id="content">
+  <h1>Rapport annuel 2026</h1>
+  <p>Le conseil de <span class="wiki-link" data-wiki="Villeneuve">Villeneuve</span> a validé
+     <strong>les comptes annuels</strong> avant le 30 juin.</p>
+  <p>La commission <mark class="ner-tag">Commission de gestion</mark> a siégé sept fois.</p>
+  <p>Appeler <code>calculerTotal()</code> puis vérifier le solde.</p>
+  <p>Tout est publié sur <a href="https://ok-ia.ch/rapport.html">le site communal</a>.</p>
+  <p><a href="https://ok-ia.ch/brut">https://ok-ia.ch/brut</a></p>
+  <p><code>uniquement du code</code></p>
+  <ul>
+    <li>Réfection du collecteur</li>
+    <li>Assainissement de la salle</li>
+  </ul>
+  <table>
+    <thead><tr><th>Poste</th><th>Montant</th></tr></thead>
+    <tbody><tr><td>Charges</td><td>4,2 millions</td></tr></tbody>
+  </table>
+  <pre><code>let total = 0
+for (const x of postes) total += x</code></pre>
+  <pre class="mermaid">flowchart TD
+    A[Réception] --> B{Complet ?}</pre>
+  <div class="okia-map" data-okia-map="x"><div class="okia-map-offline">Carte indisponible</div></div>
+  <div class="ner-legend"><span class="ner-chip">Organisations</span></div>
+</div>
+
+<script src="../../OKiaMarkdownViewer/Web/render.js"></script>
+<script>
+(function () {
+  var lignes = [], echecs = 0;
+  function verifier(nom, condition, detail) {
+    if (condition) {
+      lignes.push('<span class="ok">✓</span> ' + nom);
+    } else {
+      echecs++;
+      lignes.push('<span class="ko">✗ ' + nom + (detail ? ' — ' + detail : '') + '</span>');
+    }
+  }
+  function texteDe(sel) { return document.querySelector(sel).textContent.replace(/\s+/g, ' ').trim(); }
+
+  var T = window.OKIA && window.OKIA.translation;
+  if (!T) {
+    document.getElementById('resultats').innerHTML =
+      '<span class="ko">window.OKIA.translation absent — render.js n\'expose pas l\'API.</span>';
+    return;
+  }
+
+  var blocs = T.collect();
+
+  // -- ce qui ne doit pas être collecté -------------------------------------------
+  var tousTextes = blocs.map(function (b) {
+    return b.parts.map(function (p) { return p.texte; }).join('');
+  }).join(' | ');
+  verifier('un bloc de code n\'est pas collecté', tousTextes.indexOf('for (const x of postes)') === -1);
+  verifier('la syntaxe Mermaid n\'est pas collectée', tousTextes.indexOf('flowchart TD') === -1);
+  verifier('une carte n\'est pas collectée', tousTextes.indexOf('Carte indisponible') === -1);
+  verifier('la légende des entités n\'est pas collectée', tousTextes.indexOf('Organisations') === -1);
+  verifier('un bloc entièrement protégé est écarté', tousTextes.indexOf('uniquement du code') === -1);
+
+  // -- ce qui doit l'être ----------------------------------------------------------
+  verifier('les titres sont collectés', tousTextes.indexOf('Rapport annuel 2026') !== -1);
+  verifier('les items de liste sont collectés', tousTextes.indexOf('Réfection du collecteur') !== -1);
+  verifier('les cellules de tableau sont collectées', tousTextes.indexOf('4,2 millions') !== -1);
+  verifier('le libellé d\'un lien est collecté', tousTextes.indexOf('le site communal') !== -1);
+
+  // -- le découpage en morceaux ----------------------------------------------------
+  function blocContenant(fragment) {
+    for (var i = 0; i < blocs.length; i++) {
+      var t = blocs[i].parts.map(function (p) { return p.texte; }).join('');
+      if (t.indexOf(fragment) !== -1) return blocs[i];
+    }
+    return null;
+  }
+  var bWiki = blocContenant('a validé');
+  verifier('le bloc du wiki-lien existe', !!bWiki);
+  if (bWiki) {
+    var wiki = bWiki.parts.filter(function (p) { return p.texte === 'Villeneuve'; })[0];
+    verifier('la cible d\'un wiki-lien est protégée', wiki && wiki.protege === true,
+             wiki ? 'protege=' + wiki.protege : 'morceau absent');
+    var gras = bWiki.parts.filter(function (p) { return p.texte === 'les comptes annuels'; })[0];
+    verifier('le gras est un morceau à part, traduisible', gras && gras.protege === false);
+    verifier('le bloc du wiki-lien compte cinq morceaux', bWiki.parts.length === 5,
+             'parts=' + bWiki.parts.length);
+  }
+  var bEnt = blocContenant('a siégé sept fois');
+  var ent = bEnt && bEnt.parts.filter(function (p) { return p.texte === 'Commission de gestion'; })[0];
+  verifier('un nom d\'entité est protégé', ent && ent.protege === true);
+
+  var bCode = blocContenant('puis vérifier le solde');
+  var code = bCode && bCode.parts.filter(function (p) { return p.texte === 'calculerTotal()'; })[0];
+  verifier('le code inline est protégé', code && code.protege === true);
+
+  var bUrl = blocContenant('ok-ia.ch/brut');
+  verifier('une URL affichée est protégée',
+           bUrl === null || bUrl.parts.every(function (p) { return p.protege; }),
+           'le bloc aurait dû être écarté ou entièrement protégé');
+
+  // -- mesures ----------------------------------------------------------------------
+  verifier('les blocs sont ordonnés par position', blocs.every(function (b, i) {
+    return i === 0 || b.haut >= blocs[i - 1].haut;
+  }));
+  verifier('le poids est mesuré en caractères', blocs.every(function (b) { return b.signes > 0; }));
+
+  // -- réécriture --------------------------------------------------------------------
+  var avant = texteDe('#content h1');
+  T.apply(blocContenant('Rapport annuel 2026').id, [{ i: 0, texte: 'Jahresbericht 2026' }]);
+  verifier('apply() réécrit le texte', texteDe('#content h1') === 'Jahresbericht 2026',
+           'obtenu « ' + texteDe('#content h1') + ' »');
+
+  if (bWiki) {
+    T.apply(bWiki.id, [
+      { i: 0, texte: 'Der Rat von ' },
+      { i: 1, texte: 'IGNORÉ' },              // morceau protégé : ne doit pas bouger
+      { i: 2, texte: ' hat ' },
+      { i: 3, texte: 'die Jahresrechnungen' },
+      { i: 4, texte: ' vor dem 30. Juni genehmigt.' }
+    ]);
+    var p = document.querySelectorAll('#content p')[0];
+    verifier('un morceau protégé n\'est jamais réécrit',
+             p.textContent.indexOf('Villeneuve') !== -1 && p.textContent.indexOf('IGNORÉ') === -1);
+    verifier('les balises survivent à la réécriture',
+             p.querySelector('strong') && p.querySelector('strong').textContent === 'die Jahresrechnungen');
+    verifier('le wiki-lien survit à la réécriture',
+             p.querySelector('.wiki-link') &&
+             p.querySelector('.wiki-link').getAttribute('data-wiki') === 'Villeneuve');
+    verifier('le bloc traduit est marqué',
+             p.getAttribute('data-okia-tr-fait') === '1');
+  }
+
+  // -- retour à l'original -----------------------------------------------------------
+  T.restore();
+  verifier('restore() rétablit le titre', texteDe('#content h1') === avant);
+  verifier('restore() rétablit le paragraphe',
+           texteDe('#content p') === 'Le conseil de Villeneuve a validé les comptes annuels avant le 30 juin.',
+           'obtenu « ' + texteDe('#content p') + ' »');
+  verifier('restore() efface la marque',
+           !document.querySelector('#content [data-okia-tr-fait]'));
+
+  lignes.push('');
+  lignes.push(echecs === 0
+    ? '<span class="ok">' + (lignes.length - 1) + ' vérifications, aucun échec.</span>'
+    : '<span class="ko">' + echecs + ' ÉCHEC(S).</span>');
+  document.getElementById('resultats').innerHTML = lignes.join('\n');
+  document.title = (echecs === 0 ? 'OK' : 'ÉCHEC') + ' — collecte de traduction';
+})();
+</script>
+</body>
+</html>
