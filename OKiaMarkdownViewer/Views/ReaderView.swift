@@ -30,6 +30,8 @@ struct ReaderView: View {
     @State private var showChat = false
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
+    @AppStorage("okia.autoTranslate") private var autoTranslate = false
+    @StateObject private var translator = DocumentTranslator()
     @FocusState private var searchFocused: Bool
     @ObservedObject private var loc = Localization.shared
 
@@ -79,6 +81,10 @@ struct ReaderView: View {
                         .onChange(of: proxy.size.height) { _, h in barHeight = h }
                 }
             )
+
+            if #available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *) {
+                TranslationHostView(translator: translator)
+            }
         }
         .fullScreenCover(item: $tapped) { diagram in
             DiagramZoomView(diagram: diagram)
@@ -140,13 +146,69 @@ struct ReaderView: View {
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
         }
         .onChange(of: fontScale) { _, v in web.setFontScale(v) }
-        .task { web.setFontScale(fontScale) }
+        .task {
+            web.setFontScale(fontScale)
+            // Chaque bloc traduit se réécrit dès qu'il arrive : le document se traduit
+            // sous les yeux du lecteur au lieu d'apparaître d'un coup après l'attente.
+            translator.onBloc = { [weak web] bloc in web?.appliquerTraduction(bloc) }
+            web.onRendered = { traduireSiDemandé() }
+        }
+        // Changer de langue ou décocher l'option en cours de lecture doit se voir tout de
+        // suite : c'est le même document, il n'y aura pas de nouveau rendu pour rattraper.
+        .onChange(of: autoTranslate) { _, actif in
+            if actif { traduireSiDemandé() } else { translator.annuler(); web.restaurerOriginaux() }
+        }
+        .onChange(of: loc.language) { _, _ in
+            translator.annuler()
+            web.restaurerOriginaux()
+            traduireSiDemandé()
+        }
         // An App Intent (Siri/Shortcuts) asked to summarise the opened report.
         .onAppear {
             if store.summaryRequested { showSummary = true; store.summaryRequested = false }
         }
         .onChange(of: store.summaryRequested) { _, requested in
             if requested { showSummary = true; store.summaryRequested = false }
+        }
+    }
+
+    // MARK: Traduction
+
+    /// Décide s'il y a lieu de traduire, et lance la vague. Trois refus possibles, et
+    /// chacun est un refus rapide : l'option est éteinte, le document est déjà dans la
+    /// langue du lecteur, ou l'appareil ne sait pas faire cette paire.
+    /// L'option, telle qu'elle vaut vraiment. Le harnais existe parce qu'une app
+    /// sandboxée ne voit pas les préférences écrites de l'extérieur : un lancement
+    /// scripté n'a que l'environnement pour cocher la case. Il ouvre la porte, il
+    /// n'invente pas de traduction — le texte affiché reste celui du vrai modèle.
+    /// Le nom ne doit ressembler à aucun objet livré : `window.OKIA.translation` est
+    /// une API de production, et c'est cette confusion-là qui avait bloqué toute
+    /// livraison du temps de OKIA_PRESENT.
+    private var traductionActive: Bool {
+        #if DEBUG
+        if let forcee = ProcessInfo.processInfo.environment["OKIA_AUTO_TR"], !forcee.isEmpty {
+            return forcee != "off"
+        }
+        #endif
+        return autoTranslate
+    }
+
+    private func traduireSiDemandé() {
+        guard traductionActive else { return }
+        let cible = Localization.shared.code
+        web.collecterTraduisible { blocs, defilement in
+            guard !blocs.isEmpty else { return }
+            guard let source = DocumentTranslator.langue(de: blocs) else { return }
+            // Un document déjà dans la langue du lecteur n'a rien à gagner à un
+            // aller-retour par le modèle, qui le réécrirait sans le traduire.
+            guard source != cible else { return }
+            Task { @MainActor in
+                // `status(from:to:)` fait foi et répond en quelques dizaines de
+                // millisecondes ; il évite d'ouvrir une session qui ne mènerait à rien.
+                guard await DocumentTranslator.disponible(de: source, vers: cible) else { return }
+                translator.demarrer(blocs: blocs, defilement: defilement,
+                                    source: source, cible: cible)
+            }
         }
     }
 

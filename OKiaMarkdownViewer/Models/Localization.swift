@@ -99,10 +99,14 @@ func tr(_ key: String, _ args: CVarArg...) -> String {
 
 // MARK: - Settings sheet
 
-/// App settings: today just the language choice (System + the five shipped languages).
+/// App settings: the language choice (System + the five shipped languages) and
+/// automatic document translation.
 struct SettingsView: View {
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
+    /// Éteinte par défaut : un document arrive dans sa langue, et la traduire est un
+    /// choix du lecteur, pas une surprise à l'ouverture.
+    @AppStorage("okia.autoTranslate") private var autoTranslate = false
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -122,6 +126,14 @@ struct SettingsView: View {
                     Text(tr("Langue de l’app"))
                 } footer: {
                     Text(tr("« Système » : la langue de l’appareil si elle est prise en charge, anglais sinon."))
+                }
+
+                Section {
+                    Toggle(tr("Traduire les documents"), isOn: $autoTranslate)
+                } header: {
+                    Text(tr("Traduction automatique"))
+                } footer: {
+                    Text(tr("Un document ouvert dans une autre langue est traduit sur l’appareil, sans rien envoyer sur le réseau. L’original reste accessible d’un geste."))
                 }
             }
             .navigationTitle(tr("Réglages"))

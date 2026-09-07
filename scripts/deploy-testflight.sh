@@ -194,7 +194,7 @@ PLIST
   # Un nom de harnais ne doit jamais être aussi celui d'un objet livré : le hook du
   # diaporama s'appelait OKIA_PRESENT, comme l'API JavaScript window.OKIA_PRESENT, et cette
   # liste bloquait toute livraison sur sa propre trace. D'où OKIA_OPEN_SLIDES.
-  for marker in OKIA_FAKE_AI OKIA_RENDER_CONTENT OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI OKIA_UI_LANG; do
+  for marker in OKIA_FAKE_AI OKIA_RENDER_CONTENT OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI OKIA_UI_LANG OKIA_AUTO_TR; do
     # `if` plutôt que `grep ... && die` : un grep sans correspondance sortirait de la boucle
     # avec un statut non nul et `set -e` arrêterait le script sur un binaire sain.
     if grep -q "$marker" "$tmp/strings.txt"; then

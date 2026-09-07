@@ -181,6 +181,7 @@ struct MarkdownWebView: UIViewRepresentable {
                 }
             case "rendered":
                 parent.webController.reapplyFontScale()
+                parent.webController.onRendered?()
             case "renderError":
                 break
             default:

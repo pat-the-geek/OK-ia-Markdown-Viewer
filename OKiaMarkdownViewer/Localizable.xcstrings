@@ -3187,41 +3187,6 @@
         }
       }
     },
-    "réseau": {
-      "extractionState": "manual",
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "réseau"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "network"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Netzwerk"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "red"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "rete"
-          }
-        }
-      }
-    },
     "Résume ce document.": {
       "extractionState": "manual",
       "localizations": {
@@ -3677,6 +3642,76 @@
         }
       }
     },
+    "Traduction automatique": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduction automatique"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic translation"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatische Übersetzung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduzione automatica"
+          }
+        }
+      }
+    },
+    "Traduire les documents": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduire les documents"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translate documents"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokumente übersetzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducir los documentos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tradurre i documenti"
+          }
+        }
+      }
+    },
     "URL du rapport manquante ou invalide (https requis).": {
       "extractionState": "manual",
       "localizations": {
@@ -3708,6 +3743,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "URL del rapporto mancante o non valido (richiesto https)."
+          }
+        }
+      }
+    },
+    "Un document ouvert dans une autre langue est traduit sur l’appareil, sans rien envoyer sur le réseau. L’original reste accessible d’un geste.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un document ouvert dans une autre langue est traduit sur l’appareil, sans rien envoyer sur le réseau. L’original reste accessible d’un geste."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A document opened in another language is translated on the device, with nothing sent over the network. The original stays one tap away."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Dokument in einer anderen Sprache wird auf dem Gerät übersetzt, ohne dass etwas über das Netz geht. Das Original bleibt mit einer Geste erreichbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un documento abierto en otro idioma se traduce en el dispositivo, sin enviar nada por la red. El original queda a un gesto de distancia."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un documento aperto in un'altra lingua viene tradotto sul dispositivo, senza inviare nulla in rete. L'originale resta a portata di gesto."
           }
         }
       }
@@ -3813,6 +3883,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aumenta zoom"
+          }
+        }
+      }
+    },
+    "réseau": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "réseau"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "network"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netzwerk"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "red"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rete"
           }
         }
       }

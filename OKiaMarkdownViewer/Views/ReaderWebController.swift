@@ -62,6 +62,56 @@ final class ReaderWebController: ObservableObject {
         searchResult = SearchResult(count: 0, index: 0)
     }
 
+
+    // MARK: Traduction
+
+    /// Appelé quand le rendu vient de se terminer. La traduction s'y accroche : elle ne
+    /// peut collecter des nœuds de texte qu'une fois le document dans le DOM.
+    var onRendered: (() -> Void)?
+
+    /// Ramène les blocs traduisibles et la position du lecteur, d'un seul aller-retour :
+    /// la vague part du premier bloc visible, il faut donc savoir où il est au moment
+    /// exact de la collecte.
+    func collecterTraduisible(completion: @escaping ([TranslationBlock], Int) -> Void) {
+        guard let webView else { completion([], 0); return }
+        let js = """
+        if (!window.OKIA || !window.OKIA.translation) return null;
+        return JSON.stringify({ blocs: window.OKIA.translation.collect(),
+                                vue: window.OKIA.translation.view() });
+        """
+        webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { result in
+            guard case .success(let value) = result,
+                  let json = value as? String,
+                  let data = json.data(using: .utf8),
+                  let enveloppe = try? JSONDecoder().decode(Enveloppe.self, from: data) else {
+                completion([], 0)
+                return
+            }
+            completion(enveloppe.blocs, enveloppe.vue.defilement)
+        }
+    }
+
+    private struct Enveloppe: Decodable {
+        struct Vue: Decodable { let defilement: Int }
+        let blocs: [TranslationBlock]
+        let vue: Vue
+    }
+
+    /// Réécrit un bloc traduit. Le JavaScript ne recrée aucun HTML : il pose le texte
+    /// dans les nœuds numérotés, donc le gras, les liens et les diagrammes ne bougent pas.
+    func appliquerTraduction(_ bloc: TranslatedBlock) {
+        let parts = bloc.parts.map { ["i": $0.i, "texte": $0.texte] as [String: Any] }
+        guard let data = try? JSONSerialization.data(withJSONObject: parts),
+              let json = String(data: data, encoding: .utf8) else { return }
+        eval("window.OKIA && window.OKIA.translation.apply(\(bloc.id), \(json))")
+    }
+
+    /// L'original reste à un geste : rien n'est recalculé, les textes d'origine n'ont
+    /// jamais quitté la page.
+    func restaurerOriginaux() {
+        eval("window.OKIA && window.OKIA.translation.restore()")
+    }
+
     // MARK: Word (.docx) export
     /// Fetch the structured export model (blocks) from the rendered document.
     func buildExportModel(completion: @escaping ([[String: Any]]?) -> Void) {
