@@ -103,7 +103,7 @@ final class ReaderWebController: ObservableObject {
         let parts = bloc.parts.map { ["i": $0.i, "texte": $0.texte] as [String: Any] }
         guard let data = try? JSONSerialization.data(withJSONObject: parts),
               let json = String(data: data, encoding: .utf8) else { return }
-        eval("window.OKIA && window.OKIA.translation.apply(\(bloc.id), \(json))")
+        eval("window.OKIA && window.OKIA.translation.apply(\(bloc.id), \(json), \(bloc.reordonnable))")
     }
 
     /// L'original reste à un geste : rien n'est recalculé, les textes d'origine n'ont

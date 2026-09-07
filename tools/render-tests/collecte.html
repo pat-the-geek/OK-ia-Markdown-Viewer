@@ -29,6 +29,7 @@
   <p>Tout est publié sur <a href="https://ok-ia.ch/rapport.html">le site communal</a>.</p>
   <p><a href="https://ok-ia.ch/brut">https://ok-ia.ch/brut</a></p>
   <p><code>uniquement du code</code></p>
+  <p id="deuxlignes">Le collecteur est <strong>refait</strong>.<br>La salle est <em>assainie</em>.</p>
   <ul>
     <li>Réfection du collecteur</li>
     <li>Assainissement de la salle</li>
@@ -148,6 +149,48 @@ for (const x of postes) total += x</code></pre>
              p.getAttribute('data-okia-tr-fait') === '1');
   }
 
+
+  // -- remise en ordre selon la langue d'arrivée -------------------------------------
+  // « Tout est publié sur [le site communal]. » devient en allemand « Alles wird auf der
+  // Gemeindeseite veröffentlicht. » : le lien change de place dans la phrase.
+  var bLien = blocContenant('Tout est publié sur');
+  verifier('le bloc du lien existe', !!bLien);
+  if (bLien) {
+    T.apply(bLien.id, [
+      { i: 0, texte: 'Alles wird auf ' },
+      { i: 1, texte: 'der Gemeindeseite' },      // le libellé du lien…
+      { i: 2, texte: ' veröffentlicht.' }        // …passe devant le participe
+    ]);
+    var pLien = document.querySelectorAll('#content p')[3];
+    var lu = pLien.textContent.replace(/\s+/g, ' ').trim();
+    verifier('les unités suivent l\'ordre du texte traduit',
+             lu === 'Alles wird auf der Gemeindeseite veröffentlicht.',
+             'obtenu « ' + lu + ' »');
+    verifier('le lien est déplacé, pas recréé',
+             pLien.querySelector('a') &&
+             pLien.querySelector('a').getAttribute('href') === 'https://ok-ia.ch/rapport.html');
+    verifier('le libellé déplacé est bien dans le lien',
+             pLien.querySelector('a').textContent === 'der Gemeindeseite');
+  }
+
+  // Deux lignes séparées par un <br> se lisent séparément : leurs morceaux ne doivent
+  // jamais s'échanger, quoi que dise la séquence.
+  var b2 = blocContenant('Le collecteur est');
+  verifier('le paragraphe à deux lignes est collecté', !!b2);
+  if (b2) {
+    var idDeux = b2.id;
+    // Une séquence qui prétendrait faire passer un morceau de la seconde ligne devant
+    // un morceau de la première.
+    var seq = b2.parts.map(function (p) { return { i: p.i, texte: p.texte }; });
+    seq.reverse();
+    T.apply(idDeux, seq);
+    var apresDeux = document.querySelector('#deuxlignes');
+    verifier('le <br> tient : les deux lignes ne se mélangent pas',
+             apresDeux.querySelectorAll('br').length === 1 &&
+             apresDeux.textContent.indexOf('assainie') > apresDeux.textContent.indexOf('refait'),
+             'obtenu « ' + apresDeux.textContent.replace(/\s+/g, ' ') + ' »');
+  }
+
   // -- retour à l'original -----------------------------------------------------------
   T.restore();
   verifier('restore() rétablit le titre', texteDe('#content h1') === avant);
@@ -156,6 +199,10 @@ for (const x of postes) total += x</code></pre>
            'obtenu « ' + texteDe('#content p') + ' »');
   verifier('restore() efface la marque',
            !document.querySelector('#content [data-okia-tr-fait]'));
+  var lienRendu = document.querySelectorAll('#content p')[3].textContent.replace(/\s+/g, ' ').trim();
+  verifier('restore() rend aussi l\'ordre d\'origine',
+           lienRendu === 'Tout est publié sur le site communal.',
+           'obtenu « ' + lienRendu + ' »');
 
   lignes.push('');
   lignes.push(echecs === 0

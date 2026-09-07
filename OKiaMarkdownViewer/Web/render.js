@@ -1667,6 +1667,11 @@
     trEtat = { blocs: [], actif: false };
     if (!container) return [];
 
+    // Une traduction en place doit être défaite AVANT de recollecter, sinon les textes
+    // traduits deviendraient les « originaux » et l'original vrai serait perdu — le
+    // retour en arrière ne rendrait plus rien.
+    if (trEtat.actif) trRestaurer();
+
     // Une recherche en cours a remplacé des nœuds de texte par des <mark> : nos
     // références seraient périmées avant d'avoir servi.
     clearSearch();
@@ -1699,6 +1704,11 @@
 
     return trEtat.blocs.map(function (b, i) {
       b.el.setAttribute('data-okia-tr', String(i));
+      // L'ordre d'origine, pour pouvoir le rendre : chaque enfant et le voisin devant
+      // lequel il se tenait.
+      b.ordre = Array.prototype.slice.call(b.el.childNodes).map(function (n) {
+        return { noeud: n, suivant: n.nextSibling };
+      });
       var rect = b.el.getBoundingClientRect();
       var parts = [];
       for (var j = 0; j < b.noeuds.length; j++) {
@@ -1713,18 +1723,95 @@
     });
   }
 
-  /* Réécrit un bloc. Les morceaux protégés sont ignorés même si la réponse en propose
-     une version : ils sont revenus intacts ou ils sont revenus faux, et dans les deux
-     cas l'original est la bonne valeur. */
-  function trAppliquer(id, parts) {
+  /* L'unité d'un nœud : son plus haut ancêtre encore à l'intérieur du bloc. Pour un mot
+     en gras c'est le <strong>, pour un libellé de lien c'est le <a>. C'est ce qu'on
+     déplace — jamais ce qu'on recrée. */
+  function trUnite(noeud, bloc) {
+    var el = noeud;
+    while (el.parentNode && el.parentNode !== bloc) el = el.parentNode;
+    return el.parentNode === bloc ? el : null;
+  }
+
+  /* Les <br> découpent le bloc en segments qui se lisent séparément : `breaks: true`
+     rend chaque retour à la ligne du Markdown, et deux phrases ainsi séparées ne doivent
+     jamais échanger leurs morceaux. On réordonne à l'intérieur d'un segment, pas au
+     travers. */
+  function trSegments(bloc) {
+    var segments = [], courant = [];
+    var enfants = Array.prototype.slice.call(bloc.childNodes);
+    for (var i = 0; i < enfants.length; i++) {
+      if (enfants[i].nodeType === 1 && enfants[i].nodeName === 'BR') {
+        segments.push(courant); courant = [];
+      } else {
+        courant.push(enfants[i]);
+      }
+    }
+    segments.push(courant);
+    return segments;
+  }
+
+  /* Remet les unités dans l'ordre du texte traduit.
+
+     C'est la pièce qui manquait, et elle ne se voyait qu'à l'écran : « Tout est publié
+     sur [le site communal]. » devient « Alles wird auf der Gemeindeseite veröffentlicht. »
+     — l'allemand rejette le participe à la fin. Les morceaux reviennent chacun juste, mais
+     l'ordre des nœuds du DOM est celui du français : replacer chaque morceau chez lui
+     rendait « Alles wird auf veröffentlicht der Gemeindeseite. » Chaque mot correct, la
+     phrase fausse.
+
+     On ne recrée rien : le <a> et le <strong> sont les mêmes objets, ils changent de
+     place. Un segment qui contient autre chose que du texte collecté — une image, une
+     puce dessinée — n'est pas réordonné : mieux vaut un ordre d'origine lisible qu'un
+     déplacement qui emporterait ce qu'on ne sait pas lire. */
+  function trReordonner(b, sequence) {
+    var bloc = b.el;
+    var uniteDe = [];
+    for (var j = 0; j < b.noeuds.length; j++) uniteDe[j] = trUnite(b.noeuds[j], bloc);
+
+    trSegments(bloc).forEach(function (segment) {
+      // Les nœuds blancs entre deux éléments ne portent pas de sens : ils ne bloquent pas.
+      var utiles = segment.filter(function (n) {
+        return !(n.nodeType === 3 && !/\S/.test(n.nodeValue));
+      });
+      if (utiles.length < 2) return;
+
+      // Chaque unité du segment doit être connue, sinon on ne touche à rien.
+      var connues = utiles.every(function (u) { return uniteDe.indexOf(u) !== -1; });
+      if (!connues) return;
+
+      var voulu = [];
+      for (var k = 0; k < sequence.length; k++) {
+        var u = uniteDe[sequence[k].i];
+        if (u && utiles.indexOf(u) !== -1 && voulu.indexOf(u) === -1) voulu.push(u);
+      }
+      if (voulu.length !== utiles.length) return;
+
+      var identique = voulu.every(function (u, i) { return u === utiles[i]; });
+      if (identique) return;
+
+      // Réinsérer avant ce qui suit le segment : le <br> reste où il est.
+      var ancre = utiles[utiles.length - 1].nextSibling;
+      voulu.forEach(function (u) { bloc.insertBefore(u, ancre); });
+    });
+  }
+
+  /* Réécrit un bloc. `sequence` arrive dans l'ordre du texte traduit, pas dans celui du
+     document. Les morceaux protégés y figurent — c'est ainsi qu'on sait où ils ont
+     atterri — mais leur texte n'est jamais réécrit : ils sont revenus intacts ou ils sont
+     revenus faux, et dans les deux cas l'original est la bonne valeur. */
+  function trAppliquer(id, sequence, reordonner) {
     var b = trEtat.blocs[id];
-    if (!b || !parts) return false;
-    for (var k = 0; k < parts.length; k++) {
-      var j = parts[k].i;
+    if (!b || !sequence) return false;
+    for (var k = 0; k < sequence.length; k++) {
+      var j = sequence[k].i;
       if (typeof j !== 'number' || j < 0 || j >= b.noeuds.length) continue;
       if (b.protege[j]) continue;
-      b.noeuds[j].nodeValue = String(parts[k].texte);
+      b.noeuds[j].nodeValue = String(sequence[k].texte);
     }
+    // `reordonner` vaut faux quand un nœud a reçu du texte à deux endroits de la phrase :
+    // le DOM ne sait pas le représenter, et l'ordre du français reste alors le moins
+    // mauvais — entier, quoique dans la syntaxe de départ.
+    if (reordonner !== false) trReordonner(b, sequence);
     b.el.setAttribute('data-okia-tr-fait', '1');
     trEtat.actif = true;
     return true;
@@ -1735,6 +1822,13 @@
   function trRestaurer() {
     trEtat.blocs.forEach(function (b) {
       for (var j = 0; j < b.noeuds.length; j++) b.noeuds[j].nodeValue = b.originaux[j];
+      // Les unités ont pu changer de place pour suivre la syntaxe de la langue d'arrivée :
+      // rendre le texte sans rendre l'ordre laisserait un original en désordre.
+      if (b.ordre) {
+        for (var k = 0; k < b.ordre.length; k++) {
+          b.el.insertBefore(b.ordre[k].noeud, b.ordre[k].suivant);
+        }
+      }
       b.el.removeAttribute('data-okia-tr-fait');
     });
     trEtat.actif = false;
