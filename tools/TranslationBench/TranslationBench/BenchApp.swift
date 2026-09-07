@@ -127,19 +127,26 @@ final class Banc: ObservableObject {
         dire("PLATEFORME : \(plateforme)\(sim) — \(ProcessInfo.processInfo.operatingSystemVersionString)")
         dire()
 
-        await sousMinuterie("1. couverture", 30) { await self.epreuve1Couverture() }
-        if ProcessInfo.processInfo.environment["BENCH_SANS_PREPARE"] == nil {
+        // BENCH_ONLY=9 ou BENCH_ONLY=1,3,9 : ne lancer que ces épreuves.
+        let choisies: Set<Int>? = ProcessInfo.processInfo.environment["BENCH_ONLY"].map {
+            Set($0.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) })
+        }
+        func retenue(_ n: Int) -> Bool { choisies == nil || choisies!.contains(n) }
+
+        if retenue(1) { await sousMinuterie("1. couverture", 30) { await self.epreuve1Couverture() } }
+        if retenue(2), ProcessInfo.processInfo.environment["BENCH_SANS_PREPARE"] == nil {
             await sousMinuterie("2. invite", 60) { await self.epreuve2Invite() }
-        } else {
+        } else if retenue(2) {
             dire("=== 2. INVITE — sautée (BENCH_SANS_PREPARE) ===")
             dire()
         }
-        await sousMinuterie("3. diffusion", 120) { await self.epreuve3Diffusion() }
-        await sousMinuterie("4. markdown", 120) { await self.epreuve4Markdown() }
-        await sousMinuterie("5. skipsTranslation", 60) { await self.epreuve5SautTraduction() }
-        await sousMinuterie("6. débit", 300) { await self.epreuve6Debit() }
-        await sousMinuterie("7. paires", 300) { await self.epreuve7Paires() }
-        await sousMinuterie("8. langue absente", 180) { await self.epreuve8LangueAbsente() }
+        if retenue(3) { await sousMinuterie("3. diffusion", 120) { await self.epreuve3Diffusion() } }
+        if retenue(4) { await sousMinuterie("4. markdown", 120) { await self.epreuve4Markdown() } }
+        if retenue(5) { await sousMinuterie("5. skipsTranslation", 60) { await self.epreuve5SautTraduction() } }
+        if retenue(9) { await sousMinuterie("9. attributs", 120) { await self.epreuve9Attributs() } }
+        if retenue(6) { await sousMinuterie("6. débit", 300) { await self.epreuve6Debit() } }
+        if retenue(7) { await sousMinuterie("7. paires", 300) { await self.epreuve7Paires() } }
+        if retenue(8) { await sousMinuterie("8. langue absente", 180) { await self.epreuve8LangueAbsente() } }
 
         dire()
         dire("FIN")
@@ -347,6 +354,73 @@ final class Banc: ObservableObject {
             self.dire(String(format: "  → %d blocs en %.3f s, soit %.0f caractères/s", n, dt, Double(total) / dt))
         }
         dire()
+    }
+
+    // 9. LA question qui décide de l'architecture. Un bloc Markdown n'est pas du texte
+    //    plat : il porte du gras, des liens, du code. Si les attributs d'une plage
+    //    survivent à la traduction ET restent alignés sur le texte correspondant, on peut
+    //    traduire un bloc entier — le contexte de phrase est gardé, la mise en forme se
+    //    replace toute seule. Sinon il faut traduire chaque nœud de texte isolément, et
+    //    le modèle perd le contexte au moment même où il en a le plus besoin.
+    func epreuve9Attributs() async {
+        dire("=== 9. CONSERVATION DES ATTRIBUTS À TRAVERS LA TRADUCTION (fr → de) ===")
+        await avecSession("fr", "de") { session in
+            // a) attribut standard de Foundation : le gras d'un Markdown rendu.
+            var a = AttributedString("Le conseil a validé ")
+            var gras = AttributedString("les comptes annuels")
+            gras.inlinePresentationIntent = .stronglyEmphasized
+            var suite = AttributedString(" avant le 30 juin, sans réserve.")
+            a.append(gras); a.append(suite)
+            self.dire("a) gras (inlinePresentationIntent) sur « les comptes annuels »")
+            await self.montrerRuns(session, a)
+
+            // b) le même bloc avec en plus une portion protégée : gras ET skipsTranslation
+            //    dans la même chaîne, c'est le cas réel d'un paragraphe avec du code inline.
+            var b = AttributedString("Appeler ")
+            var code = AttributedString("calculerTotal()")
+            code.skipsTranslation = true
+            var milieu = AttributedString(" puis vérifier ")
+            var gras2 = AttributedString("le solde final")
+            gras2.inlinePresentationIntent = .stronglyEmphasized
+            var fin = AttributedString(" avant de clore l'exercice.")
+            b.append(code); b.append(milieu); b.append(gras2); b.append(fin)
+            self.dire("b) code protégé + gras dans le même bloc")
+            await self.montrerRuns(session, b)
+
+            // c) trois plages marquées d'un lien : l'ordre des runs suit-il le texte ?
+            var c = AttributedString("Le rapport, la carte et les annexes sont publiés.")
+            if let r = c.range(of: "la carte") {
+                c[r].link = URL(string: "https://ok-ia.ch/carte")
+            }
+            self.dire("c) lien sur « la carte » au milieu de la phrase")
+            await self.montrerRuns(session, c)
+        }
+        dire()
+    }
+
+    // Affiche la découpe en segments de la réponse : c'est elle qui dit si l'on peut
+    // recoller la mise en forme sur le texte traduit.
+    func montrerRuns(_ session: TranslationSession, _ source: AttributedString) async {
+        do {
+            let r = try await session.translate(source)
+            self.dire("   ORIG : \(String(source.characters))")
+            self.dire("   TRAD : \(r.targetText)")
+            guard let at = r.attributedTargetText else {
+                self.dire("   → PAS d'attributedTargetText : le recollage est impossible.")
+                return
+            }
+            self.dire("   \(at.runs.count) segments en sortie (\(source.runs.count) en entrée) :")
+            for run in at.runs {
+                var marques: [String] = []
+                if let i = run.inlinePresentationIntent, i.contains(.stronglyEmphasized) { marques.append("gras") }
+                if run.skipsTranslation == true { marques.append("protégé") }
+                if let l = run.link { marques.append("lien=\(l.absoluteString)") }
+                self.dire("     « \(String(at[run.range].characters)) »  \(marques.isEmpty ? "—" : marques.joined(separator: " "))")
+            }
+        } catch {
+            self.dire("   ERREUR : \(error)")
+        }
+        self.dire("")
     }
 
     // 8. Une paire NON installée : c'est le seul cas où l'invite système peut tomber.
