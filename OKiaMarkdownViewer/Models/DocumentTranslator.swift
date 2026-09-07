@@ -80,6 +80,12 @@ final class DocumentTranslator: ObservableObject {
     /// Appelé pour chaque bloc traduit, dans l'ordre où la vague les traite.
     var onBloc: ((TranslatedBlock) -> Void)?
 
+    /// Force le chemin de repli — celui des appareils sous iOS 18 à 26.3, où ni
+    /// `skipsTranslation` ni la traduction d'un `AttributedString` n'existent. Sans ce
+    /// levier, ce chemin ne serait jamais exécuté sur une machine de développement, qui
+    /// prend toujours l'autre : du code livré que personne n'aurait vu tourner.
+    var forcerRepli = false
+
     /// Les libellés hors texte — Mermaid, marqueurs de cartes — à traduire quand la vague
     /// a fini. Ils passent en dernier : ce qui se lit d'abord, c'est la prose.
     var extras: (() async -> [String])?
@@ -218,7 +224,8 @@ extension DocumentTranslator {
                 break
             }
             do {
-                let rendu = try await Self.traduire(bloc: bloc, session: session)
+                let rendu = try await Self.traduire(bloc: bloc, session: session,
+                                                    repli: forcerRepli)
                 onBloc?(TranslatedBlock(id: bloc.id, parts: rendu.parts,
                                         reordonnable: rendu.reordonnable))
                 rendus += 1
@@ -303,9 +310,10 @@ extension DocumentTranslator {
     /// Un bloc, une requête. Les morceaux protégés partent avec le reste — la phrase
     /// entière — mais marqués : le modèle les rend intacts au lieu de traduire une cible
     /// de wiki-lien en allemand.
-    private static func traduire(bloc: TranslationBlock, session: TranslationSession)
+    private static func traduire(bloc: TranslationBlock, session: TranslationSession,
+                                 repli: Bool = false)
         async throws -> (parts: [(i: Int, texte: String)], reordonnable: Bool) {
-        if #available(iOS 26.4, macCatalyst 26.4, macOS 26.4, *) {
+        if !repli, #available(iOS 26.4, macCatalyst 26.4, macOS 26.4, *) {
             var source = AttributedString()
             for part in bloc.parts {
                 var morceau = AttributedString(part.texte)
@@ -352,18 +360,38 @@ extension DocumentTranslator {
             return (parts: sequence, reordonnable: contigu)
         }
 
-        // Repli pour iOS 18 → 26.3, où `skipsTranslation` et la traduction d'un
-        // `AttributedString` n'existent pas encore : chaque morceau part seul. Le modèle
-        // perd le contexte de la phrase, mais rien ne casse — et un bloc sans morceau
-        // protégé, le cas courant, n'y perd qu'un peu de qualité.
-        var resultat: [(i: Int, texte: String)] = []
-        for part in bloc.parts where !part.protege {
-            let reponse = try await session.translate(part.texte)
-            resultat.append((i: part.i, texte: reponse.targetText))
+        // Repli pour iOS 18 → 26.3, où ni `skipsTranslation` ni la traduction d'un
+        // `AttributedString` n'existent. On y traduit MOINS, volontairement.
+        //
+        // La tentation était de découper le bloc et de traduire chaque morceau seul.
+        // Essayé, et regardé à l'écran : le modèle traite chaque morceau comme une phrase
+        // autonome. « Le conseil a validé les comptes annuels avant le 30 juin » revenait
+        // en « Der Gemeinderat von Villeneuve Validiert hat Die Jahresabschlüsse Vor dem
+        // 30. Juni » — majuscules parasites à chaque couture, syntaxe disloquée — et
+        // « Appeler » isolé devenait « Anrufen », c'est-à-dire téléphoner. Un lecteur
+        // germanophone lit alors un texte qui a l'air traduit et qui ment.
+        //
+        // La casse ne se rattrape pas non plus : décapitaliser à l'aveugle casserait
+        // l'allemand, où tout nom commun prend la majuscule.
+        //
+        // Donc on ne traduit que les blocs d'un seul tenant : un morceau traduisible, et
+        // en tête, si bien qu'il commence vraiment la phrase. C'est la grande majorité
+        // d'un rapport — paragraphes, titres, puces, cellules. Les autres restent en
+        // langue d'origine et sont comptés : l'état terminal sait dire « traduit, sauf
+        // trois passages », ce qui est honnête, là où un charabia ne l'est pas.
+        let traduisibles = bloc.parts.filter { !$0.protege }
+        guard traduisibles.count == 1, let seul = traduisibles.first, seul.i == 0 else {
+            throw TranslationError.nothingToTranslate
         }
-        // Chaque morceau traduit seul : rien ne dit où la phrase voudrait le placer, donc
-        // on ne déplace rien.
-        return (parts: resultat, reordonnable: false)
+        let reponse = try await session.translate(seul.texte)
+        var resultat: [(i: Int, texte: String)] = []
+        for part in bloc.parts {
+            resultat.append((i: part.i,
+                             texte: part.i == seul.i ? reponse.targetText : part.texte))
+        }
+        let proteges = Set(bloc.parts.filter { $0.protege }.map { $0.i })
+        // Rien n'a été déplacé, et rien ne dit où la phrase voudrait le placer.
+        return (parts: recoudre(resultat, proteges: proteges), reordonnable: false)
     }
 }
 

@@ -165,6 +165,12 @@ struct ReaderView: View {
             // sous les yeux du lecteur au lieu d'apparaître d'un coup après l'attente.
             translator.onBloc = { [weak web] bloc in web?.appliquerTraduction(bloc) }
             translator.extras = { [weak web] in await web?.collecterExtras() ?? [] }
+            #if DEBUG
+            // OKIA_AUTO_TR=repli : même harnais, deuxième valeur — comme OKIA_FAKE_AI
+            // accepte « off ». Exercer le chemin des appareils anciens sans ajouter un
+            // marqueur de plus à la liste que la livraison surveille.
+            translator.forcerRepli = ProcessInfo.processInfo.environment["OKIA_AUTO_TR"] == "repli"
+            #endif
             translator.onExtras = { [weak web] table in web?.appliquerExtras(table) }
             web.onRendered = { traduireSiDemandé() }
         }
@@ -201,7 +207,7 @@ struct ReaderView: View {
             bandeau(progression: nil,
                     texte: echecs == 0
                         ? tr("Traduit sur l’appareil · %@", nomLangueSource)
-                        : tr("Traduit sauf %d passage(s)", echecs))
+                        : tr("Traduit, sauf %d passage", echecs))
         default:
             EmptyView()
         }
