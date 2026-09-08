@@ -496,6 +496,13 @@ voit le compilateur — de la cible **iOS**. Il faut donc aussi
 qui ne ment pas est le binaire produit : `vtool -show-build-version` doit annoncer
 `platform MACCATALYST` et `minos 26.0`.
 
+**Vérifié sur appareil réel le 2026-09-08**, build 1.2 (35), sur iPhone et sur MacBook :
+la traduction, le bouton et son menu, la bascule vers l'original après une recherche, et
+— enfin — l'invite de téléchargement du dictionnaire, la seule des trois questions de départ
+qui n'avait jamais pu être observée. Le simulateur ne traduisant pas, tout le développement
+s'était fait en Mac Catalyst ; cet essai referme cet angle mort. Reste non éprouvé : le
+diaporama traduit sur iPhone et l'export PowerPoint qui en découle.
+
 **Le site.** La feuille de route publique (`ok-ia.ch/mdviewer/roadmap.html`) annonce la 1.2
 comme **en test**, pas comme livrée : la version en vente reste la 1.1.1. La page produit, elle,
 n'a pas été touchée — elle décrit ce qu'un visiteur télécharge aujourd'hui, et lui annoncer
