@@ -30,6 +30,8 @@
   <p><a href="https://ok-ia.ch/brut">https://ok-ia.ch/brut</a></p>
   <p><code>uniquement du code</code></p>
   <p id="deuxlignes">Le collecteur est <strong>refait</strong>.<br>La salle est <em>assainie</em>.</p>
+  <p id="redaction">Le conseil communal a validé les comptes annuels de l'exercice écoulé avant le<br>30 juin, comme le prescrit la loi communale sur les finances des communes.</p>
+  <p id="adresse">Rue du Château 1<br>1470 Estavayer-le-Lac</p>
   <ul>
     <li>Réfection du collecteur</li>
     <li>Assainissement de la salle</li>
@@ -211,6 +213,23 @@ document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/render.js?t=' + D
   T.clearExportNote();
   verifier('clearExportNote() la retire',
            document.querySelectorAll('#content .okia-tr-mention').length === 0);
+
+  // -- les coupures de rédaction -------------------------------------------------------
+  // Une phrase coupée par un retour à la ligne d'éditeur doit arriver entière au modèle :
+  // traduite en deux tronçons, elle revenait en « conformément à l'article 3 la » suivi de
+  // « de loi communale ». Une coupure voulue — une adresse — ne se touche pas.
+  var bRed = blocContenant('comme le prescrit la loi communale');
+  verifier('une phrase coupée par un <br> forme un seul morceau', !!bRed && bRed.parts.length === 1,
+           bRed ? 'morceaux=' + bRed.parts.length : 'bloc introuvable');
+  verifier('le <br> de rédaction a disparu du document',
+           document.querySelectorAll('#redaction br').length === 0);
+  verifier('les deux moitiés sont recollées par une espace',
+           !!bRed && bRed.parts[0].texte.indexOf('avant le 30 juin') !== -1,
+           bRed ? bRed.parts[0].texte : '');
+  verifier('une adresse garde sa coupure',
+           document.querySelectorAll('#adresse br').length === 1);
+  verifier('un <br> après une phrase finie est conservé',
+           document.querySelectorAll('#deuxlignes br').length === 1);
 
   // -- une recherche entre-temps ------------------------------------------------------
   // Une recherche remplace les nœuds trouvés par un <mark> et des nœuds neufs : les

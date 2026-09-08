@@ -1660,6 +1660,83 @@
     return racine;
   }
 
+  /* Les retours à la ligne de rédaction, et pourquoi il faut les effacer avant de traduire.
+
+     `breaks: true` rend chaque retour à la ligne du fichier source par un <br>. Or dans un
+     Markdown écrit à la main, une phrase court souvent sur deux ou trois lignes : ces <br>
+     ne portent aucun sens, ils viennent de la largeur de l'éditeur.
+
+     Le modèle, lui, voit alors trois morceaux au lieu d'une phrase, et il traduit chacun
+     pour lui-même. « wie es das | Gemeindegesetz vorschreibt » revenait en « conformément
+     à l'article 3 la | de loi communale » : deux moitiés qui ne se rejoignent pas. Ce
+     n'est pas un problème de mise en page — c'est la traduction elle-même qui est fausse.
+
+     On efface donc ces coupures et l'on recolle les nœuds AVANT la collecte : le modèle
+     reçoit la phrase entière. Le retour à l'original les remet, avec le <br> d'origine à
+     l'endroit exact où il était.
+
+     Un <br> voulu — une adresse, une strophe — n'est pas touché : ses lignes sont courtes
+     et se terminent proprement. C'est une règle grossière, mais elle ne se trompe que
+     dans un sens : au pire elle laisse une coupure, elle n'en invente jamais. */
+  var TR_LIGNE_REDACTION = 60;   // en deçà, la ligne est probablement voulue
+  var TR_FINS_DE_PHRASE = '.!?:;…»)]}';
+
+  function trBrDeRedaction(bloc) {
+    var res = [], courant = '';
+    var enfants = Array.prototype.slice.call(bloc.childNodes);
+    for (var i = 0; i < enfants.length; i++) {
+      var n = enfants[i];
+      if (n.nodeType === 1 && n.nodeName === 'BR') {
+        var t = courant.replace(/\s+$/, '');
+        if (t.length >= TR_LIGNE_REDACTION &&
+            TR_FINS_DE_PHRASE.indexOf(t.slice(-1)) === -1) {
+          res.push(n);
+        }
+        courant = '';
+      } else {
+        courant += (n.textContent || '');
+      }
+    }
+    return res;
+  }
+
+  /* Efface les coupures de rédaction et recolle les nœuds de texte qu'elles séparaient.
+     Rend de quoi tout remettre en place. */
+  function trAplanir(bloc) {
+    var brs = trBrDeRedaction(bloc);
+    if (!brs.length) return null;
+    var ops = [];
+    // Du dernier au premier : fusionner en avançant décalerait les suivants.
+    for (var i = brs.length - 1; i >= 0; i--) {
+      var br = brs[i];
+      var avant = br.previousSibling, apres = br.nextSibling;
+      if (!avant || avant.nodeType !== 3 || !apres || apres.nodeType !== 3) continue;
+      var coupure = avant.nodeValue.length;
+      bloc.removeChild(br);
+      avant.nodeValue = avant.nodeValue + ' ' + apres.nodeValue;
+      bloc.removeChild(apres);
+      ops.push({ noeud: avant, coupure: coupure, br: br });
+    }
+    return ops.length ? ops : null;
+  }
+
+  /* Remet les coupures là où elles étaient. Appliqué après avoir rendu les textes
+     d'origine, il redonne le bloc au caractère près. */
+  function trDeplier(ops) {
+    if (!ops) return;
+    for (var i = 0; i < ops.length; i++) {
+      var op = ops[i], n = op.noeud;
+      if (!n.parentNode) continue;
+      var texte = n.nodeValue;
+      if (texte.length < op.coupure) continue;
+      var suite = texte.slice(op.coupure + 1);   // l'espace posé à la fusion
+      n.nodeValue = texte.slice(0, op.coupure);
+      var neuf = document.createTextNode(suite);
+      n.parentNode.insertBefore(neuf, n.nextSibling);
+      n.parentNode.insertBefore(op.br, neuf);
+    }
+  }
+
   var trEtat = { blocs: [], actif: false, derniereAnimation: 0, racine: null };
 
   /* Les deux sens de la traduction, texte à texte. Les nœuds mémorisés suffisent tant
@@ -1705,6 +1782,14 @@
       el.removeAttribute('data-okia-tr-fait');
     });
 
+    // Les coupures de rédaction s'effacent AVANT la collecte : le modèle doit recevoir
+    // des phrases entières, pas des tronçons de ligne.
+    var aplanis = [];
+    container.querySelectorAll('p, li, td, th, dd, figcaption, blockquote').forEach(function (el) {
+      var ops = trAplanir(el);
+      if (ops) aplanis.push({ el: el, ops: ops });
+    });
+
     var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
     var bruts = [], node;
     while ((node = walker.nextNode())) {
@@ -1726,6 +1811,7 @@
     // Un bloc entièrement protégé — une ligne de code, un nom d'entité seul — n'a rien
     // à faire dans la file : il coûterait une requête pour se rendre inchangé.
     trEtat.blocs = bruts.filter(function (b) { return b.protege.indexOf(false) !== -1; });
+    trEtat.aplanis = aplanis;
 
     return trEtat.blocs.map(function (b, i) {
       b.el.setAttribute('data-okia-tr', String(i));
@@ -1939,6 +2025,18 @@
       return trEtat.actif;
     }
     if (traduit) {
+      // Les coupures de rédaction sont revenues avec l'original : il faut les effacer de
+      // nouveau, sinon les nœuds mémorisés ne portent plus que la première moitié de leur
+      // texte et la traduction s'écrirait dans un fragment. Refusionner rend aux
+      // références leur validité, puisque la fusion se fait dans le nœud de gauche.
+      if (!trEtat.aplanis || !trEtat.aplanis.length) {
+        var repris = [];
+        trEtat.blocs.forEach(function (b) {
+          var ops = trAplanir(b.el);
+          if (ops) repris.push({ el: b.el, ops: ops });
+        });
+        trEtat.aplanis = repris;
+      }
       trEtat.blocs.forEach(function (b, i) {
         if (b.traduit) trAppliquer(i, b.traduit.sequence, b.traduit.reordonner, false);
       });
@@ -2003,6 +2101,10 @@
       }
       b.el.removeAttribute('data-okia-tr-fait');
     });
+    // Les textes d'origine sont revenus ; les coupures de rédaction peuvent reprendre
+    // leur place, et le bloc redevient ce qu'il était au caractère près.
+    (trEtat.aplanis || []).forEach(function (a) { trDeplier(a.ops); });
+    trEtat.aplanis = [];
     // `b.traduit` survit : c'est ce qui permet de revenir à la traduction sans la refaire.
     trEtat.actif = false;
     return trEtat.blocs.length;
@@ -2015,7 +2117,12 @@
       defilement: Math.round(window.scrollY || 0),
       hauteur: Math.round(window.innerHeight || 0),
       actif: trEtat.actif,
-      blocs: trEtat.blocs.length
+      blocs: trEtat.blocs.length,
+      coupures: (function () {
+        var c = document.getElementById('content');
+        return c ? c.querySelectorAll('br').length : 0;
+      })(),
+      aplanis: (trEtat.aplanis || []).length
     };
   }
 

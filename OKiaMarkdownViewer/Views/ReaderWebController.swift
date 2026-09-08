@@ -87,12 +87,14 @@ final class ReaderWebController: ObservableObject {
                 completion([], 0)
                 return
             }
+            DocumentTranslator.journal.debug(
+                "collecte : \(enveloppe.blocs.count) blocs, \(enveloppe.vue.coupures ?? -1) <br> restants, \(enveloppe.vue.aplanis ?? -1) blocs aplanis")
             completion(enveloppe.blocs, enveloppe.vue.defilement)
         }
     }
 
     private struct Enveloppe: Decodable {
-        struct Vue: Decodable { let defilement: Int }
+        struct Vue: Decodable { let defilement: Int; let coupures: Int?; let aplanis: Int? }
         let blocs: [TranslationBlock]
         let vue: Vue
     }

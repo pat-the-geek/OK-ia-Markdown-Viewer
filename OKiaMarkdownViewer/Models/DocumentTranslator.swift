@@ -186,7 +186,7 @@ final class DocumentTranslator: ObservableObject {
             return
         }
 
-        Self.journal.debug("démarrage \(source, privacy: .public)→\(cible, privacy: .public) : \(blocs.count) blocs, défilement \(defilement)")
+        Self.journal.debug("démarrage \(source, privacy: .public)→\(cible, privacy: .public) : \(blocs.count) blocs, \(blocs.reduce(0) { $0 + $1.parts.count }) morceaux, défilement \(defilement)")
         file = aTraduire
         totalSignes = max(1, blocs.reduce(0) { $0 + $1.signes })
         faitsSignes = 0
