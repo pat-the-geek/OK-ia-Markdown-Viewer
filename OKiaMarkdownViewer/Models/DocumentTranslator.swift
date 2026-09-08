@@ -101,6 +101,12 @@ final class DocumentTranslator: ObservableObject {
     private var echecs = 0
     private var jeton = 0
 
+    /// Ce qui a déjà été traduit, morceau par morceau. Un diaporama revient sur ses
+    /// diapositives et l'export les rend une seconde fois hors écran : sans cette
+    /// mémoire, le même texte se paierait deux ou trois fois, à 171 caractères par
+    /// seconde. Elle sert aussi à faire porter la traduction au fichier PowerPoint.
+    private(set) var memoire: [String: String] = [:]
+
     // MARK: - Décider s'il y a lieu de traduire
 
     /// La langue du document, devinée sur sa prose — pas sur sa syntaxe. Rien ne sort de
@@ -177,8 +183,22 @@ final class DocumentTranslator: ObservableObject {
             state = .skipped("document sans texte à traduire")
             return
         }
+        let aTraduire = Self.ordonner(blocs, depuis: defilement)
+
+        // Une traduction déjà en cours ne se remplace pas, elle s'allonge. Le diaporama
+        // rend ses diapositives l'une après l'autre et en demande une par une : écraser
+        // la file à chaque demande perdrait tout ce que la précédente n'avait pas encore
+        // traduit — vu au journal, quatre blocs disparus entre deux diapositives.
+        if case .running = state, demande != nil {
+            file.append(contentsOf: aTraduire)
+            totalSignes += aTraduire.reduce(0) { $0 + $1.signes }
+            state = .running(faits: faitsSignes, total: totalSignes)
+            Self.journal.debug("file allongée de \(aTraduire.count) blocs")
+            return
+        }
+
         Self.journal.debug("démarrage \(source, privacy: .public)→\(cible, privacy: .public) : \(blocs.count) blocs, défilement \(defilement)")
-        file = Self.ordonner(blocs, depuis: defilement)
+        file = aTraduire
         totalSignes = max(1, blocs.reduce(0) { $0 + $1.signes })
         faitsSignes = 0
         echecs = 0
@@ -213,11 +233,60 @@ final class DocumentTranslator: ObservableObject {
     fileprivate func terminer(blocs: Int) {
         demande = nil
         state = .finished(blocs: blocs, echecs: echecs)
+        let suites = attentes
+        attentes = []
+        for suite in suites { suite.resume() }
+    }
+
+    private var attentes: [CheckedContinuation<Void, Never>] = []
+
+    /// Attend la fin de la traduction en cours. L'export PowerPoint s'en sert : il ne
+    /// peut pas lire un modèle à moitié traduit.
+    func attendreFin() async {
+        guard case .running = state else { return }
+        await withCheckedContinuation { suite in attentes.append(suite) }
     }
 
     fileprivate func compterEchec() { echecs += 1 }
 
-    fileprivate var fileCourante: [TranslationBlock] { file }
+    fileprivate var enFile: Int { file.count }
+
+    /// Retient chaque morceau traduit sous son texte d'origine.
+    fileprivate func retenir(bloc: TranslationBlock, rendu: [(i: Int, texte: String)]) {
+        let origine = Dictionary(uniqueKeysWithValues: bloc.parts.map { ($0.i, $0) })
+        for morceau in rendu {
+            guard let source = origine[morceau.i], !source.protege,
+                  source.texte != morceau.texte else { continue }
+            memoire[source.texte] = morceau.texte
+        }
+    }
+
+    /// Reprend ce qu'un autre traducteur a déjà appris. Le diaporama a le sien — sans
+    /// quoi les blocs qu'il traduit repartiraient vers le DOM du lecteur, qui est une
+    /// autre page dans un autre WebView — mais il n'a aucune raison de repayer ce que la
+    /// lecture a déjà traduit.
+    func absorber(_ table: [String: String]) {
+        memoire.merge(table) { _, neuf in neuf }
+    }
+
+    /// Traduit une liste de blocs hors du flux principal — une diapositive — et rend la
+    /// table des morceaux traduits. Le lecteur du diaporama n'a pas de vague ni de barre :
+    /// il attend une diapositive, pas un document.
+    func memoireDe(blocs: [TranslationBlock]) -> [String: String] {
+        var table: [String: String] = [:]
+        for bloc in blocs {
+            for part in bloc.parts where !part.protege {
+                if let trad = memoire[part.texte] { table[part.texte] = trad }
+            }
+        }
+        return table
+    }
+
+    /// Prend le bloc suivant. La file se consomme au fur et à mesure plutôt que d'être
+    /// figée au départ : elle peut s'allonger pendant qu'on la traite.
+    fileprivate func suivant() -> TranslationBlock? {
+        file.isEmpty ? nil : file.removeFirst()
+    }
 }
 
 #if canImport(Translation)
@@ -242,11 +311,10 @@ extension DocumentTranslator {
     /// On garde donc la main sur l'ordre, ce qui permettra plus tard de repasser devant un
     /// bloc que le lecteur vient d'atteindre.
     func traduire(avec session: TranslationSession) async {
-        let blocs = fileCourante
         var rendus = 0
 
-        Self.journal.debug("session ouverte, \(blocs.count) blocs en file")
-        for bloc in blocs {
+        Self.journal.debug("session ouverte, \(self.enFile) blocs en file")
+        while let bloc = suivant() {
             if Task.isCancelled {
                 Self.journal.debug("annulé après \(rendus) blocs")
                 break
@@ -254,6 +322,7 @@ extension DocumentTranslator {
             do {
                 let rendu = try await Self.traduire(bloc: bloc, session: session,
                                                     repli: forcerRepli)
+                retenir(bloc: bloc, rendu: rendu.parts)
                 onBloc?(TranslatedBlock(id: bloc.id, parts: rendu.parts,
                                         reordonnable: rendu.reordonnable))
                 rendus += 1

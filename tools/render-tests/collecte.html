@@ -46,7 +46,11 @@ for (const x of postes) total += x</code></pre>
   <div class="ner-legend"><span class="ner-chip">Organisations</span></div>
 </div>
 
-<script src="../../OKiaMarkdownViewer/Web/render.js"></script>
+<script>
+// Anti-cache : le navigateur intégré garde render.js d'une visite à l'autre, et un test
+// qui vérifie du code périmé ne vérifie rien.
+document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/render.js?t=' + Date.now() + '"></scr' + 'ipt>');
+</script>
 <script>
 (function () {
   var lignes = [], echecs = 0;

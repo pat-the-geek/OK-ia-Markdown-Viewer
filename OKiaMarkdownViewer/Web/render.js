@@ -1675,9 +1675,12 @@
      document. `haut` sert à ordonner la vague depuis le premier bloc visible, et
      `signes` à mesurer l'avancement en caractères plutôt qu'en blocs — un titre et un
      paragraphe de trente lignes ne pèsent pas pareil. */
-  function trCollecter() {
-    var container = document.getElementById('content');
-    trEtat = { blocs: [], actif: false };
+  function trCollecter(racine) {
+    // Le lecteur travaille sur #content ; le diaporama sur la diapositive courante, et
+    // l'export sur un conteneur hors écran. Le mécanisme est le même, seule la racine
+    // change.
+    var container = racine || document.getElementById('content');
+    trEtat = { blocs: [], actif: false, derniereAnimation: 0 };
     if (!container) return [];
 
     // Une traduction en place doit être défaite AVANT de recollecter, sinon les textes
@@ -1686,7 +1689,8 @@
     if (trEtat.actif) trRestaurer();
 
     // Une recherche en cours a remplacé des nœuds de texte par des <mark> : nos
-    // références seraient périmées avant d'avoir servi.
+    // références seraient périmées avant d'avoir servi. (Le diaporama n'a pas de
+    // recherche ; l'appel est sans effet là-bas.)
     clearSearch();
     container.querySelectorAll('[data-okia-tr]').forEach(function (el) {
       el.removeAttribute('data-okia-tr');
@@ -2073,6 +2077,28 @@
     return renderMermaid(container, '').then(function () { return diagrammes.length; });
   }
 
+  /* Applique une table « texte d'origine → traduction » à un conteneur, sans modèle et
+     sans aller-retour. C'est ce qui permet à l'export PowerPoint de porter la traduction :
+     il rend chaque diapositive hors écran, et l'on y repose ce qui a déjà été traduit. */
+  function trAppliquerMemoire(racine, table) {
+    var blocs = trCollecter(racine);
+    var faits = 0;
+    blocs.forEach(function (b) {
+      var sequence = [];
+      var connu = false;
+      b.parts.forEach(function (part) {
+        var trad = (!part.protege && Object.prototype.hasOwnProperty.call(table, part.texte))
+          ? table[part.texte] : part.texte;
+        if (trad !== part.texte) connu = true;
+        sequence.push({ i: part.i, texte: trad });
+      });
+      if (!connu) return;
+      trAppliquer(b.id, sequence, false, false);
+      faits++;
+    });
+    return faits;
+  }
+
   /* Le titre tel qu'il s'affiche à cet instant. La barre du lecteur montre le titre du
      document : quand le document passe en allemand, elle le suit. Le coffre et les
      Récents, eux, ne bougent pas — ils indexent des fichiers, pas des affichages. */
@@ -2128,6 +2154,7 @@
       title: trTitre,
       exportNote: trMentionExport,
       clearExportNote: trRetirerMention,
+      applyMemory: trAppliquerMemoire,
       collectExtras: trCollecterExtras,
       applyExtras: trAppliquerExtras,
       restoreExtras: trRestaurerExtras

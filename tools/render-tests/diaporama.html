@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr" class="present-html">
+<head>
+<meta charset="utf-8">
+<title>Test — traduction du diaporama</title>
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/style.css">
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/presentation.css">
+<script src="../../OKiaMarkdownViewer/Web/vendor/marked.min.js"></script>
+<script src="../../OKiaMarkdownViewer/Web/vendor/mermaid.min.js"></script>
+<script src="../../OKiaMarkdownViewer/Web/mermaid-okia-theme.js"></script>
+<style>
+  #resultats { position: fixed; inset: 0; z-index: 9999; overflow: auto; padding: 1.5rem;
+               background: #fff; color: #111; white-space: pre-wrap;
+               font: 13px/1.6 ui-monospace, Menlo, monospace; }
+  .ok { color: #15803d; }
+  .ko { color: #b91c1c; font-weight: 600; }
+</style>
+</head>
+<body class="present-body">
+
+<!-- La coquille du diaporama, réduite à ce que le moteur exige. -->
+<div id="deck" class="deck"></div>
+<div class="present-progress"><div id="progressBar" class="present-progress-bar"></div></div>
+<button id="navPrev"></button>
+<button id="navNext"></button>
+<button id="presentEnd"></button>
+<button id="presentMenuBtn"></button>
+<div id="presentMenu" hidden></div>
+<button id="presentGridBtn"></button>
+<div id="presentOverview" hidden>
+  <div class="overview-head"><span class="overview-title"></span><button id="overviewClose"></button></div>
+  <div id="overviewGrid"></div>
+</div>
+<div id="counter"></div>
+
+<div id="resultats">Chargement…</div>
+
+<script>
+// Anti-cache : le navigateur intégré garde render.js d'une visite à l'autre, et un test
+// qui vérifie du code périmé ne vérifie rien.
+(function () {
+  var t = Date.now();
+  document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/render.js?t=' + t + '"></scr' + 'ipt>');
+  document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/presentation.js?t=' + t + '"></scr' + 'ipt>');
+})();
+</script>
+
+<script>
+(function () {
+  var lignes = [], echecs = 0;
+  function verifier(nom, condition, detail) {
+    if (condition) lignes.push('<span class="ok">✓</span> ' + nom);
+    else { echecs++; lignes.push('<span class="ko">✗ ' + nom + (detail ? ' — ' + detail : '') + '</span>'); }
+  }
+  function rendre() {
+    lignes.push('');
+    lignes.push(echecs === 0
+      ? '<span class="ok">' + (lignes.length - 1) + ' vérifications, aucun échec.</span>'
+      : '<span class="ko">' + echecs + ' ÉCHEC(S).</span>');
+    document.getElementById('resultats').innerHTML = lignes.join('\n');
+    document.title = (echecs === 0 ? 'OK' : 'ÉCHEC') + ' — traduction du diaporama';
+  }
+
+  var MD = [
+    '# Rapport annuel 2026',
+    '',
+    'Le conseil communal a validé les comptes avant le 30 juin.',
+    '',
+    '---',
+    '',
+    '## Comptes',
+    '',
+    'Les charges atteignent 4,2 millions.',
+    '',
+    '---',
+    '',
+    '## Perspectives',
+    '',
+    'Le conseil poursuivra l\'assainissement.'
+  ].join('\n');
+
+  var P = window.OKIA_PRESENT, T = window.OKIA && window.OKIA.translation;
+  if (!P || !T) {
+    document.getElementById('resultats').innerHTML =
+      '<span class="ko">moteur absent : OKIA_PRESENT=' + typeof P + ', translation=' + typeof T + '</span>';
+    return;
+  }
+
+  verifier('collect() accepte une racine', T.collect.length >= 1,
+           'signature à ' + T.collect.length + ' argument(s) — render.js est peut-être en cache');
+  verifier('le moteur expose collectSlide', typeof P.collectSlide === 'function');
+  verifier('le moteur expose collectAllSlides', typeof P.collectAllSlides === 'function');
+  verifier('le moteur expose setTranslation', typeof P.setTranslation === 'function');
+
+  P.start(MD);
+
+  setTimeout(function () {
+    // -- collecte d'une diapositive affichée -------------------------------------
+    var d0 = P.collectSlide(0);
+    var textes0 = [];
+    d0.forEach(function (b) { b.parts.forEach(function (p) { if (!p.protege) textes0.push(p.texte.trim()); }); });
+    verifier('la première diapositive se collecte', d0.length >= 2,
+             'blocs=' + d0.length);
+    verifier('son titre est collecté', textes0.indexOf('Rapport annuel 2026') !== -1,
+             textes0.join(' | '));
+
+    // -- collecte de TOUTES les diapositives, y compris celles jamais ouvertes ----
+    P.collectAllSlides().then(function (tous) {
+      var textes = [];
+      tous.forEach(function (b) { b.parts.forEach(function (p) { if (!p.protege) textes.push(p.texte.trim()); }); });
+      verifier('toutes les diapositives sont collectées', tous.length >= 6,
+               'blocs=' + tous.length);
+      verifier('la dernière diapositive, jamais affichée, en fait partie',
+               textes.indexOf('Perspectives') !== -1, textes.join(' | '));
+      verifier('la collecte hors écran ne laisse rien derrière elle',
+               document.querySelectorAll('body > div.slide-inner').length === 0);
+
+      // -- la mémoire repose la traduction sans modèle ---------------------------
+      var table = {
+        'Rapport annuel 2026': 'Jahresbericht 2026',
+        'Le conseil communal a validé les comptes avant le 30 juin.':
+          'Der Gemeinderat hat die Rechnungen vor dem 30. Juni genehmigt.',
+        'Perspectives': 'Aussichten'
+      };
+      var faits = P.setTranslation(true, table);
+      var vu = document.querySelector('#deck .slide.active .slide-inner') ||
+               document.querySelector('#deck .slide-inner');
+      verifier('setTranslation repose ce qu\'il connaît', faits >= 1, 'blocs reposés=' + faits);
+      verifier('la diapositive affichée passe en allemand',
+               vu && vu.textContent.indexOf('Jahresbericht 2026') !== -1,
+               vu ? vu.textContent.replace(/\s+/g, ' ').slice(0, 80) : 'diapositive introuvable');
+
+      // -- et l'export les relit ------------------------------------------------
+      P.exportModel().then(function (modele) {
+        var tout = JSON.stringify(modele);
+        verifier('l\'export porte la traduction de la diapositive vue',
+                 tout.indexOf('Jahresbericht 2026') !== -1);
+        verifier('l\'export porte celle d\'une diapositive jamais ouverte',
+                 tout.indexOf('Aussichten') !== -1);
+        verifier('l\'export laisse en l\'état ce qui n\'a pas été traduit',
+                 tout.indexOf('Les charges atteignent 4,2 millions.') !== -1);
+        rendre();
+      }).catch(function (e) {
+        verifier('l\'export se construit', false, String(e));
+        rendre();
+      });
+    }).catch(function (e) {
+      verifier('collectAllSlides aboutit', false, String(e));
+      rendre();
+    });
+  }, 700);
+})();
+</script>
+</body>
+</html>

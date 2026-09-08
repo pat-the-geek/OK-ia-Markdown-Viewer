@@ -236,8 +236,86 @@
     rendered[index] = true;
     var inner = sections[index].querySelector('.slide-inner');
     return window.OKIA.renderFragment(inner, rawSlides[index])
-      .then(function () { fitSlide(sections[index]); })
+      .then(function () {
+        fitSlide(sections[index]);
+        // Une diapositive vient d'apparaître : l'hôte peut la traduire. Le rendu est
+        // paresseux, la traduction l'est donc aussi — on ne traduit pas six diapositives
+        // que personne ne regarde encore.
+        demanderTraduction(index, inner);
+      })
       .catch(function () { fitSlide(sections[index]); });
+  }
+
+  /* ---- traduction --------------------------------------------------------- */
+
+  // Rempli par l'hôte : texte d'origine → traduction. Il sert deux fois — pour reposer
+  // une diapositive déjà traduite qu'on rouvre, et pour l'export PowerPoint, qui rend
+  // chaque diapositive hors écran et n'a alors plus rien à demander au modèle.
+  var memoireTr = {};
+  var traductionActive = false;
+
+  function demanderTraduction(index, inner) {
+    if (!traductionActive || !inner) return;
+    // Ce que l'on connaît déjà se repose tout de suite, sans attendre l'hôte.
+    try { window.OKIA.translation.applyMemory(inner, memoireTr); } catch (e) {}
+    post('slideRendered', { index: index });
+  }
+
+  function collectRacine(index) {
+    var section = sections[index];
+    return section ? section.querySelector('.slide-inner') : null;
+  }
+
+  /* Collecte de la diapositive courante, pour que l'hôte la traduise. */
+  function collectSlide(index) {
+    var inner = collectRacine(index);
+    return inner ? window.OKIA.translation.collect(inner) : [];
+  }
+
+  /* Tous les blocs de toutes les diapositives, y compris celles que personne n'a
+     encore ouvertes. L'export PowerPoint les rend toutes hors écran : sans cette passe,
+     le fichier sortirait à moitié traduit — les diapositives vues en allemand, les
+     autres en français. */
+  function collectAllSlides() {
+    var tmp = document.createElement('div');
+    tmp.className = 'slide-inner markdown-body';
+    tmp.style.cssText = 'position:absolute;left:-99999px;top:0;width:1120px;';
+    document.body.appendChild(tmp);
+    var tous = [];
+    var chain = Promise.resolve();
+    rawSlides.forEach(function (md) {
+      chain = chain.then(function () {
+        return window.OKIA.renderFragment(tmp, md).then(function () {
+          var blocs = window.OKIA.translation.collect(tmp);
+          blocs.forEach(function (b) { tous.push(b); });
+        });
+      });
+    });
+    return chain.then(function () {
+      try { document.body.removeChild(tmp); } catch (e) {}
+      return tous;
+    });
+  }
+
+  /* L'hôte annonce que la traduction est active, et livre au fur et à mesure ce qu'il a
+     traduit. Une table plutôt que des blocs : le diaporama rouvre des diapositives, et
+     retraduire ce qui l'a déjà été serait payer deux fois. */
+  function setTranslation(actif, table) {
+    traductionActive = !!actif;
+    if (table) {
+      for (var k in table) {
+        if (Object.prototype.hasOwnProperty.call(table, k)) memoireTr[k] = table[k];
+      }
+    }
+    if (!traductionActive) return 0;
+    var faits = 0;
+    for (var i = 0; i < sections.length; i++) {
+      if (!rendered[i]) continue;
+      var inner = collectRacine(i);
+      if (!inner) continue;
+      try { faits += window.OKIA.translation.applyMemory(inner, memoireTr); } catch (e) {}
+    }
+    return faits;
   }
 
   function updateChrome() {
@@ -409,6 +487,12 @@
     rawSlides.forEach(function (md) {
       chain = chain.then(function () {
         return window.OKIA.renderFragment(tmp, md).then(function () {
+          // Le modèle d'export se lit dans le DOM : on y repose la traduction avant de
+          // lire, sinon le fichier PowerPoint sortirait dans la langue d'origine alors
+          // que le diaporama, lui, est traduit à l'écran.
+          if (traductionActive) {
+            try { window.OKIA.translation.applyMemory(tmp, memoireTr); } catch (e) {}
+          }
           return window.OKIA.exportModel(tmp).then(function (blocks) {
             var title = [];
             if (blocks.length && blocks[0].t === 'heading') { title = blocks[0].runs; blocks = blocks.slice(1); }
@@ -656,6 +740,8 @@
   }
 
   window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
+                          collectSlide: collectSlide, collectAllSlides: collectAllSlides,
+                          setTranslation: setTranslation,
                           setTransition: setTransition, setTheme: setTheme, escape: escape,
                           toggleOverview: toggleOverview, exportModel: buildExportModel };
   post('presentReady', {});

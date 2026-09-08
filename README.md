@@ -532,8 +532,17 @@ seulement, comme les cartes gelées pour l'impression — et le nom du fichier p
 pour que deux versions du même rapport ne se recouvrent pas dans un dossier de
 téléchargements. Le **Markdown partagé reste la source**, toujours : c'est le fichier
 lui-même, et il n'a pas changé de langue ; un `.md` traduit se ferait passer pour un original.
-Le diaporama et son export PowerPoint travaillent sur le Markdown source dans un autre
-moteur : ils ne sont pas traduits, et c'est à revoir si l'usage le demande.
+Le diaporama **est traduit** depuis le 2026-09-08, et son export PowerPoint aussi. Il rend
+ses diapositives paresseusement : la traduction l'est donc également — on ne traduit pas six
+diapositives que personne ne regarde encore. Ce qui circule entre le lecteur et lui n'est pas
+une liste de blocs numérotés mais une table « texte d'origine → traduction » : une diapositive
+qu'on rouvre, et l'export qui les rend toutes une seconde fois hors écran, s'y resservent sans
+repasser par le modèle, qui coûte 171 caractères par seconde. Le prix est qu'un morceau déplacé
+par la syntaxe d'arrivée reste à sa place — une diapositive est courte, la gêne est moindre que
+l'attente. L'export, lui, traduit d'abord **toutes** les diapositives, y compris celles jamais
+ouvertes : un fichier à moitié traduit serait pire que pas traduit du tout, puisque rien n'y
+dirait au destinataire où la traduction s'arrête. Le diaporama n'a pas de bascule vers
+l'original : il est en plein écran, sans chrome ; on en sort pour retrouver le document.
 
 *Le téléchargement du dictionnaire, tranché le 2026-09-08.* `status(from:to:)` rend trois
 états et non deux, et la nuance décide de l'expérience : « pris en charge » n'est pas

@@ -97,7 +97,13 @@ struct ReaderView: View {
             ImageZoomView(image: image)
         }
         .fullScreenCover(isPresented: $presenting) {
-            PresentationView(document: document)
+            // Le diaporama reçoit le traducteur du lecteur, pas un neuf : sa mémoire
+            // porte déjà tout ce que la lecture a traduit, et la même diapositive ne se
+            // paiera pas une seconde fois.
+            PresentationView(document: document,
+                             memoireHeritee: translator.memoire,
+                             langueSource: translator.demandeSource,
+                             traduire: traductionActive)
         }
         #if DEBUG
         // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_OPEN_SLIDES
@@ -946,13 +952,27 @@ struct DocumentSummaryView: View {
 /// the existing full-screen zoom viewers on top of the slideshow.
 struct PresentationView: View {
     let document: MarkdownDocument
+    /// La mémoire du lecteur, reprise telle quelle : ce qu'il a déjà traduit ne se
+    /// repaiera pas ici, à 171 caractères par seconde.
+    var memoireHeritee: [String: String]
+    var langueSource: String?
+    var traduire: Bool
     @Environment(\.dismiss) private var dismiss
+
+    /// Le diaporama a son propre traducteur. Le partager avec le lecteur enverrait les
+    /// blocs traduits ici vers le DOM de l'autre WebView — une autre page, d'autres
+    /// nœuds — et il faut de toute façon une vue hôte vivante dans cette hiérarchie-ci
+    /// pour que le framework rende une session.
+    @StateObject private var trad = DocumentTranslator()
     @State private var tappedDiagram: TappedDiagram?
     @State private var tappedImage: TappedImage?
     @State private var sharePayload: SharePayload?
 
     var body: some View {
         PresentationWebView(document: document,
+                            translator: trad,
+                            langueSource: langueSource,
+                            traduire: traduire,
                             onExit: { dismiss() },
                             onDiagram: { tappedDiagram = $0 },
                             onImage: { tappedImage = $0 },
@@ -963,7 +983,15 @@ struct PresentationView: View {
             .fullScreenCover(item: $tappedDiagram) { DiagramZoomView(diagram: $0) }
             .fullScreenCover(item: $tappedImage) { ImageZoomView(image: $0) }
             .sheet(item: $sharePayload) { payload in ShareSheet(items: [payload.url]) }
-            .onAppear(perform: requestLandscapeIfPhone)
+            .onAppear {
+                requestLandscapeIfPhone()
+                trad.absorber(memoireHeritee)
+            }
+            .overlay {
+                if #available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *) {
+                    TranslationHostView(translator: trad)
+                }
+            }
     }
 
     /// On iPhone, the deck reads best in landscape ("en largeur"); nudge the scene.
@@ -1004,6 +1032,12 @@ final class KeyCapturingWebView: WKWebView {
 
 struct PresentationWebView: UIViewRepresentable {
     let document: MarkdownDocument
+    var translator: DocumentTranslator
+    var langueSource: String?
+    /// Vrai quand l'option est active. Le diaporama n'a pas de bandeau — il est en plein
+    /// écran, sans chrome — donc pas de bascule vers l'original : on sort du diaporama
+    /// pour retrouver le document.
+    var traduire: Bool
     var onExit: () -> Void
     var onDiagram: (TappedDiagram) -> Void
     var onImage: (TappedImage) -> Void
@@ -1013,7 +1047,7 @@ struct PresentationWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx"] {
+        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered"] {
             controller.add(context.coordinator, name: name)
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
@@ -1058,16 +1092,83 @@ struct PresentationWebView: UIViewRepresentable {
         init(_ parent: PresentationWebView) { self.parent = parent }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            // Chaque bloc traduit alimente la table que le diaporama repose sur ses
+            // diapositives — et que l'export PowerPoint relira.
+            parent.translator.onBloc = { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.envoyerTraduction(self.parent.translator.memoire, actif: true)
+                }
+            }
             startPresentation()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak webView] in
                 webView?.becomeFirstResponder()
             }
         }
 
+        /// Traduit une diapositive qui vient d'apparaître. Le rendu du diaporama est
+        /// paresseux ; la traduction l'est donc aussi — on ne traduit pas six diapositives
+        /// que personne ne regarde encore.
+        ///
+        /// Le résultat repart en table « texte d'origine → traduction » plutôt qu'en blocs
+        /// numérotés : une diapositive qu'on rouvre, et l'export qui les rend toutes une
+        /// seconde fois hors écran, se resservent alors sans repasser par le modèle. Le
+        /// prix est qu'un morceau déplacé par la syntaxe d'arrivée reste à sa place —
+        /// une diapositive est courte, la gêne est moindre que d'attendre.
+        func traduireDiapositive(_ index: Int) {
+            guard parent.traduire, let webView else { return }
+            let cible = Localization.shared.code
+            let js = "return JSON.stringify(window.OKIA_PRESENT.collectSlide(\(index)));"
+            webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { [weak self] result in
+                guard let self, case .success(let value) = result, let json = value as? String,
+                      let data = json.data(using: .utf8),
+                      let blocs = try? JSONDecoder().decode([TranslationBlock].self, from: data),
+                      !blocs.isEmpty else { return }
+                Task { @MainActor in
+                    let translator = self.parent.translator
+                    // La langue du lecteur si elle est connue, sinon devinée sur cette
+                    // diapositive : le diaporama peut s'ouvrir avant que la lecture ait
+                    // fini de deviner la sienne, et il ne doit pas en dépendre.
+                    guard let source = self.parent.langueSource
+                            ?? DocumentTranslator.langue(de: blocs),
+                          source != cible else { return }
+
+                    // Ce que la lecture a déjà traduit se repose sans rien demander.
+                    self.envoyerTraduction(translator.memoire, actif: true)
+                    let manquants = blocs.filter { bloc in
+                        bloc.parts.contains { !$0.protege && translator.memoire[$0.texte] == nil }
+                    }
+                    guard !manquants.isEmpty,
+                          case .pret = await DocumentTranslator.aptitude(de: source, vers: cible)
+                    else { return }
+                    DocumentTranslator.journal.debug(
+                        "diapositive \(index) : \(manquants.count) blocs à traduire")
+                    translator.demarrer(blocs: manquants, defilement: 0,
+                                        source: source, cible: cible)
+                }
+            }
+        }
+
+        func envoyerTraduction(_ table: [String: String], actif: Bool) {
+            guard let webView,
+                  let data = try? JSONSerialization.data(withJSONObject: table),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            webView.evaluateJavaScript(
+                "window.OKIA_PRESENT && window.OKIA_PRESENT.setTranslation(\(actif), \(json));")
+        }
+
         func startPresentation() {
             guard let webView,
                   let data = try? JSONEncoder().encode(parent.document.text),
                   let mdJSON = String(data: data, encoding: .utf8) else { return }
+            // AVANT le démarrage, sans quoi rien ne part : le moteur n'annonce une
+            // diapositive rendue que si la traduction est active, et la première est
+            // rendue par `start` lui-même. L'annoncer après, c'est ne jamais traduire la
+            // première diapositive — et comme c'est elle qui déclenche tout, aucune.
+            // On active sur la seule option : la langue d'origine, elle, peut n'être pas
+            // encore connue — le diaporama s'ouvre parfois avant que le lecteur ait fini
+            // de deviner la sienne. Le tri se fait plus bas, diapositive par diapositive.
+            envoyerTraduction(parent.translator.memoire, actif: parent.traduire)
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.start(\(mdJSON));",
                                        completionHandler: nil)
         }
@@ -1113,6 +1214,11 @@ struct PresentationWebView: UIViewRepresentable {
                 if let dict = message.body as? [String: Any], let src = dict["src"] as? String {
                     parent.onImage(TappedImage(src: src))
                 }
+            case "slideRendered":
+                if let dict = message.body as? [String: Any] {
+                    let index = (dict["index"] as? Int) ?? Int((dict["index"] as? Double) ?? 0)
+                    traduireDiapositive(index)
+                }
             case "exportPptx":
                 exportPptx()
             default:
@@ -1120,7 +1226,51 @@ struct PresentationWebView: UIViewRepresentable {
             }
         }
 
+        /// Avant d'exporter, s'assurer que TOUTES les diapositives sont traduites — pas
+        /// seulement celles que le lecteur a ouvertes. Sans cette passe, le fichier
+        /// sortirait à moitié traduit, ce qui est pire que pas traduit du tout : rien ne
+        /// dirait au destinataire où s'arrête la traduction.
         private func exportPptx() {
+            guard parent.traduire else { exportPptxMaintenant(); return }
+            guard let webView else { return }
+            let cible = Localization.shared.code
+            let js = "return JSON.stringify(await window.OKIA_PRESENT.collectAllSlides());"
+            webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { [weak self] result in
+                guard let self else { return }
+                guard case .success(let value) = result, let json = value as? String,
+                      let data = json.data(using: .utf8),
+                      let blocs = try? JSONDecoder().decode([TranslationBlock].self, from: data),
+                      !blocs.isEmpty else {
+                    self.exportPptxMaintenant()
+                    return
+                }
+                Task { @MainActor in
+                    let translator = self.parent.translator
+                    guard let source = self.parent.langueSource
+                            ?? DocumentTranslator.langue(de: blocs),
+                          source != cible,
+                          case .pret = await DocumentTranslator.aptitude(de: source, vers: cible)
+                    else {
+                        self.exportPptxMaintenant()
+                        return
+                    }
+                    let manquants = blocs.filter { bloc in
+                        bloc.parts.contains { !$0.protege && translator.memoire[$0.texte] == nil }
+                    }
+                    if !manquants.isEmpty {
+                        DocumentTranslator.journal.debug(
+                            "export : \(manquants.count) blocs encore à traduire")
+                        translator.demarrer(blocs: manquants, defilement: 0,
+                                            source: source, cible: cible)
+                        await translator.attendreFin()
+                        self.envoyerTraduction(translator.memoire, actif: true)
+                    }
+                    self.exportPptxMaintenant()
+                }
+            }
+        }
+
+        private func exportPptxMaintenant() {
             guard let webView else { return }
             let name = (parent.document.filename as NSString).deletingPathExtension
             webView.callAsyncJavaScript("return await window.OKIA_PRESENT.exportModel();",
