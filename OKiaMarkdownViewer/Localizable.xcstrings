@@ -387,37 +387,37 @@
         }
       }
     },
-    "Ce document est en %@. Sa traduction demande un téléchargement.": {
+    "Ce document est en %@. Le traduire en %@ demande un téléchargement.": {
       "extractionState": "manual",
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ce document est en %@. Sa traduction demande un téléchargement."
+            "value": "Ce document est en %@. Le traduire en %@ demande un téléchargement."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This document is in %@. Translating it requires a download."
+            "value": "This document is in %@. Translating it into %@ requires a download."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieses Dokument ist auf %@. Für die Übersetzung ist ein Download nötig."
+            "value": "Dieses Dokument ist auf %@. Für die Übersetzung ins %@ ist ein Download nötig."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este documento está en %@. Su traducción requiere una descarga."
+            "value": "Este documento está en %@. Traducirlo al %@ requiere una descarga."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questo documento è in %@. La traduzione richiede un download."
+            "value": "Questo documento è in %@. Tradurlo in %@ richiede un download."
           }
         }
       }
@@ -3778,6 +3778,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Traduci"
+          }
+        }
+      }
+    },
+    "Traduire depuis %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduire depuis %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translate from %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzen aus dem %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducir desde %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tradurre dal %@"
           }
         }
       }

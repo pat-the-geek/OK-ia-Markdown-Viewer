@@ -35,6 +35,9 @@ struct ReaderView: View {
     /// Faux quand le lecteur a demandé à revoir l'original. La traduction reste en
     /// mémoire : la bascule ne recalcule rien.
     @State private var afficheTraduction = true
+    /// La langue du document, devinée dès le rendu. Elle sert à griser la langue d'arrivée
+    /// qui n'aurait rien à traduire, et à annoncer d'où l'on part.
+    @State private var langueDetectee: String?
     @FocusState private var searchFocused: Bool
     @ObservedObject private var loc = Localization.shared
 
@@ -170,7 +173,7 @@ struct ReaderView: View {
             translator.onBloc = { [weak web] bloc in web?.appliquerTraduction(bloc) }
             translator.extras = { [weak web] in await web?.collecterExtras() ?? [] }
             translator.onExtras = { [weak web] table in web?.appliquerExtras(table) }
-            web.onRendered = { traduireSiDemandé() }
+            web.onRendered = { analyserPuisTraduire() }
         }
         // Changer de langue ou décocher l'option en cours de lecture doit se voir tout de
         // suite : c'est le même document, il n'y aura pas de nouveau rendu pour rattraper.
@@ -198,8 +201,8 @@ struct ReaderView: View {
     /// que le texte est traduit, d'où il vient, et que rien n'est sorti de l'appareil.
     @ViewBuilder private var bandeauTraduction: some View {
         switch translator.state {
-        case .attente(let source):
-            bandeauProposition(source: source)
+        case .attente(let source, let cible):
+            bandeauProposition(source: source, cible: cible)
         case .running(let faits, let total):
             bandeau(progression: total > 0 ? Double(faits) / Double(total) : 0,
                     texte: tr("Traduction en cours…"))
@@ -215,20 +218,18 @@ struct ReaderView: View {
 
     /// Le bandeau qui demande avant de télécharger. Il dit le prix — un dictionnaire à
     /// récupérer — plutôt que de laisser une invite système l'annoncer à sa place.
-    private func bandeauProposition(source: String) -> some View {
-        let locale = Locale(identifier: Localization.shared.code)
-        let nom = locale.localizedString(forLanguageCode: source) ?? source
-        let langue = nom.prefix(1).uppercased() + nom.dropFirst()
-        return HStack(spacing: 10) {
+    private func bandeauProposition(source: String, cible: String) -> some View {
+        HStack(spacing: 10) {
             Image(systemName: "arrow.down.circle")
                 .font(.caption)
                 .foregroundStyle(orange)
-            Text(tr("Ce document est en %@. Sa traduction demande un téléchargement.", langue))
+            Text(tr("Ce document est en %@. Le traduire en %@ demande un téléchargement.",
+                    nomDeLangue(source), nomDeLangue(cible)))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
             Spacer(minLength: 8)
-            Button(tr("Traduire")) { accepterTraduction() }
+            Button(tr("Traduire")) { accepterTraduction(cible: cible) }
                 .font(.caption.weight(.medium))
                 .buttonStyle(.plain)
                 .foregroundStyle(orange)
@@ -315,14 +316,72 @@ struct ReaderView: View {
     /// Le lecteur a accepté le téléchargement : on repart d'une collecte fraîche plutôt
     /// que de rejouer celle de tout à l'heure, qu'une recherche entre-temps aurait pu
     /// rendre caduque.
-    private func accepterTraduction() {
-        guard case .attente(let source) = translator.state else { return }
-        let cible = Localization.shared.code
+    private func accepterTraduction(cible: String) {
+        guard case .attente(let source, _) = translator.state else { return }
         web.collecterTraduisible { blocs, defilement in
             guard !blocs.isEmpty else { return }
             afficheTraduction = true
             translator.demarrer(blocs: blocs, defilement: defilement,
                                 source: source, cible: cible)
+        }
+    }
+
+    /// La langue d'arrivée en cours, ou celle des réglages tant que rien n'a été demandé.
+    private var cibleActive: String { translator.demandeCible ?? Localization.shared.code }
+
+    /// Le nom d'une langue, dit dans celle du lecteur, première lettre en capitale.
+    private func nomDeLangue(_ code: String) -> String {
+        let locale = Locale(identifier: Localization.shared.code)
+        let nom = locale.localizedString(forLanguageCode: code) ?? code
+        return nom.prefix(1).uppercased() + nom.dropFirst()
+    }
+
+    /// Traduire vers la langue demandée depuis le bouton, que l'option automatique soit
+    /// active ou non — c'est un geste explicite, il n'a pas à passer par les Réglages.
+    private func traduireVers(_ cible: String) {
+        web.collecterTraduisible { blocs, defilement in
+            guard !blocs.isEmpty,
+                  let source = langueDetectee ?? DocumentTranslator.langue(de: blocs),
+                  source != cible else { return }
+            Task { @MainActor in
+                switch await DocumentTranslator.aptitude(de: source, vers: cible) {
+                case .impossible:
+                    return
+                case .aTelecharger, .pret:
+                    // Pas de bandeau ici : le lecteur vient de désigner une langue, son
+                    // geste vaut demande. Si un dictionnaire manque, c'est l'invite du
+                    // système qui le dira — la doubler serait demander deux fois.
+                    // La mémoire est indexée par le texte d'origine seulement : changer de
+                    // langue d'arrivée sans l'oublier reposerait de l'allemand sur un
+                    // document qu'on vient de demander en espagnol.
+                    if translator.demandeCible != cible { translator.oublier() }
+                    afficheTraduction = true
+                    translator.demarrer(blocs: blocs, defilement: defilement,
+                                        source: source, cible: cible)
+                }
+            }
+        }
+    }
+
+    /// Devine la langue du document dès le rendu — pour le bouton — puis traduit si
+    /// l'option automatique le demande. Une seule collecte sert aux deux.
+    private func analyserPuisTraduire() {
+        let cible = Localization.shared.code
+        web.collecterTraduisible { blocs, defilement in
+            guard !blocs.isEmpty else { langueDetectee = nil; return }
+            let source = DocumentTranslator.langue(de: blocs)
+            langueDetectee = source
+            guard traductionActive, let source, source != cible else { return }
+            Task { @MainActor in
+                switch await DocumentTranslator.aptitude(de: source, vers: cible) {
+                case .impossible: return
+                case .aTelecharger: translator.attendre(source: source, cible: cible)
+                case .pret:
+                    afficheTraduction = true
+                    translator.demarrer(blocs: blocs, defilement: defilement,
+                                        source: source, cible: cible)
+                }
+            }
         }
     }
 
@@ -349,7 +408,7 @@ struct ReaderView: View {
                     // Le dictionnaire manque. Le télécharger fait tomber une invite
                     // système : elle doit répondre à un geste, pas surprendre un lecteur
                     // au milieu d'une page. On propose, on n'impose pas.
-                    translator.attendre(source: source)
+                    translator.attendre(source: source, cible: cible)
                 }
             }
         }
@@ -402,6 +461,44 @@ struct ReaderView: View {
             Button { showTOC = true } label: { Image(systemName: "list.bullet") }
                 .disabled(web.toc.isEmpty)
                 .accessibilityLabel(tr("Sommaire (accessibilité)"))
+
+            // Traduire — le geste ponctuel, à côté du réglage qui, lui, traduit tout seul.
+            // Le menu n'apparaît que si l'appareil sait traduire ET que la langue du
+            // document est connue : un bouton qui ne peut rien faire ne vaut pas la place
+            // qu'il prend dans une barre qui en compte déjà huit.
+            if let source = langueDetectee {
+                Menu {
+                    Section(tr("Traduire depuis %@", nomDeLangue(source))) {
+                        ForEach(AppLanguage.allCases.filter { $0 != .system }) { langue in
+                            Button {
+                                traduireVers(langue.rawValue)
+                            } label: {
+                                Label {
+                                    Text("\(langue.drapeau)  \(langue.nativeName)")
+                                } icon: {
+                                    if cibleActive == langue.rawValue { Image(systemName: "checkmark") }
+                                }
+                            }
+                            .disabled(langue.rawValue == source)
+                        }
+                    }
+                    if translator.demandeCible != nil {
+                        Divider()
+                        Button {
+                            afficheTraduction.toggle()
+                            web.afficherTraduction(afficheTraduction)
+                            if afficheTraduction { web.reappliquerExtras() } else { web.restaurerExtras() }
+                            web.titreCourant { t in if !t.isEmpty { title = t } }
+                        } label: {
+                            Label(afficheTraduction ? tr("Voir l’original") : tr("Voir la traduction"),
+                                  systemImage: afficheTraduction ? "arrow.uturn.backward" : "character.book.closed")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "character.book.closed")
+                }
+                .accessibilityLabel(tr("Traduire"))
+            }
 
             Button {
                 withAnimation(.easeInOut(duration: 0.15)) { isSearching.toggle() }

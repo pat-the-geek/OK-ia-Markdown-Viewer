@@ -57,7 +57,7 @@ final class DocumentTranslator: ObservableObject {
         /// La paire est prise en charge mais le dictionnaire n'est pas là. On ne lance
         /// rien : le téléchargement fait tomber une invite système, et elle doit répondre
         /// à un geste du lecteur, pas le surprendre au milieu d'une page.
-        case attente(source: String)
+        case attente(source: String, cible: String)
         case running(faits: Int, total: Int)      // en caractères, pas en blocs
         /// « traduit, sauf trois paragraphes » — une fin qui n'arrive pas est pire qu'un échec.
         case finished(blocs: Int, echecs: Int)
@@ -80,6 +80,10 @@ final class DocumentTranslator: ObservableObject {
     /// La langue d'origine du document en cours, pour l'annoncer au lecteur. Elle survit
     /// à la fin de la traduction, alors que `demande` retombe à nil.
     @Published private(set) var demandeSource: String?
+
+    /// La langue d'arrivée en cours. Elle n'est pas toujours celle de l'app : le lecteur
+    /// peut demander une autre cible depuis le bouton de traduction.
+    @Published private(set) var demandeCible: String?
 
     /// Appelé pour chaque bloc traduit, dans l'ordre où la vague les traite.
     var onBloc: ((TranslatedBlock) -> Void)?
@@ -157,9 +161,10 @@ final class DocumentTranslator: ObservableObject {
     /// proposition et le clic, le lecteur peut chercher dans le document, et une
     /// recherche remplace des nœuds de texte par des `<mark>`. Les références seraient
     /// périmées avant d'avoir servi. Le geste relance donc une collecte fraîche.
-    func attendre(source: String) {
+    func attendre(source: String, cible: String) {
         demandeSource = source
-        state = .attente(source: source)
+        demandeCible = cible
+        state = .attente(source: source, cible: cible)
     }
 
     // MARK: - Lancer
@@ -194,6 +199,7 @@ final class DocumentTranslator: ObservableObject {
         state = .running(faits: 0, total: totalSignes)
         jeton += 1
         demandeSource = source
+        demandeCible = cible
         demande = Demande(source: source, cible: cible, jeton: jeton)
     }
 
@@ -211,7 +217,15 @@ final class DocumentTranslator: ObservableObject {
         file = []
         demande = nil
         demandeSource = nil
+        demandeCible = nil
         state = .idle
+    }
+
+    /// Oublie ce qui a été traduit. Indispensable quand la langue d'arrivée change : la
+    /// mémoire est indexée par le texte d'origine seulement, si bien qu'elle reposerait
+    /// de l'allemand sur un document qu'on vient de demander en espagnol.
+    func oublier() {
+        memoire.removeAll()
     }
 
     fileprivate func avancer(_ signes: Int) {
@@ -239,6 +253,9 @@ final class DocumentTranslator: ObservableObject {
     fileprivate func compterEchec() { echecs += 1 }
 
     fileprivate var enFile: Int { file.count }
+
+    /// Vide la file : ce qui reste n'a plus aucune chance d'aboutir.
+    fileprivate func vider() { file.removeAll() }
 
     /// Retient chaque morceau traduit sous son texte d'origine.
     fileprivate func retenir(bloc: TranslationBlock, rendu: [(i: Int, texte: String)]) {
@@ -299,6 +316,7 @@ extension DocumentTranslator {
     /// bloc que le lecteur vient d'atteindre.
     func traduire(avec session: TranslationSession) async {
         var rendus = 0
+        var consecutifs = 0
 
         Self.journal.debug("session ouverte, \(self.enFile) blocs en file")
         while let bloc = suivant() {
@@ -309,6 +327,7 @@ extension DocumentTranslator {
             do {
                 let rendu = try await Self.traduire(bloc: bloc, session: session)
                 retenir(bloc: bloc, rendu: rendu.parts)
+                consecutifs = 0
                 onBloc?(TranslatedBlock(id: bloc.id, parts: rendu.parts,
                                         reordonnable: rendu.reordonnable))
                 rendus += 1
@@ -317,6 +336,16 @@ extension DocumentTranslator {
                 // pouvoir finir en disant « traduit, sauf trois paragraphes ».
                 Self.journal.error("bloc \(bloc.id) en échec : \(String(describing: error), privacy: .public)")
                 compterEchec()
+                consecutifs += 1
+                // Sauf quand rien ne passe : un dictionnaire refusé ou interrompu fait
+                // échouer TOUS les blocs, et les tenter l'un après l'autre ne ferait
+                // qu'ajouter des secondes à un échec déjà acquis. Trois de suite dès le
+                // départ suffisent à conclure.
+                if consecutifs >= 3 && rendus == 0 {
+                    Self.journal.error("trois échecs de suite sans un seul succès : abandon")
+                    vider()
+                    break
+                }
             }
             avancer(bloc.signes)
         }
@@ -412,8 +441,18 @@ extension DocumentTranslator {
     /// séparateur — « veröffentlichtder Gemeindeseite ». Trois règles, et seulement
     /// celles qui valent dans les cinq langues de l'app.
     private static func recoudre(_ sequence: [(i: Int, texte: String)],
-                                 proteges: Set<Int>) -> [(i: Int, texte: String)] {
+                                 proteges: Set<Int>,
+                                 suivraLOrdreDuTexte: Bool = true) -> [(i: Int, texte: String)] {
         var out = sequence
+
+        // Les règles de jointure ne valent que si l'on connaît les vrais voisins. Quand le
+        // bloc ne sera PAS réordonné — un nœud éclaté, que le DOM ne sait pas représenter —
+        // les morceaux resteront dans l'ordre du document, pas dans celui de la séquence.
+        // Coudre selon la séquence reviendrait alors à recoudre des bords qui ne se
+        // touchent pas, et à laisser sans espace ceux qui se touchent vraiment.
+        if !suivraLOrdreDuTexte {
+            out.sort { $0.i < $1.i }
+        }
 
         // 1. À l'intérieur d'un morceau : une espace devant un point ou une virgule n'a
         //    sa place dans aucune des cinq langues. On s'arrête là — « ; : ! ? » en
@@ -425,7 +464,10 @@ extension DocumentTranslator {
                                       with: "$1", options: .regularExpression)
         }
 
-        let fermantes = CharacterSet(charactersIn: ".,;:!?…)]}»%")
+        // Seulement celles qui ne prennent JAMAIS d'espace devant, dans aucune des cinq
+        // langues. « ; : ! ? » et « % » en prennent une en français — les inclure ici
+        // revenait à supprimer des espaces légitimes : « 4,2 % » devenait « 4,2% ».
+        let fermantes = CharacterSet(charactersIn: ".,…)]}")
         for k in 0..<max(0, out.count - 1) {
             let courantProtege = proteges.contains(out[k].i)
             let suivantProtege = proteges.contains(out[k + 1].i)
@@ -439,17 +481,27 @@ extension DocumentTranslator {
                                         .drop(while: { $0.isWhitespace }).reversed())
             }
 
-            // 3. Deux mots soudés à une jointure : « veröffentlichtder ». Le DOM sépare
-            //    deux nœuds là où la phrase avait un blanc ; quand la traduction déplace
-            //    l'un des deux, ce blanc peut se perdre. Deux caractères de mot qui se
-            //    touchent à une frontière n'arrivent jamais dans ces cinq langues.
-            let dernier = out[k].texte.last
-            if let d = dernier, d.isLetter || d.isNumber, premier.isLetter || premier.isNumber {
-                if suivantProtege {
-                    out[k].texte += " "
-                } else {
-                    out[k + 1].texte = " " + out[k + 1].texte
-                }
+            // 3. Deux morceaux soudés à une jointure. Le DOM sépare deux nœuds là où la
+            //    phrase avait un blanc ; quand la traduction déplace l'un des deux, ce
+            //    blanc se perd et l'on lit « calcolaTotale()avant chaque exportation ».
+            //
+            //    La première version ne regardait que deux lettres, si bien qu'une
+            //    parenthèse fermante — la fin de tout appel de fonction — ne déclenchait
+            //    rien. On raisonne donc par l'inverse : on insère une espace sauf là où
+            //    elle n'a rien à faire — après une apostrophe ou une ouverture, devant une
+            //    ponctuation, ou si l'un des deux bords en porte déjà une.
+            let colleAGauche = CharacterSet(charactersIn: "'\u{2019}([{«\u{00A0}-–—/")
+            let colleADroite = CharacterSet(charactersIn: ".,;:!?…)]}»%\u{00A0}-–—/'\u{2019}")
+
+            guard let fin = out[k].texte.unicodeScalars.last,
+                  let debut = out[k + 1].texte.unicodeScalars.first else { continue }
+            let manque = !CharacterSet.whitespacesAndNewlines.contains(fin)
+                && !CharacterSet.whitespacesAndNewlines.contains(debut)
+                && !colleAGauche.contains(fin)
+                && !colleADroite.contains(debut)
+            if manque {
+                if suivantProtege { out[k].texte += " " }
+                else { out[k + 1].texte = " " + out[k + 1].texte }
             }
         }
         return out
@@ -500,7 +552,7 @@ extension DocumentTranslator {
         var sequence = ordre.map { (i: $0, texte: textes[$0] ?? "") }
         let proteges = Set(bloc.parts.filter { $0.protege }.map { $0.i })
         sequence = recoller(sequence, bloc: bloc, proteges: proteges)
-        sequence = recoudre(sequence, proteges: proteges)
+        sequence = recoudre(sequence, proteges: proteges, suivraLOrdreDuTexte: contigu)
         // On ne remet dans l'ordre de la langue d'arrivée que si cet ordre est
         // représentable : un nœud éclaté rendrait la phrase incomplète ou mélangée.
         // Dans ce cas on garde l'ordre du français — imparfait, mais entier.

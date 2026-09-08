@@ -13,6 +13,21 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Un drapeau devant le nom, pour repérer la langue d'un coup d'œil dans le menu de
+    /// traduction. Ce sont les drapeaux d'usage des langues, pas des pays où on les parle :
+    /// l'allemand, le français et l'italien sont aussi des langues suisses, et aucun
+    /// drapeau ne dirait cela. Ils servent de repère visuel, pas de revendication.
+    var drapeau: String {
+        switch self {
+        case .system:  return "⚙️"
+        case .french:  return "🇫🇷"
+        case .english: return "🇬🇧"
+        case .german:  return "🇩🇪"
+        case .spanish: return "🇪🇸"
+        case .italian: return "🇮🇹"
+        }
+    }
+
     /// Each language names itself — a German speaker looks for « Deutsch », not « Allemand ».
     /// `.system` has no native name; the picker labels it with a translated string.
     var nativeName: String {
