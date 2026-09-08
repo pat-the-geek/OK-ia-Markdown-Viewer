@@ -496,11 +496,17 @@ voit le compilateur — de la cible **iOS**. Il faut donc aussi
 qui ne ment pas est le binaire produit : `vtool -show-build-version` doit annoncer
 `platform MACCATALYST` et `minos 26.0`.
 
-**Vérifié sur appareil réel le 2026-09-08**, build 1.2 (35), sur iPhone et sur MacBook :
-la traduction, le bouton et son menu, la bascule vers l'original après une recherche, et
-— enfin — l'invite de téléchargement du dictionnaire, la seule des trois questions de départ
-qui n'avait jamais pu être observée. Le simulateur ne traduisant pas, tout le développement
-s'était fait en Mac Catalyst ; cet essai referme cet angle mort. Reste non éprouvé : le
+**Vérifié sur appareil réel le 2026-09-08**, build 1.2 (35), sur iPhone et sur MacBook : la
+traduction, le bouton et son menu, la bascule vers l'original après une recherche. Toutes les
+traductions ont abouti. Le simulateur ne traduisant pas, tout le développement s'était fait en
+Mac Catalyst ; cet essai lève cet angle mort.
+
+**L'invite de téléchargement, elle, n'a toujours pas été vue** — et c'est une information en
+soi : les cinq langues de l'app étaient déjà installées sur les deux appareils, comme elles
+l'étaient sur la machine de développement. Le chemin `.aTelecharger` et son bandeau restent
+donc du code jamais exécuté en conditions réelles. Cela relativise le risque — un appareil
+suisse a vraisemblablement fr/de/it/en d'emblée — sans le supprimer : il suffit d'un lecteur
+qui ait retiré une langue dans les réglages système. Reste non éprouvé également : le
 diaporama traduit sur iPhone et l'export PowerPoint qui en découle.
 
 **Le site.** La feuille de route publique (`ok-ia.ch/mdviewer/roadmap.html`) annonce la 1.2
