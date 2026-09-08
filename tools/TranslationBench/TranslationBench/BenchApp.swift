@@ -156,6 +156,7 @@ final class Banc: ObservableObject {
         if retenue(6) { await sousMinuterie("6. débit", 300) { await self.epreuve6Debit() } }
         if retenue(7) { await sousMinuterie("7. paires", 300) { await self.epreuve7Paires() } }
         if retenue(8) { await sousMinuterie("8. langue absente", 180) { await self.epreuve8LangueAbsente() } }
+        if retenue(10) { await sousMinuterie("10. doublon", 180) { await self.epreuve10Doublon() } }
 
         dire()
         dire("FIN")
@@ -452,6 +453,81 @@ final class Banc: ObservableObject {
                 if let l = run.link { marques.append("lien=\(l.absoluteString)") }
                 self.dire("     « \(String(at[run.range].characters)) »  \(marques.isEmpty ? "—" : marques.joined(separator: " "))")
             }
+        } catch {
+            self.dire("   ERREUR : \(error)")
+        }
+        self.dire("")
+    }
+
+    // 10. Le contenu protégé se retrouve-t-il DEUX fois ?
+    //
+    //     Vu à l'écran sur un vrai document : « du quartier d'Arcegno Arcegno », et
+    //     « la fonction calculateTotalest utilisée calcolaTotale() ». Le morceau protégé
+    //     revient intact — c'est sa copie, dans le segment voisin, qui est en trop.
+    //     `skipsTranslation` empêche de traduire un segment ; empêche-t-il le modèle d'en
+    //     rendre le contenu ailleurs ? Et un jeton neutre ferait-il mieux ?
+    func epreuve10Doublon() async {
+        dire("=== 10. DUPLICATION AUTOUR D'UN SEGMENT PROTÉGÉ (it → fr) ===")
+        await avecSession("it", "fr") { session in
+            let avant = "e con la messa in servizio del teleriscaldamento del quartiere di "
+            let apres = "."
+            let nom = "Arcegno"
+
+            // a) le cas réel : nom protégé au milieu de la phrase
+            var a = AttributedString(avant)
+            var pa = AttributedString(nom); pa.skipsTranslation = true
+            a.append(pa); a.append(AttributedString(apres))
+            self.dire("a) nom propre protégé")
+            await self.montrerDoublon(session, a, nom)
+
+            // b) le même sans protection : le modèle traduit tout, sans copie possible
+            let b = AttributedString(avant + nom + apres)
+            self.dire("b) le même, rien de protégé (témoin)")
+            await self.montrerDoublon(session, b, nom)
+
+            // c) du code, où la copie est traduite plutôt que recopiée
+            var c = AttributedString("Chiamare ")
+            var pc = AttributedString("calcolaTotale()"); pc.skipsTranslation = true
+            c.append(pc); c.append(AttributedString(" prima di ogni esportazione."))
+            self.dire("c) code protégé")
+            await self.montrerDoublon(session, c, "calcolaTotale")
+
+            // d) un jeton neutre à la place du contenu : le modèle garde la structure de
+            //    la phrase sans avoir de quoi la recopier.
+            var d = AttributedString(avant)
+            var pd = AttributedString("\u{FFFC}"); pd.skipsTranslation = true   // OBJECT REPLACEMENT CHARACTER
+            d.append(pd); d.append(AttributedString(apres))
+            self.dire("d) jeton neutre U+FFFC à la place du nom")
+            await self.montrerDoublon(session, d, "\u{FFFC}")
+
+            // e) le même avec un jeton lisible, au cas où U+FFFC déroute le modèle
+            var e = AttributedString(avant)
+            var pe = AttributedString("[1]"); pe.skipsTranslation = true
+            e.append(pe); e.append(AttributedString(apres))
+            self.dire("e) jeton « [1] » à la place du nom")
+            await self.montrerDoublon(session, e, "[1]")
+        }
+        dire()
+    }
+
+    func montrerDoublon(_ session: TranslationSession, _ source: AttributedString,
+                        _ aiguille: String) async {
+        do {
+            let r = try await session.translate(source)
+            self.dire("   ORIG : \(String(source.characters))")
+            self.dire("   TRAD : \(r.targetText)")
+            guard let at = r.attributedTargetText else { self.dire("   (pas de runs)"); return }
+            var horsProtege = ""
+            var dansProtege = ""
+            for run in at.runs {
+                let t = String(at[run.range].characters)
+                if run.skipsTranslation == true { dansProtege += t } else { horsProtege += t }
+            }
+            self.dire("   protégé rendu : « \(dansProtege) »")
+            let copie = horsProtege.localizedCaseInsensitiveContains(aiguille)
+            self.dire(copie
+                ? "   → DOUBLON : « \(aiguille) » apparaît AUSSI hors du segment protégé."
+                : "   → propre : rien hors du segment protégé.")
         } catch {
             self.dire("   ERREUR : \(error)")
         }

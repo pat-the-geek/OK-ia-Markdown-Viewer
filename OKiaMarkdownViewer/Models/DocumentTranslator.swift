@@ -340,6 +340,71 @@ extension DocumentTranslator {
     }
 
 
+
+    /// Recolle un morceau protégé que le modèle a absorbé.
+    ///
+    /// Mesuré au banc, épreuve 10 : quand un nom propre est marqué `skipsTranslation`, le
+    /// modèle rend parfois ce segment VIDE et place le nom dans le texte traduit d'à côté
+    /// — « ... du quartier d'Arcegno » en un seul morceau. Comme le morceau protégé n'est
+    /// jamais réécrit et garde sa valeur d'origine, le lecteur voyait le nom deux fois :
+    /// « du quartier d'Arcegno Arcegno ». Ce n'est pas une duplication du modèle, c'est un
+    /// déplacement que le DOM redouble.
+    ///
+    /// On retire donc la copie du texte traduit et l'on remet le morceau protégé à sa
+    /// place : « du quartier d' » + [[Arcegno]] + « . ». Le wiki-lien reste entier,
+    /// cliquable et coloré, ce qu'un segment vidé n'aurait pas été.
+    private static func recoller(_ sequence: [(i: Int, texte: String)],
+                                 bloc: TranslationBlock,
+                                 proteges: Set<Int>) -> [(i: Int, texte: String)] {
+        var out = sequence
+        let rendus = Set(sequence.map { $0.i })
+
+        for part in bloc.parts where part.protege && !rendus.contains(part.i) {
+            let nom = part.texte.trimmingCharacters(in: .whitespaces)
+            guard nom.count >= 2 else { continue }
+
+            // Où le modèle a-t-il posé le nom ? On cherche dans les segments traduits.
+            guard let k = out.firstIndex(where: { !proteges.contains($0.i)
+                                                  && $0.texte.contains(nom) }) else {
+                // Absorbé sous une autre forme — traduit, décliné — ou simplement perdu :
+                // on remet le morceau à sa place et l'on n'invente rien de plus.
+                if let position = out.firstIndex(where: { $0.i > part.i }) {
+                    out.insert((i: part.i, texte: part.texte), at: position)
+                } else {
+                    out.append((i: part.i, texte: part.texte))
+                }
+                continue
+            }
+
+            let texte = out[k].texte
+            guard let plage = texte.range(of: nom) else { continue }
+            let avant = String(texte[texte.startIndex..<plage.lowerBound])
+            let apres = String(texte[plage.upperBound...])
+
+            // Le segment se scinde autour du nom, et le morceau protégé reprend sa place
+            // entre les deux moitiés — dans l'ordre où la phrase traduite le veut.
+            out[k].texte = avant
+            out.insert((i: part.i, texte: part.texte), at: k + 1)
+            if !apres.isEmpty {
+                // La fin du segment ne peut pas porter le même index que son début : deux
+                // entrées de même index se fusionneraient à l'écriture. On la donne au
+                // morceau suivant s'il existe, sinon on la laisse au segment d'origine.
+                if k + 2 < out.count, !proteges.contains(out[k + 2].i) {
+                    out[k + 2].texte = apres + out[k + 2].texte
+                } else {
+                    out[k].texte = avant + apres
+                    out.remove(at: k + 1)
+                    if let position = out.firstIndex(where: { $0.i > part.i }) {
+                        out.insert((i: part.i, texte: part.texte), at: position)
+                    } else {
+                        out.append((i: part.i, texte: part.texte))
+                    }
+                }
+            }
+        }
+        return out
+    }
+
     /// Recoud les jointures et les points de suture internes.
     ///
     /// Les frontières entre morceaux ne tombent pas où le français les avait mises : le
@@ -434,6 +499,7 @@ extension DocumentTranslator {
         }
         var sequence = ordre.map { (i: $0, texte: textes[$0] ?? "") }
         let proteges = Set(bloc.parts.filter { $0.protege }.map { $0.i })
+        sequence = recoller(sequence, bloc: bloc, proteges: proteges)
         sequence = recoudre(sequence, proteges: proteges)
         // On ne remet dans l'ordre de la langue d'arrivée que si cet ordre est
         // représentable : un nœud éclaté rendrait la phrase incomplète ou mélangée.
