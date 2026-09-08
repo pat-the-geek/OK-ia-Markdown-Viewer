@@ -18,6 +18,13 @@ Contenu prêt à téléverser sur l'hébergement de **ok-ia.ch**.
   prévisualisation locale (`.claude/launch.json` → serveur `mdviewer-site`,
   http://localhost:8766/mdviewer/). Ne pas téléverser (le site a déjà le sien).
 
+> ⚠️ **Cette copie est en retard sur le site, et la référence est le dépôt du site.**
+> Constaté le 2026-09-08 : `public/mdviewer/index.html` de [`pat-the-geek/OK-ia`](https://github.com/pat-the-geek/OK-ia)
+> a gagné des balises SEO (canonical, hreflang, JSON-LD, Open Graph), une sous-navigation et
+> une page `roadmap.html` que la copie ci-contre n'a pas — 159 lignes d'écart. **Écraser
+> `public/mdviewer/index.html` avec ce fichier détruirait tout cela.** Reporter les
+> modifications une par une, dans le fichier du dépôt du site, après un `diff`.
+
 ## Mise en ligne
 
 Le site **n'est pas déployé par téléversement** : il vit dans le dépôt

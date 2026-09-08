@@ -496,6 +496,12 @@ voit le compilateur — de la cible **iOS**. Il faut donc aussi
 qui ne ment pas est le binaire produit : `vtool -show-build-version` doit annoncer
 `platform MACCATALYST` et `minos 26.0`.
 
+**Le site.** La feuille de route publique (`ok-ia.ch/mdviewer/roadmap.html`) annonce la 1.2
+comme **en test**, pas comme livrée : la version en vente reste la 1.1.1. La page produit, elle,
+n'a pas été touchée — elle décrit ce qu'un visiteur télécharge aujourd'hui, et lui annoncer
+« iOS 26.4 requis » avec une fonction qu'il n'aura pas serait la tromper. Ses modifications
+attendent dans `site/mdviewer/index.html` le jour de l'approbation.
+
 **Le banc d'essai est conservé** dans `tools/TranslationBench/` — une app à part, hors de la
 cible livrée, qui interroge le framework et écrit ce qu'elle trouve. Elle a servi à trancher
 les trois questions ci-dessus avant d'écrire une ligne dans le lecteur, et elle sert à
