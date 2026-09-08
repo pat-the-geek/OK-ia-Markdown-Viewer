@@ -76,7 +76,16 @@
     '',
     '## Perspectives',
     '',
-    'Le conseil poursuivra l\'assainissement.'
+    'Le conseil poursuivra l\'assainissement.',
+    '',
+    '---',
+    '',
+    '## Procédure',
+    '',
+    '```mermaid',
+    'flowchart TD',
+    '    A[Réception du dossier] --> B{Complet ?}',
+    '```'
   ].join('\n');
 
   var P = window.OKIA_PRESENT, T = window.OKIA && window.OKIA.translation;
@@ -130,8 +139,27 @@
                vu && vu.textContent.indexOf('Jahresbericht 2026') !== -1,
                vu ? vu.textContent.replace(/\s+/g, ' ').slice(0, 80) : 'diapositive introuvable');
 
+      // -- les libellés de diagrammes ---------------------------------------------
+      // Ils vivent dans le SVG, pas dans le texte : la mémoire ne les touche pas, et
+      // c'est un chemin séparé qui doit les traduire. Sans ce test, le diaporama
+      // gardait ses diagrammes dans la langue d'origine — vu sur iPhone, pas ici.
+      verifier('le moteur expose la collecte des libellés',
+               typeof P.collectSlideExtras === 'function' &&
+               typeof P.collectAllSlidesExtras === 'function');
+
+      // La diapositive du diagramme n'a jamais été affichée : le rendu est paresseux, et
+      // c'est justement le cas qui laissait un diagramme en langue d'origine.
+      P.collectAllSlidesExtras().then(function (extras) {
+        verifier('les libellés du diagramme sont collectés, même jamais affiché',
+                 extras.indexOf('Réception du dossier') !== -1 && extras.indexOf('Complet ?') !== -1,
+                 extras.join(' | ') || 'aucun libellé');
+        verifier('la syntaxe du diagramme n\'est pas prise pour un libellé',
+                 extras.indexOf('flowchart TD') === -1);
+        verifier('la collecte des libellés ne laisse rien derrière elle',
+                 document.querySelectorAll('body > div.slide-inner').length === 0);
+
       // -- et l'export les relit ------------------------------------------------
-      P.exportModel().then(function (modele) {
+      return P.exportModel().then(function (modele) {
         var tout = JSON.stringify(modele);
         verifier('l\'export porte la traduction de la diapositive vue',
                  tout.indexOf('Jahresbericht 2026') !== -1);
@@ -140,6 +168,7 @@
         verifier('l\'export laisse en l\'état ce qui n\'a pas été traduit',
                  tout.indexOf('Les charges atteignent 4,2 millions.') !== -1);
         rendre();
+      });
       }).catch(function (e) {
         verifier('l\'export se construit', false, String(e));
         rendre();

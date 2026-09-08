@@ -1185,6 +1185,19 @@ struct PresentationWebView: UIViewRepresentable {
                     self.envoyerTraduction(self.parent.translator.memoire, actif: true)
                 }
             }
+            // Les libellés qui ne sont pas du texte : nœuds Mermaid, bulles de marqueurs.
+            // Ils vivent dans le SVG, la collecte de texte les ignore, et sans ce
+            // branchement le diaporama gardait ses diagrammes dans la langue d'origine
+            // pendant que tout le reste passait — vu sur iPhone, pas au développement.
+            parent.translator.extras = { [weak self] in
+                guard let self else { return [] }
+                return await self.collecterExtrasDiapositives()
+            }
+            parent.translator.onExtras = { [weak self] table in
+                guard let self else { return }
+                self.parent.translator.absorber(table)
+                self.envoyerTraduction(self.parent.translator.memoire, actif: true)
+            }
             startPresentation()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak webView] in
                 webView?.becomeFirstResponder()
@@ -1230,6 +1243,29 @@ struct PresentationWebView: UIViewRepresentable {
                         "diapositive \(index) : \(manquants.count) blocs à traduire")
                     translator.demarrer(blocs: manquants, defilement: 0,
                                         source: source, cible: cible)
+                }
+            }
+        }
+
+        /// Les libellés hors texte de toutes les diapositives déjà rendues. On ne se limite
+        /// pas à la diapositive courante : le lecteur avance, et un aller-retour par
+        /// diapositive coûterait cher pour un gain nul — la mémoire écarte de toute façon
+        /// ce qui a déjà été traduit.
+        func collecterExtrasDiapositives() async -> [String] {
+            guard let webView else { return [] }
+            // Toutes les diapositives, pas seulement celles déjà affichées : le rendu du
+            // diaporama est paresseux, et un diagramme jamais dessiné n'a pas de libellé à
+            // collecter — il serait resté en langue d'origine jusque dans le PowerPoint.
+            let js = "return JSON.stringify(await window.OKIA_PRESENT.collectAllSlidesExtras());"
+            return await withCheckedContinuation { suite in
+                webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { result in
+                    guard case .success(let v) = result, let json = v as? String,
+                          let d = json.data(using: .utf8),
+                          let liste = try? JSONDecoder().decode([String].self, from: d) else {
+                        suite.resume(returning: [])
+                        return
+                    }
+                    suite.resume(returning: liste)
                 }
             }
         }

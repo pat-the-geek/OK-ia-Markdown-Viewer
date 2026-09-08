@@ -2173,8 +2173,8 @@
 
   /* Rend la liste de ce qui reste à traduire hors du texte courant : un tableau
      d'entrées { genre, cle, texte }. Swift les traite comme des blocs ordinaires. */
-  function trCollecterExtras() {
-    var container = document.getElementById('content');
+  function trCollecterExtras(racine) {
+    var container = racine || document.getElementById('content');
     if (!container) return [];
     var extras = [];
 
@@ -2198,8 +2198,8 @@
   }
 
   /* Réécrit les libellés traduits. `table` associe le texte d'origine à sa traduction. */
-  function trAppliquerExtras(table) {
-    var container = document.getElementById('content');
+  function trAppliquerExtras(table, racine) {
+    var container = racine || document.getElementById('content');
     if (!container) return Promise.resolve(0);
     var faits = 0;
 
@@ -2231,8 +2231,8 @@
   }
 
   /* Rend aux diagrammes leur source d'origine — pendant du retour à l'original. */
-  function trRestaurerExtras(tableInverse) {
-    var container = document.getElementById('content');
+  function trRestaurerExtras(tableInverse, racine) {
+    var container = racine || document.getElementById('content');
     if (!container) return Promise.resolve(0);
 
     container.querySelectorAll('.okia-map').forEach(function (el) {

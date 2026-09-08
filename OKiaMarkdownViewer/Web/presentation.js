@@ -258,7 +258,33 @@
     if (!traductionActive || !inner) return;
     // Ce que l'on connaît déjà se repose tout de suite, sans attendre l'hôte.
     try { window.OKIA.translation.applyMemory(inner, memoireTr); } catch (e) {}
+    appliquerExtras(index);
     post('slideRendered', { index: index });
+  }
+
+  /* Les libellés qui ne sont pas du texte : nœuds de diagrammes Mermaid, bulles de
+     marqueurs. Ils vivent dans le SVG et la collecte de texte les ignore — c'est pourquoi
+     le diaporama affichait encore ses diagrammes en italien quand tout le reste était
+     traduit. */
+  function collectSlideExtras(index) {
+    var inner = collectRacine(index);
+    if (!inner) return [];
+    try {
+      return window.OKIA.translation.collectExtras(inner).map(function (e) { return e.texte; });
+    } catch (e) { return []; }
+  }
+
+  /* Repose les libellés connus sur une diapositive, puis la remet à l'échelle : un
+     diagramme redessiné n'a plus la même hauteur. */
+  function appliquerExtras(index) {
+    var inner = collectRacine(index);
+    if (!inner || !traductionActive) return;
+    try {
+      var r = window.OKIA.translation.applyExtras(memoireTr, inner);
+      if (r && typeof r.then === 'function') {
+        r.then(function () { if (sections[index]) fitSlide(sections[index]); });
+      }
+    } catch (e) {}
   }
 
   function collectRacine(index) {
@@ -297,6 +323,35 @@
     });
   }
 
+  /* Les libellés hors texte de TOUTES les diapositives, y compris celles que personne n'a
+     ouvertes. Le rendu du diaporama est paresseux : une diapositive jamais affichée n'a pas
+     de diagramme dessiné, donc rien à collecter — et son diagramme serait resté dans la
+     langue d'origine jusque dans le PowerPoint exporté. On les rend donc hors écran, comme
+     pour le texte. */
+  function collectAllSlidesExtras() {
+    var tmp = document.createElement('div');
+    tmp.className = 'slide-inner markdown-body';
+    tmp.style.cssText = 'position:absolute;left:-99999px;top:0;width:1120px;';
+    document.body.appendChild(tmp);
+    var tous = [];
+    var chain = Promise.resolve();
+    rawSlides.forEach(function (md) {
+      chain = chain.then(function () {
+        return window.OKIA.renderFragment(tmp, md).then(function () {
+          try {
+            window.OKIA.translation.collectExtras(tmp).forEach(function (e) {
+              if (tous.indexOf(e.texte) === -1) tous.push(e.texte);
+            });
+          } catch (e) {}
+        });
+      });
+    });
+    return chain.then(function () {
+      try { document.body.removeChild(tmp); } catch (e) {}
+      return tous;
+    });
+  }
+
   /* L'hôte annonce que la traduction est active, et livre au fur et à mesure ce qu'il a
      traduit. Une table plutôt que des blocs : le diaporama rouvre des diapositives, et
      retraduire ce qui l'a déjà été serait payer deux fois. */
@@ -314,6 +369,7 @@
       var inner = collectRacine(i);
       if (!inner) continue;
       try { faits += window.OKIA.translation.applyMemory(inner, memoireTr); } catch (e) {}
+      appliquerExtras(i);
     }
     return faits;
   }
@@ -483,6 +539,17 @@
     tmp.style.cssText = 'position:absolute;left:-99999px;top:0;width:1120px;';
     document.body.appendChild(tmp);
     var out = [];
+
+    // Lire une diapositive rendue et l'ajouter au modèle. Le premier titre devient le
+    // titre de la diapositive.
+    function lireModele() {
+      return window.OKIA.exportModel(tmp).then(function (blocks) {
+        var title = [];
+        if (blocks.length && blocks[0].t === 'heading') { title = blocks[0].runs; blocks = blocks.slice(1); }
+        out.push({ title: title, blocks: blocks });
+      });
+    }
+
     var chain = Promise.resolve();
     rawSlides.forEach(function (md) {
       chain = chain.then(function () {
@@ -490,14 +557,16 @@
           // Le modèle d'export se lit dans le DOM : on y repose la traduction avant de
           // lire, sinon le fichier PowerPoint sortirait dans la langue d'origine alors
           // que le diaporama, lui, est traduit à l'écran.
-          if (traductionActive) {
-            try { window.OKIA.translation.applyMemory(tmp, memoireTr); } catch (e) {}
-          }
-          return window.OKIA.exportModel(tmp).then(function (blocks) {
-            var title = [];
-            if (blocks.length && blocks[0].t === 'heading') { title = blocks[0].runs; blocks = blocks.slice(1); }
-            out.push({ title: title, blocks: blocks });
-          });
+          if (!traductionActive) return lireModele();
+          try { window.OKIA.translation.applyMemory(tmp, memoireTr); } catch (e) {}
+          // Les diagrammes sont rastérisés par exportModel : leurs libellés doivent être
+          // traduits ET redessinés avant la lecture, sinon le PowerPoint porte des images
+          // restées dans la langue d'origine.
+          var pret = null;
+          try { pret = window.OKIA.translation.applyExtras(memoireTr, tmp); } catch (e) {}
+          return (pret && typeof pret.then === 'function')
+            ? pret.then(lireModele)
+            : lireModele();
         });
       });
     });
@@ -741,6 +810,8 @@
 
   window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
                           collectSlide: collectSlide, collectAllSlides: collectAllSlides,
+                          collectSlideExtras: collectSlideExtras,
+                          collectAllSlidesExtras: collectAllSlidesExtras,
                           setTranslation: setTranslation,
                           setTransition: setTransition, setTheme: setTheme, escape: escape,
                           toggleOverview: toggleOverview, exportModel: buildExportModel };
