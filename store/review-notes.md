@@ -31,6 +31,17 @@ APPLE INTELLIGENCE (facultatif)
 • Le menu ✦ n'apparaît que si Apple Intelligence est disponible (iOS 26 / macOS 26+, appareil
   compatible). Sinon les deux fonctions sont simplement masquées — le reste de l'app fonctionne.
 
+TRADUCTION DU DOCUMENT (1.2)
+• Un rapport ouvert dans une autre langue que celle de l'app peut être traduit, par le bouton 📖
+  de la barre du lecteur ou par le réglage « Traduire les documents ». La traduction utilise le
+  framework Translation d'Apple, ON-DEVICE : aucun texte ne quitte l'appareil, aucun service
+  distant n'est appelé.
+• Si le dictionnaire d'une langue n'est pas installé, l'app ne télécharge rien d'elle-même :
+  elle affiche un bandeau et attend un geste, puis c'est l'invite du système qui décide.
+• L'original n'est jamais perdu : il reste dans la page et revient d'un geste.
+• Cette version exige iOS/iPadOS 26.4 ou macOS 26.4 — en deçà, ni skipsTranslation ni la
+  traduction d'un AttributedString n'existent, et la qualité ne serait pas au rendez-vous.
+
 SIRI / RACCOURCIS (App Intents)
 • L'app expose des actions « Ouvrir un rapport », « Ouvrir le dernier rapport » et « Résumer un
   rapport ». Elles s'appuient sur un dossier de « coffre » optionnel configuré par l'utilisateur ;

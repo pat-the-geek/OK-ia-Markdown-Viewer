@@ -51,6 +51,7 @@ FEATURES
 • Automatic table of contents, in-document search, adjustable text size
 • Paginated PDF export (A4 or Letter), Word and PowerPoint; share the .md file
 • Interface in 5 languages: English, French, German, Spanish, Italian
+• On-device document translation: a report received in another language reads in yours, paragraph after paragraph, diagrams and maps included — the original stays one tap away
 • Dark mode, portrait and landscape, iPhone + iPad + Mac
 
 AI, ON YOUR DEVICE
@@ -58,6 +59,7 @@ AI, ON YOUR DEVICE
 • Chat with the document: the opening screen offers questions drawn from the report itself, about its own subjects
 • Answers draw on its content alone; when the answer is not in it, the app says so instead of inventing one
 • They are written in the app's language, even when the report is written in another
+• And the report itself gets translated, on the device: nothing is left in a language you don't read
 • The document is treated as data, never as a command: an instruction slipped into a report is not carried out
 • Everything runs on the device: no account, nothing uploaded, no text leaving it (requires an Apple Intelligence-capable device)
 
@@ -100,7 +102,29 @@ phrases.)
 ## Price
 - **Free** ✅ — no limited availability, available in every country.
 
-## What's new in this version (release notes 1.1.1)
+## What's new in this version (release notes 1.2)
+```
+Your reports finally read in your language.
+
+NEW
+• On-device document translation: open a report written in German, Italian,
+  Spanish or French and it is translated into the app's language — paragraph
+  after paragraph, before your eyes
+• A button in the reader's bar picks the target language; the "Translate
+  documents" setting does it on its own when a document opens
+• Diagram and map marker labels follow. Code, links, URLs and entity names stay
+  untouched: they are nobody's language
+• The slideshow and the PowerPoint export are translated too
+• The original stays one tap away, and nothing leaves the device: no account,
+  no upload, no text going out
+
+This version requires iOS/iPadOS 26.4 or macOS 26.4: on-device translation does
+not exist before that.
+```
+
+<details>
+<summary>Archive — release notes 1.1.1</summary>
+
 ```
 Maps get a clean background again.
 
@@ -114,6 +138,7 @@ FIXED
 • Slides are no longer cut off at the sides when presenting from an iPhone held
   upright
 ```
+</details>
 
 <details>
 <summary>Archive — release notes 1.1.0</summary>

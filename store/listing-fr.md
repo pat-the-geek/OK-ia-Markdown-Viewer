@@ -48,6 +48,7 @@ FONCTIONNALITÉS
 • Sommaire automatique, recherche dans le document, taille de texte ajustable
 • Export PDF paginé (A4 ou Letter), Word et PowerPoint ; partage du fichier .md
 • Interface en 5 langues : français, anglais, allemand, espagnol, italien
+• Traduction du document sur l'appareil : un rapport reçu dans une autre langue se lit dans la vôtre, paragraphe après paragraphe, diagrammes et cartes compris — l'original reste à un geste
 • Mode sombre, portrait et paysage, iPhone + iPad + Mac
 
 L'IA, SUR VOTRE APPAREIL
@@ -55,6 +56,7 @@ L'IA, SUR VOTRE APPAREIL
 • Discuter avec le document : l'écran d'accueil propose des questions tirées du rapport lui-même, sur ses propres sujets
 • Les réponses s'appuient sur son seul contenu ; quand la réponse ne s'y trouve pas, l'app le dit plutôt que d'inventer
 • Elles sont rédigées dans la langue de l'app, même si le rapport est écrit dans une autre
+• Et le rapport lui-même se traduit, sur l'appareil : plus rien ne reste dans une langue que vous ne lisez pas
 • Le document est traité comme une donnée, jamais comme une consigne : une instruction glissée dans un rapport n'est pas exécutée
 • Tout se passe sur l'appareil : aucun compte, aucun envoi, aucun texte qui sort (nécessite un appareil compatible Apple Intelligence)
 
@@ -100,7 +102,30 @@ sous-titre, et Apple lit le nom, le sous-titre et les mots-clés comme un seul s
 ## Prix
 - **Gratuit** ✅ — aucune disponibilité limitée, disponible dans tous les pays.
 
-## Nouveautés de cette version (release notes 1.1.1)
+## Nouveautés de cette version (release notes 1.2)
+```
+Vos rapports se lisent enfin dans votre langue.
+
+NOUVEAU
+• Traduction du document sur l'appareil : ouvrez un rapport écrit en allemand,
+  en italien, en espagnol ou en anglais, il se traduit dans la langue de l'app —
+  paragraphe après paragraphe, sous vos yeux
+• Un bouton dans la barre du lecteur choisit la langue d'arrivée ; l'option
+  « Traduire les documents » des Réglages le fait toute seule à l'ouverture
+• Les libellés des diagrammes et des marqueurs de cartes suivent. Le code, les
+  liens, les URL et les noms d'entités restent intacts : ils ne sont la langue
+  de personne
+• Le diaporama et l'export PowerPoint sont traduits eux aussi
+• L'original reste à un geste, et rien ne quitte l'appareil : ni compte, ni envoi,
+  ni texte qui sort
+
+Cette version demande iOS/iPadOS 26.4 ou macOS 26.4 : la traduction sur
+l'appareil n'existe pas avant.
+```
+
+<details>
+<summary>Archive — release notes 1.1.1</summary>
+
 ```
 Les cartes retrouvent un fond net.
 
@@ -114,6 +139,7 @@ CORRIGÉ
 • Les diapositives ne sont plus coupées sur les côtés quand on présente depuis un
   iPhone tenu droit
 ```
+</details>
 
 <details>
 <summary>Archive — release notes 1.1.0</summary>

@@ -5,9 +5,13 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.0.0 (18)`** — inclut le résumé Apple Intelligence, les App Intents et
-> le correctif Gantt. `CURRENT_PROJECT_VERSION` est déjà à 18 et le projet régénéré : Xcode →
-> Archive (scheme « md Viewer », Any iOS Device) → Organizer → Distribute/Upload.
+> ⚠️ **Build à utiliser : `1.2 (35)`** — la traduction des documents sur l'appareil. Envoyé
+> par `scripts/deploy-testflight.sh --bump --both`, qui construit iOS et Mac à partir du même
+> numéro et passe les contrôles avant envoi.
+>
+> **Cette version demande iOS/iPadOS 26.4 ou macOS 26.4.** Un testeur sur un appareil plus
+> ancien ne verra pas le build apparaître : ce n'est pas une panne, c'est le framework de
+> traduction qui n'existe pas avant.
 
 ---
 
@@ -16,8 +20,10 @@
 - **Beta App Description**
 ```
 md Viewer (OK-ia Markdown Viewer) affiche des fichiers Markdown à la charte ok-ia.ch :
-diagrammes Mermaid, cartes Leaflet, callouts, coloration d'entités, résumé par Apple Intelligence.
-Cette bêta sert à valider le rendu, la navigation et la stabilité sur iPhone, iPad et Mac.
+diagrammes Mermaid, cartes Leaflet, callouts, coloration d'entités, résumé et discussion par
+Apple Intelligence, et traduction du document sur l'appareil.
+Cette bêta sert à valider le rendu, la navigation, la traduction et la stabilité sur iPhone,
+iPad et Mac.
 ```
 - **Feedback Email** : `patrick@ok-ia.ch`
 - **Marketing URL** : `https://ok-ia.ch`
@@ -25,12 +31,37 @@ Cette bêta sert à valider le rendu, la navigation et la stabilité sur iPhone,
 
 ---
 
-## What to Test — 1.1.1 (29)
+## What to Test — 1.2 (35)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
 
-DANS CETTE VERSION — LES CARTES
+DANS CETTE VERSION — LA TRADUCTION
+Prenez un rapport écrit dans une langue que l'app ne parle pas à l'écran : allemand
+ou italien si votre app est en français. Des exemples sont fournis dans le dépôt,
+dossier tools/documents-test.
+
+• Bouton 📖 dans la barre du lecteur → choisissez une langue. Le document se traduit
+  paragraphe après paragraphe, du haut vers le bas, en partant de ce qui est à l'écran.
+• Le bandeau au-dessus du document annonce la traduction et la langue d'origine.
+  « Voir l'original » doit rendre le texte de départ, immédiatement, à l'identique —
+  et « Voir la traduction » le ramener sans rien recalculer.
+• Réglages → « Traduire les documents » : à l'ouverture, un document dans une autre
+  langue se traduit tout seul.
+• Ce qui NE doit PAS être traduit : le code entre accents graves et les blocs de code,
+  les URL, les noms d'entités colorés, les cibles des liens. Signalez tout mot qui
+  apparaîtrait deux fois, ou deux mots collés sans espace.
+• Ce qui DOIT l'être : les titres, les tableaux, les listes, les libellés des
+  diagrammes Mermaid, et les bulles des marqueurs de cartes (touchez un marqueur).
+• Diaporama (bouton ▶) sur un document traduit : les diapositives doivent l'être
+  aussi, y compris celles que vous n'avez pas encore ouvertes après un export
+  PowerPoint.
+• Si une langue demande un téléchargement, l'app doit le DIRE avant, par un bandeau,
+  et ne rien télécharger sans que vous ayez touché « Traduire ».
+• Sur un long rapport, comptez le temps : la traduction est volontairement
+  progressive. Dites-nous si l'attente devient pénible, et sur quel appareil.
+
+RAPPEL DES VERSIONS PRÉCÉDENTES — LES CARTES
 • Ouvrez le document de démonstration, section « Carte géographique » : le fond
   doit être net, sans filigrane en travers, avec les noms de villes lisibles.
 • Bouton des couches (en haut à droite de la carte) : basculez Clair / Sombre /

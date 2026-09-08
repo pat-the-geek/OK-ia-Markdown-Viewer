@@ -14,6 +14,9 @@ Justification (faits vérifiés dans le code) :
 - Aucun compte, aucun identifiant, aucune connexion serveur propriétaire.
 - Le résumé Apple Intelligence tourne **sur l'appareil** (framework *Foundation Models*) — aucun
   texte n'est envoyé à un serveur.
+- La traduction des documents tourne **sur l'appareil** elle aussi (framework *Translation*) :
+  le texte du rapport ne quitte pas la machine, et le dictionnaire de langue est téléchargé par
+  le système, à la demande de l'utilisateur — jamais par l'app de sa propre initiative.
 - Stockage **local uniquement** : fichiers récents et bookmarks security-scoped du coffre
   (UserDefaults / bookmarks), jamais transmis.
 

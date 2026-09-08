@@ -123,6 +123,12 @@ marker: default,-1.68,29.22,[[Goma]]
 | **Exporter en PowerPoint** (.pptx mixte) | bouton **⚙** → section **Export** → *PowerPoint (.pptx)* |
 | **Quitter** le diaporama | bouton **✕** ou touche **Échap** |
 
+> **Traduction (1.2).** Si le document ouvert dans le lecteur est traduit, le diaporama l'est
+> aussi : chaque diapositive se traduit à son apparition, et l'export PowerPoint traduit d'abord
+> celles que personne n'a encore ouvertes — un fichier à moitié traduit serait pire que pas
+> traduit du tout. Le diaporama n'offre pas de retour à l'original : il est en plein écran, sans
+> chrome ; on en sort pour retrouver le document.
+
 ---
 
 ## Exemple minimal
