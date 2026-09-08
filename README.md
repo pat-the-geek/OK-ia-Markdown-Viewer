@@ -475,12 +475,18 @@ précédentes l'ont été avec Xcode 26. Ce n'est pas un détail d'intendance : 
 `skipsTranslation`, les variantes `AttributedString` et le choix de stratégie — et c'est le SDK,
 pas seulement l'appareil, qui décide de ce que l'on peut appeler.
 
-**La cible macOS passe à 26.** `Translation` n'existe sur Mac Catalyst qu'à partir de
-`macCatalyst 26.0`, alors que le projet visait macOS 14. L'autre voie — un `#available` qui
-aurait gardé macOS 14 et 15 — laissait sur le Mac une app qui lit sans traduire, c'est-à-dire
-précisément l'écart que 1.2 doit fermer ; et elle aurait fait vivre deux comportements dans le
-même binaire pour un gain qui n'a jamais été mesuré. Les Mac restés sous macOS 14 ou 15 gardent
-la 1.1.1, qui ne cesse pas de fonctionner. L'app iOS ne bouge pas : elle reste en 17.0.
+**Les cibles passent à 26.4, iOS compris.** `Translation` n'existe sur Mac Catalyst qu'à
+partir de `macCatalyst 26.0`, et ses deux pièces décisives — `skipsTranslation` et la
+traduction d'un `AttributedString` — qu'à partir de 26.4. En deçà subsistait un chemin de repli
+qui traduisait moins bien : chaque morceau partant seul, le modèle rendait « Validiert hat » et
+traduisait « Appeler » par « Anrufen », téléphoner. Il avait fallu le restreindre aux blocs d'un
+seul tenant pour qu'il ne mente pas. Viser 26.4 le rend inutile et ne laisse qu'un comportement,
+celui qui a été éprouvé.
+
+Le prix est assumé : les Mac sous macOS 26.3 ou antérieur, et les iPhone et iPad sous iOS 26.3
+ou antérieur, gardent la 1.1.1, qui ne cesse pas de fonctionner. C'est une coupure bien plus
+large côté iPhone que côté Mac, et c'est le seul choix irréversible de cette version : une fois
+1.2 en vente, un appareil trop ancien ne verra plus de mise à jour.
 
 Le réglage lui-même est un piège, et il a coûté un aller-retour : `MACOSX_DEPLOYMENT_TARGET`
 ne suffit pas. Sur Catalyst, Xcode dérive `LSMinimumSystemVersion` — et la disponibilité que

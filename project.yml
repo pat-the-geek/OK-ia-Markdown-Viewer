@@ -3,7 +3,7 @@ name: OK-ia - md Viewer
 options:
   bundleIdPrefix: ch.ok-ia
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.4"
   createIntermediateGroups: true
   generateEmptyDirectories: true
   # Localizable.xcstrings is authored in French and translated to en/de/es/it.
@@ -14,7 +14,7 @@ options:
 
 settings:
   base:
-    MARKETING_VERSION: "1.1.1"
+    MARKETING_VERSION: "1.2"
     CURRENT_PROJECT_VERSION: "31"
     DEVELOPMENT_TEAM: "PU9BSXN2V5"      # Paid Apple Developer Program team (auto-signing) — used for TestFlight/App Store.
                                         # (Build 14 and the store provisioning profile are under this team;
@@ -27,7 +27,7 @@ targets:
   OKiaMarkdownViewer:
     type: application
     platform: iOS
-    deploymentTarget: "17.0"
+    deploymentTarget: "26.4"
     sources:
       # Swift source + asset catalog (Web folder excluded — added as a folder reference below)
       - path: OKiaMarkdownViewer
@@ -49,16 +49,18 @@ targets:
         SUPPORTS_MACCATALYST: YES                    # macOS via Mac Catalyst
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO    # true Catalyst app (not "Designed for iPad")
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO  # same bundle id on Mac
-        # macOS 26 depuis la 1.2 : le framework Translation n'existe sur Mac Catalyst qu'à
-        # partir de macCatalyst 26.0. Un #available aurait gardé macOS 14 et 15 au prix
-        # d'un Mac qui lit sans traduire — c'est précisément l'écart que 1.2 doit fermer.
-        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        # 26.4 partout depuis la 1.2, et c'est le framework qui l'impose. `Translation`
+        # n'existe sur Mac Catalyst qu'à partir de macCatalyst 26.0, et ses deux pièces
+        # décisives — `skipsTranslation` et la traduction d'un `AttributedString` — qu'à
+        # partir de 26.4. En deçà, il restait un chemin de repli qui traduisait moins bien :
+        # un seul morceau par bloc, le reste laissé en langue d'origine. Viser 26.4 rend ce
+        # chemin inutile et ne laisse qu'un comportement, celui qui a été éprouvé.
+        MACOSX_DEPLOYMENT_TARGET: "26.4"
         # Les deux clés sont nécessaires, et c'est la seconde qui décide. Sur Catalyst, Xcode
         # dérive LSMinimumSystemVersion — et la disponibilité vue par le compilateur — de la
         # cible iOS, pas de MACOSX_DEPLOYMENT_TARGET : sans cette ligne, l'app se déclarait
-        # encore macOS 14.0 et `Translation` restait hors d'atteinte. iOS 26 ↔ macOS 26 ;
-        # restreinte au SDK macosx, elle ne touche pas l'app iOS, qui reste en 17.0.
-        IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]: "26.0"
+        # encore macOS 14.0 alors que tout le reste était en place.
+        IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]: "26.4"
         # NOTE: local Mac run used CODE_SIGN_IDENTITY[sdk=macosx*]: "-" (ad-hoc); temporarily
         # removed for Mac App Store distribution archive (automatic signing picks Apple Distribution).
         # App Sandbox entitlements (mandatory for the Mac App Store) — macOS/Catalyst only, iOS untouched.

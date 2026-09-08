@@ -7,11 +7,9 @@ import Translation
 
 /// Porte `.translationTask` pour le traducteur, et rien d'autre.
 ///
-/// Une vue à part parce que les types du framework `Translation` n'existent qu'à partir
-/// d'iOS 18 et de macCatalyst 26 : les enfermer ici évite d'annoter tout le lecteur, qui
-/// se déploie encore sur iOS 17. Elle n'affiche rien — c'est un point d'ancrage, pas une
-/// interface : le framework ne rend une session qu'à une vue vivante.
-@available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *)
+/// Elle n'affiche rien : c'est un point d'ancrage, pas une interface. Le framework ne rend
+/// une session qu'à une vue vivante, et il en faut donc une dans chaque hiérarchie qui
+/// traduit — le lecteur a la sienne, le diaporama la sienne.
 struct TranslationHostView: View {
     @ObservedObject var translator: DocumentTranslator
 

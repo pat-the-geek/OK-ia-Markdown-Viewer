@@ -84,12 +84,6 @@ final class DocumentTranslator: ObservableObject {
     /// Appelé pour chaque bloc traduit, dans l'ordre où la vague les traite.
     var onBloc: ((TranslatedBlock) -> Void)?
 
-    /// Force le chemin de repli — celui des appareils sous iOS 18 à 26.3, où ni
-    /// `skipsTranslation` ni la traduction d'un `AttributedString` n'existent. Sans ce
-    /// levier, ce chemin ne serait jamais exécuté sur une machine de développement, qui
-    /// prend toujours l'autre : du code livré que personne n'aurait vu tourner.
-    var forcerRepli = false
-
     /// Les libellés hors texte — Mermaid, marqueurs de cartes — à traduire quand la vague
     /// a fini. Ils passent en dernier : ce qui se lit d'abord, c'est la prose.
     var extras: (() async -> [String])?
@@ -145,20 +139,15 @@ final class DocumentTranslator: ObservableObject {
             return .aTelecharger
         }
         #endif
-        #if canImport(Translation)
-        if #available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *) {
-            let statut = await LanguageAvailability().status(
-                from: Locale.Language(identifier: source),
-                to: Locale.Language(identifier: cible))
-            switch statut {
-            case .installed: return .pret
-            case .supported: return .aTelecharger
-            case .unsupported: return .impossible
-            @unknown default: return .impossible
-            }
+        let statut = await LanguageAvailability().status(
+            from: Locale.Language(identifier: source),
+            to: Locale.Language(identifier: cible))
+        switch statut {
+        case .installed: return .pret
+        case .supported: return .aTelecharger
+        case .unsupported: return .impossible
+        @unknown default: return .impossible
         }
-        #endif
-        return .impossible
     }
 
     /// Met la traduction en attente d'un geste : le dictionnaire manque, et c'est au
@@ -295,13 +284,11 @@ final class DocumentTranslator: ObservableObject {
 /// vérifié au banc, il survit à la traduction et se réaligne sur le sens — les trois
 /// phrases numérotées reviennent numérotées, dans l'ordre. C'est lui qui permet de
 /// réécrire chaque nœud de texte à sa place sans jamais reconstruire de HTML.
-@available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *)
 enum OKiaNodeIndex: AttributedStringKey {
     typealias Value = Int
     static let name = "okiaIndexNoeud"
 }
 
-@available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *)
 extension DocumentTranslator {
 
     /// Traduit la file, bloc par bloc, en rendant chaque bloc dès qu'il arrive.
@@ -320,8 +307,7 @@ extension DocumentTranslator {
                 break
             }
             do {
-                let rendu = try await Self.traduire(bloc: bloc, session: session,
-                                                    repli: forcerRepli)
+                let rendu = try await Self.traduire(bloc: bloc, session: session)
                 retenir(bloc: bloc, rendu: rendu.parts)
                 onBloc?(TranslatedBlock(id: bloc.id, parts: rendu.parts,
                                         reordonnable: rendu.reordonnable))
@@ -407,88 +393,52 @@ extension DocumentTranslator {
     /// Un bloc, une requête. Les morceaux protégés partent avec le reste — la phrase
     /// entière — mais marqués : le modèle les rend intacts au lieu de traduire une cible
     /// de wiki-lien en allemand.
-    private static func traduire(bloc: TranslationBlock, session: TranslationSession,
-                                 repli: Bool = false)
+    private static func traduire(bloc: TranslationBlock, session: TranslationSession)
         async throws -> (parts: [(i: Int, texte: String)], reordonnable: Bool) {
-        if !repli, #available(iOS 26.4, macCatalyst 26.4, macOS 26.4, *) {
-            var source = AttributedString()
-            for part in bloc.parts {
-                var morceau = AttributedString(part.texte)
-                morceau[OKiaNodeIndex.self] = part.i
-                if part.protege { morceau.skipsTranslation = true }
-                source.append(morceau)
-            }
-            let reponse = try await session.translate(source)
-            guard let cible = reponse.attributedTargetText else {
-                throw TranslationError.internalError
-            }
-            // Les segments reviennent alignés sur le sens, ET dans l'ordre de la langue
-            // d'arrivée — qui n'est pas celui du français. On garde cet ordre : c'est lui
-            // qui dit où chaque morceau doit atterrir dans la phrase allemande. Les
-            // morceaux protégés restent dans la séquence, sans quoi on ignorerait où le
-            // modèle les a placés.
-            // Un même nœud peut recevoir plusieurs segments, et pas toujours d'affilée :
-            // l'allemand peut couper ce que le français disait d'un trait. On fusionne
-            // donc par nœud — sans quoi le dernier segment écrase les précédents et le
-            // texte disparaît — en gardant l'ordre de première apparition.
-            var ordre: [Int] = []
-            var textes: [Int: String] = [:]
-            var contigu = true
-            var precedent: Int?
-            for run in cible.runs {
-                guard let index = run[OKiaNodeIndex.self] else { continue }
-                let morceau = String(cible[run.range].characters)
-                if textes[index] == nil {
-                    ordre.append(index)
-                } else if precedent != index {
-                    // Le nœud revient plus loin dans la phrase : son contenu est éclaté en
-                    // deux endroits que le DOM ne peut pas représenter d'un seul tenant.
-                    contigu = false
-                }
-                textes[index, default: ""] += morceau
-                precedent = index
-            }
-            var sequence = ordre.map { (i: $0, texte: textes[$0] ?? "") }
-            let proteges = Set(bloc.parts.filter { $0.protege }.map { $0.i })
-            sequence = recoudre(sequence, proteges: proteges)
-            // On ne remet dans l'ordre de la langue d'arrivée que si cet ordre est
-            // représentable : un nœud éclaté rendrait la phrase incomplète ou mélangée.
-            // Dans ce cas on garde l'ordre du français — imparfait, mais entier.
-            return (parts: sequence, reordonnable: contigu)
-        }
-
-        // Repli pour iOS 18 → 26.3, où ni `skipsTranslation` ni la traduction d'un
-        // `AttributedString` n'existent. On y traduit MOINS, volontairement.
-        //
-        // La tentation était de découper le bloc et de traduire chaque morceau seul.
-        // Essayé, et regardé à l'écran : le modèle traite chaque morceau comme une phrase
-        // autonome. « Le conseil a validé les comptes annuels avant le 30 juin » revenait
-        // en « Der Gemeinderat von Villeneuve Validiert hat Die Jahresabschlüsse Vor dem
-        // 30. Juni » — majuscules parasites à chaque couture, syntaxe disloquée — et
-        // « Appeler » isolé devenait « Anrufen », c'est-à-dire téléphoner. Un lecteur
-        // germanophone lit alors un texte qui a l'air traduit et qui ment.
-        //
-        // La casse ne se rattrape pas non plus : décapitaliser à l'aveugle casserait
-        // l'allemand, où tout nom commun prend la majuscule.
-        //
-        // Donc on ne traduit que les blocs d'un seul tenant : un morceau traduisible, et
-        // en tête, si bien qu'il commence vraiment la phrase. C'est la grande majorité
-        // d'un rapport — paragraphes, titres, puces, cellules. Les autres restent en
-        // langue d'origine et sont comptés : l'état terminal sait dire « traduit, sauf
-        // trois passages », ce qui est honnête, là où un charabia ne l'est pas.
-        let traduisibles = bloc.parts.filter { !$0.protege }
-        guard traduisibles.count == 1, let seul = traduisibles.first, seul.i == 0 else {
-            throw TranslationError.nothingToTranslate
-        }
-        let reponse = try await session.translate(seul.texte)
-        var resultat: [(i: Int, texte: String)] = []
+        var source = AttributedString()
         for part in bloc.parts {
-            resultat.append((i: part.i,
-                             texte: part.i == seul.i ? reponse.targetText : part.texte))
+            var morceau = AttributedString(part.texte)
+            morceau[OKiaNodeIndex.self] = part.i
+            if part.protege { morceau.skipsTranslation = true }
+            source.append(morceau)
         }
+        let reponse = try await session.translate(source)
+        guard let cible = reponse.attributedTargetText else {
+            throw TranslationError.internalError
+        }
+        // Les segments reviennent alignés sur le sens, ET dans l'ordre de la langue
+        // d'arrivée — qui n'est pas celui du français. On garde cet ordre : c'est lui
+        // qui dit où chaque morceau doit atterrir dans la phrase allemande. Les
+        // morceaux protégés restent dans la séquence, sans quoi on ignorerait où le
+        // modèle les a placés.
+        // Un même nœud peut recevoir plusieurs segments, et pas toujours d'affilée :
+        // l'allemand peut couper ce que le français disait d'un trait. On fusionne
+        // donc par nœud — sans quoi le dernier segment écrase les précédents et le
+        // texte disparaît — en gardant l'ordre de première apparition.
+        var ordre: [Int] = []
+        var textes: [Int: String] = [:]
+        var contigu = true
+        var precedent: Int?
+        for run in cible.runs {
+            guard let index = run[OKiaNodeIndex.self] else { continue }
+            let morceau = String(cible[run.range].characters)
+            if textes[index] == nil {
+                ordre.append(index)
+            } else if precedent != index {
+                // Le nœud revient plus loin dans la phrase : son contenu est éclaté en
+                // deux endroits que le DOM ne peut pas représenter d'un seul tenant.
+                contigu = false
+            }
+            textes[index, default: ""] += morceau
+            precedent = index
+        }
+        var sequence = ordre.map { (i: $0, texte: textes[$0] ?? "") }
         let proteges = Set(bloc.parts.filter { $0.protege }.map { $0.i })
-        // Rien n'a été déplacé, et rien ne dit où la phrase voudrait le placer.
-        return (parts: recoudre(resultat, proteges: proteges), reordonnable: false)
+        sequence = recoudre(sequence, proteges: proteges)
+        // On ne remet dans l'ordre de la langue d'arrivée que si cet ordre est
+        // représentable : un nœud éclaté rendrait la phrase incomplète ou mélangée.
+        // Dans ce cas on garde l'ordre du français — imparfait, mais entier.
+        return (parts: sequence, reordonnable: contigu)
     }
 }
 
