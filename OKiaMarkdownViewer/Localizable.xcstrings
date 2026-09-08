@@ -387,6 +387,41 @@
         }
       }
     },
+    "Ce document est en %@. Sa traduction demande un téléchargement.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce document est en %@. Sa traduction demande un téléchargement."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document is in %@. Translating it requires a download."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Dokument ist auf %@. Für die Übersetzung ist ein Download nötig."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este documento está en %@. Su traducción requiere una descarga."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo documento è in %@. La traduzione richiede un download."
+          }
+        }
+      }
+    },
     "Ce document ne contient pas de titres.": {
       "extractionState": "manual",
       "localizations": {
@@ -3708,6 +3743,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Traduzione in corso…"
+          }
+        }
+      }
+    },
+    "Traduire": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduire"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducir"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduci"
           }
         }
       }

@@ -200,6 +200,8 @@ struct ReaderView: View {
     /// que le texte est traduit, d'où il vient, et que rien n'est sorti de l'appareil.
     @ViewBuilder private var bandeauTraduction: some View {
         switch translator.state {
+        case .attente(let source):
+            bandeauProposition(source: source)
         case .running(let faits, let total):
             bandeau(progression: total > 0 ? Double(faits) / Double(total) : 0,
                     texte: tr("Traduction en cours…"))
@@ -211,6 +213,32 @@ struct ReaderView: View {
         default:
             EmptyView()
         }
+    }
+
+    /// Le bandeau qui demande avant de télécharger. Il dit le prix — un dictionnaire à
+    /// récupérer — plutôt que de laisser une invite système l'annoncer à sa place.
+    private func bandeauProposition(source: String) -> some View {
+        let locale = Locale(identifier: Localization.shared.code)
+        let nom = locale.localizedString(forLanguageCode: source) ?? source
+        let langue = nom.prefix(1).uppercased() + nom.dropFirst()
+        return HStack(spacing: 10) {
+            Image(systemName: "arrow.down.circle")
+                .font(.caption)
+                .foregroundStyle(orange)
+            Text(tr("Ce document est en %@. Sa traduction demande un téléchargement.", langue))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+            Spacer(minLength: 8)
+            Button(tr("Traduire")) { accepterTraduction() }
+                .font(.caption.weight(.medium))
+                .buttonStyle(.plain)
+                .foregroundStyle(orange)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background(.bar)
+        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
 
     private func bandeau(progression: Double?, texte: String) -> some View {
@@ -286,6 +314,20 @@ struct ReaderView: View {
         return autoTranslate
     }
 
+    /// Le lecteur a accepté le téléchargement : on repart d'une collecte fraîche plutôt
+    /// que de rejouer celle de tout à l'heure, qu'une recherche entre-temps aurait pu
+    /// rendre caduque.
+    private func accepterTraduction() {
+        guard case .attente(let source) = translator.state else { return }
+        let cible = Localization.shared.code
+        web.collecterTraduisible { blocs, defilement in
+            guard !blocs.isEmpty else { return }
+            afficheTraduction = true
+            translator.demarrer(blocs: blocs, defilement: defilement,
+                                source: source, cible: cible)
+        }
+    }
+
     private func traduireSiDemandé() {
         guard traductionActive else { return }
         let cible = Localization.shared.code
@@ -298,10 +340,19 @@ struct ReaderView: View {
             Task { @MainActor in
                 // `status(from:to:)` fait foi et répond en quelques dizaines de
                 // millisecondes ; il évite d'ouvrir une session qui ne mènerait à rien.
-                guard await DocumentTranslator.disponible(de: source, vers: cible) else { return }
                 afficheTraduction = true
-                translator.demarrer(blocs: blocs, defilement: defilement,
-                                    source: source, cible: cible)
+                switch await DocumentTranslator.aptitude(de: source, vers: cible) {
+                case .impossible:
+                    return
+                case .pret:
+                    translator.demarrer(blocs: blocs, defilement: defilement,
+                                        source: source, cible: cible)
+                case .aTelecharger:
+                    // Le dictionnaire manque. Le télécharger fait tomber une invite
+                    // système : elle doit répondre à un geste, pas surprendre un lecteur
+                    // au milieu d'une page. On propose, on n'impose pas.
+                    translator.attendre(source: source)
+                }
             }
         }
     }

@@ -535,6 +535,15 @@ lui-même, et il n'a pas changé de langue ; un `.md` traduit se ferait passer p
 Le diaporama et son export PowerPoint travaillent sur le Markdown source dans un autre
 moteur : ils ne sont pas traduits, et c'est à revoir si l'usage le demande.
 
+*Le téléchargement du dictionnaire, tranché le 2026-09-08.* `status(from:to:)` rend trois
+états et non deux, et la nuance décide de l'expérience : « pris en charge » n'est pas
+« prêt ». Quand le dictionnaire manque, l'app ne lance rien — elle propose, par un bandeau
+qui dit le prix : « Ce document est en français. Sa traduction demande un téléchargement. »
+L'invite système tombe alors après un geste, jamais au milieu d'une page. Le geste relance
+une collecte fraîche plutôt que de rejouer la première : entre la proposition et le clic, une
+recherche dans le document remplace des nœuds de texte par des `<mark>`, et les références
+mémorisées seraient périmées.
+
 *Le titre.* La barre du lecteur **suit la traduction** : elle montre le titre du document, et
 laisser « Rapport annuel 2026 » au-dessus d'un « Jahresbericht 2026 » serait incohérent. Le
 coffre et les Récents, eux, **ne bougent pas** : ils indexent des fichiers par leur nom, et un

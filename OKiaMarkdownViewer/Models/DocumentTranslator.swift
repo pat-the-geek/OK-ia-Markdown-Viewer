@@ -54,6 +54,10 @@ final class DocumentTranslator: ObservableObject {
         case idle
         /// Rien à faire : document déjà dans la langue du lecteur, ou paire indisponible.
         case skipped(String)
+        /// La paire est prise en charge mais le dictionnaire n'est pas là. On ne lance
+        /// rien : le téléchargement fait tomber une invite système, et elle doit répondre
+        /// à un geste du lecteur, pas le surprendre au milieu d'une page.
+        case attente(source: String)
         case running(faits: Int, total: Int)      // en caractères, pas en blocs
         /// « traduit, sauf trois paragraphes » — une fin qui n'arrive pas est pire qu'un échec.
         case finished(blocs: Int, echecs: Int)
@@ -119,24 +123,48 @@ final class DocumentTranslator: ObservableObject {
         return langue.rawValue
     }
 
-    /// Vrai quand la traduction peut tourner sur cet appareil pour cette paire.
+    /// Ce que l'appareil sait faire de cette paire, en trois états — la nuance compte :
+    /// « pris en charge » n'est pas « prêt », et confondre les deux ferait tomber une
+    /// invite de téléchargement au milieu d'une lecture.
+    enum Aptitude { case pret, aTelecharger, impossible }
+
     /// `status(from:to:)` fait foi et répond en quelques dizaines de millisecondes —
     /// `supportedLanguages`, lui, annonce 38 langues jusque sur un simulateur où plus
     /// rien ne traduit. Mesuré au banc.
-    static func disponible(de source: String, vers cible: String) async -> Bool {
+    static func aptitude(de source: String, vers cible: String) async -> Aptitude {
+        #if DEBUG
+        // OKIA_AUTO_TR=telecharger : jouer le cas d'un dictionnaire absent sur une
+        // machine où les 38 langues sont installées, donc où il ne se produit jamais.
+        if ProcessInfo.processInfo.environment["OKIA_AUTO_TR"] == "telecharger" {
+            return .aTelecharger
+        }
+        #endif
         #if canImport(Translation)
         if #available(iOS 18.0, macCatalyst 26.0, macOS 15.0, *) {
             let statut = await LanguageAvailability().status(
                 from: Locale.Language(identifier: source),
                 to: Locale.Language(identifier: cible))
             switch statut {
-            case .installed, .supported: return true
-            case .unsupported: return false
-            @unknown default: return false
+            case .installed: return .pret
+            case .supported: return .aTelecharger
+            case .unsupported: return .impossible
+            @unknown default: return .impossible
             }
         }
         #endif
-        return false
+        return .impossible
+    }
+
+    /// Met la traduction en attente d'un geste : le dictionnaire manque, et c'est au
+    /// lecteur de décider s'il veut le télécharger maintenant.
+    ///
+    /// On ne garde que les deux langues, jamais les blocs déjà collectés : entre la
+    /// proposition et le clic, le lecteur peut chercher dans le document, et une
+    /// recherche remplace des nœuds de texte par des `<mark>`. Les références seraient
+    /// périmées avant d'avoir servi. Le geste relance donc une collecte fraîche.
+    func attendre(source: String) {
+        demandeSource = source
+        state = .attente(source: source)
     }
 
     // MARK: - Lancer
