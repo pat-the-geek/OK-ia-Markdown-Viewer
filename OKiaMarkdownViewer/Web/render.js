@@ -1660,7 +1660,14 @@
     return racine;
   }
 
-  var trEtat = { blocs: [], actif: false, derniereAnimation: 0 };
+  var trEtat = { blocs: [], actif: false, derniereAnimation: 0, racine: null };
+
+  /* Les deux sens de la traduction, texte à texte. Les nœuds mémorisés suffisent tant
+     que personne n'y touche — mais une recherche remplace les nœuds trouvés par un
+     <mark> et des nœuds neufs, et nos références deviennent des orphelins. Écrire dedans
+     ne fait rien de visible, et le bloc se retrouve moitié dans une langue, moitié dans
+     l'autre. Ces tables sont le filet : elles ne dépendent d'aucun nœud. */
+  var trTables = { versTraduit: {}, versOriginal: {} };
 
   /* Cadence minimale entre deux fondus. Elle ne freine que l'animation, jamais la
      disponibilité du texte : un bloc qui arrive trop vite après le précédent est écrit
@@ -1675,12 +1682,13 @@
      document. `haut` sert à ordonner la vague depuis le premier bloc visible, et
      `signes` à mesurer l'avancement en caractères plutôt qu'en blocs — un titre et un
      paragraphe de trente lignes ne pèsent pas pareil. */
-  function trCollecter(racine) {
+  function trCollecter(racine, garderTables) {
     // Le lecteur travaille sur #content ; le diaporama sur la diapositive courante, et
     // l'export sur un conteneur hors écran. Le mécanisme est le même, seule la racine
     // change.
     var container = racine || document.getElementById('content');
-    trEtat = { blocs: [], actif: false, derniereAnimation: 0 };
+    if (!garderTables) trTables = { versTraduit: {}, versOriginal: {} };
+    trEtat = { blocs: [], actif: false, derniereAnimation: 0, racine: container };
     if (!container) return [];
 
     // Une traduction en place doit être défaite AVANT de recollecter, sinon les textes
@@ -1900,6 +1908,13 @@
     // Mémorisé pour la bascule : revenir à la traduction ne doit rien recalculer, la
     // traduction a déjà coûté ses secondes.
     b.traduit = { sequence: sequence, reordonner: reordonner !== false };
+    for (var m = 0; m < sequence.length; m++) {
+      var idx = sequence[m].i;
+      if (typeof idx !== 'number' || idx < 0 || idx >= b.originaux.length) continue;
+      if (b.protege[idx]) continue;
+      trTables.versTraduit[b.originaux[idx]] = String(sequence[m].texte);
+      trTables.versOriginal[String(sequence[m].texte)] = b.originaux[idx];
+    }
     b.el.setAttribute('data-okia-tr-fait', '1');
     trEtat.actif = true;
     return true;
@@ -1909,6 +1924,20 @@
      automatique annoncée : l'original reste à un geste, et le geste est instantané —
      les deux versions sont là, rien n'est refait. */
   function trBasculer(traduit) {
+    // Les nœuds ont-ils survécu depuis la collecte ? Une recherche en remplace, et
+    // écrire dans un orphelin ne fait rien de visible — le bloc resterait à moitié
+    // traduit. Dans ce cas on passe par les tables, qui ne dépendent d'aucun nœud.
+    if (!trNoeudsIntacts()) {
+      var container = trEtat.racine || document.getElementById('content');
+      // `clearSearch` refusionne les nœuds qu'elle avait coupés : les textes redeviennent
+      // entiers, donc reconnaissables dans la table.
+      clearSearch();
+      trReecrireParTable(container,
+                         traduit ? trTables.versTraduit : trTables.versOriginal,
+                         !!traduit);
+      trEtat.actif = !!traduit;
+      return trEtat.actif;
+    }
     if (traduit) {
       trEtat.blocs.forEach(function (b, i) {
         if (b.traduit) trAppliquer(i, b.traduit.sequence, b.traduit.reordonner, false);
@@ -1920,9 +1949,49 @@
     return trEtat.actif;
   }
 
+  /* Réécrit par la table, sans recollecter. Recollecter remplacerait `trEtat` et
+     jetterait ce que chaque bloc sait de sa propre traduction — la bascule suivante
+     n'aurait plus rien à reposer. On se contente donc de parcourir les nœuds vivants. */
+  function trReecrireParTable(container, table, marquer) {
+    if (!container || !table) return 0;
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    var cibles = [], node;
+    while ((node = walker.nextNode())) {
+      if (!node.nodeValue || !/\S/.test(node.nodeValue)) continue;
+      if (trZoneExclue(node.parentNode)) continue;
+      if (Object.prototype.hasOwnProperty.call(table, node.nodeValue)) cibles.push(node);
+    }
+    cibles.forEach(function (n) {
+      n.nodeValue = table[n.nodeValue];
+      // La marque suit le texte : un bloc revenu à l'original n'est plus « traduit », et
+      // c'est elle que le style et les tests regardent.
+      var bloc = n.parentNode;
+      while (bloc && bloc !== container && !(bloc.getAttribute && bloc.getAttribute('data-okia-tr'))) {
+        bloc = bloc.parentNode;
+      }
+      if (bloc && bloc.setAttribute) {
+        if (marquer) bloc.setAttribute('data-okia-tr-fait', '1');
+        else bloc.removeAttribute('data-okia-tr-fait');
+      }
+    });
+    return cibles.length;
+  }
+
+  /* Vrai tant que chaque nœud collecté est encore dans le document. */
+  function trNoeudsIntacts() {
+    for (var i = 0; i < trEtat.blocs.length; i++) {
+      var noeuds = trEtat.blocs[i].noeuds;
+      for (var j = 0; j < noeuds.length; j++) {
+        if (!noeuds[j].isConnected) return false;
+      }
+    }
+    return true;
+  }
+
   /* L'original reste à un geste : c'est la contrepartie d'une traduction automatique
      annoncée. Rien n'est recalculé, les textes d'origine n'ont jamais quitté la page. */
   function trRestaurer() {
+    if (!trNoeudsIntacts()) return trBasculer(false) ? 0 : trEtat.blocs.length;
     trEtat.blocs.forEach(function (b) {
       for (var j = 0; j < b.noeuds.length; j++) b.noeuds[j].nodeValue = b.originaux[j];
       // Les unités ont pu changer de place pour suivre la syntaxe de la langue d'arrivée :
@@ -2081,7 +2150,8 @@
      sans aller-retour. C'est ce qui permet à l'export PowerPoint de porter la traduction :
      il rend chaque diapositive hors écran, et l'on y repose ce qui a déjà été traduit. */
   function trAppliquerMemoire(racine, table) {
-    var blocs = trCollecter(racine);
+    // `true` : ne pas vider les tables de bascule, dont on se sert précisément ici.
+    var blocs = trCollecter(racine, true);
     var faits = 0;
     blocs.forEach(function (b) {
       var sequence = [];

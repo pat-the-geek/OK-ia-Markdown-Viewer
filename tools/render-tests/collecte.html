@@ -212,6 +212,34 @@ document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/render.js?t=' + D
   verifier('clearExportNote() la retire',
            document.querySelectorAll('#content .okia-tr-mention').length === 0);
 
+  // -- une recherche entre-temps ------------------------------------------------------
+  // Une recherche remplace les nœuds trouvés par un <mark> et des nœuds neufs : les
+  // références de la collecte deviennent des orphelins, et écrire dedans ne fait rien de
+  // visible. Sans filet, le retour à l'original rendait « Der Rat von Le conseil de
+  // Villeneuve a validé… » — moitié allemand, moitié français.
+  var bRech = blocContenant('a siégé sept fois');
+  if (bRech) {
+    T.apply(bRech.id, [
+      { i: 0, texte: 'Die Kommission ' },
+      { i: 1, texte: 'IGNORÉ' },
+      { i: 2, texte: ' hat siebenmal getagt.' }
+    ], false, false);
+    var pRech = document.querySelectorAll('#content p')[1];
+    var avantRecherche = pRech.textContent.replace(/\s+/g, ' ').trim();
+    var res = window.OKIA.search('Kommission');
+    verifier('la recherche trouve dans le texte traduit', res.count >= 1, 'trouvés=' + res.count);
+    T.restore();
+    var apresRestore = document.querySelectorAll('#content p')[1].textContent.replace(/\s+/g, ' ').trim();
+    verifier('le retour à l\'original survit à une recherche',
+             apresRestore === 'La commission Commission de gestion a siégé sept fois.',
+             'obtenu « ' + apresRestore + ' »');
+    verifier('et la traduction revient ensuite',
+             (T.toggle(true), document.querySelectorAll('#content p')[1].textContent
+                .indexOf('siebenmal getagt') !== -1),
+             'obtenu « ' + document.querySelectorAll('#content p')[1].textContent.trim() + ' »');
+    T.toggle(false);
+  }
+
   // -- retour à l'original -----------------------------------------------------------
   T.restore();
   verifier('restore() rétablit le titre', texteDe('#content h1') === avant);
