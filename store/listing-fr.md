@@ -118,6 +118,8 @@ NOUVEAU
 • Le diaporama et l'export PowerPoint sont traduits eux aussi
 • L'original reste à un geste, et rien ne quitte l'appareil : ni compte, ni envoi,
   ni texte qui sort
+• L'écran d'accueil range vos fichiers récents et les rapports du coffre par date :
+  aujourd'hui, hier, la semaine, le mois
 
 Cette version demande iOS/iPadOS 26.4 ou macOS 26.4 : la traduction sur
 l'appareil n'existe pas avant.

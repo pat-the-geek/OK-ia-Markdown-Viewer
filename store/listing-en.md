@@ -117,6 +117,8 @@ NEW
 • The slideshow and the PowerPoint export are translated too
 • The original stays one tap away, and nothing leaves the device: no account,
   no upload, no text going out
+• The home screen sorts your recent files and vault reports by date: today,
+  yesterday, this week, this month
 
 This version requires iOS/iPadOS 26.4 or macOS 26.4: on-device translation does
 not exist before that.

@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.2 (35)`** — la traduction des documents sur l'appareil. Envoyé
+> ⚠️ **Build à utiliser : `1.2 (36)`** — la traduction des documents sur l'appareil. Envoyé
 > par `scripts/deploy-testflight.sh --bump --both`, qui construit iOS et Mac à partir du même
 > numéro et passe les contrôles avant envoi.
 >
@@ -31,10 +31,18 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.2 (35)
+## What to Test — 1.2 (36)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
+
+CORRIGÉ DEPUIS LE BUILD 35
+• Diaporama d'un document traduit : les libellés des diagrammes Mermaid restaient
+  dans la langue d'origine, à l'écran comme dans l'export PowerPoint. Vérifiez-les,
+  y compris sur une diapositive que vous n'aviez pas encore ouverte.
+• Écran d'accueil : les fichiers récents et les rapports du coffre sont maintenant
+  groupés par date — aujourd'hui, hier, 7 puis 30 derniers jours, ensuite par mois.
+  L'heure s'affiche pour aujourd'hui et hier, la date courte au-delà.
 
 DANS CETTE VERSION — LA TRADUCTION
 Prenez un rapport écrit dans une langue que l'app ne parle pas à l'écran : allemand
