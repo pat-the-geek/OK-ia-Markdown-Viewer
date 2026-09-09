@@ -88,6 +88,10 @@ final class Localization: ObservableObject {
     /// Two-letter code handed to the web renderer (window.OKIA_LANG) and the summariser.
     var code: String { language == .system ? Self.systemCode : language.rawValue }
 
+    /// La locale des dates affichées. Elle suit le réglage de l'app, pas l'appareil : un
+    /// utilisateur qui a choisi l'italien lirait sinon « Giugno » sous un intitulé français.
+    var locale: Locale { Locale(identifier: code) }
+
     /// The `.lproj` bundle strings are read from. Because Settings can override the
     /// language at runtime, strings cannot be resolved against `Bundle.main` — that one
     /// follows the *device* language and would ignore the user's choice.

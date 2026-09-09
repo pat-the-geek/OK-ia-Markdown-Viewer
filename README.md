@@ -96,6 +96,11 @@ Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent 
   dans chaque langue (`ReaderView.instructions`), pas traduit mot à mot.
 - **Fichiers récents** : les derniers `.md` ouverts sont mémorisés (bookmarks security-scoped) et
   proposés sur l'écran d'accueil.
+- **Listes groupées par date** : les récents et les rapports du coffre sont découpés en tranches —
+  aujourd'hui, hier, les 7 puis les 30 derniers jours, ensuite un groupe par mois. Le découpage est
+  commun aux deux listes (`Models/DateGrouping.swift`) pour qu'un même fichier tombe sous le même
+  intitulé où qu'on le voie ; chaque ligne porte l'heure quand le jour est déjà dit par l'intitulé,
+  la date courte sinon. Les noms de mois suivent la langue **de l'app**, pas celle de l'appareil.
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.
 - **Recherche dans le document** : surlignage des occurrences + navigation précédent/suivant.
 - **Partage / export** : export du rendu en **PDF** ou partage du fichier `.md` via la share sheet iOS.

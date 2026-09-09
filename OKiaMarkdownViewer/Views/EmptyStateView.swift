@@ -94,50 +94,72 @@ struct EmptyStateView: View {
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
+    /// Les récents, découpés par date d'ouverture. Une liste de douze noms ne dit pas
+    /// d'elle-même ce qui date d'aujourd'hui et ce qui remonte au mois dernier ; les
+    /// intitulés le disent, et la mention de chaque ligne n'a plus qu'à préciser l'heure.
+    private var groupesRecents: [GroupeDate<RecentFile>] {
+        DecoupageParDate.grouper(recents, date: \.openedAt)
+    }
+
     private var recentsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 14) {
             Text(tr("Récents"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
-            VStack(spacing: 0) {
-                ForEach(recents) { item in
-                    Button { onRecent(item) } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")
-                                .foregroundStyle(orange)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.name)
-                                    .font(.callout.weight(.medium))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                Text(item.openedAt, format: .relative(presentation: .named))
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+            ForEach(groupesRecents) { groupe in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(groupe.titre)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 4)
+
+                    VStack(spacing: 0) {
+                        ForEach(groupe.elements) { item in
+                            ligneRecente(item)
+                            if item.id != groupe.elements.last?.id {
+                                Divider().padding(.leading, 44)
                             }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 12)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .contextMenu {
-                        Button(role: .destructive) { recentsStore.remove(item) } label: {
-                            Label(tr("Retirer de la liste"), systemImage: "trash")
                         }
                     }
-                    if item.id != recents.last?.id { Divider().padding(.leading, 44) }
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
         }
         .frame(maxWidth: 480)
         .padding(.top, 8)
+    }
+
+    private func ligneRecente(_ item: RecentFile) -> some View {
+        Button { onRecent(item) } label: {
+            HStack(spacing: 12) {
+                Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")
+                    .foregroundStyle(orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.name)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(DecoupageParDate.mention(pour: item.openedAt))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) { recentsStore.remove(item) } label: {
+                Label(tr("Retirer de la liste"), systemImage: "trash")
+            }
+        }
     }
 }
 
