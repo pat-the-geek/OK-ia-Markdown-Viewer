@@ -762,12 +762,11 @@ une coupure supplémentaire ne se décide pas en passant.
 elle, part en revue telle qu'elle est : un appareil qui vient de sortir ne retarde pas une version
 éprouvée.
 
-**Ce qui n'est pas encore établi, et qu'on n'inventera pas** : ses dimensions, son rapport
-d'écran, et s'il expose un ou deux états d'affichage. Ces points se lisent dans la documentation
-d'Apple et se vérifient au simulateur — lequel arrive avec Xcode 27, attendu lundi soir (entrée
-précédente). Le travail est donc suspendu à cette bascule : sans le SDK, ni le simulateur de
-l'appareil ni ses interfaces ne sont là. Tout ce qui suit est une liste de points à éprouver, pas
-un plan arrêté.
+**L'appareil se plie et porte deux écrans** (confirmé par Patrick le 2026-09-11) : un écran
+extérieur, replié, et un écran intérieur, déplié. Restent à établir leurs dimensions et leurs
+rapports, et la façon dont le système passe l'app de l'un à l'autre — au simulateur, avec Xcode 27.
+Le travail est suspendu à cette bascule : sans le SDK, ni le simulateur de l'appareil ni ses
+interfaces ne sont là.
 
 **Ce que le code suppose aujourd'hui**, et qu'un format inédit met à l'épreuve :
 
@@ -783,13 +782,26 @@ un plan arrêté.
 - `TARGETED_DEVICE_FAMILY` vaut `"1,2"` (iPhone + iPad) : vérifier si le nouvel appareil relève
   d'une famille déjà couverte.
 
-**Le vrai risque, s'il existe deux états d'écran** : la bascule se produit pendant qu'on lit. Le
-lecteur doit alors garder sa position de défilement, son sommaire ouvert ou fermé, et surtout
-**l'état de la traduction** — la mémoire est indexée par bloc, et un redimensionnement qui
-relancerait un rendu repartirait d'un document neuf. C'est le point à éprouver en premier, avant
-toute considération d'esthétique.
+**Le cœur du sujet : on plie pendant qu'on lit.** Le lecteur doit garder sa position de
+défilement, sa recherche, son sommaire — et surtout **l'état de la traduction**, dont la mémoire
+est indexée par bloc : un rendu relancé repartirait d'un document neuf, en langue d'origine. Trois
+constats, tirés du code tel qu'il est :
 
-**Côté magasin** : un nouveau gabarit d'iPhone peut exiger sa propre taille de capture dans App
+- **le lecteur ne se redessine pas sur un simple redimensionnement.** `renderCurrentDocument`
+  (`MarkdownWebView`) est gardé par l'identifiant du document : tant que c'est le même, il ne
+  rappelle pas `OKIA.render`. Le DOM, donc la traduction, survit. Ce qu'il faut éprouver, c'est
+  que le pliage ne **recrée** pas la `WKWebView` elle-même — si SwiftUI reconstruit la vue, tout
+  repart à zéro, et cela ne se verra qu'à l'essai ;
+- **`render.js` n'écoute pas `resize`.** Les cartes Leaflet n'appellent `invalidateSize()` qu'au
+  moment du rendu. Déplier l'appareil laisserait donc une carte à ses anciennes dimensions,
+  bande grise comprise. Le diaporama, lui, écoute déjà `resize` et `orientationchange` et
+  recalcule la diapositive courante (`presentation.js`) : c'est le même traitement qu'il faut
+  donner au lecteur ;
+- **la règle paysage de `style.css` raisonne en orientation.** Sur un écran intérieur presque
+  carré, l'orientation ne dit plus grand-chose ; une règle fondée sur la largeur dirait mieux ce
+  qu'elle veut dire.
+
+**Côté magasin** : deux écrans, c'est probablement deux gabarits de capture à fournir dans App
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
 et régénérées par `scripts/screenshots.sh` ; il faudra y ajouter le format le jour où Apple le
 demande.
