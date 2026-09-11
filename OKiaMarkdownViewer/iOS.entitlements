@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Boîte aux lettres partagée avec fornews.ai — voir `BoiteAuxLettres`.
+	     ⚠️ iOS n'avait AUCUN fichier d'entitlements jusqu'ici : sans celui-ci, le groupe
+	     n'existe que sur le Mac et l'ouverture directe reste impossible là où on l'a demandée. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.ai.fornews.native</string>
+	</array>
+</dict>
+</plist>

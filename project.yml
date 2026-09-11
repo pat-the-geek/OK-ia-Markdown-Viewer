@@ -65,6 +65,10 @@ targets:
         # removed for Mac App Store distribution archive (automatic signing picks Apple Distribution).
         # App Sandbox entitlements (mandatory for the Mac App Store) — macOS/Catalyst only, iOS untouched.
         CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: OKiaMarkdownViewer/macOS.entitlements
+        # Groupe d'applications partagé avec fornews.ai (iOS/iPadOS). Sans cette ligne, le groupe
+        # n'est déclaré que côté Mac et `mdviewer://fichier` ne trouve rien sur iPhone.
+        CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]: OKiaMarkdownViewer/iOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: OKiaMarkdownViewer/iOS.entitlements
         GENERATE_INFOPLIST_FILE: NO
 
 # Scheme named "md Viewer" so archives are filed under that name in the Organizer

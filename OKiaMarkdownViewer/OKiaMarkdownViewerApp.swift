@@ -38,6 +38,7 @@ final class DocumentStore: ObservableObject {
 
     /// mdviewer://open?url=<https .md>   — fetch a remote report and render it
     /// mdviewer://render?name=<f>&content=<percent-encoded markdown>  — render inline
+    /// mdviewer://fichier?nom=<f>          — read a drop from the shared mailbox (see BoiteAuxLettres)
     private func handleScheme(_ url: URL) {
         guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             errorMessage = tr("Lien invalide."); return
@@ -53,6 +54,22 @@ final class DocumentStore: ObservableObject {
                 openRemote(remote)
             } else {
                 errorMessage = tr("URL du rapport manquante ou invalide (https requis).")
+            }
+        // Boîte aux lettres partagée avec fornews.ai. Demandée par Patrick le 11/09 : sur iOS,
+        // aucune application ne peut remettre un FICHIER à une autre application nommée, et le
+        // contenu ne tient pas dans une URL — un rapport mesuré à 272 037 caractères une fois
+        // encodé. fornews dépose donc le document dans le conteneur du groupe et n'envoie que son
+        // NOM. Cf. `BoiteAuxLettres`, dont ce fichier partage la définition mot pour mot.
+        case "fichier", "file":
+            let nom = value("nom", "name", "f") ?? ""
+            if let contenu = BoiteAuxLettres.relire(nom), !contenu.isEmpty {
+                document = MarkdownDocument(filename: sanitize(nom), text: contenu)
+                errorMessage = nil
+            } else {
+                // ⚠️ Dire ce qui manque, et non « lien invalide » : le dépôt peut avoir été effacé
+                // par le plafond de la boîte, ou le groupe d'applications mal signé. Deux causes
+                // bien distinctes, toutes deux invisibles sans ce message.
+                errorMessage = tr("Document introuvable dans le dossier partagé : « %@ ».", nom)
             }
         case "render", "content":
             let name = value("name", "title") ?? tr("Rapport.md")

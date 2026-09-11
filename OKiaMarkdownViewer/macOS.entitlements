@@ -14,5 +14,12 @@
 	<!-- App-scoped security bookmarks so the vault folder + recents persist across launches. -->
 	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
+	<!-- Boîte aux lettres partagée avec fornews.ai — voir `BoiteAuxLettres`. Le groupe porte
+	     l'identifiant de fornews parce que c'est lui qui l'a créé et qui le livre déjà ;
+	     en créer un neutre obligerait à modifier les deux applications au lieu d'une. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.ai.fornews.native</string>
+	</array>
 </dict>
 </plist>
