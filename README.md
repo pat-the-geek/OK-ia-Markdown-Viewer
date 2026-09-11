@@ -837,10 +837,15 @@ iPhone Duo*, *Raise the bar with iPhone Duo*). Ce qui suit dit ce que chaque not
   pour les vues sur mesure, `visibilityPriority`, `ToolbarOverflowMenu` pour le débordement, et
   `.toolbarVerticalBehavior(.disabled)` pour s'en exempter. C'est une reprise du lecteur, pas un
   réglage.
-- **Le SDK décide du degré d'adaptation.** L'app tournera sans être recompilée ; le SDK 27
-  l'étend à gauche de la barre d'état sur l'écran intérieur ; le SDK **27.1** lui donne le bord de
-  l'écran et les barres verticales. L'entrée « compiler avec Xcode 27 » n'est donc pas de la seule
-  hygiène : elle conditionne celle-ci.
+- **Le SDK décide du degré d'adaptation**, et il y a donc un mode de compatibilité : l'app
+  tournera sans être recompilée, simplement sans occuper tout l'écran — les comptes rendus de
+  presse parlent d'une fenêtre d'iPhone centrée entre deux bandes noires, Apple se bornant à dire
+  que l'usage de l'écran s'améliore avec chaque SDK. Le SDK 27 l'étend à gauche de la barre
+  d'état sur l'écran intérieur ; le SDK **27.1** lui donne le bord de l'écran et les barres
+  verticales. Conséquence pour nous : la 1.2 n'est pas en danger sur un Duo, elle y sera
+  seulement à l'étroit. Et l'entrée « compiler avec Xcode 27 » n'est pas de la seule hygiène,
+  elle conditionne celle-ci — sachant qu'Apple annonce la bêta d'Xcode 27.1 et le guide
+  *Preparing your app for iPhone Duo* pour « plus tard ce mois-ci ».
 - **Ce qu'Apple interdit et que le code fait déjà.** `requestLandscapeIfPhone()` (`ReaderView`)
   force le paysage avant le diaporama quand l'idiome est « téléphone ». Apple demande exactement
   l'inverse : ne rien déduire de l'idiome, raisonner en classes de taille. Déplié, le Duo restera
