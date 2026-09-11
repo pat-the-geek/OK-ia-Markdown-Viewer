@@ -801,6 +801,32 @@ constats, tirés du code tel qu'il est :
   carré, l'orientation ne dit plus grand-chose ; une règle fondée sur la largeur dirait mieux ce
   qu'elle veut dire.
 
+**Les concepts à reprendre** (notes de Patrick, 2026-09-11). Les noms exacts des interfaces se
+liront dans le SDK ; ce qui suit dit à quoi chacun se heurte **ici**, pour que la lecture de la
+documentation serve à quelque chose au lieu de recommencer l'inventaire.
+
+- **La notion de région** — l'unité que le système attribue à chaque écran. L'app n'en connaît
+  aucune aujourd'hui : elle se dessine dans une seule surface, et c'est la première chose à
+  apprendre à déclarer.
+- **Le conteneur de disposition** — ce qui tient les régions ensemble. Le lecteur est un `ZStack`
+  posant une barre sur une vue web (`ReaderView.body`), l'accueil un unique `ScrollView`. Ni l'un
+  ni l'autre n'a de place prévue pour une seconde région : c'est une reprise de structure, pas un
+  réglage.
+- **L'arrangement** — comment les régions se répartissent selon que l'appareil est plié ou
+  déplié. À déclarer explicitement ; ce qui se déduit tout seul se déduit mal.
+- **Vue primaire et vue secondaire** — c'est là que l'app a le plus à gagner, et la répartition
+  s'impose presque d'elle-même. La primaire est le document. La secondaire est tout ce qui le
+  recouvre aujourd'hui par une feuille ou un plein écran : le **sommaire**, le **résumé**, la
+  **discussion**, la **recherche** — cinq `.sheet` et deux `.fullScreenCover` dans `ReaderView`,
+  autant d'occasions où l'on cache le texte pour parler du texte. Sur l'écran déplié, le sommaire
+  à côté du document vaut mieux que par-dessus. Sur l'accueil, la même question se pose pour les
+  récents et le coffre, aujourd'hui l'un sous l'autre. Restent à trancher le **diaporama** et le
+  **zoom de diagramme**, qui prennent tout l'écran par nature.
+- **L'emplacement des barres et des boutons** — le point le plus coûteux, parce que le lecteur ne
+  se sert pas d'une barre système : `titleBar` est un `HStack` maison, et le système ne replacera
+  donc rien pour nous quand l'appareil se plie. À éprouver avant de décider si l'on repositionne
+  à la main ou si l'on rend la barre au système.
+
 **Côté magasin** : deux écrans, c'est probablement deux gabarits de capture à fournir dans App
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
 et régénérées par `scripts/screenshots.sh` ; il faudra y ajouter le format le jour où Apple le
