@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.2 (38)`** — la traduction des documents sur l'appareil. Envoyé
+> ⚠️ **Build à utiliser : `1.2 (39)`** — la traduction des documents sur l'appareil. Envoyé
 > par `scripts/deploy-testflight.sh --bump --both`, qui construit iOS et Mac à partir du même
 > numéro et passe les contrôles avant envoi.
 >
@@ -31,7 +31,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.2 (38)
+## What to Test — 1.2 (39)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
