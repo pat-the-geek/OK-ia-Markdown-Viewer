@@ -721,7 +721,9 @@ terminal — « traduit, sauf trois paragraphes » — et le moyen de voir lesqu
 ### Prochaine étape — compiler avec la dernière version d'Xcode 27
 
 **Demandé le 2026-09-11.** Passer la chaîne de compilation à Xcode 27 dès que possible, et livrer
-le prochain build avec.
+le prochain build avec. **Disponibilité attendue : le lundi 2026-09-14 au soir**, après la sortie
+publique. Tant qu'elle n'est pas là, la machine reste en Xcode 26.6 et rien ne presse : le seuil
+dont la 1.2 dépend est déjà franchi.
 
 **Pourquoi.** C'est le SDK qui décide de ce que le compilateur accepte d'appeler, l'épisode
 `skipsTranslation` l'a montré : l'appareil peut savoir faire quelque chose que le SDK ne laisse pas
