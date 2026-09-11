@@ -37,7 +37,12 @@
   --diagram-frame: var(--blanc-casse);
 
   --reading-max: 720px;
-  --reading-pad: 20px;
+  /* ⚠️ **La LARGEUR, elle, ne bouge pas.** Demandé par Patrick le 11/09 de réduire les marges du
+     lecteur. Sur un grand écran, ce qu'on prend pour une marge est la colonne de lecture, bornée
+     à 720 px — soit environ 75 caractères. L'élargir gagnerait du blanc et coûterait du confort :
+     au-delà de 75 signes, l'œil perd la ligne suivante. On resserre donc le rembourrage réel,
+     qui profite surtout au téléphone, et on laisse la colonne. */
+  --reading-pad: 14px;
 
   font-size: 17px;
 }
@@ -63,12 +68,12 @@ body {
 .markdown-body {
   max-width: var(--reading-max);
   margin: 0 auto;
-  padding: 28px var(--reading-pad) 64px;
+  padding: 20px var(--reading-pad) 40px;
 }
 
 /* Landscape: widen the reading column and reduce side padding for wide diagrams */
 @media (orientation: landscape) {
-  :root { --reading-max: 1040px; --reading-pad: 32px; }
+  :root { --reading-max: 1040px; --reading-pad: 22px; }
 }
 
 .loading { color: var(--muted); text-align: center; padding: 40vh 0; font-size: 1.2rem; }
