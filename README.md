@@ -176,8 +176,11 @@ fichier part dans la share sheet.
 
 ## Prérequis
 
-- **Xcode 16+** (développé/testé avec Xcode 26.5).
-- **iOS 17.0+** (cible de déploiement).
+- **Xcode 26.4+** — c'est le **SDK** qui décide de ce que l'on peut appeler, et `skipsTranslation`
+  comme la traduction d'un `AttributedString` n'apparaissent qu'au SDK 26.4. La 1.2 a été livrée
+  avec **Xcode 26.6** (SDK 26.5) : `vtool -show-build-version` sur le binaire du build 36 affiche
+  `minos 26.4, sdk 26.5`. Le passage à Xcode 27 est en attente, voir la feuille de route.
+- **iOS/iPadOS 26.4+ et macOS 26.4+** (cibles de déploiement depuis la 1.2).
 - **XcodeGen** — le `.xcodeproj` est généré à partir de [`project.yml`](project.yml) (non commité).
 
 ```bash
@@ -474,11 +477,14 @@ aujourd'hui.
 choix de langue. Activée, un document ouvert dans une autre langue que celle de l'app est traduit
 avant d'être rendu ; désactivée — la valeur par défaut — rien ne change.
 
-**Chaîne de compilation : Xcode 27.** La version 1.2 se compile avec Xcode 27 ; les versions
-précédentes l'ont été avec Xcode 26. Ce n'est pas un détail d'intendance : le framework
-`Translation` n'expose ses pièces les plus utiles ici qu'à partir de macOS/iOS 26.4 — l'attribut
-`skipsTranslation`, les variantes `AttributedString` et le choix de stratégie — et c'est le SDK,
-pas seulement l'appareil, qui décide de ce que l'on peut appeler.
+**Chaîne de compilation : le SDK 26.4 au minimum.** Ce n'est pas un détail d'intendance : le
+framework `Translation` n'expose ses pièces les plus utiles ici qu'à partir de macOS/iOS 26.4 —
+l'attribut `skipsTranslation`, les variantes `AttributedString` et le choix de stratégie — et
+c'est le SDK, pas seulement l'appareil, qui décide de ce que l'on peut appeler.
+
+*Rectification du 2026-09-11 :* cette section annonçait une compilation sous Xcode 27. Elle n'a
+pas eu lieu — la 1.2 est partie sous **Xcode 26.6, SDK 26.5**, ce qui suffit puisque le seuil est
+le SDK 26.4. Le passage à Xcode 27 reste à faire, il a sa propre entrée plus bas.
 
 **Les cibles passent à 26.4, iOS compris.** `Translation` n'existe sur Mac Catalyst qu'à
 partir de `macCatalyst 26.0`, et ses deux pièces décisives — `skipsTranslation` et la
@@ -711,3 +717,39 @@ progression régulière et honnête.
 **Prévoir la fin qui n'arrive pas.** Une langue non prise en charge, un dictionnaire interrompu,
 un bloc qui échoue : la barre ne doit pas rester bloquée à 98 % pour l'éternité. Il faut un état
 terminal — « traduit, sauf trois paragraphes » — et le moyen de voir lesquels.
+
+### Prochaine étape — compiler avec la dernière version d'Xcode 27
+
+**Demandé le 2026-09-11.** Passer la chaîne de compilation à Xcode 27 dès que possible, et livrer
+le prochain build avec.
+
+**Pourquoi.** C'est le SDK qui décide de ce que le compilateur accepte d'appeler, l'épisode
+`skipsTranslation` l'a montré : l'appareil peut savoir faire quelque chose que le SDK ne laisse pas
+écrire. Rester une version de SDK en arrière, c'est s'interdire sans le voir les nouveautés du
+prochain cycle — et découvrir le problème le jour où l'on en a besoin, au milieu d'une
+fonctionnalité, comme cela s'est produit pour la 1.2. Une chaîne à jour, c'est aussi la même que
+celle qui compile ce qu'Apple examine en revue.
+
+**Où l'on en est.** Les builds 32 à 36 sont partis sous **Xcode 26.6, SDK iOS/macOS 26.5**, pour
+des cibles 26.4 — `vtool -show-build-version` sur le binaire du build 36 affiche `minos 26.4,
+sdk 26.5`. Rien n'est cassé : le seuil de `Translation` est le SDK 26.4, il est franchi.
+
+**Ce que le passage demande**, dans cet ordre :
+
+1. installer Xcode 27, garder l'ancien à côté le temps de la bascule, et rendre le choix
+   explicite (`xcode-select` ou `DEVELOPER_DIR` dans `scripts/deploy-testflight.sh`) — un doute
+   sur la version qui a compilé est un doute sur tout le reste ;
+2. reconstruire et faire tourner les deux pages de test du moteur (`tools/render-tests/`), qui ne
+   dépendent pas du SDK mais valident que rien n'a bougé au rendu ;
+3. relire les avertissements neufs du compilateur avant de les taire : un changement de SDK en
+   révèle, et ce sont souvent de vrais problèmes que l'ancienne version taisait ;
+4. vérifier la cible réellement inscrite dans le binaire avec `vtool -show-build-version`, sur
+   iOS **et** sur Mac Catalyst — c'est là que la dérivation `IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]`
+   s'est déjà fait oublier une fois ;
+5. livrer un build TestFlight et l'éprouver sur appareil réel avant d'y ajouter quoi que ce soit
+   d'autre. Un build qui ne change que de chaîne de compilation est le seul où une régression se
+   diagnostique sans ambiguïté.
+
+**Le risque à surveiller.** Un SDK plus récent peut relever la version d'OS minimale exigée par
+Apple à l'envoi, ou changer un comportement par défaut. La 1.2 coupe déjà les appareils sous 26.4 ;
+une coupure supplémentaire ne se décide pas en passant.
