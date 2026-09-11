@@ -105,13 +105,17 @@ deliver() {
 
   printf '\n\033[1m━━ %s ━━\033[0m\n' "$label"
 
-# ⚠️ **`-allowProvisioningUpdates` ne suffit PAS sans identifiants.** Constaté le 11/09 en ajoutant
-# le groupe d'applications : « No Accounts: Add a new account in Accounts settings ». xcodebuild sait
-# mettre un profil à jour, mais il lui faut de quoi s'authentifier — et en tête-à-tête avec un
-# terminal, il n'y a pas de compte Xcode. Le script de fornews passait ces trois options depuis le
-# début ; celui-ci ne les passait qu'à `altool`, pour le téléversement.
-ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8}"
-AUTH=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+# ⛔ **NE PAS passer la clé d'API à `xcodebuild`, malgré la tentation.** Éprouvé le 11/09, en
+# ajoutant le groupe d'applications : l'archive échouait sur « No Accounts », j'ai donc ajouté
+# `-authenticationKeyPath` comme le fait le script de fornews. L'archive est passée, et **l'export
+# a échoué** : « Cloud signing permission error ». Mesuré en relançant le MÊME export sans la clé —
+# il réussit du premier coup.
+#
+# 🔑 La clé BASCULE xcodebuild en signature dans le nuage et court-circuite le compte Xcode. Or
+# cette clé a le rôle App Manager, qui ne peut pas régénérer un profil. Le vrai remède était
+# ailleurs : connecter un compte dans Xcode (Réglages ▸ Accounts), ce qui régénère les profils
+# quand une capacité change. La clé reste utilisée pour le TÉLÉVERSEMENT, par `altool`, où elle
+# suffit.
 
 
   step "Archive (Release, $dest)"
@@ -121,7 +125,6 @@ AUTH=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" 
     -destination "$dest" \
     -archivePath "$dir/$SCHEME.xcarchive" \
     DEVELOPMENT_TEAM="$TEAM_ID" \
-    "${AUTH[@]}" \
     -allowProvisioningUpdates archive >"$dir/archive.log" 2>&1 \
     || { grep -E 'error:' "$dir/archive.log" | head -20; die "archive échouée — log : $dir/archive.log"; }
   ok "$dir/$SCHEME.xcarchive"
@@ -144,7 +147,6 @@ PLIST
     -archivePath "$dir/$SCHEME.xcarchive" \
     -exportOptionsPlist "$dir/exportOptions.plist" \
     -exportPath "$dir/export" \
-    "${AUTH[@]}" \
     -allowProvisioningUpdates >"$dir/export.log" 2>&1 \
     || { tail -20 "$dir/export.log"; die "export échoué — log : $dir/export.log"; }
 
