@@ -801,31 +801,51 @@ constats, tirés du code tel qu'il est :
   carré, l'orientation ne dit plus grand-chose ; une règle fondée sur la largeur dirait mieux ce
   qu'elle veut dire.
 
-**Les concepts à reprendre** (notes de Patrick, 2026-09-11). Les noms exacts des interfaces se
-liront dans le SDK ; ce qui suit dit à quoi chacun se heurte **ici**, pour que la lecture de la
-documentation serve à quelque chose au lieu de recommencer l'inventaire.
+**Les concepts à reprendre** (notes de Patrick, 2026-09-11, vérifiées dans la documentation
+d'Apple : Tech Talks *Prepare your app for iPhone Duo*, *Strike a pose with adaptive layouts on
+iPhone Duo*, *Raise the bar with iPhone Duo*). Ce qui suit dit ce que chaque notion coûte **ici**.
 
-- **La notion de région** — l'unité que le système attribue à chaque écran. L'app n'en connaît
-  aucune aujourd'hui : elle se dessine dans une seule surface, et c'est la première chose à
-  apprendre à déclarer.
-- **Le conteneur de disposition** — ce qui tient les régions ensemble. Le lecteur est un `ZStack`
-  posant une barre sur une vue web (`ReaderView.body`), l'accueil un unique `ScrollView`. Ni l'un
-  ni l'autre n'a de place prévue pour une seconde région : c'est une reprise de structure, pas un
+- **Les régions réservées.** Deux sortes : *division* — la charnière, qui coupe l'espace — et
+  *occlusion* — la caméra, qui masque. En SwiftUI, `GeometryReader { proxy in
+  proxy.reservedRegions(kind: .division) }`, l'option `.includeInactive` donnant aussi celles qui
+  dorment. Chez nous, le lecteur est une `WKWebView` plein cadre : la charnière traversera le
+  texte. Il faudra porter ces régions jusqu'au calque web, par le chemin qui lui passe déjà
+  `topInset` (`MarkdownWebView`).
+- **Les conteneurs de disposition.** `NavigationStack`, `NavigationSplitView`, `TabView`, `List`
+  et `ScrollView` s'adaptent seuls. L'accueil est un `ScrollView`, il est du bon côté. Le lecteur
+  est un `ZStack` maison, il n'aura rien gratuitement.
+- **L'arrangement.** `ArrangementView` (iOS **27.1**) prend une vue primaire et une secondaire :
+  `.arrangementViewStyle(.split)` partage l'espace — `.split.axes(.horizontal)` contraint l'axe —
+  et `.overlay` pose l'une sur l'autre, `@Environment(\.overlayArrangementZIndex)` disant alors si
+  la secondaire est repliée. Deux interdits nous visent directement : pas de `NavigationSplitView`
+  à l'intérieur, et **pas d'`ArrangementView` dans un `ScrollView` ou une `List`** — or l'accueil
+  est précisément un `ScrollView`.
+- **Vue primaire et vue secondaire.** La primaire est le document. La secondaire est tout ce qui
+  le recouvre aujourd'hui : **sommaire**, **résumé**, **discussion**, **recherche** — cinq
+  `.sheet` et deux `.fullScreenCover` dans `ReaderView`, autant d'occasions où l'on cache le texte
+  pour parler du texte. Sur l'écran déplié, le sommaire à côté du document vaut mieux que
+  par-dessus. Sur l'accueil, la même question se pose pour les récents et le coffre, mais
+  l'interdit ci-dessus oblige d'abord à sortir l'arrangement du `ScrollView`. Restent à trancher
+  le **diaporama** et le **zoom de diagramme**, qui prennent tout l'écran par nature.
+- **L'emplacement des barres et des boutons**, le point le plus coûteux, et la documentation est
+  nette : à partir du **SDK 27.1**, les boutons de navigation et de barre d'outils **standards**
+  se posent verticalement sur le côté de l'écran intérieur, et **le contenu des barres
+  personnalisées n'est pas pris en compte**. Le lecteur dessine `titleBar`, un `HStack` maison :
+  il ne recevra rien. En profiter, c'est rendre la barre au système — `NavigationStack` +
+  `.toolbar` — avec les placements `.cancellationAction` et `.topBarPinnedTrailing`,
+  `axisBehavior(.verticalPreferred)` ou `.horizontalOnly`, `@Environment(\.toolbarVerticalEdge)`
+  pour les vues sur mesure, `visibilityPriority`, `ToolbarOverflowMenu` pour le débordement, et
+  `.toolbarVerticalBehavior(.disabled)` pour s'en exempter. C'est une reprise du lecteur, pas un
   réglage.
-- **L'arrangement** — comment les régions se répartissent selon que l'appareil est plié ou
-  déplié. À déclarer explicitement ; ce qui se déduit tout seul se déduit mal.
-- **Vue primaire et vue secondaire** — c'est là que l'app a le plus à gagner, et la répartition
-  s'impose presque d'elle-même. La primaire est le document. La secondaire est tout ce qui le
-  recouvre aujourd'hui par une feuille ou un plein écran : le **sommaire**, le **résumé**, la
-  **discussion**, la **recherche** — cinq `.sheet` et deux `.fullScreenCover` dans `ReaderView`,
-  autant d'occasions où l'on cache le texte pour parler du texte. Sur l'écran déplié, le sommaire
-  à côté du document vaut mieux que par-dessus. Sur l'accueil, la même question se pose pour les
-  récents et le coffre, aujourd'hui l'un sous l'autre. Restent à trancher le **diaporama** et le
-  **zoom de diagramme**, qui prennent tout l'écran par nature.
-- **L'emplacement des barres et des boutons** — le point le plus coûteux, parce que le lecteur ne
-  se sert pas d'une barre système : `titleBar` est un `HStack` maison, et le système ne replacera
-  donc rien pour nous quand l'appareil se plie. À éprouver avant de décider si l'on repositionne
-  à la main ou si l'on rend la barre au système.
+- **Le SDK décide du degré d'adaptation.** L'app tournera sans être recompilée ; le SDK 27
+  l'étend à gauche de la barre d'état sur l'écran intérieur ; le SDK **27.1** lui donne le bord de
+  l'écran et les barres verticales. L'entrée « compiler avec Xcode 27 » n'est donc pas de la seule
+  hygiène : elle conditionne celle-ci.
+- **Ce qu'Apple interdit et que le code fait déjà.** `requestLandscapeIfPhone()` (`ReaderView`)
+  force le paysage avant le diaporama quand l'idiome est « téléphone ». Apple demande exactement
+  l'inverse : ne rien déduire de l'idiome, raisonner en classes de taille. Déplié, le Duo restera
+  un « téléphone » dont l'écran n'aura rien d'un téléphone. Même vigilance pour `UIScreen.main`,
+  qu'on n'emploie nulle part — c'est à vérifier à chaque ajout, pas une fois.
 
 **Côté magasin** : deux écrans, c'est probablement deux gabarits de capture à fournir dans App
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
