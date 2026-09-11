@@ -120,6 +120,8 @@ NOUVEAU
   ni texte qui sort
 • L'écran d'accueil range vos fichiers récents et les rapports du coffre par date :
   aujourd'hui, hier, la semaine, le mois
+• Un rapport de fornews.ai s'ouvre directement dans md Viewer, sur iPhone comme
+  sur Mac, quelle que soit sa longueur
 
 Cette version demande iOS/iPadOS 26.4 ou macOS 26.4 : la traduction sur
 l'appareil n'existe pas avant.

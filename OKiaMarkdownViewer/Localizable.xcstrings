@@ -1017,6 +1017,41 @@
         }
       }
     },
+    "Document introuvable dans le dossier partagé : « %@ ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document introuvable dans le dossier partagé : « %@ »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document not found in the shared folder: “%@”."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument im gemeinsamen Ordner nicht gefunden: „%@“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documento no encontrado en la carpeta compartida: «%@»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documento non trovato nella cartella condivisa: «%@»."
+          }
+        }
+      }
+    },
     "Document trop long pour être lu en entier : seul son début a été analysé.": {
       "extractionState": "manual",
       "localizations": {

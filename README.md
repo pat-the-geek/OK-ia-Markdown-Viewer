@@ -101,6 +101,9 @@ Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent 
   commun aux deux listes (`Models/DateGrouping.swift`) pour qu'un même fichier tombe sous le même
   intitulé où qu'on le voie ; chaque ligne porte l'heure quand le jour est déjà dit par l'intitulé,
   la date courte sinon. Les noms de mois suivent la langue **de l'app**, pas celle de l'appareil.
+- **Ouverture depuis fornews.ai** : sur iPhone comme sur Mac, un rapport s'ouvre directement dans
+  md Viewer par une boîte aux lettres partagée entre les deux applications — voir la section sur le
+  schéma `mdviewer://`.
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.
 - **Recherche dans le document** : surlignage des occurrences + navigation précédent/suivant.
 - **Partage / export** : export du rendu en **PDF** ou partage du fichier `.md` via la share sheet iOS.
@@ -309,6 +312,37 @@ L'app enregistre le schéma d'URL `mdviewer://` (`CFBundleURLTypes` dans `Info.p
   location.href = 'mdviewer://render?name=' + encodeURIComponent('Rapport.md')
                + '&content=' + encodeURIComponent(markdown);
   ```
+- **Dépôt dans la boîte aux lettres partagée** — pour les documents qui ne tiennent pas dans une
+  URL, et c'est le cas courant : le plus gros rapport mesuré fait 180 560 caractères, soit 272 037
+  une fois encodés. Une URL de cette taille n'est pas ouverte, et **l'échec est silencieux**.
+  L'application qui envoie écrit donc le Markdown dans le conteneur du groupe d'applications et
+  n'envoie que le **nom** — jamais un chemin, dont le préfixe diffère d'une application à l'autre :
+  ```
+  mdviewer://fichier?nom=<nom du dépôt>
+  ```
+
+#### La boîte aux lettres partagée avec fornews.ai
+
+**Ajoutée le 2026-09-11** — [`BoiteAuxLettres.swift`](OKiaMarkdownViewer/BoiteAuxLettres.swift).
+Elle existe parce que **iOS n'a aucun moyen de remettre un fichier à une
+application désignée par son nom** — sur macOS, `NSWorkspace` le fait ; sur iPhone, le bouton
+« ouvrir dans md Viewer » n'existait donc pas là où il sert le plus.
+
+- **Le groupe s'appelle `group.ai.fornews.native`**, du nom de fornews.ai : c'est lui qui l'a créé
+  et qui le livre déjà. En forger un neutre obligerait à modifier les deux applications et à
+  republier deux profils ; celui-ci ne demande qu'une déclaration côté md Viewer. Elle vit dans
+  [`iOS.entitlements`](OKiaMarkdownViewer/iOS.entitlements) et
+  [`macOS.entitlements`](OKiaMarkdownViewer/macOS.entitlements) — iOS n'avait aucun fichier
+  d'entitlements avant celui-ci. ⚠️ Un groupe ne se partage qu'entre applications **de la même
+  équipe de signature** ; hors de `PU9BSXN2V5`, la boîte reste vide sans rien dire.
+- **Les dépôts sont jetables.** Le document de référence reste celui de Fichiers ; la boîte ne
+  garde que les **dix** derniers et efface les plus anciens, sans quoi le conteneur partagé
+  enflerait à chaque lecture, invisible dans Réglages comme dans Fichiers.
+- **Le nom reçu est réduit à son dernier segment** avant toute lecture : il vient d'une URL, donc
+  de l'extérieur, et `?nom=../../Documents/quelque-chose` lirait hors de la boîte.
+- **Un dépôt manquant le dit** — « Document introuvable dans le dossier partagé » — au lieu du
+  « lien invalide » générique : les deux causes possibles, un dépôt effacé par le plafond ou un
+  groupe mal signé, sont invisibles autrement.
 
 > Limite : un schéma personnalisé ne fonctionne **que si l'app est installée** (pas de repli web
 > automatique). Pour des liens `https` normaux qui retombent sur le site quand l'app est absente,

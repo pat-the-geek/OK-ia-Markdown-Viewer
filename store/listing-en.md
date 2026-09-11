@@ -119,6 +119,8 @@ NEW
   no upload, no text going out
 • The home screen sorts your recent files and vault reports by date: today,
   yesterday, this week, this month
+• A fornews.ai report opens straight into md Viewer, on iPhone as on Mac, however
+  long it is
 
 This version requires iOS/iPadOS 26.4 or macOS 26.4: on-device translation does
 not exist before that.

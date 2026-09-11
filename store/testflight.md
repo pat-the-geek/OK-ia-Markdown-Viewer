@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.2 (36)`** — la traduction des documents sur l'appareil. Envoyé
+> ⚠️ **Build à utiliser : `1.2 (38)`** — la traduction des documents sur l'appareil. Envoyé
 > par `scripts/deploy-testflight.sh --bump --both`, qui construit iOS et Mac à partir du même
 > numéro et passe les contrôles avant envoi.
 >
@@ -31,10 +31,24 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.2 (36)
+## What to Test — 1.2 (38)
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
+
+NOUVEAU DANS CE BUILD — L'OUVERTURE DEPUIS FORNEWS.AI
+• Sur iPhone comme sur Mac, depuis fornews.ai, demandez à ouvrir un rapport dans
+  md Viewer. Le document doit s'afficher ici, en entier, y compris un long rapport :
+  c'était impossible sur iPhone jusqu'à ce build.
+• Enchaînez une dizaine de rapports : rien ne doit ralentir ni gonfler, la boîte
+  partagée ne gardant que les derniers dépôts.
+• Si un document ne s'ouvre pas, l'app doit dire lequel manque, et non « lien
+  invalide ». Signalez-nous le message exact.
+
+NOUVEAU DANS CE BUILD — LA COLONNE DE LECTURE
+• Le texte occupe une colonne plus large et des marges resserrées, surtout visible
+  sur Mac et iPad. Dites-nous si la ligne vous paraît trop longue à lire, et sur
+  quel appareil : c'est un réglage, il se corrige.
 
 CORRIGÉ DEPUIS LE BUILD 35
 • Diaporama d'un document traduit : les libellés des diagrammes Mermaid restaient
