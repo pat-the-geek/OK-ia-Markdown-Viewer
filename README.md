@@ -755,3 +755,41 @@ sdk 26.5`. Rien n'est cassé : le seuil de `Translation` est le SDK 26.4, il est
 **Le risque à surveiller.** Un SDK plus récent peut relever la version d'OS minimale exigée par
 Apple à l'envoi, ou changer un comportement par défaut. La 1.2 coupe déjà les appareils sous 26.4 ;
 une coupure supplémentaire ne se décide pas en passant.
+
+### 1.3 — Adapter l'application au nouvel iPhone Duo
+
+**Demandé le 2026-09-11, pour la version 1.3.** L'app doit tenir sur le nouvel iPhone Duo. La 1.2,
+elle, part en revue telle qu'elle est : un appareil qui vient de sortir ne retarde pas une version
+éprouvée.
+
+**Ce qui n'est pas encore établi, et qu'on n'inventera pas** : ses dimensions, son rapport
+d'écran, et s'il expose un ou deux états d'affichage. Ces points se lisent dans la documentation
+d'Apple et se vérifient au simulateur — lequel arrive avec Xcode 27, attendu lundi soir (entrée
+précédente). Le travail est donc suspendu à cette bascule : sans le SDK, ni le simulateur de
+l'appareil ni ses interfaces ne sont là. Tout ce qui suit est une liste de points à éprouver, pas
+un plan arrêté.
+
+**Ce que le code suppose aujourd'hui**, et qu'un format inédit met à l'épreuve :
+
+- l'écran d'accueil plafonne ses deux listes à `maxWidth: 480` et ses boutons à `280`
+  (`EmptyStateView`, `VaultSectionView`). Ce sont des plafonds, pas des largeurs fixes : ils ne
+  casseront pas, mais sur un écran beaucoup plus large ils laisseraient une colonne étroite au
+  milieu du vide ;
+- le lecteur est une vue web, et la longueur de ligne vient de `--reading-max` avec une règle
+  `@media (orientation: landscape)` dans `Web/style.css`. C'est exactement la pièce prévue pour
+  un rapport d'écran nouveau — à régler, pas à réécrire ;
+- le diaporama calcule l'échelle d'une diapositive à partir du conteneur. Un format inhabituel
+  est le cas où cette arithmétique se voit ;
+- `TARGETED_DEVICE_FAMILY` vaut `"1,2"` (iPhone + iPad) : vérifier si le nouvel appareil relève
+  d'une famille déjà couverte.
+
+**Le vrai risque, s'il existe deux états d'écran** : la bascule se produit pendant qu'on lit. Le
+lecteur doit alors garder sa position de défilement, son sommaire ouvert ou fermé, et surtout
+**l'état de la traduction** — la mémoire est indexée par bloc, et un redimensionnement qui
+relancerait un rendu repartirait d'un document neuf. C'est le point à éprouver en premier, avant
+toute considération d'esthétique.
+
+**Côté magasin** : un nouveau gabarit d'iPhone peut exiger sa propre taille de capture dans App
+Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
+et régénérées par `scripts/screenshots.sh` ; il faudra y ajouter le format le jour où Apple le
+demande.
