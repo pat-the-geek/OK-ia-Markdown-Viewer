@@ -36,12 +36,12 @@
   --code-bg: #f3f1ec;
   --diagram-frame: var(--blanc-casse);
 
-  --reading-max: 720px;
-  /* ⚠️ **La LARGEUR, elle, ne bouge pas.** Demandé par Patrick le 11/09 de réduire les marges du
-     lecteur. Sur un grand écran, ce qu'on prend pour une marge est la colonne de lecture, bornée
-     à 720 px — soit environ 75 caractères. L'élargir gagnerait du blanc et coûterait du confort :
-     au-delà de 75 signes, l'œil perd la ligne suivante. On resserre donc le rembourrage réel,
-     qui profite surtout au téléphone, et on laisse la colonne. */
+  /* Portée de 720 à 820 px le 11/09, sur décision de Patrick après que je lui aie exposé le
+     compromis : au-delà d'environ 75 caractères, l'œil retrouve moins bien le début de la ligne
+     suivante, et 820 px en fait à peu près 85. C'est un choix assumé — sur Mac et iPad, la
+     colonne à 720 laissait trop de blanc de part et d'autre pour ce qu'elle donnait à lire.
+     ⚠️ Sans effet sur téléphone, où l'écran est plus étroit que l'une comme l'autre. */
+  --reading-max: 820px;
   --reading-pad: 14px;
 
   font-size: 17px;
