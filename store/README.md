@@ -61,15 +61,32 @@ L'app est **universelle** : `TARGETED_DEVICE_FAMILY = 1,2` (iPhone + iPad) **et*
   d'applications au nom de fornews.ai.
 - ✅ [`app-privacy.md`](app-privacy.md) : la réponse « Données non collectées » tient, justifiée pour
   la traduction et le dossier partagé.
-- ⏳ **Politique de confidentialité mise à jour, pas encore publiée.** La page en ligne date du
-  17 juin et ne dit rien de la traduction ni du dossier partagé. La correction attend sur une
-  branche locale du dépôt du site (`claude/confidentialite-1-2-d455b15c`) : **à publier avant
-  « Submit for Review »**, puisque l'examinateur la compare à l'app.
+- ✅ **Politique de confidentialité publiée le 2026-09-16** (pat-the-geek/OK-ia#265) : traduction sur
+  l'appareil, dictionnaire téléchargé par le système, dossier partagé avec fornews.ai. Vérifiée en
+  ligne après le déploiement.
 - ➖ **Captures d'écran inchangées** (4 septembre). Elles restent fidèles à l'app ; elles ne montrent
   ni la traduction — le simulateur iOS ne traduit pas — ni la colonne de lecture élargie du build
   38, sensible surtout sur Mac et iPad. Apple ne l'exige pas.
 - ⏳ **Page produit ok-ia.ch** : décidé le 2026-09-08, elle se publie **au moment de la mise en
   vente**, pas à la soumission. Ses modifications attendent dans `site/mdviewer/index.html`.
+
+### Ce qui est déjà saisi dans App Store Connect (par l'API, le 2026-09-16)
+
+- ✅ Version **1.2** créée sur **iOS** et sur **macOS**, état « Prepare for Submission », sortie
+  **automatique après approbation** comme les versions précédentes, build **39** rattaché à chacune.
+- ✅ Fiches **fr-FR** et **en-US** des deux plateformes : description, nouveautés et texte
+  promotionnel écrits depuis `listing-fr.md` et `listing-en.md`, **lignes dépliées** — les fichiers
+  sont repliés à 80 colonnes pour la relecture, l'App Store affiche chaque saut de ligne. Mots-clés
+  inchangés, identiques à ceux en ligne.
+- ✅ Notes pour l'examinateur : version **anglaise** de `review-notes.md` sur les deux versions ;
+  coordonnées de contact reprises de la 1.1.1, pas de compte de démonstration.
+- ✅ Contrôlé sans rien modifier : captures reprises de la 1.1.1 (iPhone 6,7″ ×5, iPad 12,9″ ×5,
+  Mac ×6, en français et en anglais), copyright `© 2026 OK-ia`, URL de confidentialité renseignée.
+- ⏳ **« Submit for Review » : pas fait.** C'est la seule étape qui n'est plus réversible sans
+  retirer la soumission ; elle attend un accord explicite.
+
+L'API s'utilise avec la clé de `scripts/deploy.env` (rôle App Manager, suffisant pour les métadonnées
+et la soumission). Le jeton JWT ES256 se signe sans dépendance, avec CryptoKit.
 
 ## Ce que je ne peux pas faire à ta place
 
