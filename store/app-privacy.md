@@ -19,6 +19,9 @@ Justification (faits vérifiés dans le code) :
   le système, à la demande de l'utilisateur — jamais par l'app de sa propre initiative.
 - Stockage **local uniquement** : fichiers récents et bookmarks security-scoped du coffre
   (UserDefaults / bookmarks), jamais transmis.
+- **Dossier partagé avec fornews.ai (1.2)** : le conteneur du groupe `group.ai.fornews.native`
+  garde une copie des dix derniers documents ouverts depuis fornews.ai. Il vit sur l'appareil,
+  entre deux applications du même développeur, et rien n'en sort : ce n'est pas une collecte.
 
 > Donc, dans le questionnaire, répondre **« Non »** à « collectez-vous des données ? ».
 
@@ -40,7 +43,11 @@ par transparence.
 
 ## 2. Politique de confidentialité
 
-✅ **Version finalisée, prête à héberger : [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html)**
+✅ **Version finalisée : [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html)**, copie de la
+page en ligne. **Mise à jour pour la 1.2 le 2026-09-16** — traduction sur l'appareil, dictionnaire
+téléchargé par le système, dossier partagé avec fornews.ai, discussion avec le document. La page
+fait foi dans le dépôt du site (`pat-the-geek/OK-ia`, `public/mdviewer/confidentialite.html`) :
+modifier là-bas, puis recopier ici.
 (page HTML autonome). Publie-la à `https://ok-ia.ch/mdviewer/confidentialite.html`, puis renseigne cette URL
 dans App Store Connect (champ **obligatoire**). Contact dans la page : `patrick@ok-ia.ch`
 (à ajuster si une autre adresse est préférée).
