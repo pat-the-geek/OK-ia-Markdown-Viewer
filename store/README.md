@@ -82,8 +82,9 @@ L'app est **universelle** : `TARGETED_DEVICE_FAMILY = 1,2` (iPhone + iPad) **et*
   coordonnées de contact reprises de la 1.1.1, pas de compte de démonstration.
 - ✅ Contrôlé sans rien modifier : captures reprises de la 1.1.1 (iPhone 6,7″ ×5, iPad 12,9″ ×5,
   Mac ×6, en français et en anglais), copyright `© 2026 OK-ia`, URL de confidentialité renseignée.
-- ⏳ **« Submit for Review » : pas fait.** C'est la seule étape qui n'est plus réversible sans
-  retirer la soumission ; elle attend un accord explicite.
+- ✅ **Soumise en revue le 2026-09-16 à 15 h 57 UTC**, sur accord explicite de Patrick : iOS et macOS
+  en « Waiting for Review ». Sortie automatique à l'approbation — la page produit ok-ia.ch est à
+  publier dès l'acceptation.
 
 L'API s'utilise avec la clé de `scripts/deploy.env` (rôle App Manager, suffisant pour les métadonnées
 et la soumission). Le jeton JWT ES256 se signe sans dépendance, avec CryptoKit.
