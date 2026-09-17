@@ -554,8 +554,12 @@ suisse a vraisemblablement fr/de/it/en d'emblée — sans le supprimer : il suff
 qui ait retiré une langue dans les réglages système. Reste non éprouvé également : le
 diaporama traduit sur iPhone et l'export PowerPoint qui en découle.
 
+**Soumise en revue le 2026-09-16**, build 39, iOS et macOS ; **en cours d'examen** chez Apple le
+2026-09-17. Sortie automatique à l'approbation.
+
 **Le site.** La feuille de route publique (`ok-ia.ch/mdviewer/roadmap.html`) annonce la 1.2
-comme **en test**, pas comme livrée : la version en vente reste la 1.1.1. La page produit, elle,
+comme **en revue chez Apple** depuis le 2026-09-17, pas comme livrée : la version en vente reste
+la 1.1.1. La page produit, elle,
 n'a pas été touchée — elle décrit ce qu'un visiteur télécharge aujourd'hui, et lui annoncer
 « iOS 26.4 requis » avec une fonction qu'il n'aura pas serait la tromper. Ses modifications
 attendent dans `site/mdviewer/index.html` le jour de l'approbation.
@@ -752,12 +756,16 @@ progression régulière et honnête.
 un bloc qui échoue : la barre ne doit pas rester bloquée à 98 % pour l'éternité. Il faut un état
 terminal — « traduit, sauf trois paragraphes » — et le moyen de voir lesquels.
 
-### Prochaine étape — compiler avec la dernière version d'Xcode 27
+### 1.3, première étape — compiler avec la dernière version d'Xcode 27
 
-**Demandé le 2026-09-11.** Passer la chaîne de compilation à Xcode 27 dès que possible, et livrer
-le prochain build avec. **Disponibilité attendue : le lundi 2026-09-14 au soir**, après la sortie
-publique. Tant qu'elle n'est pas là, la machine reste en Xcode 26.6 et rien ne presse : le seuil
-dont la 1.2 dépend est déjà franchi.
+**Demandé le 2026-09-11.** Passer la chaîne de compilation à Xcode 27 dès que possible. C'est le
+premier chantier de la **1.3** (entrée suivante), et son premier build ne changera rien d'autre.
+
+**Installé le 2026-09-16 : Xcode 27.0** (`27A266a`), à la place d'Xcode 26.6 — la machine n'a plus
+qu'un Xcode. La 1.2, soumise ce jour-là, est donc le dernier binaire compilé sous 26.6 ; tout build
+suivant sort de la nouvelle chaîne. ⚠️ Xcode 27.0 n'est pas la fin de l'histoire : Apple annonce
+**Xcode 27.1 et son SDK pour plus tard en septembre**, et c'est le SDK **27.1** qui apporte les
+barres verticales et le bord d'écran de l'iPhone Duo. La 1.3 se compilera donc avec la 27.1.
 
 **Pourquoi.** C'est le SDK qui décide de ce que le compilateur accepte d'appeler, l'épisode
 `skipsTranslation` l'a montré : l'appareil peut savoir faire quelque chose que le SDK ne laisse pas
@@ -790,11 +798,18 @@ sdk 26.5`. Rien n'est cassé : le seuil de `Translation` est le SDK 26.4, il est
 Apple à l'envoi, ou changer un comportement par défaut. La 1.2 coupe déjà les appareils sous 26.4 ;
 une coupure supplémentaire ne se décide pas en passant.
 
-### 1.3 — Adapter l'application au nouvel iPhone Duo
+### 1.3 — Optimisée pour iOS, iPadOS et macOS 27, et pour l'iPhone Duo
 
-**Demandé le 2026-09-11, pour la version 1.3.** L'app doit tenir sur le nouvel iPhone Duo. La 1.2,
-elle, part en revue telle qu'elle est : un appareil qui vient de sortir ne retarde pas une version
-éprouvée.
+**Décidé le 2026-09-17.** La 1.3 a deux objets, et seulement deux : tirer parti des systèmes de la
+génération **27** — iOS 27, iPadOS 27, macOS 27 — et **adapter l'app à l'iPhone Duo**. Les deux se
+tiennent : c'est le SDK 27.1 qui donne à l'app le bord de l'écran et les barres du pliable. La 1.2,
+elle, est partie en revue telle qu'elle est : un appareil qui vient de sortir ne retarde pas une
+version éprouvée. Annoncée sur la feuille de route publique le même jour.
+
+**Question ouverte, à trancher avant le premier build de la 1.3 : la cible minimale.** « Optimisée
+pour 27 » ne veut pas dire « réservée à 27 » ; relever la cible couperait à nouveau des appareils,
+et la 1.2 en a déjà coupé. Rien de ce qui est listé ci-dessous n'impose de la relever tant que les
+nouvelles interfaces restent derrière `if #available`.
 
 **L'appareil se plie et porte deux écrans** (confirmé par Patrick le 2026-09-11) : un écran
 extérieur, replié, et un écran intérieur, déplié. Restent à établir leurs dimensions et leurs
