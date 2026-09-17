@@ -82,9 +82,11 @@ L'app est **universelle** : `TARGETED_DEVICE_FAMILY = 1,2` (iPhone + iPad) **et*
   coordonnées de contact reprises de la 1.1.1, pas de compte de démonstration.
 - ✅ Contrôlé sans rien modifier : captures reprises de la 1.1.1 (iPhone 6,7″ ×5, iPad 12,9″ ×5,
   Mac ×6, en français et en anglais), copyright `© 2026 OK-ia`, URL de confidentialité renseignée.
-- ✅ **Soumise en revue le 2026-09-16 à 15 h 57 UTC**, sur accord explicite de Patrick : iOS et macOS
-  en « Waiting for Review ». Sortie automatique à l'approbation — la page produit ok-ia.ch est à
-  publier dès l'acceptation.
+- ✅ **Soumise en revue le 2026-09-16 à 15 h 57 UTC**, sur accord explicite de Patrick.
+- ✅ **iOS approuvée le 2026-09-17, en vente depuis 16 h 33 UTC**, sortie automatique.
+- ⏳ **macOS toujours en cours d'examen** à 17 h 26 UTC le même jour.
+- ⏳ Page produit et feuille de route publique prêtes sur la branche
+  `claude/mdviewer-page-produit-1-2-d455b15c` du dépôt du site, non publiées.
 
 L'API s'utilise avec la clé de `scripts/deploy.env` (rôle App Manager, suffisant pour les métadonnées
 et la soumission). Le jeton JWT ES256 se signe sans dépendance, avec CryptoKit.

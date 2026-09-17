@@ -554,8 +554,9 @@ suisse a vraisemblablement fr/de/it/en d'emblée — sans le supprimer : il suff
 qui ait retiré une langue dans les réglages système. Reste non éprouvé également : le
 diaporama traduit sur iPhone et l'export PowerPoint qui en découle.
 
-**Soumise en revue le 2026-09-16**, build 39, iOS et macOS ; **en cours d'examen** chez Apple le
-2026-09-17. Sortie automatique à l'approbation.
+**Soumise en revue le 2026-09-16**, build 39, iOS et macOS. **iOS approuvée le 2026-09-17, en vente
+depuis 16 h 33 UTC** (cible 26.4 confirmée sur la fiche publique). **macOS encore en cours d'examen**
+au même moment ; la 1.1.1 y reste en vente d'ici là.
 
 **Le site.** La feuille de route publique (`ok-ia.ch/mdviewer/roadmap.html`) annonce la 1.2
 comme **en revue chez Apple** depuis le 2026-09-17, pas comme livrée : la version en vente reste
