@@ -554,16 +554,14 @@ suisse a vraisemblablement fr/de/it/en d'emblée — sans le supprimer : il suff
 qui ait retiré une langue dans les réglages système. Reste non éprouvé également : le
 diaporama traduit sur iPhone et l'export PowerPoint qui en découle.
 
-**Soumise en revue le 2026-09-16**, build 39, iOS et macOS. **iOS approuvée le 2026-09-17, en vente
-depuis 16 h 33 UTC** (cible 26.4 confirmée sur la fiche publique). **macOS encore en cours d'examen**
-au même moment ; la 1.1.1 y reste en vente d'ici là.
+**Livrée.** Soumise en revue le 2026-09-16, build 39. **iOS approuvée et en vente le 2026-09-17**
+à 16 h 33 UTC, **macOS approuvée ensuite** — en vente partout le 2026-09-18 au matin, cible 26.4
+confirmée sur la fiche publique.
 
-**Le site.** La feuille de route publique (`ok-ia.ch/mdviewer/roadmap.html`) annonce la 1.2
-comme **en revue chez Apple** depuis le 2026-09-17, pas comme livrée : la version en vente reste
-la 1.1.1. La page produit, elle,
-n'a pas été touchée — elle décrit ce qu'un visiteur télécharge aujourd'hui, et lui annoncer
-« iOS 26.4 requis » avec une fonction qu'il n'aura pas serait la tromper. Ses modifications
-attendent dans `site/mdviewer/index.html` le jour de l'approbation.
+**Le site.** La page produit a été retenue jusqu'à ce que **les deux** plateformes soient en vente :
+publiée plus tôt, elle aurait annoncé macOS 26.4 et la traduction à un visiteur Mac qui téléchargeait
+encore la 1.1.1. Publiée le 2026-09-18 (pat-the-geek/OK-ia#273) avec la feuille de route, où la 1.2
+passe « en vente » et la 1.1.1 devient la version précédente.
 
 **Le banc d'essai est conservé** dans `tools/TranslationBench/` — une app à part, hors de la
 cible livrée, qui interroge le framework et écrit ce qu'elle trouve. Elle a servi à trancher

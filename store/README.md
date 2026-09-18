@@ -67,8 +67,7 @@ L'app est **universelle** : `TARGETED_DEVICE_FAMILY = 1,2` (iPhone + iPad) **et*
 - ➖ **Captures d'écran inchangées** (4 septembre). Elles restent fidèles à l'app ; elles ne montrent
   ni la traduction — le simulateur iOS ne traduit pas — ni la colonne de lecture élargie du build
   38, sensible surtout sur Mac et iPad. Apple ne l'exige pas.
-- ⏳ **Page produit ok-ia.ch** : décidé le 2026-09-08, elle se publie **au moment de la mise en
-  vente**, pas à la soumission. Ses modifications attendent dans `site/mdviewer/index.html`.
+- ✅ **Page produit ok-ia.ch** publiée le 2026-09-18, une fois les deux plateformes en vente.
 
 ### Ce qui est déjà saisi dans App Store Connect (par l'API, le 2026-09-16)
 
@@ -84,9 +83,8 @@ L'app est **universelle** : `TARGETED_DEVICE_FAMILY = 1,2` (iPhone + iPad) **et*
   Mac ×6, en français et en anglais), copyright `© 2026 OK-ia`, URL de confidentialité renseignée.
 - ✅ **Soumise en revue le 2026-09-16 à 15 h 57 UTC**, sur accord explicite de Patrick.
 - ✅ **iOS approuvée le 2026-09-17, en vente depuis 16 h 33 UTC**, sortie automatique.
-- ⏳ **macOS toujours en cours d'examen** à 17 h 26 UTC le même jour.
-- ⏳ Page produit et feuille de route publique prêtes sur la branche
-  `claude/mdviewer-page-produit-1-2-d455b15c` du dépôt du site, non publiées.
+- ✅ **macOS approuvée ensuite**, en vente le 2026-09-18 au matin.
+- ✅ Page produit et feuille de route publique **publiées le 2026-09-18** (pat-the-geek/OK-ia#273).
 
 L'API s'utilise avec la clé de `scripts/deploy.env` (rôle App Manager, suffisant pour les métadonnées
 et la soumission). Le jeton JWT ES256 se signe sans dépendance, avec CryptoKit.
