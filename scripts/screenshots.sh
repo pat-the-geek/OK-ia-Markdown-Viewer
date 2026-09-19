@@ -243,8 +243,15 @@ capture_mac() {
   fen_l=$(( fen_h * 16 / 10 ))
   if [ "$fen_l" -gt "$ecran_l" ]; then fen_l="$ecran_l"; fen_h=$(( fen_l * 10 / 16 )); fi
   FENETRE="${fen_l}x${fen_h}"
-  defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "0 0 $fen_l $fen_h $ecran "
-  defaults write "$BUNDLE" okia.fontScale -float 1.0
+  # ⚠️ Ces réglages vivent dans le conteneur de l'app, que macOS protège (« données d'autres
+  # apps ») : un terminal sans cette autorisation se voit refuser l'écriture — constaté le
+  # 19/09/2026. On continue alors : la taille passe aussi par OKIA_SHOT_SIZE, que l'app
+  # applique à sa fenêtre en mode capture ; seule une taille de texte réglée à la main
+  # resterait en place (vérifier les captures).
+  if ! defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "0 0 $fen_l $fen_h $ecran " 2>/dev/null \
+     || ! defaults write "$BUNDLE" okia.fontScale -float 1.0 2>/dev/null; then
+    printf '  \033[33m…\033[0m conteneur protégé : réglages non écrits, taille via OKIA_SHOT_SIZE\n'
+  fi
   # Le réveil doit tenir toute la passe, pas cinq minutes : à l'expiration, l'écran
   # s'éteignait au milieu du travail et l'app n'ouvrait plus aucune fenêtre — les scènes
   # restantes échouaient sur « aucune fenêtre trouvée », sans rapport avec elles. Sans
@@ -306,8 +313,8 @@ capture_mac() {
   for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI \
            OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
   # On rend la machine dans l'état où on l'a trouvée.
-  [ -n "$ancien_scale" ] && defaults write "$BUNDLE" okia.fontScale -float "$ancien_scale"
-  [ -n "$ancien_cadre" ] && defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "$ancien_cadre"
+  [ -n "$ancien_scale" ] && { defaults write "$BUNDLE" okia.fontScale -float "$ancien_scale" 2>/dev/null || true; }
+  [ -n "$ancien_cadre" ] && { defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "$ancien_cadre" 2>/dev/null || true; }
   ok "réglages de la machine restaurés"
 }
 

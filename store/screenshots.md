@@ -2,8 +2,15 @@
 
 ## Jeu courant (4 septembre 2026)
 
-`scripts/screenshots.sh <langue> [iphone|ipad|mac]` régénère tout, sans un clic. Deux langues
-sont tenues à jour, `fr` et `en` ; les scènes vivent dans `store/scenes/<langue>/`.
+`scripts/screenshots.sh <langue> [iphone|ipad|mac]` régénère tout, sans un clic. **Cinq langues**
+sont tenues à jour depuis le 19/09/2026 (1.2.1) : `fr`, `en`, `de`, `es`, `it` ; les scènes vivent dans
+`store/scenes/<langue>/`. Simulateurs : iPhone 17 Pro Max et iPad Pro 13" (M5) **sous iOS 26.5**, comme le
+jeu fr/en — recréés le 19/09 après l'arrivée d'iOS 27 (le script prend le premier du nom).
+
+⚠️ Passage Mac : macOS protège le conteneur de l'app (« données d'autres apps »). Un terminal sans
+cette autorisation ne peut plus y écrire le cadre de fenêtre ni la taille de texte ; le script le dit
+(« conteneur protégé ») et continue, la taille passant par `OKIA_SHOT_SIZE`. Vérifier alors la taille
+du texte sur les captures.
 
 | Dossier | Taille | Scènes |
 |---|---|---|
