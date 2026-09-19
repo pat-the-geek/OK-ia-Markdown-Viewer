@@ -39,6 +39,9 @@ harnais_de() {
   echo "OKIA_UI_LANG=$LANGUE"
   case "$LANGUE" in
     en) question="Which fields have the most initiatives?" ;;
+    de) question="Welche Bereiche haben die meisten Initiativen?" ;;
+    es) question="¿Qué ámbitos tienen más iniciativas?" ;;
+    it) question="Quali ambiti hanno più iniziative?" ;;
     *)  question="Quels domaines comptent le plus d'initiatives ?" ;;
   esac
   case "$1" in
@@ -64,7 +67,7 @@ attente_de() { case "$1" in 5-resume|6-discussion) echo 30 ;; *) echo "$ATTENTE"
 scene_reservee_au_mac() { case "$1" in 5-resume) return 0 ;; *) return 1 ;; esac; }
 
 # Région du simulateur : le format de date suit la locale, pas seulement la langue.
-locale_systeme() { case "$LANGUE" in en) echo en_US ;; *) echo "${LANGUE}_CH" ;; esac; }
+locale_systeme() { case "$LANGUE" in en) echo en_US ;; es) echo es_ES ;; *) echo "${LANGUE}_CH" ;; esac; }  # es_CH n'existe pas
 
 # Apple accepte 2880×1800, 2560×1600, 1440×900 ou 1280×800 pour le Mac. On recadre au
 # format 16:10 — quelques pixels au plus — puis on va chercher la taille acceptée la plus
