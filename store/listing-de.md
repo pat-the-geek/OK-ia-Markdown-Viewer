@@ -54,8 +54,15 @@ Reader,Betrachter,Diagramm,Flussdiagramm,Gantt,Karte,Notizen,PDF,Word,Folien,KI,
 ```
 (95 octets — aucun mot du nom ni du sous-titre.)
 
-## Nouveautés de cette version
-À rédiger avec la version qui publie cette fiche.
+## Nouveautés de cette version (release notes 1.2.1)
+```
+Ein neuer Auftritt im App Store.
+
+• md Viewer stellt sich im App Store jetzt auch auf Deutsch, Spanisch und Italienisch vor: in den fünf Sprachen der App.
+• Die App selbst bleibt unverändert. Alles, was Version 1.2 gebracht hat, auch die Übersetzung von Dokumenten auf dem Gerät, ist weiterhin da.
+
+Wenn Ihnen md Viewer hilft, freuen wir uns sehr über eine Bewertung im App Store.
+```
 
 ## URLs, catégorie, âge, copyright, prix
 Identiques à la fiche française : voir [`listing-fr.md`](listing-fr.md).

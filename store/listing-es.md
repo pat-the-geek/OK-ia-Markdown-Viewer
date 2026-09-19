@@ -54,8 +54,15 @@ lector,visor,diagrama,flujo,gantt,mapa,callout,notas,pdf,word,diapositivas,resum
 ```
 (97 octets — aucun mot du nom ni du sous-titre.)
 
-## Nouveautés de cette version
-À rédiger avec la version qui publie cette fiche.
+## Nouveautés de cette version (release notes 1.2.1)
+```
+Una nueva presentación en el App Store.
+
+• md Viewer se presenta ahora también en alemán, español e italiano: los cinco idiomas de la app.
+• La app no cambia. Todo lo que trajo la versión 1.2, incluida la traducción de documentos en el dispositivo, sigue aquí.
+
+Si md Viewer le resulta útil, una valoración en el App Store nos ayuda mucho.
+```
 
 ## URLs, catégorie, âge, copyright, prix
 Identiques à la fiche française : voir [`listing-fr.md`](listing-fr.md).

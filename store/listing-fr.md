@@ -141,7 +141,19 @@ sous-titre, et Apple lit le nom, le sous-titre et les mots-clés comme un seul s
 ## Prix
 - **Gratuit** ✅ — aucune disponibilité limitée, disponible dans tous les pays.
 
-## Nouveautés de cette version (release notes 1.2)
+## Nouveautés de cette version (release notes 1.2.1)
+```
+Une nouvelle présentation sur l'App Store.
+
+• md Viewer se présente désormais aussi en allemand, en espagnol et en italien : les cinq langues de l'app.
+• L'app elle-même ne change pas. Tout ce qu'apportait la 1.2, dont la traduction des documents sur l'appareil, est toujours là.
+
+Si md Viewer vous rend service, un avis sur l'App Store nous aide beaucoup.
+```
+
+<details>
+<summary>Archive — release notes 1.2</summary>
+
 ```
 Vos rapports se lisent enfin dans votre langue.
 
@@ -165,6 +177,7 @@ NOUVEAU
 Cette version demande iOS/iPadOS 26.4 ou macOS 26.4 : la traduction sur
 l'appareil n'existe pas avant.
 ```
+</details>
 
 <details>
 <summary>Archive — release notes 1.1.1</summary>

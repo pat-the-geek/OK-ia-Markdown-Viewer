@@ -141,7 +141,19 @@ phrases.)
 ## Price
 - **Free** ✅ — no limited availability, available in every country.
 
-## What's new in this version (release notes 1.2)
+## What's new in this version (release notes 1.2.1)
+```
+A fresh look on the App Store.
+
+• md Viewer's App Store page now also speaks German, Spanish and Italian: the five languages of the app.
+• The app itself doesn't change. Everything 1.2 brought, including on-device document translation, is still here.
+
+If md Viewer helps you, a rating on the App Store means a lot to us.
+```
+
+<details>
+<summary>Archive — release notes 1.2</summary>
+
 ```
 Your reports finally read in your language.
 
@@ -164,6 +176,7 @@ NEW
 This version requires iOS/iPadOS 26.4 or macOS 26.4: on-device translation does
 not exist before that.
 ```
+</details>
 
 <details>
 <summary>Archive — release notes 1.1.1</summary>
