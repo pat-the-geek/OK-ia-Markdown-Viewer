@@ -11,6 +11,11 @@ Pas de compte requis → laisser les champs identifiants vides ; cocher **« Sig
 ## Notes (EN — à coller)
 
 ```
+UPDATE 1.2.1 — THIS VERSION ONLY UPDATES THE APP STORE PRODUCT PAGE
+• The descriptions of the product page were rewritten, and German, Spanish and Italian
+  localizations of the page were added. The app itself is unchanged from 1.2: same features,
+  same code, only the version number differs. The testing notes below still apply.
+
 md Viewer is a Markdown document (report) reader. No account or login is required.
 
 HOW TO TEST
@@ -62,6 +67,12 @@ PLATFORMS
 ## Notes (FR — pour mémoire)
 
 ```
+MISE À JOUR 1.2.1 — CETTE VERSION NE MET À JOUR QUE LA FICHE APP STORE
+• Les descriptions de la fiche produit ont été réécrites, et des versions allemande, espagnole
+  et italienne de la fiche ont été ajoutées. L'app elle-même est inchangée depuis la 1.2 :
+  mêmes fonctions, même code, seul le numéro de version diffère. Les notes ci-dessous restent
+  valables.
+
 md Viewer est un lecteur de documents Markdown (rapports). Aucun compte ni connexion n'est requis.
 
 COMMENT TESTER

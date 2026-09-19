@@ -3,6 +3,8 @@
 Langue principale : **Français (Suisse)**. Vaut pour **iOS** et **macOS** (mêmes textes).
 Copier-coller dans App Store Connect → *Informations sur l'app* et *Version*.
 
+> **1.2.1 (19/09/2026)** : description réécrite dans un style simple, orienté expérience, et mots-clés revus (termes courants comme « lecteur » ; « obsidian » retiré, marque d'un tiers, règle 2.3.7). Nom, sous-titre et texte promotionnel inchangés. Textes établis dans le dépôt OK-ia, `Stratégie/fiches-app-store.md`.
+
 ---
 
 ## Nom de l'app (30 car. max)
@@ -34,6 +36,30 @@ déjà « Markdown » et y caser « Mermaid » coûterait « OK-ia » ou « View
 </details>
 
 ## Description
+```
+Vos fichiers Markdown méritent mieux qu'un texte brut.
+
+md Viewer les ouvre comme de vrais documents : titres, tableaux, diagrammes, cartes et encadrés s'affichent proprement, sur iPhone, iPad et Mac. Ouvrez un fichier depuis Fichiers, un e-mail ou une autre app : il est prêt à lire.
+
+Besoin de l'essentiel ? L'app résume le document et répond à vos questions à son sujet. Il est écrit dans une autre langue ? Elle le traduit. Tout se passe sur votre appareil, même sans connexion. Gratuit, sans compte.
+
+CE QUE VOUS ALLEZ AIMER
+• Un rendu fidèle : titres, tableaux, listes, citations.
+• Les diagrammes Mermaid (organigrammes, séquences, Gantt, mindmaps) et les cartes, zoomables en plein écran.
+• Les encadrés (callouts) et les liens wiki, compatibles avec les notes Obsidian.
+• Le mode présentation : votre document devient un diaporama.
+• L'export en PDF, Word et PowerPoint.
+• Le résumé, la discussion et la traduction par IA, sur l'appareil.
+• Siri, Spotlight et Raccourcis : « Ouvre le dernier rapport ».
+• Le mode sombre et une interface en 5 langues.
+
+HORS LIGNE ET PRIVÉ
+Aucun compte, aucun envoi : vos documents restent sur vos appareils. Seuls les fonds de carte se chargent en ligne. L'IA nécessite un appareil compatible Apple Intelligence.
+```
+
+<details>
+<summary>Description 1.2 (remplacée par la 1.2.1)</summary>
+
 ```
 md Viewer affiche vos fichiers Markdown comme un vrai document : diagrammes, cartes, callouts et entités colorées, avec la typographie et les couleurs de la charte ok-ia.ch.
 
@@ -68,10 +94,21 @@ Ouvrez un .md depuis Fichiers, le partage iOS, une autre app, ou un lien web (md
 « Ce que les algorithmes ignorent encore. » — ok-ia.ch
 ```
 
+</details>
+
 ## Mots-clés (100 car. max, séparés par des virgules, sans espaces superflus)
+```
+lecteur,visionneuse,diagramme,organigramme,carte,callout,notes,pdf,docx,diaporama,résumé,ia,readme
+```
+(100 octets — Apple compte en octets : une lettre accentuée compte double. Aucun mot du nom ni du sous-titre : « markdown », « mermaid », « rapports », « hors ligne » y sont déjà indexés. « lecteur » et « visionneuse » : ce que tape quelqu'un qui cherche l'app. « obsidian » retiré : nom d'une app tierce, interdit dans les mots-clés ; la compatibilité reste dite dans la description.)
+
+<details>
+<summary>Mots-clés 1.2 (remplacés)</summary>
+
 ```
 diagramme,leaflet,carte,obsidian,callout,mermaid,résumé,ia,pdf,visionneuse,readme,docx,diaporama
 ```
+
 (96 car. — « rapport » est sorti : « Rapports fidèles, hors ligne » l'indexe déjà comme
 sous-titre, et Apple lit le nom, le sous-titre et les mots-clés comme un seul sac. « siri » et
 « raccourcis » sont indexés via les phrases App Shortcuts.)
@@ -79,6 +116,8 @@ sous-titre, et Apple lit le nom, le sous-titre et les mots-clés comme un seul s
 > ⚠️ « mermaid » figure aussi dans le nom (« md Viewer : Markdown & Mermaid ») : il est donc
 > indexé deux fois et n'élargit rien. Il est là par choix explicite ; la place rendue par
 > « rapport » pourrait sinon aller à un terme non encore couvert — « flowchart », « gantt ».
+
+</details>
 
 ## URLs
 - **URL d'assistance** (obligatoire) : `https://ok-ia.ch` ✅

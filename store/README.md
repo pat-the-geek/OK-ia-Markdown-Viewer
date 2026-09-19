@@ -10,6 +10,7 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 |---|---|
 | [`listing-fr.md`](listing-fr.md) | Fiche produit **FR** : nom, sous-titre, description, mots-clés, nouveautés, URLs, catégorie, copyright |
 | [`listing-en.md`](listing-en.md) | Fiche produit **EN** — miroir de la FR, à garder synchronisée |
+| [`listing-de.md`](listing-de.md), [`listing-es.md`](listing-es.md), [`listing-it.md`](listing-it.md) | Fiches **DE / ES / IT**, ajoutées pour la 1.2.1 |
 | [`app-privacy.md`](app-privacy.md) | Réponses au questionnaire « App Privacy » |
 | [`mdviewer-confidentialite.html`](mdviewer-confidentialite.html) | **Politique de confidentialité finalisée**, à héberger sur `ok-ia.ch/mdviewer/confidentialite.html` |
 | [`screenshots.md`](screenshots.md) | Tailles de captures requises (iPhone/iPad/Mac) + plan de capture |
@@ -19,12 +20,17 @@ Ces documents sont **prêts à copier-coller** dans App Store Connect. Les choix
 ## Décisions actées
 
 - **Nom** : OK-ia Markdown Viewer · **Catégorie** : Productivité · **Prix** : Gratuit
-- **Langues de la fiche** : **français + anglais uniquement** (décidé le 2026-07-27).
-  ⚠️ À ne pas confondre avec les langues de l'**app**, qui sont cinq depuis la 1.1.0
-  (fr, en, de, es, it). App Store Connect proposera donc d'ajouter de/es/it à la fiche :
-  **ne pas les remplir pour l'instant**. Un binaire multilingue avec une fiche FR/EN est
-  parfaitement recevable — l'App Store affiche simplement la fiche dans la langue la plus
-  proche pour les visiteurs germanophones, hispanophones et italophones.
+- **Langues de la fiche** : **français, anglais, allemand, espagnol et italien** depuis la **1.2.1** (décidé le 2026-09-19) — les cinq langues de l'app. La vitrine allemande, suisse alémanique, espagnole et italienne affichait jusque-là la fiche **française**, langue principale : incompréhensible pour ces visiteurs, et invisible dans leurs recherches.
+  <details><summary>Décision précédente (2026-07-27), remplacée</summary>
+
+  - **Langues de la fiche** : **français + anglais uniquement** (décidé le 2026-07-27).
+    ⚠️ À ne pas confondre avec les langues de l'**app**, qui sont cinq depuis la 1.1.0
+    (fr, en, de, es, it). App Store Connect proposera donc d'ajouter de/es/it à la fiche :
+    **ne pas les remplir pour l'instant**. Un binaire multilingue avec une fiche FR/EN est
+    parfaitement recevable — l'App Store affiche simplement la fiche dans la langue la plus
+    proche pour les visiteurs germanophones, hispanophones et italophones.
+
+  </details>
 - **Âge** : 4+ (répondre « Non » à « accès web sans restriction »)
 - **URLs** : assistance & marketing `https://ok-ia.ch` · confidentialité `https://ok-ia.ch/mdviewer/confidentialite.html`
 - **Copyright** : © 2026 OK-ia

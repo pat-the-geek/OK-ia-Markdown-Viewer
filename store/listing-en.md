@@ -4,6 +4,8 @@ Secondary App Store language: **English**. Applies to **iOS** and **macOS** (sam
 Mirror of [`listing-fr.md`](listing-fr.md) — keep both in sync when either changes.
 Paste into App Store Connect → *App Information* and *Version*, English localisation.
 
+> **1.2.1 (19/09/2026)**: description rewritten in a simple, experience-first style; keywords revised (common terms such as “reader”; “obsidian” dropped — a third-party app name, guideline 2.3.7). Name, subtitle and promotional text unchanged.
+
 > Wording note: the app's own English strings avoid US/UK spelling clashes where possible
 > (« entity highlighting » rather than colouring/coloring). Keep that habit here.
 
@@ -38,6 +40,30 @@ two search terms.
 
 ## Description
 ```
+Your Markdown files deserve better than plain text.
+
+md Viewer opens them as real documents: headings, tables, diagrams, maps and callouts display beautifully on iPhone, iPad and Mac. Open a file from Files, an email or another app: it's ready to read.
+
+Need the gist? The app summarises the document and answers your questions about it. Written in another language? It translates it. Everything happens on your device, even offline. Free, no account.
+
+WHAT YOU'LL LOVE
+• Faithful rendering: headings, tables, lists, quotes.
+• Mermaid diagrams (flowcharts, sequences, Gantt, mind maps) and maps, zoomable full screen.
+• Callouts and wiki-links, compatible with Obsidian notes.
+• Presentation mode: your document becomes a slideshow.
+• Export to PDF, Word and PowerPoint.
+• On-device AI summary, chat and translation.
+• Siri, Spotlight and Shortcuts: “Open the latest report”.
+• Dark mode and an interface in 5 languages.
+
+OFFLINE AND PRIVATE
+No account, nothing uploaded: your documents stay on your devices. Only map tiles load online. The AI requires an Apple Intelligence-compatible device.
+```
+
+<details>
+<summary>1.2 description (replaced in 1.2.1)</summary>
+
+```
 md Viewer displays your Markdown files as real documents: diagrams, maps, callouts and highlighted entities, with the typography and colours of the ok-ia.ch design language.
 
 FEATURES
@@ -71,13 +97,26 @@ Open a .md from Files, the iOS share sheet, another app, or a web link (mdviewer
 “What algorithms don't know yet.” — ok-ia.ch
 ```
 
+</details>
+
 ## Keywords (100 char. max, comma-separated, no stray spaces)
+```
+reader,diagram,flowchart,gantt,map,callout,notes,pdf,docx,slides,summary,ai,readme,wiki,document
+```
+(96 bytes — no word from the name or subtitle. “md” dropped: it is in the name. “obsidian” dropped: a third-party app name is not allowed in keywords; compatibility is stated in the description.)
+
+<details>
+<summary>1.2 keywords (replaced)</summary>
+
 ```
 diagram,leaflet,map,obsidian,callout,summary,ai,pdf,md,readme,docx,slides,notes,flowchart,gantt
 ```
+
 (95 char. — “report” and “offline” dropped: both now sit in the subtitle, and a word indexed
 from name or subtitle is wasted here. “siri/shortcuts” are indexed through the App Shortcuts
 phrases.)
+
+</details>
 
 ## URLs
 - **Support URL** (required): `https://ok-ia.ch` ✅
