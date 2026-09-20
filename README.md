@@ -939,10 +939,11 @@ premier.
 - **Ce que le thème touche.** Le texte et le fond, certainement ; mais aussi les callouts, la
   coloration des entités, le cadre des diagrammes et le fond de carte clair ou sombre. Un thème qui
   ne descendrait pas jusque-là se verrait comme un habit mal ajusté.
-- **Les exports.** Le PDF, le Word et le PowerPoint gardent la charte OK-ia quel que soit le thème
-  de lecture : ce qui sort de l'app est un document transmis, pas l'écran de son auteur. À
-  confirmer — l'inverse se défend, un rapport imprimé depuis le thème « Administratif » aurait sa
-  cohérence.
+**Tranché le 2026-09-20 — les exports ne suivent pas le thème.** Le PDF, le Word et le PowerPoint
+gardent la charte OK-ia quel que soit le thème de lecture : ce qui sort de l'app est un document
+transmis, pas l'écran de son auteur. Le thème regarde celui qui lit ; le destinataire, lui, reçoit
+un document qui ne dépend pas d'un réglage qu'il n'a pas choisi. C'est aussi ce qui garde une
+identité constante aux rapports produits avec md Viewer.
 
 **Côté magasin** : deux écrans, c'est probablement deux gabarits de capture à fournir dans App
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
