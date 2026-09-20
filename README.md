@@ -797,10 +797,11 @@ sdk 26.5`. Rien n'est cassé : le seuil de `Translation` est le SDK 26.4, il est
 Apple à l'envoi, ou changer un comportement par défaut. La 1.2 coupe déjà les appareils sous 26.4 ;
 une coupure supplémentaire ne se décide pas en passant.
 
-### 1.3 — Optimisée pour iOS, iPadOS et macOS 27, et pour l'iPhone Duo
+### 1.3 — Systèmes 27, iPhone Duo, et thèmes de lecture
 
-**Décidé le 2026-09-17.** La 1.3 a deux objets, et seulement deux : tirer parti des systèmes de la
-génération **27** — iOS 27, iPadOS 27, macOS 27 — et **adapter l'app à l'iPhone Duo**. Les deux se
+**Décidé le 2026-09-17, complété le 2026-09-20.** La 1.3 a trois objets : tirer parti des systèmes
+de la génération **27** — iOS 27, iPadOS 27, macOS 27 —, **adapter l'app à l'iPhone Duo**, et donner
+au lecteur le **choix d'un thème** (dernière section de cette entrée). Les deux se
 tiennent : c'est le SDK 27.1 qui donne à l'app le bord de l'écran et les barres du pliable. La 1.2,
 elle, est partie en revue telle qu'elle est : un appareil qui vient de sortir ne retarde pas une
 version éprouvée. Annoncée sur la feuille de route publique le même jour.
@@ -899,6 +900,49 @@ iPhone Duo*, *Raise the bar with iPhone Duo*). Ce qui suit dit ce que chaque not
   l'inverse : ne rien déduire de l'idiome, raisonner en classes de taille. Déplié, le Duo restera
   un « téléphone » dont l'écran n'aura rien d'un téléphone. Même vigilance pour `UIScreen.main`,
   qu'on n'emploie nulle part — c'est à vérifier à chaque ajout, pas une fois.
+
+#### Thèmes de lecture
+
+**Demandé le 2026-09-20.** Le lecteur doit offrir **cinq thèmes adaptés aux rapports**, dont le
+**thème OK-ia** — la charte du site, aujourd'hui seul habillage possible.
+
+**Adaptés aux rapports, et c'est la contrainte principale.** Les cinq thèmes du diaporama —
+`light`, `dark`, `console`, `sepia`, `ocean` — sont faits pour une salle : contraste franc, fond
+coloré, texte vu de loin pendant quelques secondes. Un rapport se lit vingt minutes, de près, et
+souvent s'imprime. Ses thèmes se jugent donc sur la fatigue à la lecture et sur la tenue des
+tableaux, pas sur l'effet. Ce qu'on reprend du diaporama, c'est le **mécanisme** — une classe
+`theme-<clé>` sur le `body`, le choix retenu dans `localStorage` — pas la palette.
+
+**Un thème de rapport, c'est plus qu'une couleur.** Il porte la police et sa taille, l'interligne,
+la largeur de la colonne (`--reading-max`), le rendu des titres, et la façon dont respirent les
+tableaux — le poste le plus sensible dans un rapport, et celui qu'un thème mal réglé abîme en
+premier.
+
+**Cinq pistes, à valider avec Patrick avant tout code :**
+
+| Thème | Pour qui, et ce qui change |
+|---|---|
+| **OK-ia** | La charte actuelle : Nunito pour les titres, accent orange, entités colorées. Le défaut, celui qu'on connaît. |
+| **Administratif** | Rapport communal, juridique, procès-verbal : titres sobres, empattements, interligne large, tableaux à filets nets. Ce qui ressemble au document qu'on imprimera. |
+| **Éditorial** | Note de synthèse, veille, dossier de presse : colonne plus étroite, titres contrastés, citations mises en avant. |
+| **Lecture longue** | Fond crème, contraste adouci, texte un cran plus grand : pour un rapport de trente pages, le soir. |
+| **Contraste élevé** | Accessibilité : noir franc sur blanc, graisses appuyées, aucune couleur porteuse de sens à elle seule. |
+
+**Les points à trancher :**
+
+- **Où se choisit-il.** Dans les Réglages, à côté de la langue et de la taille de texte, ou dans la
+  barre du lecteur comme au diaporama ? Le second est plus direct, mais la barre compte déjà huit
+  boutons — c'est justement ce que l'iPhone Duo va obliger à revoir.
+- **Un thème ou deux.** Un réglage unique, ou un thème clair et un thème sombre entre lesquels le
+  système bascule ? Aujourd'hui l'app suit l'appareil ; un thème fixe le contredirait. Chaque thème
+  de rapport doit donc probablement exister en clair **et** en sombre.
+- **Ce que le thème touche.** Le texte et le fond, certainement ; mais aussi les callouts, la
+  coloration des entités, le cadre des diagrammes et le fond de carte clair ou sombre. Un thème qui
+  ne descendrait pas jusque-là se verrait comme un habit mal ajusté.
+- **Les exports.** Le PDF, le Word et le PowerPoint gardent la charte OK-ia quel que soit le thème
+  de lecture : ce qui sort de l'app est un document transmis, pas l'écran de son auteur. À
+  confirmer — l'inverse se défend, un rapport imprimé depuis le thème « Administratif » aurait sa
+  cohérence.
 
 **Côté magasin** : deux écrans, c'est probablement deux gabarits de capture à fournir dans App
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
