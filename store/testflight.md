@@ -5,13 +5,12 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.2 (39)`** — la traduction des documents sur l'appareil. Envoyé
-> par `scripts/deploy-testflight.sh --bump --both`, qui construit iOS et Mac à partir du même
-> numéro et passe les contrôles avant envoi.
+> ⚠️ **Build à utiliser : `1.3 (42)`** — version de développement de la 1.3 : thèmes de lecture,
+> nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
+> `scripts/deploy-testflight.sh --bump --both`, compilé avec l'Xcode **stable** (27.0) : le script
+> refuse d'envoyer depuis une bêta.
 >
-> **Cette version demande iOS/iPadOS 26.4 ou macOS 26.4.** Un testeur sur un appareil plus
-> ancien ne verra pas le build apparaître : ce n'est pas une panne, c'est le framework de
-> traduction qui n'existe pas avant.
+> **Cette version demande iOS/iPadOS 26.4 ou macOS 26.4**, comme la 1.2.
 
 ---
 
@@ -31,7 +30,38 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.2 (39)
+## What to Test — 1.3 (42)
+
+```
+Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
+
+NOUVEAU — SIX TRANSITIONS DE PLUS AU DIAPORAMA
+Ouvrez un document découpé en diapositives par des lignes --- (par exemple une
+présentation exportée de fornews.ai) et lancez le diaporama (bouton ▶).
+• Menu du diaporama → Transition : Balayage, Découverte, Cube, Iris, Fondu au noir
+  et Damier s'ajoutent aux cinq existantes.
+• Essayez chacune en avançant ET en reculant : la plupart changent de sens.
+• Aucune trace ne doit rester à l'écran après une transition, et les cartes et
+  diagrammes doivent rester à leur place, même après Cube et Damier.
+• Dites-nous si l'une d'elles saccade, et sur quel appareil.
+• Réglages de l'appareil → Accessibilité → Mouvement → Réduire les animations :
+  toutes les transitions doivent alors devenir un simple fondu.
+
+NOUVEAU — LES TRANSITIONS DANS L'EXPORT POWERPOINT
+• Choisissez une transition, puis Menu du diaporama → Exporter en PowerPoint.
+• Ouvrez le fichier dans PowerPoint : chaque diapositive doit porter la transition
+  choisie (onglet Transitions).
+• Ouvrez-le aussi dans Keynote et dites-nous ce qu'il en reste : l'Échelle, le
+  Retournement et le Cube y prévoient un fondu de repli, au cas où.
+
+NOUVEAU — LES THÈMES DE LECTURE
+• Bouton « Aa » du lecteur : OK-ia, Administratif, Éditorial, Lecture longue,
+  Contraste élevé. Essayez-les en clair et en sombre.
+• Exportez en PDF depuis un autre thème que OK-ia : le PDF doit rester aux
+  couleurs OK-ia.
+```
+
+## What to Test — 1.2 (39) — archive
 
 ```
 Merci de tester md Viewer ! Points à vérifier :
