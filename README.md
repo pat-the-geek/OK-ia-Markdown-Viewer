@@ -755,10 +755,15 @@ progression régulière et honnête.
 un bloc qui échoue : la barre ne doit pas rester bloquée à 98 % pour l'éternité. Il faut un état
 terminal — « traduit, sauf trois paragraphes » — et le moyen de voir lesquels.
 
-### 1.3, première étape — compiler avec la dernière version d'Xcode 27
+### 1.3, première étape — compiler avec la dernière version d'Xcode 27 — faite
 
 **Demandé le 2026-09-11.** Passer la chaîne de compilation à Xcode 27 dès que possible. C'est le
 premier chantier de la **1.3** (entrée suivante), et son premier build ne changera rien d'autre.
+
+**Faite le 2026-09-29 avec le build 41** (1.2.2 Mac) : premier binaire compilé sous Xcode 27.0,
+SDK 27.0, sans aucun autre changement — exactement le build « qui ne change que de chaîne » que
+prévoyait l'ordre de marche ci-dessous. Vérifié avant l'envoi : il rend et traduit sous macOS 27,
+et porte toujours `minos 26.4`. Approuvé par Apple et en vente le 2026-10-01.
 
 **Installé le 2026-09-16 : Xcode 27.0** (`27A266a`), à la place d'Xcode 26.6 — la machine n'a plus
 qu'un Xcode. La 1.2, soumise ce jour-là, est donc le dernier binaire compilé sous 26.6 ; tout build
@@ -798,6 +803,55 @@ Apple à l'envoi, ou changer un comportement par défaut. La 1.2 coupe déjà le
 une coupure supplémentaire ne se décide pas en passant.
 
 ### 1.3 — Systèmes 27, iPhone Duo, et thèmes de lecture
+
+#### Démarrage — état des lieux du 2026-10-01
+
+**La 1.3 démarre le 2026-10-01**, comme convenu avec Patrick, dès l'approbation de la 1.2.2 sur
+Mac. `MARKETING_VERSION` passe à `1.3`.
+
+**Deux Xcode, deux rôles.** `Xcode.app` (27.0, stable) livre ; `Xcode-27.1.0-Beta.app` sert à
+développer pour l'iPhone Duo. Apple refuse tout binaire compilé par une bêta : le script de
+livraison affiche désormais l'Xcode employé et **refuse d'envoyer depuis une bêta** (`--no-upload`
+reste permis). La garde se place avant l'incrément du numéro de build, pour qu'un refus ne
+laisse rien derrière lui. Pour compiler avec la bêta :
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode-27.1.0-Beta.app/Contents/Developer xcodebuild …
+```
+
+**Les interfaces du Duo, vérifiées dans le SDK 27.1 bêta** — plus seulement dans les présentations
+d'Apple. Elles vivent dans `SwiftUICore`, que SwiftUI réexporte, et sont toutes marquées
+`@available(anyAppleOS 27.1, *)` : `ArrangementView<Primary, Secondary>`,
+`arrangementViewStyle(_:)`, `overlayArrangementZIndex`, `reservedRegions(kind:options:…)`,
+`onHingeChange(isEnabled:_:)` avec un `DeviceHingeContext`, `toolbarVerticalEdge`,
+`ToolbarOverflowMenu`, `axisBehavior`. Côté UIKit : `UIArrangementViewController`,
+`UIHingeInteraction`, `UIVerticalBarEdge`.
+
+**Deux conséquences qui décident de la structure du code :**
+
+- ⚠️ **Mac Catalyst ne les voit pas.** La bêta n'apporte qu'un SDK macOS 27.0, dont l'interface
+  Catalyst de `SwiftUICore` ne contient aucun de ces symboles. Un simple `if #available` ne suffit
+  donc pas : le Mac ne compilerait plus. Tout code propre au Duo s'écrit sous
+  `#if !targetEnvironment(macCatalyst)`, **et** derrière `if #available(iOS 27.1, *)`.
+- ✅ **La cible minimale peut rester 26.4.** Rien ne force à la relever : le Duo passe par des tests
+  de disponibilité, les thèmes ne dépendent d'aucun SDK. La question ouverte se ferme d'elle-même,
+  sauf décision contraire.
+
+**Le simulateur iPhone Duo existe** (runtime iOS 27.1) et l'app actuelle s'y installe et s'y lance.
+Mais ses captures d'écran sans fenêtre (`simctl io screenshot`) reviennent noires, et la capture
+par écran se bloque ; `Simulator.app` n'est pas à son emplacement habituel dans la bêta. À
+résoudre au début du chantier Duo : sans capture, on ne vérifie rien.
+
+**Une compilation sans avertissement**, sur iPhone comme sur Mac, avec la bêta comme avec la
+stable. Trois avertissements de Swift 27 ont été levés avant de commencer, sans changer de
+comportement : une variable inutilisée dans `DocumentTranslator`, la capture du contrôleur web
+désormais explicite dans la tâche de `ReaderView`, et la teinte des commandes de Safari, dépréciée
+depuis iOS 26 et retirée. Ainsi, tout avertissement que la 1.3 fera naître se verra.
+
+**Ordre proposé.** Les **thèmes de lecture** d'abord : ils ne dépendent d'aucun SDK, se compilent
+avec l'Xcode stable, et pourraient sortir seuls. Le **Duo** ensuite, développé sous la bêta mais
+livrable seulement quand Xcode 27.1 sera publié.
+
 
 **Décidé le 2026-09-17, complété le 2026-09-20.** La 1.3 a trois objets : tirer parti des systèmes
 de la génération **27** — iOS 27, iPadOS 27, macOS 27 —, **adapter l'app à l'iPhone Duo**, et donner
