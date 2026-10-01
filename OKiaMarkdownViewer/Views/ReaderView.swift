@@ -30,6 +30,9 @@ struct ReaderView: View {
     @State private var showChat = false
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
+    /// Thème de lecture (1.3), retenu comme la taille du texte. Clé d'un `ReaderTheme`.
+    @AppStorage("okia.readerTheme") private var readerTheme = ReaderTheme.okia.rawValue
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage("okia.autoTranslate") private var autoTranslate = false
     @StateObject private var translator = DocumentTranslator()
     /// Faux quand le lecteur a demandé à revoir l'original. La traduction reste en
@@ -166,10 +169,12 @@ struct ReaderView: View {
             }
         }
         .onChange(of: fontScale) { _, v in web.setFontScale(v) }
+        .onChange(of: readerTheme) { _, v in web.setTheme(v) }
         // `[web]` est explicite : la tâche tient le contrôleur le temps de s'exécuter — il le
         // faut bien pour former les captures `[weak web]` ci-dessous —, et Swift 27 demande
         // qu'on le dise. Les fermetures confiées au traducteur, elles, restent faibles.
         .task { [web] in
+            web.setTheme(readerTheme)
             web.setFontScale(fontScale)
             // Chaque bloc traduit se réécrit dès qu'il arrive : le document se traduit
             // sous les yeux du lecteur au lieu d'apparaître d'un coup après l'attente.
@@ -455,9 +460,9 @@ struct ReaderView: View {
             }
 
             Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
-                .accessibilityLabel(tr("Taille du texte"))
+                .accessibilityLabel(tr("Apparence"))
                 .popover(isPresented: $showTextSize) {
-                    textSizeControls
+                    appearanceControls
                         .presentationCompactAdaptation(.popover)
                 }
 
@@ -563,6 +568,61 @@ struct ReaderView: View {
 
     // MARK: Text size
 
+    /// Le menu « Aa » : le thème de lecture puis la taille du texte. Les réunir évite un
+    /// neuvième bouton dans une barre qui en compte déjà huit — et l'on règle d'un même geste
+    /// tout ce qui touche à l'aspect de la page.
+    private var appearanceControls: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(tr("Thème"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            VStack(spacing: 4) {
+                ForEach(ReaderTheme.allCases) { theme in themeRow(theme) }
+            }
+            Divider()
+            Text(tr("Taille du texte"))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            textSizeControls
+                .frame(maxWidth: .infinity)
+        }
+        .padding(16)
+        .frame(width: 290)
+    }
+
+    /// Une ligne du choix de thème : une vignette aux couleurs du thème — dans le mode clair ou
+    /// sombre en cours —, son nom, et une coche sur celui qui est actif.
+    private func themeRow(_ theme: ReaderTheme) -> some View {
+        let v = theme.vignette(colorScheme)
+        let actif = readerTheme == theme.rawValue
+        return Button { readerTheme = theme.rawValue } label: {
+            HStack(spacing: 12) {
+                ZStack(alignment: .bottomLeading) {
+                    RoundedRectangle(cornerRadius: 6).fill(v.fond)
+                    RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.3))
+                    Text("Aa")
+                        .font(.system(size: 15, weight: .bold, design: theme.dessinTitre))
+                        .foregroundStyle(v.titre)
+                        .padding(.leading, 6).padding(.bottom, 5)
+                    Capsule().fill(v.accent)
+                        .frame(width: 10, height: 3)
+                        .offset(x: 30, y: -9)
+                }
+                .frame(width: 48, height: 32)
+                Text(theme.nom)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if actif {
+                    Image(systemName: "checkmark").foregroundStyle(orange)
+                }
+            }
+            .padding(.vertical, 2)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(actif ? .isSelected : [])
+    }
+
     private var textSizeControls: some View {
         HStack(spacing: 16) {
             Button { setScale(fontScale - scaleStep) } label: {
@@ -587,7 +647,6 @@ struct ReaderView: View {
             .disabled(fontScale >= maxScale - 0.001)
         }
         .tint(orange)
-        .padding(16)
     }
 
     private func setScale(_ value: Double) {

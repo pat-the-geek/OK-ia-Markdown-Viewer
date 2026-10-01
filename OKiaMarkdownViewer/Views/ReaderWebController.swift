@@ -36,6 +36,20 @@ final class ReaderWebController: ObservableObject {
         eval("window.OKIA && window.OKIA.setFontScale(\(fontScale))")
     }
 
+    // MARK: Thème de lecture (1.3)
+    /// Clé d'un `ReaderTheme`. Gardée ici pour être posée avant chaque rendu : sans cela, la
+    /// page s'afficherait un instant aux couleurs OK-ia avant de basculer.
+    private(set) var theme: String = ReaderTheme.okia.rawValue
+
+    func setTheme(_ key: String) {
+        theme = ReaderTheme(rawValue: key)?.rawValue ?? ReaderTheme.okia.rawValue
+        eval("window.OKIA && window.OKIA.setTheme(\(jsString(theme)))")
+    }
+
+    /// L'expression JavaScript qui pose le thème — à placer devant l'appel de rendu, séparée
+    /// par une virgule : c'est une expression, pas une instruction.
+    var themeScript: String { "window.OKIA.setTheme(\(jsString(theme)))" }
+
     // MARK: TOC
     func scrollToHeading(_ id: String) {
         eval("window.OKIA && window.OKIA.scrollToHeading(\(jsString(id)))")

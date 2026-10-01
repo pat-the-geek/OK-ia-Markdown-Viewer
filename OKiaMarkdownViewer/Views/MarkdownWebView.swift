@@ -145,7 +145,9 @@ struct MarkdownWebView: UIViewRepresentable {
             let call = parent.showsHeader
                 ? "window.OKIA.render(\(mdJSON), \(nameJSON))"
                 : "window.OKIA.renderPlain(\(mdJSON))"
-            webView.evaluateJavaScript("window.OKIA && \(call);", completionHandler: nil)
+            // Le thème d'abord : posé après coup, il ferait clignoter la charte OK-ia.
+            let theme = parent.webController.themeScript
+            webView.evaluateJavaScript("window.OKIA && (\(theme), \(call));", completionHandler: nil)
         }
 
         private func jsonString(_ value: String) -> String? {

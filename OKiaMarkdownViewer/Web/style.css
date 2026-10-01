@@ -36,6 +36,22 @@
   --code-bg: #f3f1ec;
   --diagram-frame: var(--blanc-casse);
 
+  /* Jetons de thème (1.3). Tout ce qu'un thème de lecture change passe par eux ; leurs
+     valeurs ici sont la charte OK-ia, et la page sans thème choisi n'a pas bougé d'un pixel. */
+  --accent: var(--orange);
+  --accent-pale: var(--orange-pale);
+  --accent-line: rgba(232,151,46,.4);
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-heading: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  --heading-weight: 900;
+  --heading-color: var(--noir);
+  --line-height: 1.65;
+  --text-size: 1rem;
+  --th-bg: var(--gris-clair);
+  --zebra: rgba(232,230,224,.35);
+  --quote-border: var(--gris);
+  --quote-bg: rgba(154,154,144,.07);
+
   /* Portée de 720 à 820 px le 11/09, sur décision de Patrick après que je lui aie exposé le
      compromis : au-delà d'environ 75 caractères, l'œil retrouve moins bien le début de la ligne
      suivante, et 820 px en fait à peu près 85. C'est un choix assumé — sur Mac et iPad, la
@@ -59,8 +75,8 @@ html, body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  line-height: 1.65;
+  font-family: var(--font-body);
+  line-height: var(--line-height);
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
@@ -69,6 +85,7 @@ body {
   max-width: var(--reading-max);
   margin: 0 auto;
   padding: 20px var(--reading-pad) 40px;
+  font-size: var(--text-size);
 }
 
 /* Landscape: widen the reading column and reduce side padding for wide diagrams */
@@ -80,10 +97,10 @@ body {
 
 /* ---- Typography ---------------------------------------------------------- */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-weight: 900;
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight);
   line-height: 1.2;
-  color: var(--noir);
+  color: var(--heading-color);
   margin: 1.6em 0 0.5em;
   scroll-margin-top: 64px;   /* offset for the native title bar when jumping via TOC */
 }
@@ -94,8 +111,8 @@ h3 { font-size: 1.25rem; }
 h4 { font-size: 1.08rem; }
 
 p { margin: 0.85em 0; }
-a { color: var(--orange); text-decoration: none; border-bottom: 1px solid rgba(232,151,46,.4); }
-a:hover { border-bottom-color: var(--orange); }
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-line); }
+a:hover { border-bottom-color: var(--accent); }
 
 strong { font-weight: 700; }
 hr { border: none; border-top: 1px solid var(--rule); margin: 2em 0; }
@@ -106,9 +123,9 @@ li { margin: 0.3em 0; }
 blockquote {
   margin: 1em 0;
   padding: 0.4em 1.1em;
-  border-left: 4px solid var(--gris);
+  border-left: 4px solid var(--quote-border);
   color: var(--muted);
-  background: rgba(154,154,144,.07);
+  background: var(--quote-bg);
 }
 
 code {
@@ -133,13 +150,14 @@ img.okia-zoomable { cursor: zoom-in; }
 
 table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 0.95em; }
 th, td { border: 1px solid var(--rule); padding: 8px 12px; text-align: left; }
-th { background: var(--gris-clair); font-weight: 700; }
-tr:nth-child(even) td { background: rgba(232,230,224,.35); }
+th { background: var(--th-bg); font-weight: 700; }
+tr:nth-child(even) td { background: var(--zebra); }
 
 /* ---- Title + meta bar ---------------------------------------------------- */
 .okia-title {
-  font-family: 'Nunito', sans-serif;
-  font-weight: 900;
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight);
+  color: var(--heading-color);
   font-size: 2.2rem;
   line-height: 1.15;
   margin: 0 0 0.35em;
@@ -157,14 +175,14 @@ tr:nth-child(even) td { background: rgba(232,230,224,.35); }
   border-bottom: 1px solid var(--rule);
 }
 .okia-meta .sep { color: var(--gris); }
-.okia-meta a { color: var(--orange); border: none; font-weight: 700; }
+.okia-meta a { color: var(--accent); border: none; font-weight: 700; }
 
 /* ---- Callouts (Obsidian) ------------------------------------------------- */
 .callout {
   margin: 1.2em 0;
   border-radius: 10px;
-  border-left: 4px solid var(--callout-color, var(--orange));
-  background: color-mix(in srgb, var(--callout-color, var(--orange)) 9%, var(--card-bg));
+  border-left: 4px solid var(--callout-color, var(--accent));
+  background: color-mix(in srgb, var(--callout-color, var(--accent)) 9%, var(--card-bg));
   overflow: hidden;
 }
 .callout-title {
@@ -173,7 +191,7 @@ tr:nth-child(even) td { background: rgba(232,230,224,.35); }
   gap: 8px;
   font-weight: 700;
   padding: 10px 14px;
-  color: var(--callout-color, var(--orange));
+  color: var(--callout-color, var(--accent));
 }
 .callout-title .callout-icon { font-size: 1.05em; }
 .callout-content { padding: 0 14px 10px 14px; }
@@ -182,8 +200,8 @@ tr:nth-child(even) td { background: rgba(232,230,224,.35); }
 
 /* ---- Wiki-links ---------------------------------------------------------- */
 .wiki-link {
-  color: var(--orange);
-  background: var(--orange-pale);
+  color: var(--accent);
+  background: var(--accent-pale);
   padding: 0.05em 0.35em;
   border-radius: 4px;
   font-weight: 600;
@@ -284,13 +302,126 @@ pre.mermaid.mermaid-error::after { content: none; }
     --code-bg: #23232a;
     /* Diagrams stay on a light frame so the OK-ia mermaid palette renders true */
     --diagram-frame: var(--blanc-casse);
+    --heading-color: var(--fg);
+    --th-bg: #2a2a31;
+    --zebra: rgba(255,255,255,.03);
   }
-  h1, h2, h3, h4, h5, h6 { color: var(--fg); }
-  .okia-title { color: var(--fg); }
-  th { background: #2a2a31; }
-  tr:nth-child(even) td { background: rgba(255,255,255,.03); }
   /* The mermaid SVG itself is rendered with light OK-ia colors; keep it on a light card. */
   pre.mermaid { color: var(--noir); }
+}
+
+/* ===========================================================================
+   THÈMES DE LECTURE (1.3) — `html[data-okia-theme="…"]`, posé par OKIA.setTheme
+   Cinq thèmes pensés pour lire un rapport, pas pour le projeter : ils se jugent sur la
+   fatigue à la lecture et sur la tenue des tableaux. Chacun existe en clair et en sombre,
+   et l'app continue de suivre le réglage de l'appareil.
+   ⚠️ Tout est sous `@media screen` : l'impression — donc le PDF — n'en voit rien et garde
+   la charte OK-ia. Décidé avec Patrick : ce qui sort de l'app est un document transmis,
+   pas l'écran de son auteur. Word et PowerPoint ne lisent pas cette feuille.
+   « okia » n'a pas de règle : c'est la charte des jetons de :root, le thème par défaut.
+   =========================================================================== */
+@media screen {
+
+  /* Administratif — rapport communal, procès-verbal : empattements, interligne large,
+     tableaux à filets nets. Ce qui ressemble au document qu'on imprimera. */
+  html[data-okia-theme="administratif"] {
+    --bg: #FFFFFF; --fg: #1B1B1B; --muted: #55565A; --rule: #C9CCD1;
+    --card-bg: #FFFFFF; --code-bg: #F2F3F5;
+    --accent: #1F4E79; --accent-pale: #E6EEF6; --accent-line: rgba(31,78,121,.35);
+    --font-body: ui-serif, 'New York', Georgia, serif;
+    --font-heading: ui-serif, 'New York', Georgia, serif;
+    --heading-weight: 700; --heading-color: #10243A;
+    --line-height: 1.7;
+    --th-bg: #E9ECF0; --zebra: #F6F7F9;
+    --quote-border: #1F4E79; --quote-bg: #F4F6F9;
+  }
+
+  /* Éditorial — note de synthèse, veille : colonne plus étroite, titres à empattements
+     sur un texte sans, citations mises en avant. */
+  html[data-okia-theme="editorial"] {
+    --bg: #FFFFFF; --fg: #222222; --muted: #666666; --rule: #E2E2E2;
+    --card-bg: #FFFFFF; --code-bg: #F4F4F4;
+    --accent: #A61E2D; --accent-pale: #F8E6E8; --accent-line: rgba(166,30,45,.35);
+    --font-heading: ui-serif, 'New York', Georgia, serif;
+    --heading-weight: 800; --heading-color: #111111;
+    --line-height: 1.7;
+    --reading-max: 720px;
+    --th-bg: #F1F1F1; --zebra: #FAFAFA;
+    --quote-border: #A61E2D; --quote-bg: transparent;
+  }
+  html[data-okia-theme="editorial"] blockquote {
+    font-family: var(--font-heading);
+    font-size: 1.15em;
+    font-style: italic;
+    color: var(--fg);
+  }
+
+  /* Lecture longue — fond crème, contraste adouci, texte un cran plus grand : pour un
+     rapport de trente pages, le soir. */
+  html[data-okia-theme="lecture"] {
+    --bg: #F6F0E3; --fg: #3B352C; --muted: #7A7062; --rule: #E2D8C3;
+    --card-bg: #FBF7EE; --code-bg: #EFE7D6;
+    --accent: #9A5B2A; --accent-pale: #F1E2CF; --accent-line: rgba(154,91,42,.35);
+    --font-body: ui-serif, 'New York', Georgia, serif;
+    --font-heading: ui-serif, 'New York', Georgia, serif;
+    --heading-weight: 700; --heading-color: #2E2922;
+    --line-height: 1.8;
+    --text-size: 1.08rem;
+    --th-bg: #EDE3CF; --zebra: rgba(226,216,195,.35);
+    --quote-border: #C9B48E; --quote-bg: rgba(201,180,142,.12);
+  }
+
+  /* Contraste élevé — accessibilité : noir franc sur blanc, graisses appuyées, liens
+     soulignés. Aucune information portée par la seule couleur. */
+  html[data-okia-theme="contraste"] {
+    --bg: #FFFFFF; --fg: #000000; --muted: #2B2B2B; --rule: #000000;
+    --card-bg: #FFFFFF; --code-bg: #EDEDED;
+    --accent: #0033B3; --accent-pale: #E3EAFF; --accent-line: #0033B3;
+    --font-heading: -apple-system, BlinkMacSystemFont, sans-serif;
+    --heading-weight: 800; --heading-color: #000000;
+    --line-height: 1.7;
+    --text-size: 1.05rem;
+    --th-bg: #DADADA; --zebra: #F2F2F2;
+    --quote-border: #000000; --quote-bg: #F2F2F2;
+  }
+  html[data-okia-theme="contraste"] body { font-weight: 500; }
+  html[data-okia-theme="contraste"] a { text-decoration: underline; border-bottom: none; }
+
+  /* ---- Les mêmes, en sombre ---------------------------------------------- */
+  @media (prefers-color-scheme: dark) {
+    html[data-okia-theme="administratif"] {
+      --bg: #15181C; --fg: #E4E6E9; --muted: #A4A9B0; --rule: #3A4049;
+      --card-bg: #1C2026; --code-bg: #22272E;
+      --accent: #8DB4DD; --accent-pale: #22324A; --accent-line: rgba(141,180,221,.4);
+      --heading-color: #E9EEF4;
+      --th-bg: #262C34; --zebra: rgba(255,255,255,.03);
+      --quote-border: #8DB4DD; --quote-bg: rgba(141,180,221,.06);
+    }
+    html[data-okia-theme="editorial"] {
+      --bg: #121212; --fg: #E8E8E8; --muted: #9A9A9A; --rule: #333333;
+      --card-bg: #1A1A1A; --code-bg: #1F1F1F;
+      --accent: #F0707C; --accent-pale: #3A1E22; --accent-line: rgba(240,112,124,.4);
+      --heading-color: #F2F2F2;
+      --th-bg: #222222; --zebra: rgba(255,255,255,.03);
+      --quote-border: #F0707C;
+    }
+    html[data-okia-theme="lecture"] {
+      --bg: #1C1915; --fg: #D9D0C1; --muted: #A39888; --rule: #3A342B;
+      --card-bg: #23201B; --code-bg: #2A2620;
+      --accent: #D9A066; --accent-pale: #3A2E20; --accent-line: rgba(217,160,102,.4);
+      --heading-color: #E6DCCB;
+      --th-bg: #2C2822; --zebra: rgba(255,255,255,.025);
+      --quote-border: #7A6A50; --quote-bg: rgba(217,160,102,.06);
+    }
+    html[data-okia-theme="contraste"] {
+      --bg: #000000; --fg: #FFFFFF; --muted: #E0E0E0; --rule: #FFFFFF;
+      --card-bg: #000000; --code-bg: #1A1A1A;
+      --accent: #FFD60A; --accent-pale: #332B00; --accent-line: #FFD60A;
+      --heading-color: #FFFFFF;
+      --th-bg: #2A2A2A; --zebra: #111111;
+      --quote-border: #FFFFFF; --quote-bg: #111111;
+    }
+  }
 }
 
 /* ===========================================================================

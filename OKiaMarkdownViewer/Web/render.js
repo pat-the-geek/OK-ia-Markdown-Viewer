@@ -1072,6 +1072,24 @@
   }
 
   /* =========================================================================
+     THÈMES DE LECTURE (1.3) — un attribut sur <html>, que style.css lit
+     L'attribut tient sur <html> et non sur le contenu : render() remplace le corps de la
+     page, et le thème doit survivre à chaque nouveau document.
+     ========================================================================= */
+  var THEMES_LECTURE = ['okia', 'administratif', 'editorial', 'lecture', 'contraste'];
+  var currentTheme = 'okia';
+
+  function setTheme(key) {
+    if (THEMES_LECTURE.indexOf(key) === -1) key = 'okia';
+    currentTheme = key;
+    // « okia » ne pose pas d'attribut : c'est la charte des jetons de :root, et une page sans
+    // thème choisi doit rester exactement celle d'avant la 1.3.
+    if (key === 'okia') document.documentElement.removeAttribute('data-okia-theme');
+    else document.documentElement.setAttribute('data-okia-theme', key);
+    return currentTheme;
+  }
+
+  /* =========================================================================
      TABLE OF CONTENTS — assign ids to headings, post the outline to native
      ========================================================================= */
   function slugify(text) {
@@ -2317,6 +2335,7 @@
     renderFragment: renderFragment,
     exportModel: exportModel,
     setFontScale: setFontScale,
+    setTheme: setTheme,
     scrollToHeading: scrollToHeading,
     search: search,
     searchNext: searchNext,
