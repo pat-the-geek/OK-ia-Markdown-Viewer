@@ -326,7 +326,8 @@ enum PptxBuilder {
         case image(OOXMLImage)
     }
 
-    static func build(slides: [PptxSlide]) -> Data {
+    static func build(slides: [PptxSlide], transition: String? = nil) -> Data {
+        let entree = transitionXML(transition)
         var zip = OOXMLZip()
         var slideOverrides = ""
         var presRels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster\" Target=\"slideMasters/slideMaster1.xml\"/>"
@@ -336,7 +337,7 @@ enum PptxBuilder {
             let n = i + 1
             let rid = "rId\(n + 1)"
             var images: [(name: String, img: OOXMLImage)] = []
-            let xml = slideXML(slide, slideIndex: n, images: &images)
+            let xml = slideXML(slide, slideIndex: n, images: &images, transition: entree)
             zip.add("ppt/slides/slide\(n).xml", xml: xml)
 
             var rels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout\" Target=\"../slideLayouts/slideLayout1.xml\"/>"
@@ -365,9 +366,47 @@ enum PptxBuilder {
         return zip.finalize()
     }
 
+    // MARK: transitions
+
+    /// L'élément `<p:transition>` qui rejoue dans PowerPoint la transition choisie au diaporama.
+    /// Il se place après `<p:clrMapOvr>`, comme l'exige l'ordre de `CT_Slide`. Chaque transition de
+    /// md Viewer a son équivalent natif, dans le sens « suivante » — c'est celui que PowerPoint
+    /// joue. Échelle, Retournement et Cube n'existent qu'à partir de PowerPoint 2010 (espace `p14`) : ils
+    /// passent par `mc:AlternateContent`, avec un fondu de repli pour les lecteurs qui ne les
+    /// connaissent pas — Keynote compris, qui importe alors un fondu plutôt qu'un fichier refusé.
+    static func transitionXML(_ key: String?) -> String {
+        func t(_ vitesse: String, _ effet: String) -> String {
+            "<p:transition spd=\"\(vitesse)\">\(effet)</p:transition>"
+        }
+        func p14(_ vitesse: String, _ effet: String) -> String {
+            "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\">"
+            + "<mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\">"
+            + t(vitesse, effet) + "</mc:Choice><mc:Fallback>" + t(vitesse, "<p:fade/>")
+            + "</mc:Fallback></mc:AlternateContent>"
+        }
+        switch key {
+        case "dissolve": return t("fast", "<p:fade/>")
+        case "push":     return t("med", "<p:push dir=\"l\"/>")
+        case "movein":   return t("fast", "<p:cover dir=\"l\"/>")
+        // `<p:zoom>` est l'ancienne « boîte » de PowerPoint, pas un zoom — vérifié en le lui
+        // faisant lire. Notre « Échelle » est son « Fly Through » : la courante grandit et
+        // s'efface, la suivante arrive de plus petit.
+        case "scale":    return p14("fast", "<p14:flythrough hasBounce=\"0\"/>")
+        case "flip":     return p14("med", "<p14:flip dir=\"l\"/>")
+        case "wipe":     return t("med", "<p:wipe dir=\"l\"/>")
+        case "reveal":   return t("fast", "<p:pull dir=\"l\"/>")
+        case "cube":     return p14("med", "<p14:prism dir=\"l\"/>")
+        case "iris":     return t("med", "<p:circle/>")
+        case "black":    return t("slow", "<p:fade thruBlk=\"1\"/>")
+        case "checker":  return t("slow", "<p:checker dir=\"horz\"/>")
+        default:         return ""
+        }
+    }
+
     // MARK: per-slide layout
 
-    private static func slideXML(_ slide: PptxSlide, slideIndex: Int, images: inout [(name: String, img: OOXMLImage)]) -> String {
+    private static func slideXML(_ slide: PptxSlide, slideIndex: Int, images: inout [(name: String, img: OOXMLImage)],
+                                 transition: String = "") -> String {
         var id = 1
         func nextId() -> Int { id += 1; return id }
         var shapes = ""
@@ -446,7 +485,7 @@ enum PptxBuilder {
         <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
         <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>\
         <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>\
-        \(shapes)</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr></p:sld>
+        \(shapes)</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:clrMapOvr>\(transition)</p:sld>
         """
     }
 
@@ -724,7 +763,7 @@ enum OOXMLExportBridge {
                 let blocks = ((s["blocks"] as? [[String: Any]]) ?? []).compactMap { block($0, imgs) }
                 return PptxSlide(title: runs(s["title"]), blocks: blocks)
             }
-            completion(PptxBuilder.build(slides: slides))
+            completion(PptxBuilder.build(slides: slides, transition: model["transition"] as? String))
         }
     }
 }

@@ -682,7 +682,10 @@
         });
       });
     });
-    return chain.then(function () { try { document.body.removeChild(tmp); } catch (e) {} return { slides: out }; });
+    // La transition choisie voyage avec le modèle : le PowerPoint la rejoue sur chaque
+    // diapositive. C'est le choix du présentateur, pas l'éventuel fondu de « Réduire les
+    // animations » — ce réglage-là appartient à l'appareil qui projettera le fichier.
+    return chain.then(function () { try { document.body.removeChild(tmp); } catch (e) {} return { slides: out, transition: transition }; });
   }
 
   function openMenu()  { var m = el('presentMenu'); if (m) { m.hidden = false; syncMenu(); } }
