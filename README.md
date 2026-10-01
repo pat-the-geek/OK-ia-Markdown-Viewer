@@ -870,6 +870,14 @@ presque carré, régulier dans les deux dimensions, tenu comme un livre. C'est l
 premier — la colonne de lecture, l'interligne et les thèmes y comptent plus qu'ailleurs, et le
 sommaire peut y vivre à côté du texte sans le serrer.
 
+**Sur le Duo déplié, la présentation se construit sous les yeux, sans bloquer la lecture**
+(Patrick, 2026-10-01) : lancée depuis le rapport, la conversion remplit **l'autre partie de
+l'écran** — en bas en portrait, à droite en paysage —, diapositive après diapositive, pendant qu'on
+continue à lire le rapport ou qu'on regarde la présentation se former. Le moteur s'y prête : il
+travaille déjà section par section. Il faudra qu'il livre chaque diapositive dès qu'elle est
+prête, et que la conversion cesse d'être une feuille modale pour devenir la vue secondaire de
+l'arrangement.
+
 **Déplié, une ou deux parties, au choix** (Patrick, 2026-10-01) : le lecteur choisit simplement entre
 **une seule partie** — le document sur tout l'écran — et **deux parties**, l'une au-dessus de
 l'autre ou côte à côte. Pas de réglage plus fin que cela. C'est exactement ce que dessine
@@ -1068,7 +1076,23 @@ les nouvelles — cette entrée l'avait présumé à tort. Les traduire en trans
 (`<p:transition>` : fondu, poussée, balayage, découverte, cube, cercle, damier existent tous) est
 possible, mais reste à décider.
 
-#### Convertir un rapport en présentation, avec Apple Intelligence
+#### Convertir un rapport en présentation, avec Apple Intelligence — première version le 2026-10-01
+
+**Dans l'app** : menu Apple Intelligence du lecteur → « Convertir en présentation ». On choisit 5,
+10, 15, 20 ou 25 diapositives, ou un nombre libre (borné par ce que le rapport peut donner) ;
+l'avancement se suit section par section ; le résultat s'ouvre au diaporama, s'enregistre en
+`.md`, et dit ce qui a été laissé de côté. Le moteur, `Models/PresentationConverter.swift`, ne
+dépend que de Foundation, `NaturalLanguage` et `FoundationModels` : le banc le compile tel quel,
+et ce qu'il mesure est ce que l'app livre. L'écran est `Views/PresentationConverterView.swift`.
+
+**L'essai dans l'app a trouvé ce que le banc n'avait pas vu**, sur le rapport allemand de test :
+la consigne de langue, écrite en allemand, fuyait en puce (« Schreibe ausschließlich auf
+Deutsch ») puis en conclusion — elle est désormais une consigne marquée hors du texte, et les
+puces qui la recopient sont écartées ; une section presque sans prose se remplissait de puces
+creuses — elle montre maintenant son diagramme ; les titres que l'app écrit (« À retenir »)
+restaient en français — ils suivent la langue du rapport ; et la conclusion mélangeait les chiffres
+de deux diapositives — elle reçoit les diapositives comme des diapositives, avec la consigne de
+n'en combiner aucune, et ses constats qui recopient sont écartés.
 
 **Demandé le 2026-10-01.** Un geste qui transforme le rapport ouvert en diaporama md Viewer,
 calculé **sur l'appareil** par le modèle d'Apple Intelligence (`FoundationModels`, déjà employé

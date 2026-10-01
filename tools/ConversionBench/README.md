@@ -6,9 +6,13 @@ qui décident de son architecture. Il emploie **uniquement le modèle de l'appar
 exécuté sur les serveurs d'Apple, qui contredirait la promesse de l'app.
 
 ```bash
-swiftc -O tools/ConversionBench/main.swift -o build/conversion-bench
+swiftc -O OKiaMarkdownViewer/Models/PresentationConverter.swift tools/ConversionBench/main.swift \
+       -o build/conversion-bench
 build/conversion-bench <rapport.md> <nombre de diapositives> [sortie.md]
 ```
+
+**Depuis le 2026-10-01, le banc compile le moteur de l'app** (`PresentationConverter.swift`) au
+lieu d'en porter une copie : ce qu'il mesure est ce que l'app livre.
 
 ## Ce qu'il fait
 

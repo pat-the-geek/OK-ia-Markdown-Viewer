@@ -28,6 +28,11 @@ struct ReaderView: View {
     @State private var showTextSize = false
     @State private var showSummary = false
     @State private var showChat = false
+    /// Conversion en présentation (1.3). La présentation produite attend la fermeture de la
+    /// feuille avant de s'ouvrir au diaporama : deux présentations modales ne se chevauchent pas.
+    @State private var showConverter = false
+    @State private var presentationEnAttente: MarkdownDocument?
+    @State private var presentationConvertie: MarkdownDocument?
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     /// Thème de lecture (1.3), retenu comme la taille du texte. Clé d'un `ReaderTheme`.
@@ -143,6 +148,19 @@ struct ReaderView: View {
         .sheet(isPresented: $showChat) {
             DocumentChatView(sourceTitle: title.isEmpty ? document.filename : title,
                              sourceMarkdown: document.text)
+        }
+        .sheet(isPresented: $showConverter, onDismiss: {
+            if let d = presentationEnAttente { presentationEnAttente = nil; presentationConvertie = d }
+        }) {
+            PresentationConverterView(document: document,
+                                      titreAffiche: title.isEmpty ? document.filename : title) { d in
+                presentationEnAttente = d
+            }
+        }
+        // La présentation convertie est un document neuf, dans la langue du rapport : rien à
+        // hériter de la traduction du lecteur.
+        .fullScreenCover(item: $presentationConvertie) { d in
+            PresentationView(document: d, memoireHeritee: [:], langueSource: nil, traduire: false)
         }
 #if !targetEnvironment(macCatalyst)
         .sheet(item: $externalLink) { link in
@@ -452,6 +470,9 @@ struct ReaderView: View {
                     }
                     Button { showChat = true } label: {
                         Label(tr("Discuter avec le document"), systemImage: "text.bubble")
+                    }
+                    Button { showConverter = true } label: {
+                        Label(tr("Convertir en présentation"), systemImage: "rectangle.on.rectangle.angled")
                     }
                 } label: {
                     AppleIntelligenceGlyph(size: 18)
