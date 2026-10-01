@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (43)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (44)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec l'Xcode **stable** (27.0) : le script
 > refuse d'envoyer depuis une bêta.
@@ -30,7 +30,60 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (43)
+## What to Test — 1.3 (44)
+
+```
+Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
+
+NOUVEAU — CONVERTIR UN RAPPORT EN PRÉSENTATION (Apple Intelligence)
+Ouvrez un rapport, puis bouton Apple Intelligence du lecteur → « Convertir en présentation ».
+• Choisissez 5, 10, 15, 20 ou 25 diapositives, ou « Autre ». La présentation doit
+  compter exactement ce nombre.
+• Suivez l'avancement : la liste des diapositives prêtes doit s'allonger au fur
+  et à mesure, titre et plan d'abord. Puis « Lancer le diaporama ».
+• Vérifiez les chiffres : chacun doit se retrouver dans le rapport. Signalez tout
+  chiffre ou tout nom qui n'y figure pas.
+• Les diagrammes et la carte du rapport doivent être repris tels quels.
+• La présentation garde la langue du rapport : essayez un rapport en anglais ou en
+  allemand.
+• « Laissé de côté » doit dire honnêtement ce qui manque, surtout à 5 diapositives.
+• « Enregistrer le fichier .md » : le fichier doit s'ouvrir dans md Viewer.
+• Dites-nous combien de temps a pris la conversion, et sur quel appareil.
+• Nécessite un appareil compatible Apple Intelligence ; tout se calcule sur
+  l'appareil.
+
+
+NOUVEAU — SIX TRANSITIONS DE PLUS AU DIAPORAMA
+Ouvrez un document découpé en diapositives par des lignes --- (par exemple une
+présentation exportée de fornews.ai) et lancez le diaporama (bouton ▶).
+• Menu du diaporama → Transition : Balayage, Découverte, Cube, Iris, Fondu au noir
+  et Damier s'ajoutent aux cinq existantes.
+• Essayez chacune en avançant ET en reculant : la plupart changent de sens.
+• Damier (refait dans ce build) : la diapositive se découpe en cases qui pivotent
+  une à une, au hasard, pour découvrir la suivante.
+• Aucune trace ne doit rester à l'écran après une transition, et les cartes et
+  diagrammes doivent rester à leur place, même après Cube et Damier.
+• Dites-nous si l'une d'elles saccade, et sur quel appareil.
+• Réglages de l'appareil → Accessibilité → Mouvement → Réduire les animations :
+  toutes les transitions doivent alors devenir un simple fondu.
+
+NOUVEAU — LES TRANSITIONS DANS L'EXPORT POWERPOINT
+• Choisissez une transition, puis Menu du diaporama → Exporter en PowerPoint.
+• Ouvrez le fichier dans PowerPoint : chaque diapositive doit porter la transition
+  choisie (onglet Transitions).
+• Le Damier devient dans PowerPoint le « Scintillement » en losanges, son plus
+  proche parent.
+• Ouvrez-le aussi dans Keynote et dites-nous ce qu'il en reste : l'Échelle, le
+  Retournement, le Cube et le Damier y prévoient un repli, au cas où.
+
+NOUVEAU — LES THÈMES DE LECTURE
+• Bouton « Aa » du lecteur : OK-ia, Administratif, Éditorial, Lecture longue,
+  Contraste élevé. Essayez-les en clair et en sombre.
+• Exportez en PDF depuis un autre thème que OK-ia : le PDF doit rester aux
+  couleurs OK-ia.
+```
+
+## What to Test — 1.3 (43) — archive
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
