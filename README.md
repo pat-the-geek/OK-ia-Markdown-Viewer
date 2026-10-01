@@ -865,6 +865,18 @@ pour 27 » ne veut pas dire « réservée à 27 » ; relever la cible couperait 
 et la 1.2 en a déjà coupé. Rien de ce qui est listé ci-dessous n'impose de la relever tant que les
 nouvelles interfaces restent derrière `if #available`.
 
+**Déplié à la verticale, le Duo fait un lecteur remarquable** (Patrick, 2026-10-01) : un écran
+presque carré, régulier dans les deux dimensions, tenu comme un livre. C'est l'usage à soigner en
+premier — la colonne de lecture, l'interligne et les thèmes y comptent plus qu'ailleurs, et le
+sommaire peut y vivre à côté du texte sans le serrer.
+
+**Une orientation par usage** (décidé par Patrick le 2026-10-01) : **les rapports se lisent à la
+verticale**, plié ou déplié ; **les présentations se donnent à l'horizontale**, plié ou déplié.
+C'est déjà ce que fait le diaporama sur iPhone, mais il le décide d'après l'idiome « téléphone »
+(`requestLandscapeIfPhone`), ce qu'Apple déconseille et que le Duo déplié rend faux : la règle
+devra s'appuyer sur l'usage — le diaporama demande le paysage — et non sur le type d'appareil. Les
+captures et les essais du Duo suivront le même partage : lecteur en portrait, diaporama en paysage.
+
 **L'appareil se plie et porte deux écrans** (confirmé par Patrick le 2026-09-11) : un écran
 extérieur, replié, et un écran intérieur, déplié. Restent à établir leurs dimensions et leurs
 rapports, et la façon dont le système passe l'app de l'un à l'autre — au simulateur, avec Xcode 27.
@@ -955,7 +967,24 @@ iPhone Duo*, *Raise the bar with iPhone Duo*). Ce qui suit dit ce que chaque not
   un « téléphone » dont l'écran n'aura rien d'un téléphone. Même vigilance pour `UIScreen.main`,
   qu'on n'emploie nulle part — c'est à vérifier à chaque ajout, pas une fois.
 
-#### Thèmes de lecture
+#### Thèmes de lecture — réalisés le 2026-10-01
+
+**Ce qui est en place.** Les cinq thèmes ci-dessous, chacun en clair et en sombre, se choisissent
+dans le menu « Aa » du lecteur, au-dessus de la taille du texte — décidé avec Patrick, pour ne pas
+ajouter de neuvième bouton. Le choix est retenu (`okia.readerTheme`) et posé **avant** chaque
+rendu, sans quoi la page clignoterait un instant aux couleurs OK-ia.
+
+- `style.css` : tout ce qu'un thème change passe par des jetons (`--accent`, `--font-body`,
+  `--font-heading`, `--heading-weight`, `--line-height`, `--text-size`, `--th-bg`, `--zebra`,
+  `--quote-*`…), et chaque thème les redéfinit sous `html[data-okia-theme="…"]`. Vérifié dans
+  le navigateur, page témoin contre page modifiée : sans thème choisi, **aucune différence** de
+  style calculé, en clair (144 comparaisons) comme en sombre (52).
+- Toutes les règles de thème vivent dans `@media screen` — vérifié règle par règle : le PDF, qui
+  s'imprime depuis la même page, garde la charte OK-ia. Word et PowerPoint ne lisent pas la
+  feuille. Le diaporama garde ses propres thèmes.
+- `render.js` : `OKIA.setTheme(clé)` ; une clé inconnue retombe sur OK-ia.
+- `Models/ReaderTheme.swift` : les clés, les noms dans les cinq langues, et les couleurs des
+  vignettes du menu — ⚠️ à garder en accord avec `style.css`.
 
 **Demandé le 2026-09-20.** Le lecteur doit offrir **cinq thèmes adaptés aux rapports**, dont le
 **thème OK-ia** — la charte du site, aujourd'hui seul habillage possible.
@@ -998,6 +1027,69 @@ gardent la charte OK-ia quel que soit le thème de lecture : ce qui sort de l'ap
 transmis, pas l'écran de son auteur. Le thème regarde celui qui lit ; le destinataire, lui, reçoit
 un document qui ne dépend pas d'un réglage qu'il n'a pas choisi. C'est aussi ce qui garde une
 identité constante aux rapports produits avec md Viewer.
+
+#### Cinq nouvelles transitions pour le diaporama
+
+**Demandé le 2026-10-01** : cinq transitions **classiques** de plus. Le diaporama en a déjà cinq —
+Fondu, Poussée, Entrée, Échelle, Retournement 3D (`TRANSITIONS` dans `presentation.js`). Les
+candidates, choisies pour ne doubler aucune des cinq existantes, à valider avec Patrick :
+
+| Transition | Ce qu'on voit |
+|---|---|
+| **Balayage** | La nouvelle diapositive se dévoile par un bord, comme un rideau qu'on tire. |
+| **Découverte** | L'inverse d'« Entrée » : la diapositive courante s'écarte et révèle la suivante, restée en place. |
+| **Cube** | Les deux diapositives sont deux faces d'un cube qui pivote. |
+| **Iris** | La suivante s'ouvre en cercle depuis le centre. |
+| **Fondu au noir** | La diapositive s'efface vers le noir, puis la suivante en émerge. |
+
+Toutes en CSS, comme les cinq actuelles : aucune dépendance, et `prefers-reduced-motion` doit
+continuer de les remplacer par un simple fondu. À vérifier aussi : l'export PowerPoint, qui
+reprend la transition choisie — ses transitions natives couvrent Balayage, Découverte, Cube et
+Fondu au noir ; l'Iris a son équivalent « cercle ».
+
+#### Convertir un rapport en présentation, avec Apple Intelligence
+
+**Demandé le 2026-10-01.** Un geste qui transforme le rapport ouvert en diaporama md Viewer,
+calculé **sur l'appareil** par le modèle d'Apple Intelligence (`FoundationModels`, déjà employé
+par le résumé et la discussion). Rien ne part sur le réseau, comme le reste de l'app.
+
+**Le prompt de Patrick**, écrit pour un assistant en ligne, est la référence de ce qu'on attend :
+
+```
+Transforme le document ci-joint en présentation pour md Viewer, en Markdown :
+
+- Première diapositive : le titre (#) et une phrase qui dit l'essentiel.
+- Sépare les diapositives par une ligne --- seule, avec une ligne vide avant et après.
+- Chaque diapositive suivante a un titre (##) et porte une seule idée.
+- Deuxième diapositive : le plan, en liste numérotée.
+- Au plus 5 puces par diapositive, de 12 mots au plus ; pas de longs paragraphes.
+- Quand une idée s'y prête, montre-la plutôt que de l'écrire : un diagramme dans un bloc
+  ```mermaid (8 éléments au plus), un tableau de 5 lignes au plus, ou un encadré > [!tip] ou
+  > [!warning].
+- Pour des lieux, une diapositive avec une carte dans un bloc ```leaflet : une ligne
+  id: nom-de-la-carte, puis une ligne par lieu au format marker: latitude, longitude, [[Nom du lieu]].
+- Garde exacts les chiffres, les noms et les citations du document ; n'invente rien.
+- Termine par une diapositive « À retenir » (3 points), puis « Sources » si le document en cite.
+- Vise 10 à 15 diapositives pour un document d'une dizaine de pages.
+- Donne toute la présentation dans un seul bloc Markdown, que je puisse enregistrer en fichier .md.
+  Après le bloc, dis en une phrase ce que tu as laissé de côté.
+```
+
+**Ce que l'appareil change à ce prompt**, et qu'il faudra éprouver avant de promettre quoi que ce
+soit :
+
+- **La longueur.** Le modèle de l'appareil a une fenêtre de contexte courte ; un rapport d'une
+  dizaine de pages n'y tient pas d'un bloc. Il faudra procéder par sections — un plan d'abord, puis
+  une ou deux diapositives par section — et assembler.
+- **La forme, garantie par l'app plutôt que demandée au modèle.** La génération guidée de
+  `FoundationModels` (`@Generable`) peut rendre des diapositives structurées — titre, puces,
+  tableau — que l'app écrit ensuite en Markdown. Les séparateurs `---`, les niveaux de titre et la
+  limite de cinq puces deviennent alors des certitudes, pas des consignes.
+- **« N'invente rien » vaut d'abord pour les cartes.** Un petit modèle qui écrit des latitudes les
+  invente. Les cartes et les diagrammes déjà présents dans le rapport doivent être **repris tels
+  quels** ; en créer de nouveaux reste à éprouver, et sans doute à exclure pour les cartes.
+- **Les chiffres, les noms et les citations** se vérifient : chaque nombre de la présentation doit
+  se retrouver dans le rapport, ce que l'app peut contrôler avant d'afficher le résultat.
 
 **Côté magasin** : deux écrans, c'est probablement deux gabarits de capture à fournir dans App
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
