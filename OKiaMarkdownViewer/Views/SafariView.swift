@@ -18,7 +18,8 @@ struct SafariView: UIViewControllerRepresentable {
         let config = SFSafariViewController.Configuration()
         config.entersReaderIfAvailable = false
         let controller = SFSafariViewController(url: url, configuration: config)
-        controller.preferredControlTintColor = UIColor(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255, alpha: 1)
+        // Pas de teinte orange : dépréciée depuis iOS 26, elle se bat avec les fonds que le
+        // système dessine derrière les commandes.
         return controller
     }
 

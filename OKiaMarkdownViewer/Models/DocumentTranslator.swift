@@ -471,7 +471,7 @@ extension DocumentTranslator {
         for k in 0..<max(0, out.count - 1) {
             let courantProtege = proteges.contains(out[k].i)
             let suivantProtege = proteges.contains(out[k + 1].i)
-            guard let premier = out[k + 1].texte.first else { continue }
+            guard !out[k + 1].texte.isEmpty else { continue }
 
             // 2. « Juni  . » → « Juni. »
             if !courantProtege, out[k].texte.last?.isWhitespace == true,

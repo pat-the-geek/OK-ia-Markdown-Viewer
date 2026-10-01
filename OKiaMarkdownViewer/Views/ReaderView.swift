@@ -166,7 +166,10 @@ struct ReaderView: View {
             }
         }
         .onChange(of: fontScale) { _, v in web.setFontScale(v) }
-        .task {
+        // `[web]` est explicite : la tâche tient le contrôleur le temps de s'exécuter — il le
+        // faut bien pour former les captures `[weak web]` ci-dessous —, et Swift 27 demande
+        // qu'on le dise. Les fermetures confiées au traducteur, elles, restent faibles.
+        .task { [web] in
             web.setFontScale(fontScale)
             // Chaque bloc traduit se réécrit dès qu'il arrive : le document se traduit
             // sous les yeux du lecteur au lieu d'apparaître d'un coup après l'attente.
