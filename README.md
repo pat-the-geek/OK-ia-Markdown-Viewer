@@ -1119,6 +1119,14 @@ Comment le tenir, puisque l'app assemble elle-même la présentation :
 - **La phrase « ce que j'ai laissé de côté »** devient plus précieuse à mesure que le nombre baisse :
   l'app la montre à côté du résultat, section par section.
 
+**Banc d'essai fait le 2026-10-01** — [`tools/ConversionBench`](tools/ConversionBench/README.md),
+sur un rapport fornews réel de 37 000 caractères et sur les rapports de test allemand et italien.
+Résultat : fenêtre de contexte de **8 192 jetons** sous macOS 27, nombre de diapositives **toujours
+exact** grâce au schéma, **12 s pour 5 diapositives, 25 s pour 10, 42 à 50 s pour 20**, **aucun
+nombre inventé**, langue du rapport tenue. Le détail, et les neuf corrections que l'app devra
+reprendre, sont dans le README du banc. La présentation garde **la langue du rapport** : la
+traduire relève de la traduction de la 1.2, qui fonctionne aussi au diaporama.
+
 **Ce que l'appareil change à ce prompt**, et qu'il faudra éprouver avant de promettre quoi que ce
 soit :
 
