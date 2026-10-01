@@ -119,6 +119,28 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   100% { opacity: 0; }
 }
 
+/* Damier : une grille de cartes posée sur les deux diapositives le temps de la transition.
+   Chaque carte porte deux faces, la courante devant, la suivante au dos ; le noir se voit
+   entre les cases quand elles sont de chant. */
+.damier {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  pointer-events: none;
+}
+.damier-case {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+.damier-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 /* Slides stack; transitions are driven inline by JS (transform + opacity), so no
    base CSS transition here. Only the active slide is shown (and interactive). */
 .slide {

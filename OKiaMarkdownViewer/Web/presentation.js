@@ -173,35 +173,88 @@
     black: { dur: 900, ease: 'linear', throughBlack: true,
       enter: function () { return { t: '', o: 0 }; },
       leave: function () { return { t: '', o: 0 }; } },
-    // Damier — chaque case se balaie dans le sens de la marche : une case sur deux d'abord,
-    // puis les autres. Trois temps, qu'une transition CSS à deux bornes ne sait pas dire :
-    // il passe par l'API d'animation (`keyframes`).
-    checker: { dur: 900, ease: 'ease-in-out', incomingOnTop: true,
+    // Damier — la diapositive se découpe en cases, en lignes et en colonnes ; chacune pivote à
+    // son tour, dans un ordre tiré au hasard, et montre au dos sa part de la suivante. Demandé
+    // ainsi par Patrick : le premier damier, un balayage case par case, ne tournait rien.
+    checker: { dur: 1600, ease: 'ease-in-out', cases: true,
       enter: function () { return { t: '', o: 1 }; },
-      keyframes: function (d) { return [damier(d, 0, 0), damier(d, 1, 0), damier(d, 1, 1)]; },
       leave: function () { return { t: '', o: 1 }; } }
   };
 
-  // Le damier en un seul polygone : chaque case est un rectangle de largeur `fa` ou `fb`
-  // (cases paires ou impaires), reliées par une « épine » qui longe le bord haut de chaque
-  // rangée puis le bord gauche de l'écran. Toute l'épine est parcourue à l'aller et au
-  // retour : elle n'enferme aucune surface. Chaque image clé a le même nombre de points,
-  // condition pour que le navigateur interpole de l'une à l'autre.
-  var DAMIER_COLS = 8, DAMIER_ROWS = 6;
-  function damier(d, fa, fb) {
-    var cw = 100 / DAMIER_COLS, rh = 100 / DAMIER_ROWS, pts = [];
-    var pt = function (x, y) { pts.push(x.toFixed(3) + '% ' + y.toFixed(3) + '%'); };
-    for (var r = 0; r < DAMIER_ROWS; r++) {
-      var y0 = r * rh, y1 = y0 + rh;
-      pt(0, y0);
-      for (var c = 0; c < DAMIER_COLS; c++) {
-        var f = (r + c) % 2 === 0 ? fa : fb, x0 = c * cw, x1 = x0 + cw;
-        var xs = d > 0 ? x0 : x1 - f * cw, xe = d > 0 ? x0 + f * cw : x1;
-        pt(xs, y0); pt(xe, y0); pt(xe, y1); pt(xs, y1); pt(xs, y0);
-      }
-      pt(0, y0);
+  // Chaque case est une carte à deux faces ; chaque face porte une copie de la diapositive,
+  // décalée pour n'en laisser voir que sa part. Quatre cases sur le petit côté de l'écran, et
+  // ce qu'il faut sur le grand pour qu'elles restent carrées : 4 × 7 en 16:9, soit 56 copies le
+  // temps d'une transition — davantage pèserait sur un iPhone quand la diapositive porte une
+  // carte ou un grand diagramme.
+  var DAMIER_PETIT_COTE = 4, DAMIER_TOUR = 560;
+  var damierEl = null;
+
+  function retirerDamier() {
+    if (damierEl) { damierEl.remove(); damierEl = null; }
+  }
+
+  // Le fond des faces : celui du thème, sans quoi une case laisserait voir ce qui est dessous —
+  // les diapositives sont transparentes sur le fond de la page.
+  function fondDesCases() {
+    var c = getComputedStyle(deck).backgroundColor;
+    if (!c || c === 'transparent' || c === 'rgba(0, 0, 0, 0)') c = getComputedStyle(document.body).backgroundColor;
+    return c;
+  }
+
+  function faceDeCase(slide, x, y, w, h, fond, dos) {
+    var f = document.createElement('div');
+    f.className = 'damier-face';
+    f.style.background = fond;
+    if (dos) f.style.transform = dos;
+    var copie = slide.cloneNode(true);
+    copie.removeAttribute('id');
+    copie.classList.add('active');
+    copie.style.cssText = 'inset:auto;left:' + (-x) + 'px;top:' + (-y) + 'px;width:' + w + 'px;height:' + h + 'px;'
+      + 'opacity:1;transform:none;transition:none;clip-path:none;z-index:auto;pointer-events:none';
+    f.appendChild(copie);
+    return f;
+  }
+
+  function lancerDamier(fromEl, toEl, dur) {
+    var w = deck.clientWidth, h = deck.clientHeight;
+    var cote = Math.min(w, h) / DAMIER_PETIT_COTE;
+    var colonnes = Math.max(1, Math.round(w / cote)), rangees = Math.max(1, Math.round(h / cote));
+    var n = colonnes * rangees, fond = fondDesCases();
+    // L'ordre de passage, tiré au hasard (Fisher-Yates).
+    var ordre = [];
+    for (var i = 0; i < n; i++) ordre.push(i);
+    for (var j = n - 1; j > 0; j--) {
+      var k = Math.floor(Math.random() * (j + 1)), tmp = ordre[j]; ordre[j] = ordre[k]; ordre[k] = tmp;
     }
-    return 'polygon(' + pts.join(', ') + ')';
+    var grille = document.createElement('div');
+    grille.className = 'damier';
+    var cartes = [], fins = [];
+    for (var r = 0; r < rangees; r++) {
+      for (var c = 0; c < colonnes; c++) {
+        // Bords arrondis au pixel sur la grille : deux cases voisines se touchent sans jour.
+        var x = Math.round(c * w / colonnes), y = Math.round(r * h / rangees);
+        var cw = Math.round((c + 1) * w / colonnes) - x, ch = Math.round((r + 1) * h / rangees) - y;
+        // Chaque case tourne sur un axe et dans un sens tirés au hasard ; son dos est retourné
+        // sur le même axe, pour arriver à l'endroit.
+        var axe = Math.random() < 0.5 ? 'X' : 'Y', sens = Math.random() < 0.5 ? 1 : -1;
+        var p = 'perspective(' + Math.round(Math.max(cw, ch) * 4) + 'px) ';
+        var carte = document.createElement('div');
+        carte.className = 'damier-case';
+        carte.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + cw + 'px;height:' + ch + 'px;'
+          + 'transform:' + p + 'rotate' + axe + '(0deg)';
+        carte.appendChild(faceDeCase(fromEl, x, y, w, h, fond, ''));
+        carte.appendChild(faceDeCase(toEl, x, y, w, h, fond, 'rotate' + axe + '(180deg)'));
+        var delai = n > 1 ? Math.round(ordre[cartes.length] / (n - 1) * (dur - DAMIER_TOUR)) : 0;
+        carte.style.transition = 'transform ' + DAMIER_TOUR + 'ms cubic-bezier(.45,0,.25,1) ' + delai + 'ms';
+        cartes.push(carte);
+        fins.push(p + 'rotate' + axe + '(' + (sens * 180) + 'deg)');
+        grille.appendChild(carte);
+      }
+    }
+    deck.appendChild(grille);
+    damierEl = grille;
+    void grille.offsetWidth;                     // l'état de départ, posé avant de tourner
+    cartes.forEach(function (carte, i) { carte.style.transform = fins[i]; });
   }
 
   // Moins d'animation quand l'appareil le demande : toute transition devient un fondu. Le
@@ -210,7 +263,6 @@
     var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     return reduit ? SPECS.dissolve : (SPECS[transition] || SPECS.dissolve);
   }
-  var currentAnim = null;
   var transition = 'dissolve';
   var animating = false, animTimer = null;
 
@@ -476,7 +528,7 @@
   // End any in-flight animation immediately, leaving only `keepEl` visible.
   function finishPending(keepEl) {
     if (animTimer) { clearTimeout(animTimer); animTimer = null; }
-    if (currentAnim) { currentAnim.cancel(); currentAnim = null; }
+    retirerDamier();
     deck.classList.remove('deck-noir');
     sections.forEach(function (s) {
       if (s !== keepEl) { s.classList.remove('active'); clearAnim(s); }
@@ -535,7 +587,10 @@
         return p + ' ' + ms + 'ms ' + spec.ease + (delay ? ' ' + delay + 'ms' : '');
       }).join(', ');
     };
-    if (spec.throughBlack) {
+    if (spec.cases) {
+      // Les cases couvrent tout ; les deux diapositives restent immobiles dessous.
+      lancerDamier(fromEl, toEl, dur);
+    } else if (spec.throughBlack) {
       // Le voile fait le fondu ; les diapositives s'échangent d'un coup à mi-course, dessous.
       deck.style.setProperty('--noir-dur', dur + 'ms');
       deck.classList.add('deck-noir');
@@ -550,15 +605,9 @@
     var l = spec.leave(dir);
     fromEl.style.transform = l.t; fromEl.style.opacity = l.o;
 
-    if (spec.keyframes && toEl.animate) {
-      currentAnim = toEl.animate(spec.keyframes(dir).map(function (c) {
-        return { clipPath: c, easing: spec.ease };
-      }), { duration: dur, fill: 'forwards' });
-    }
-
     animTimer = setTimeout(function () {
       animTimer = null;
-      if (currentAnim) { currentAnim.cancel(); currentAnim = null; }
+      retirerDamier();
       fromEl.classList.remove('active');
       clearAnim(fromEl);
       clearAnim(toEl);

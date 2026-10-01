@@ -1056,11 +1056,17 @@ sixième, le **damier**. Le diaporama en compte désormais **onze** (`TRANSITION
 | **Cube** | Deux faces qui pivotent autour de leur arête commune. | Chaque face tourne autour du bord partagé (`origin`), avec perspective. |
 | **Iris** | La suivante s'ouvre en cercle depuis le centre. | Découpe `circle()` animée. |
 | **Fondu au noir** | La diapositive s'efface vers le noir, la suivante en émerge. | Un voile noir monte puis redescend (`.deck-noir`) ; les diapositives s'échangent à mi-course, dessous. Les fondre elles-mêmes ne marchait pas : transparentes sur le fond du thème, celui-ci aurait basculé d'un coup au noir. |
-| **Damier** | Une case sur deux se balaie, puis les autres. | Trois temps qu'une transition CSS à deux bornes ne sait pas dire : l'API d'animation, sur un seul polygone de 8 × 6 cases. |
+| **Damier** | La diapositive se découpe en cases, en lignes et en colonnes ; chacune pivote à son tour, dans un ordre tiré au hasard, et montre au dos sa part de la suivante. | Une grille de cartes à deux faces posée le temps de la transition (`.damier`) ; chaque face porte une copie de la diapositive, décalée sur sa case. Quatre cases sur le petit côté, carrées : 4 × 7 en 16:9. Axe (horizontal ou vertical) et sens tirés au hasard pour chaque case ; du noir entre les cases quand elles sont de chant. |
 
 Le moteur (`runTransition`) a été étendu pour cela, sans changer les cinq transitions existantes :
 découpe (`c` / `clipEnd`), origine de rotation, premier plan pour la diapositive sortante, voile,
-images clés.
+grille de cases.
+
+**Le damier refait le 2026-10-01, à la demande de Patrick** : la première version balayait une
+case sur deux puis les autres, sans rien faire tourner. Il doit découper la diapositive en lignes
+et en colonnes et faire pivoter les cases au hasard pour découvrir la suivante — c'est ce qu'il
+fait désormais. Vérifié dans le navigateur, saisi à mi-course : cases retournées, cases de chant et
+cases encore intactes se côtoient, et la diapositive suivante est seule à l'écran à la fin.
 
 **Nouveau aussi : le réglage « Réduire les animations » est respecté.** Toute transition devient
 alors un simple fondu — le cube et le damier sont précisément ce que ce réglage veut éviter.
@@ -1071,10 +1077,15 @@ l'était pas.
 montrent l'effet attendu, puis ne laissent qu'une diapositive active et aucun style résiduel ; les
 18 vérifications du diaporama passent toujours.
 
-**Rectification sur l'export PowerPoint** : il ne reprend **aucune** transition, ni les anciennes ni
-les nouvelles — cette entrée l'avait présumé à tort. Les traduire en transitions PowerPoint natives
-(`<p:transition>` : fondu, poussée, balayage, découverte, cube, cercle, damier existent tous) est
-possible, mais reste à décider.
+**L'export PowerPoint reprend la transition — réalisé le 2026-10-01.** Une première version de
+cette entrée le présumait à tort ; c'est désormais fait (`OOXMLExport.transitionXML`). Chaque
+diapositive porte un `<p:transition>` natif : fondu, poussée, couverture, balayage, découverte,
+cercle, fondu au noir. Échelle, Retournement, Cube et Damier n'existent qu'à partir de PowerPoint
+2010 (`p14` : Fly Through, Flip, Prism, Scintillement) et passent par `mc:AlternateContent`, avec
+un repli pour les lecteurs qui ne les connaissent pas. Le Damier n'a pas d'équivalent exact —
+PowerPoint n'a pas de cases carrées qui pivotent — : il devient le Scintillement en losanges, les
+plus proches, avec le damier classique en repli. Chaque fichier a été relu par PowerPoint lui-même
+(`entry effect` de la transition), qui y reconnaît bien l'effet voulu. Keynote reste à essayer.
 
 #### Convertir un rapport en présentation, avec Apple Intelligence — première version le 2026-10-01
 

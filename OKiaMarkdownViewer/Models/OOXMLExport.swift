@@ -371,17 +371,18 @@ enum PptxBuilder {
     /// L'élément `<p:transition>` qui rejoue dans PowerPoint la transition choisie au diaporama.
     /// Il se place après `<p:clrMapOvr>`, comme l'exige l'ordre de `CT_Slide`. Chaque transition de
     /// md Viewer a son équivalent natif, dans le sens « suivante » — c'est celui que PowerPoint
-    /// joue. Échelle, Retournement et Cube n'existent qu'à partir de PowerPoint 2010 (espace `p14`) : ils
-    /// passent par `mc:AlternateContent`, avec un fondu de repli pour les lecteurs qui ne les
-    /// connaissent pas — Keynote compris, qui importe alors un fondu plutôt qu'un fichier refusé.
+    /// joue. Échelle, Retournement, Cube et Damier n'existent qu'à partir de PowerPoint 2010 (espace
+    /// `p14`) : ils passent par `mc:AlternateContent`, avec un repli — un fondu, le damier classique
+    /// pour le Damier — pour les lecteurs qui ne les connaissent pas, Keynote compris, qui importe
+    /// alors le repli plutôt que de refuser le fichier.
     static func transitionXML(_ key: String?) -> String {
         func t(_ vitesse: String, _ effet: String) -> String {
             "<p:transition spd=\"\(vitesse)\">\(effet)</p:transition>"
         }
-        func p14(_ vitesse: String, _ effet: String) -> String {
+        func p14(_ vitesse: String, _ effet: String, repli: String = "<p:fade/>") -> String {
             "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\">"
             + "<mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\">"
-            + t(vitesse, effet) + "</mc:Choice><mc:Fallback>" + t(vitesse, "<p:fade/>")
+            + t(vitesse, effet) + "</mc:Choice><mc:Fallback>" + t(vitesse, repli)
             + "</mc:Fallback></mc:AlternateContent>"
         }
         switch key {
@@ -398,7 +399,11 @@ enum PptxBuilder {
         case "cube":     return p14("med", "<p14:prism dir=\"l\"/>")
         case "iris":     return t("med", "<p:circle/>")
         case "black":    return t("slow", "<p:fade thruBlk=\"1\"/>")
-        case "checker":  return t("slow", "<p:checker dir=\"horz\"/>")
+        // Notre damier fait pivoter des cases au hasard : PowerPoint n'a pas de cases carrées qui
+        // tournent, son « Scintillement » en losanges est le plus proche. Le damier classique,
+        // un balayage, reste le repli.
+        case "checker":  return p14("slow", "<p14:glitter dir=\"l\" pattern=\"diamond\"/>",
+                                    repli: "<p:checker dir=\"horz\"/>")
         default:         return ""
         }
     }
