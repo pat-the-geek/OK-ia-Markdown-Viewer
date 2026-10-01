@@ -56,6 +56,22 @@ die()  { printf '\033[31m✗ %s\033[0m\n' "$1" >&2; exit 1; }
 KEY_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
 [ -f "$KEY_FILE" ] || die "clé API introuvable : $KEY_FILE"
 
+# --- chaîne de compilation ---------------------------------------------------------
+# Depuis la 1.3, deux Xcode cohabitent : le stable, qui livre, et une bêta, qui sert à
+# développer pour l'iPhone Duo. Apple refuse tout binaire compilé par une bêta — on le
+# découvre sinon après l'envoi, par un courriel, pas avant. Le script dit donc lequel il
+# emploie, et refuse d'envoyer depuis une bêta ; `--no-upload` reste permis pour essayer.
+step "Chaîne de compilation"
+DEV_DIR="${DEVELOPER_DIR:-$(xcode-select -p)}"
+XCODE_VERSION="$(xcodebuild -version | sed -n 1p)"   # sed lit tout : `head` couperait le tube, et `pipefail` arrêterait le script sans un mot
+ok "$XCODE_VERSION — $DEV_DIR"
+if printf '%s' "$DEV_DIR" | grep -qi 'beta'; then
+  if [ "$UPLOAD" = 1 ]; then
+    die "Xcode bêta : Apple refuse ces binaires. Repasser sur l'Xcode stable (DEVELOPER_DIR ou xcode-select), ou lancer avec --no-upload."
+  fi
+  printf '  \033[33m!\033[0m Xcode bêta — essai local seulement, rien ne sera envoyé\n'
+fi
+
 # --- version -------------------------------------------------------------------------
 read_setting() { awk -F'"' -v k="$1:" '$0 ~ k {print $2; exit}' project.yml; }
 
