@@ -102,6 +102,22 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 .deck.deck-3d { perspective: 1800px; }
+/* Fondu au noir : un voile monte jusqu'au noir puis redescend, au-dessus des deux
+   diapositives qui s'échangent à mi-course. La durée vient du JS (`--noir-dur`). */
+.deck.deck-noir::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+  pointer-events: none;
+  animation: okia-noir var(--noir-dur, 900ms) ease-in-out both;
+}
+@keyframes okia-noir {
+  0%   { opacity: 0; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 /* Slides stack; transitions are driven inline by JS (transform + opacity), so no
    base CSS transition here. Only the active slide is shown (and interactive). */

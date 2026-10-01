@@ -29,6 +29,13 @@
     'Entrée':         { en: 'Move In', de: 'Einfahren', es: 'Entrada', it: 'Entrata' },
     'Échelle':        { en: 'Scale', de: 'Skalieren', es: 'Escala', it: 'Scala' },
     'Retournement 3D':{ en: '3D Flip', de: '3D-Drehung', es: 'Giro 3D', it: 'Ribaltamento 3D' },
+    'Balayage':       { en: 'Wipe', de: 'Wischen', es: 'Barrido', it: 'Tendina' },
+    'Découverte':     { en: 'Reveal', de: 'Aufdecken', es: 'Revelar', it: 'Rivela' },
+    'Cube':           { en: 'Cube', de: 'Würfel', es: 'Cubo', it: 'Cubo' },
+    'Iris':           { en: 'Iris', de: 'Iris', es: 'Iris', it: 'Iride' },
+    'Fondu au noir':  { en: 'Fade Through Black', de: 'Über Schwarz', es: 'Fundido a negro',
+                        it: 'Dissolvenza al nero' },
+    'Damier':         { en: 'Checkerboard', de: 'Schachbrett', es: 'Damero', it: 'Scacchiera' },
     // Thèmes
     'Clair':          { en: 'Light', de: 'Hell', es: 'Claro', it: 'Chiaro' },
     'Sombre':         { en: 'Dark', de: 'Dunkel', es: 'Oscuro', it: 'Scuro' },
@@ -103,15 +110,22 @@
   var rendered = [];                  // bool per slide
   var current = 0;
 
-  // Slide transitions — the 5 Keynote classics. Each spec returns the incoming
-  // slide's start state and the outgoing slide's end state (per direction d:
-  // +1 = forward / next, -1 = backward / prev).
+  // Slide transitions — onze classiques : les cinq de départ, puis cinq de plus et le damier,
+  // ajoutés en 1.3 à la demande de Patrick. Each spec returns the incoming slide's start state
+  // and the outgoing slide's end state (per direction d: +1 = forward / next, -1 = backward /
+  // prev). A state may carry `c`, a clip-path, for the transitions that cut rather than move.
   var TRANSITIONS = [
     { key: 'dissolve', label: TXT('Fondu') },
     { key: 'push',     label: TXT('Poussée') },
     { key: 'movein',   label: TXT('Entrée') },
     { key: 'scale',    label: TXT('Échelle') },
-    { key: 'flip',     label: TXT('Retournement 3D') }
+    { key: 'flip',     label: TXT('Retournement 3D') },
+    { key: 'wipe',     label: TXT('Balayage') },
+    { key: 'reveal',   label: TXT('Découverte') },
+    { key: 'cube',     label: TXT('Cube') },
+    { key: 'iris',     label: TXT('Iris') },
+    { key: 'black',    label: TXT('Fondu au noir') },
+    { key: 'checker',  label: TXT('Damier') }
   ];
   var SPECS = {
     dissolve: { dur: 450, ease: 'ease',
@@ -128,8 +142,75 @@
       leave: function () { return { t: 'scale(1.14)', o: 0 }; } },
     flip: { dur: 640, ease: 'cubic-bezier(.45,0,.25,1)', threeD: true,
       enter: function (d) { return { t: 'rotateY(' + (d * 90) + 'deg)', o: 0 }; },
-      leave: function (d) { return { t: 'rotateY(' + (-d * 90) + 'deg)', o: 0 }; } }
+      leave: function (d) { return { t: 'rotateY(' + (-d * 90) + 'deg)', o: 0 }; } },
+
+    // Balayage — la suivante se dévoile par un bord, du côté d'où elle arrive.
+    wipe: { dur: 600, ease: 'cubic-bezier(.4,0,.2,1)', incomingOnTop: true,
+      enter: function (d) { return { t: '', o: 1, c: d > 0 ? 'inset(0 0 0 100%)' : 'inset(0 100% 0 0)' }; },
+      clipEnd: 'inset(0 0 0 0)',
+      leave: function () { return { t: '', o: 1 }; } },
+    // Découverte — l'inverse d'« Entrée » : la diapositive courante s'écarte, dessus, et
+    // découvre la suivante restée en place.
+    reveal: { dur: 520, ease: 'cubic-bezier(.4,0,.2,1)', outgoingOnTop: true,
+      enter: function () { return { t: '', o: 1 }; },
+      leave: function (d) { return { t: 'translateX(' + (-d * 100) + '%)', o: 1 }; } },
+    // Cube — deux faces qui pivotent autour de leur arête commune. Chacune tourne autour du
+    // bord qu'elle partage avec l'autre, et cette arête glisse d'un côté de l'écran à l'autre.
+    cube: { dur: 720, ease: 'cubic-bezier(.45,0,.25,1)', threeD: true,
+      origin: function (d) { return d > 0 ? { to: '0% 50%', from: '100% 50%' }
+                                            : { to: '100% 50%', from: '0% 50%' }; },
+      enter: function (d) { return { t: 'translateX(' + (d * 100) + '%) rotateY(' + (d * 90) + 'deg)', o: 1 }; },
+      leave: function (d) { return { t: 'translateX(' + (-d * 100) + '%) rotateY(' + (-d * 90) + 'deg)', o: 1 }; } },
+    // Iris — la suivante s'ouvre en cercle depuis le centre. 75 % du rayon de référence
+    // couvre les coins de n'importe quel format d'écran.
+    iris: { dur: 650, ease: 'cubic-bezier(.4,0,.2,1)', incomingOnTop: true,
+      enter: function () { return { t: '', o: 1, c: 'circle(0% at 50% 50%)' }; },
+      clipEnd: 'circle(75% at 50% 50%)',
+      leave: function () { return { t: '', o: 1 }; } },
+    // Fondu au noir — un voile noir monte puis redescend (`.deck-noir`) ; les diapositives
+    // s'échangent à mi-course, sous le voile. Les fondre elles-mêmes ne marcherait pas : elles
+    // sont transparentes sur le fond du thème, qui basculerait d'un coup au noir.
+    black: { dur: 900, ease: 'linear', throughBlack: true,
+      enter: function () { return { t: '', o: 0 }; },
+      leave: function () { return { t: '', o: 0 }; } },
+    // Damier — chaque case se balaie dans le sens de la marche : une case sur deux d'abord,
+    // puis les autres. Trois temps, qu'une transition CSS à deux bornes ne sait pas dire :
+    // il passe par l'API d'animation (`keyframes`).
+    checker: { dur: 900, ease: 'ease-in-out', incomingOnTop: true,
+      enter: function () { return { t: '', o: 1 }; },
+      keyframes: function (d) { return [damier(d, 0, 0), damier(d, 1, 0), damier(d, 1, 1)]; },
+      leave: function () { return { t: '', o: 1 }; } }
   };
+
+  // Le damier en un seul polygone : chaque case est un rectangle de largeur `fa` ou `fb`
+  // (cases paires ou impaires), reliées par une « épine » qui longe le bord haut de chaque
+  // rangée puis le bord gauche de l'écran. Toute l'épine est parcourue à l'aller et au
+  // retour : elle n'enferme aucune surface. Chaque image clé a le même nombre de points,
+  // condition pour que le navigateur interpole de l'une à l'autre.
+  var DAMIER_COLS = 8, DAMIER_ROWS = 6;
+  function damier(d, fa, fb) {
+    var cw = 100 / DAMIER_COLS, rh = 100 / DAMIER_ROWS, pts = [];
+    var pt = function (x, y) { pts.push(x.toFixed(3) + '% ' + y.toFixed(3) + '%'); };
+    for (var r = 0; r < DAMIER_ROWS; r++) {
+      var y0 = r * rh, y1 = y0 + rh;
+      pt(0, y0);
+      for (var c = 0; c < DAMIER_COLS; c++) {
+        var f = (r + c) % 2 === 0 ? fa : fb, x0 = c * cw, x1 = x0 + cw;
+        var xs = d > 0 ? x0 : x1 - f * cw, xe = d > 0 ? x0 + f * cw : x1;
+        pt(xs, y0); pt(xe, y0); pt(xe, y1); pt(xs, y1); pt(xs, y0);
+      }
+      pt(0, y0);
+    }
+    return 'polygon(' + pts.join(', ') + ')';
+  }
+
+  // Moins d'animation quand l'appareil le demande : toute transition devient un fondu. Le
+  // cube et le damier, surtout, sont exactement ce que ce réglage veut éviter.
+  function transitionSpec() {
+    var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return reduit ? SPECS.dissolve : (SPECS[transition] || SPECS.dissolve);
+  }
+  var currentAnim = null;
   var transition = 'dissolve';
   var animating = false, animTimer = null;
 
@@ -388,11 +469,15 @@
     elm.style.transform = '';
     elm.style.opacity = '';
     elm.style.zIndex = '';
+    elm.style.clipPath = '';
+    elm.style.transformOrigin = '';
   }
 
   // End any in-flight animation immediately, leaving only `keepEl` visible.
   function finishPending(keepEl) {
     if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+    if (currentAnim) { currentAnim.cancel(); currentAnim = null; }
+    deck.classList.remove('deck-noir');
     sections.forEach(function (s) {
       if (s !== keepEl) { s.classList.remove('active'); clearAnim(s); }
     });
@@ -418,40 +503,67 @@
 
   function runTransition(fromEl, toEl, dir) {
     finishPending(fromEl);                       // settle any previous animation
-    var spec = SPECS[transition] || SPECS.dissolve;
+    var spec = transitionSpec();
     var dur = spec.dur;
     animating = true;
 
     deck.classList.toggle('deck-3d', !!spec.threeD);
 
-    // Both slides visible during the transition; incoming on top when needed.
+    // Both slides visible during the transition. On top: the incoming slide when it is the
+    // one that moves in, the outgoing one when it moves away to reveal the next (Découverte).
     toEl.classList.add('active');
-    toEl.style.zIndex = spec.incomingOnTop ? '3' : '2';
-    fromEl.style.zIndex = '1';
+    toEl.style.zIndex = spec.outgoingOnTop ? '2' : (spec.incomingOnTop ? '3' : '2');
+    fromEl.style.zIndex = spec.outgoingOnTop ? '3' : '1';
 
     // Initial states (no animation yet).
     toEl.style.transition = 'none';
     fromEl.style.transition = 'none';
+    if (spec.origin) {
+      var or = spec.origin(dir);
+      toEl.style.transformOrigin = or.to; fromEl.style.transformOrigin = or.from;
+    }
     var e = spec.enter(dir);
     toEl.style.transform = e.t; toEl.style.opacity = e.o;
+    toEl.style.clipPath = e.c || '';
     fromEl.style.transform = ''; fromEl.style.opacity = 1;
 
     // Force reflow so the start state is committed before we animate.
     void toEl.offsetWidth;
 
-    var tr = 'transform ' + dur + 'ms ' + spec.ease + ', opacity ' + dur + 'ms ' + spec.ease;
-    toEl.style.transition = tr;
-    fromEl.style.transition = tr;
+    var tr = function (ms, delay) {
+      return ['transform', 'opacity', 'clip-path'].map(function (p) {
+        return p + ' ' + ms + 'ms ' + spec.ease + (delay ? ' ' + delay + 'ms' : '');
+      }).join(', ');
+    };
+    if (spec.throughBlack) {
+      // Le voile fait le fondu ; les diapositives s'échangent d'un coup à mi-course, dessous.
+      deck.style.setProperty('--noir-dur', dur + 'ms');
+      deck.classList.add('deck-noir');
+      toEl.style.transition = tr(1, dur / 2);
+      fromEl.style.transition = tr(1, dur / 2);
+    } else {
+      toEl.style.transition = tr(dur);
+      fromEl.style.transition = tr(dur);
+    }
     toEl.style.transform = ''; toEl.style.opacity = 1;
+    if (e.c) toEl.style.clipPath = spec.clipEnd;
     var l = spec.leave(dir);
     fromEl.style.transform = l.t; fromEl.style.opacity = l.o;
 
+    if (spec.keyframes && toEl.animate) {
+      currentAnim = toEl.animate(spec.keyframes(dir).map(function (c) {
+        return { clipPath: c, easing: spec.ease };
+      }), { duration: dur, fill: 'forwards' });
+    }
+
     animTimer = setTimeout(function () {
       animTimer = null;
+      if (currentAnim) { currentAnim.cancel(); currentAnim = null; }
       fromEl.classList.remove('active');
       clearAnim(fromEl);
       clearAnim(toEl);
       deck.classList.remove('deck-3d');
+      deck.classList.remove('deck-noir');
       animating = false;
       // Re-fit now that the slide is settled at full size (re-measures maps).
       fitSlide(toEl);
