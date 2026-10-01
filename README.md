@@ -1075,6 +1075,29 @@ Transforme le document ci-joint en présentation pour md Viewer, en Markdown :
   Après le bloc, dis en une phrase ce que tu as laissé de côté.
 ```
 
+**Le nombre de diapositives se choisit** (Patrick, 2026-10-01) : 5, 10, 15, 20 ou 25, ou un
+nombre libre. La conversion tient ce nombre exactement, en répartissant intelligemment le
+contenu — c'est la consigne « Vise 10 à 15 diapositives » du prompt, rendue au lecteur.
+
+Comment le tenir, puisque l'app assemble elle-même la présentation :
+
+- **Les diapositives fixes d'abord.** Le titre, le plan, « À retenir » et « Sources » sont
+  décomptés du total ; le reste forme le budget du contenu. À 5 diapositives, il n'en reste que
+  deux ou trois : le plan disparaît (il serait aussi long que la présentation) et « Sources » se
+  replie en une ligne sous « À retenir ».
+- **Un budget par section, au prorata de son poids** — sa longueur, et ce qu'elle porte de chiffres,
+  de tableaux, de diagrammes. Une section trop légère pour sa propre diapositive fusionne avec sa
+  voisine ; une section lourde en reçoit plusieurs. Chaque appel au modèle reçoit son nombre exact.
+- **Moins de diapositives, c'est trier, pas tasser.** À 5, on garde l'essentiel et on le dit ; à 25,
+  on déplie les détails et l'on montre davantage — tableaux, diagrammes repris du rapport. La
+  limite de cinq puces par diapositive vaut à toutes les tailles : c'est le contenu qui s'adapte,
+  jamais la densité.
+- **Un nombre libre a des bornes.** Au-dessous de 5, ce n'est plus une présentation ; au-dessus du
+  nombre de sections utiles, on délaierait. Si le rapport est trop court pour le nombre demandé,
+  l'app le dit et propose le maximum qui a du sens, plutôt que de remplir.
+- **La phrase « ce que j'ai laissé de côté »** devient plus précieuse à mesure que le nombre baisse :
+  l'app la montre à côté du résultat, section par section.
+
 **Ce que l'appareil change à ce prompt**, et qu'il faudra éprouver avant de promettre quoi que ce
 soit :
 
