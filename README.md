@@ -870,6 +870,12 @@ presque carré, régulier dans les deux dimensions, tenu comme un livre. C'est l
 premier — la colonne de lecture, l'interligne et les thèmes y comptent plus qu'ailleurs, et le
 sommaire peut y vivre à côté du texte sans le serrer.
 
+**Déplié, une ou deux parties, au choix** (Patrick, 2026-10-01) : le lecteur choisit simplement entre
+**une seule partie** — le document sur tout l'écran — et **deux parties**, l'une au-dessus de
+l'autre ou côte à côte. Pas de réglage plus fin que cela. C'est exactement ce que dessine
+`ArrangementView` : un style `split` dont on contraint l'axe (`.split.axes(…)`), ou l'arrangement
+retiré pour laisser le document seul.
+
 **Une orientation par usage** (décidé par Patrick le 2026-10-01) : **les rapports se lisent à la
 verticale**, plié ou déplié ; **les présentations se donnent à l'horizontale**, plié ou déplié.
 C'est déjà ce que fait le diaporama sur iPhone, mais il le décide d'après l'idiome « téléphone »
@@ -1028,24 +1034,39 @@ transmis, pas l'écran de son auteur. Le thème regarde celui qui lit ; le desti
 un document qui ne dépend pas d'un réglage qu'il n'a pas choisi. C'est aussi ce qui garde une
 identité constante aux rapports produits avec md Viewer.
 
-#### Cinq nouvelles transitions pour le diaporama
+#### Six nouvelles transitions pour le diaporama — réalisées le 2026-10-01
 
-**Demandé le 2026-10-01** : cinq transitions **classiques** de plus. Le diaporama en a déjà cinq —
-Fondu, Poussée, Entrée, Échelle, Retournement 3D (`TRANSITIONS` dans `presentation.js`). Les
-candidates, choisies pour ne doubler aucune des cinq existantes, à valider avec Patrick :
+**Demandé le 2026-10-01** : cinq transitions classiques de plus, validées par Patrick, puis une
+sixième, le **damier**. Le diaporama en compte désormais **onze** (`TRANSITIONS` dans
+`presentation.js`) :
 
-| Transition | Ce qu'on voit |
-|---|---|
-| **Balayage** | La nouvelle diapositive se dévoile par un bord, comme un rideau qu'on tire. |
-| **Découverte** | L'inverse d'« Entrée » : la diapositive courante s'écarte et révèle la suivante, restée en place. |
-| **Cube** | Les deux diapositives sont deux faces d'un cube qui pivote. |
-| **Iris** | La suivante s'ouvre en cercle depuis le centre. |
-| **Fondu au noir** | La diapositive s'efface vers le noir, puis la suivante en émerge. |
+| Transition | Ce qu'on voit | Comment |
+|---|---|---|
+| Fondu, Poussée, Entrée, Échelle, Retournement 3D | Les cinq de départ. | Position et opacité. |
+| **Balayage** | La suivante se dévoile par un bord, du côté d'où elle arrive. | Découpe `inset()` animée. |
+| **Découverte** | L'inverse d'« Entrée » : la diapositive courante s'écarte, dessus, et révèle la suivante. | L'ancienne passe au premier plan (`outgoingOnTop`). |
+| **Cube** | Deux faces qui pivotent autour de leur arête commune. | Chaque face tourne autour du bord partagé (`origin`), avec perspective. |
+| **Iris** | La suivante s'ouvre en cercle depuis le centre. | Découpe `circle()` animée. |
+| **Fondu au noir** | La diapositive s'efface vers le noir, la suivante en émerge. | Un voile noir monte puis redescend (`.deck-noir`) ; les diapositives s'échangent à mi-course, dessous. Les fondre elles-mêmes ne marchait pas : transparentes sur le fond du thème, celui-ci aurait basculé d'un coup au noir. |
+| **Damier** | Une case sur deux se balaie, puis les autres. | Trois temps qu'une transition CSS à deux bornes ne sait pas dire : l'API d'animation, sur un seul polygone de 8 × 6 cases. |
 
-Toutes en CSS, comme les cinq actuelles : aucune dépendance, et `prefers-reduced-motion` doit
-continuer de les remplacer par un simple fondu. À vérifier aussi : l'export PowerPoint, qui
-reprend la transition choisie — ses transitions natives couvrent Balayage, Découverte, Cube et
-Fondu au noir ; l'Iris a son équivalent « cercle ».
+Le moteur (`runTransition`) a été étendu pour cela, sans changer les cinq transitions existantes :
+découpe (`c` / `clipEnd`), origine de rotation, premier plan pour la diapositive sortante, voile,
+images clés.
+
+**Nouveau aussi : le réglage « Réduire les animations » est respecté.** Toute transition devient
+alors un simple fondu — le cube et le damier sont précisément ce que ce réglage veut éviter.
+Rectification : la version précédente de cette entrée disait qu'il était déjà respecté ; il ne
+l'était pas.
+
+**Vérifié dans le navigateur, sur le diaporama réel** : les onze transitions, saisies à mi-course,
+montrent l'effet attendu, puis ne laissent qu'une diapositive active et aucun style résiduel ; les
+18 vérifications du diaporama passent toujours.
+
+**Rectification sur l'export PowerPoint** : il ne reprend **aucune** transition, ni les anciennes ni
+les nouvelles — cette entrée l'avait présumé à tort. Les traduire en transitions PowerPoint natives
+(`<p:transition>` : fondu, poussée, balayage, découverte, cube, cercle, damier existent tous) est
+possible, mais reste à décider.
 
 #### Convertir un rapport en présentation, avec Apple Intelligence
 
