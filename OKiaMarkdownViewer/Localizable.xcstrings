@@ -1367,6 +1367,41 @@
         }
       }
     },
+    "Diapositives prêtes : %d sur %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diapositives prêtes : %d sur %d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slides ready: %d of %d"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertige Folien: %d von %d"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diapositivas listas: %d de %d"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diapositive pronte: %d di %d"
+          }
+        }
+      }
+    },
     "Discussion — %@": {
       "extractionState": "manual",
       "localizations": {

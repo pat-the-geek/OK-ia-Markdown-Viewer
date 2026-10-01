@@ -30,7 +30,9 @@ struct PresentationConverterView: View {
             Form {
                 switch conversion.etat {
                 case .reglage: reglage
-                case .enCours(let etape, let total, let section): avancement(etape, total, section)
+                case .enCours(let etape, let total, let section, let titres, let prevues):
+                    avancement(etape, total, section)
+                    formation(titres, prevues)
                 case .fini(let r): resultat(r)
                 case .echec(let message): echec(message)
                 }
@@ -102,6 +104,28 @@ struct PresentationConverterView: View {
         }
     }
 
+    /// La présentation qui se forme : les titres des diapositives déjà prêtes, au fur et à mesure.
+    /// Sur le Duo déplié, ce sera la présentation elle-même, dans l'autre partie de l'écran.
+    @ViewBuilder private func formation(_ titres: [String], _ prevues: Int) -> some View {
+        if !titres.isEmpty {
+            Section {
+                ForEach(Array(titres.enumerated()), id: \.offset) { i, t in
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text("\(i + 1)")
+                            .font(.caption.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(orange)
+                            .frame(minWidth: 18, alignment: .trailing)
+                        Text(t).font(.callout).lineLimit(2)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+            } header: {
+                Text(tr("Diapositives prêtes : %d sur %d", titres.count, prevues))
+            }
+            .animation(.easeOut(duration: 0.3), value: titres.count)
+        }
+    }
+
     @ViewBuilder private func resultat(_ r: ConversionEnCours.Fini) -> some View {
         Section {
             Label(tr("%d diapositives prêtes", r.diapositives), systemImage: "checkmark.circle")
@@ -157,7 +181,7 @@ final class ConversionEnCours: ObservableObject {
 
     enum Etat {
         case reglage
-        case enCours(etape: Int, total: Int, section: String)
+        case enCours(etape: Int, total: Int, section: String, titres: [String], prevues: Int)
         case fini(Fini)
         case echec(String)
     }
@@ -167,7 +191,7 @@ final class ConversionEnCours: ObservableObject {
 
     func lancer(markdown: String, titre: String, diapositives: Int) {
         tache?.cancel()
-        etat = .enCours(etape: 0, total: 1, section: "")
+        etat = .enCours(etape: 0, total: 1, section: "", titres: [], prevues: diapositives)
         #if canImport(FoundationModels)
         // L'avancement arrive d'un autre fil : on le ramène sur celui de l'interface, sans jamais
         // retenir l'écran au-delà de sa fermeture.
@@ -200,7 +224,14 @@ final class ConversionEnCours: ObservableObject {
     /// Une annulation arrivée entre-temps l'emporte : l'avancement ne rouvre pas l'écran de travail.
     private func suivre(_ a: ConvertisseurPresentation.Avancement) {
         guard case .enCours = etat else { return }
-        etat = .enCours(etape: a.etape, total: a.total, section: a.section)
+        etat = .enCours(etape: a.etape, total: a.total, section: a.section,
+                        titres: a.diapositives.map(Self.titreDe), prevues: a.prevues)
+    }
+
+    /// Le titre d'une diapositive : sa première ligne, sans les dièses du Markdown.
+    nonisolated static func titreDe(_ diapo: String) -> String {
+        let premiere = diapo.components(separatedBy: "\n").first ?? ""
+        return premiere.drop(while: { $0 == "#" || $0 == " " }).trimmingCharacters(in: .whitespaces)
     }
 
     func annuler() {

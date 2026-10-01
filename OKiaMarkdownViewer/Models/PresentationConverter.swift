@@ -229,6 +229,12 @@ final class ConvertisseurPresentation {
         let etape: Int
         let total: Int
         let section: String       // vide pour l'ouverture et la conclusion
+        /// Les diapositives déjà prêtes, dans leur ordre définitif : titre et plan dès le départ,
+        /// puis chaque section dès qu'elle est écrite. De quoi montrer la présentation se former
+        /// pendant qu'on lit — sur le Duo déplié, dans l'autre partie de l'écran.
+        let diapositives: [String]
+        /// Le nombre de diapositives que comptera la présentation.
+        let prevues: Int
     }
 
     /// Ce qui a été laissé de côté. Structuré plutôt qu'écrit : la mention se lit dans la langue
@@ -315,7 +321,10 @@ final class ConvertisseurPresentation {
     /// laissé de côté dans cette section ») : ce n'est pas une omission.
     static func estOmissionVide(_ t: String) -> Bool {
         let bas = t.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // Le modèle répond parfois sur le texte au lieu de dire ce qu'il en a omis : « Le texte ne
+        // contient pas de titre… », « Aucun », « Rien ». Ce n'est pas une omission.
         return bas.count < 8 || bas.contains("laissé de côté dans cette section") || bas.hasPrefix("une phrase")
+            || bas.hasPrefix("le texte ne contient") || bas.hasPrefix("aucun") || bas.hasPrefix("rien")
     }
 
     func convertir(markdown: String, titreParDefaut: String, diapositives demande: Int,
@@ -332,12 +341,23 @@ final class ConvertisseurPresentation {
 
         var diapos: [String] = [], resumes: [String] = [], omissions: [Omission] = [], ecartees: [String] = []
         var etape = 0
+        let fixes = Self.titresFixes(rapport.langue)
+        let diapoPlan: String? = plan.plan == 1 ? {
+            let titres = zip(contenu, plan.parSection).filter { $0.1 > 0 }.map(\.0.titre)
+            return "## \(fixes.plan)\n\n" + titres.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        }() : nil
+        // Ce qui est prêt, dans l'ordre où la présentation le montrera. La phrase d'ouverture
+        // s'écrit en dernier : le titre l'attend sans retarder le reste.
+        func pretes(_ phrase: String = "") -> [String] {
+            ["# \(rapport.titre)" + (phrase.isEmpty ? "" : "\n\n\(phrase)")] + (diapoPlan.map { [$0] } ?? []) + diapos
+        }
 
         for (s, k) in zip(contenu, plan.parSection) {
             try Task.checkCancellation()
             guard k > 0 else { omissions.append(.sectionEntiere(s.titre)); continue }
             etape += 1
-            avancement(Avancement(etape: etape, total: etapes, section: s.titre))
+            avancement(Avancement(etape: etape, total: etapes, section: s.titre,
+                                  diapositives: pretes(), prevues: demande))
 
             // Le visuel de la section, repris tel quel : la carte d'abord, puis un diagramme,
             // puis un petit tableau. Une section qui n'a droit qu'à une diapositive le montre
@@ -383,7 +403,8 @@ final class ConvertisseurPresentation {
         // et les trois constats, chacun sous schéma — la seule demande libre du banc était revenue
         // en liste de puces.
         try Task.checkCancellation()
-        avancement(Avancement(etape: etapes, total: etapes, section: ""))
+        avancement(Avancement(etape: etapes, total: etapes, section: "",
+                              diapositives: pretes(), prevues: demande))
         let introduction = String((rapport.chapeau.isEmpty ? (contenu.first?.texte ?? "") : rapport.chapeau).prefix(3000))
         let phrase = (try? await phraseDOuverture(titre: rapport.titre, introduction: introduction,
                                                   langue: rapport.langue, regle: regle)) ?? ""
@@ -397,14 +418,7 @@ final class ConvertisseurPresentation {
                     && c.split(separator: " ").count <= 25
                     && VerificationsPresentation.nombres(c).allSatisfy(nombresDuRapport.contains)
             }
-        let fixes = Self.titresFixes(rapport.langue)
-
-        var finale = ["# \(rapport.titre)" + (phrase.isEmpty ? "" : "\n\n\(phrase)")]
-        if plan.plan == 1 {
-            let titres = zip(contenu, plan.parSection).filter { $0.1 > 0 }.map(\.0.titre)
-            finale.append("## \(fixes.plan)\n\n" + titres.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n"))
-        }
-        finale += diapos
+        var finale = pretes(phrase)
         finale.append("## \(fixes.retenir)\n\n" + retenir.map { "- \($0)" }.joined(separator: "\n"))
         if plan.sources == 1, let src = rapport.sources { finale.append(diapositiveSources(src, markdown: markdown)) }
 

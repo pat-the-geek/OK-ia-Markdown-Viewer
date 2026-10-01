@@ -1085,6 +1085,14 @@ l'avancement se suit section par section ; le résultat s'ouvre au diaporama, s'
 dépend que de Foundation, `NaturalLanguage` et `FoundationModels` : le banc le compile tel quel,
 et ce qu'il mesure est ce que l'app livre. L'écran est `Views/PresentationConverterView.swift`.
 
+**La présentation se forme sous les yeux — le 2026-10-01.** La conversion livre chaque
+diapositive dès qu'elle est prête (`Avancement.diapositives`) : le titre et le plan d'emblée, puis
+chaque section à mesure qu'elle est écrite ; la phrase d'ouverture vient en dernier, et le titre
+l'attend sans retarder le reste. L'écran de conversion en montre la liste qui s'allonge
+(« Diapositives prêtes : 5 sur 10 »). C'est le premier pas de ce que Patrick veut sur le Duo
+déplié : la présentation qui se constitue dans l'autre partie de l'écran pendant qu'on continue à
+lire le rapport. Au banc, sur 10 diapositives : 2, puis 5, 7, 9 et 10 prêtes.
+
 **L'essai dans l'app a trouvé ce que le banc n'avait pas vu**, sur le rapport allemand de test :
 la consigne de langue, écrite en allemand, fuyait en puce (« Schreibe ausschließlich auf
 Deutsch ») puis en conclusion — elle est désormais une consigne marquée hors du texte, et les

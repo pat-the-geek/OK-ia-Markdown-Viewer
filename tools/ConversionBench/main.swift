@@ -28,7 +28,7 @@ let horloge = ContinuousClock()
 let debut = horloge.now
 do {
     let r = try await ConvertisseurPresentation().convertir(markdown: md, titreParDefaut: nom, diapositives: demande) { a in
-        print("   … \(a.etape)/\(a.total) \(a.section.isEmpty ? "ouverture et conclusion" : a.section)")
+        print("   … \(a.etape)/\(a.total) \(a.section.isEmpty ? "ouverture et conclusion" : a.section) — \(a.diapositives.count)/\(a.prevues) prêtes")
     }
     let duree = horloge.now - debut
     if args.count >= 4 { try r.markdown.write(toFile: args[3], atomically: true, encoding: .utf8) }
