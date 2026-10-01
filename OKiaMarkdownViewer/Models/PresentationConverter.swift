@@ -33,14 +33,19 @@ struct RapportDecoupe {
         var texte: String           // la prose seule : blocs, métadonnées et images retirés
         var blocs: [Bloc]
         var estSources: Bool
-        /// Ce qu'elle pèse dans la répartition : sa prose, et un forfait par visuel.
-        var poids: Int { texte.count + blocs.count * 1500 }
+        /// Ses images, chacune sa ligne Markdown entière, telle quelle.
+        var images: [String] = []
+        /// Ce qu'elle pèse dans la répartition : sa prose, un forfait par visuel, un plus petit par
+        /// image — deux au plus : une galerie ne vaut pas un chapitre.
+        var poids: Int { texte.count + blocs.count * 1500 + min(images.count, 2) * 600 }
     }
 
     var titre: String
     /// Ce qui précède la première section — note de cadrage, statistiques. Il ne grossit pas la
     /// première section (il la remplissait de « 33 articles, 17 sources ») ; il nourrit l'ouverture.
     var chapeau: String
+    /// Les images du chapeau : la première illustre la diapositive de titre.
+    var imagesChapeau: [String]
     var sections: [Section]
     /// fr, en, de, es ou it — détectée sur la prose seule.
     var langue: String
@@ -55,7 +60,8 @@ struct RapportDecoupe {
         }
         var titre = "", chapeau = "", sections: [Section] = [], courante: Section?
         var dansBloc: Bloc.Genre?, tampon: [String] = []
-        var prose: [String] = [], blocs: [Bloc] = [], tableau: [String] = []
+        var prose: [String] = [], blocs: [Bloc] = [], tableau: [String] = [], images: [String] = []
+        var imagesChapeau: [String] = []
 
         func cloreTableau() {
             if tableau.count >= 3 { blocs.append(Bloc(genre: .tableau, texte: tableau.joined(separator: "\n"))) }
@@ -67,13 +73,15 @@ struct RapportDecoupe {
                 chapeau = prose.map { $0.replacingOccurrences(of: #"^>\s?(\[![^\]]+\][^\n]*)?"#, with: "",
                                                               options: .regularExpression) }
                     .joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-                prose = []; blocs = []
+                imagesChapeau = images
+                prose = []; blocs = []; images = []
                 return
             }
             s.texte = prose.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
             s.blocs = blocs
+            s.images = images
             sections.append(s)
-            prose = []; blocs = []
+            prose = []; blocs = []; images = []
         }
 
         for l in lignes {
@@ -101,12 +109,14 @@ struct RapportDecoupe {
                 courante = Section(titre: t, texte: "", blocs: [], estSources: Self.estTitreDeSources(t))
                 continue
             }
+            if Self.estImageAffichable(l) { images.append(l.trimmingCharacters(in: .whitespaces)); continue }
             if !Self.estMeta(l) { prose.append(l) }
         }
         cloreTableau(); clore()
 
         self.titre = titre.isEmpty ? titreParDefaut : titre
         self.chapeau = chapeau
+        self.imagesChapeau = imagesChapeau
         self.sections = sections
         self.langue = Self.langue(de: chapeau + "\n" + sections.map(\.texte).joined(separator: "\n"))
     }
@@ -117,8 +127,8 @@ struct RapportDecoupe {
     }
 
     /// Une ligne qui n'est pas de la prose à présenter : un séparateur `---` — recopié, il créerait
-    /// une diapositive de plus —, une image (certains rapports les embarquent en base64, sur des
-    /// millions de caractères), une métadonnée « **Clé** — … », ou une ligne de statistiques du
+    /// une diapositive de plus —, une image que le diaporama n'afficherait pas (les autres sont
+    /// mises à part avant, par `estImageAffichable`), une métadonnée « **Clé** — … », ou une ligne de statistiques du
     /// corpus « 33 articles · mai – 4 septembre · 17 sources ».
     static func estMeta(_ l: String) -> Bool {
         let t = l.trimmingCharacters(in: .whitespaces)
@@ -126,6 +136,19 @@ struct RapportDecoupe {
         if t.hasPrefix("![") { return true }
         if t.components(separatedBy: " · ").count >= 3 && t.rangeOfCharacter(from: .decimalDigits) != nil { return true }
         return t.range(of: #"^>?\s*\*\*[^*]{1,40}\*\*\s*[—:–-]"#, options: .regularExpression) != nil
+    }
+
+    /// Une ligne qui n'est qu'une image (`![…](…)`, liée ou non) que le diaporama saura afficher :
+    /// adresse web ou image embarquée. Un chemin relatif ne s'afficherait pas — la présentation
+    /// s'écrit dans un dossier temporaire, loin du rapport — : il reste écarté avec les
+    /// métadonnées.
+    static func estImageAffichable(_ l: String) -> Bool {
+        let t = l.trimmingCharacters(in: .whitespaces)
+        guard t.hasPrefix("![") || t.hasPrefix("[![") else { return false }
+        guard let r = t.range(of: #"!\[[^\]]*\]\(\s*<?([^)\s>]+)"#, options: .regularExpression) else { return false }
+        let src = String(t[r]).components(separatedBy: "(").dropFirst().joined(separator: "(")
+            .trimmingCharacters(in: CharacterSet(charactersIn: " <")).lowercased()
+        return src.hasPrefix("https://") || src.hasPrefix("http://") || src.hasPrefix("data:image/")
     }
 
     static func estTitreDeSources(_ t: String) -> Bool {
@@ -181,7 +204,7 @@ struct PlanDiapositives {
     /// Une diapositive par tranche de 700 caractères de prose, plus ses visuels, plus les fixes.
     static func maximumUtile(_ r: RapportDecoupe) -> Int {
         let sections = r.contenu.reduce(0) { somme, s in
-            somme + max(1, Int((Double(s.texte.count) / 700).rounded(.up))) + min(s.blocs.count, 2)
+            somme + max(1, Int((Double(s.texte.count) / 700).rounded(.up))) + min(s.blocs.count + (s.images.isEmpty ? 0 : 1), 2)
         }
         return max(5, min(60, sections + 2 + (r.contenu.count > 3 ? 1 : 0) + (r.sources != nil ? 1 : 0)))
     }
@@ -322,9 +345,10 @@ final class ConvertisseurPresentation {
     static func estOmissionVide(_ t: String) -> Bool {
         let bas = t.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         // Le modèle répond parfois sur le texte au lieu de dire ce qu'il en a omis : « Le texte ne
-        // contient pas de titre… », « Aucun », « Rien ». Ce n'est pas une omission.
+        // contient pas de titre… », « Keine Information… », « Aucun ». Ce n'est pas une omission.
         return bas.count < 8 || bas.contains("laissé de côté dans cette section") || bas.hasPrefix("une phrase")
-            || bas.hasPrefix("le texte ne contient") || bas.hasPrefix("aucun") || bas.hasPrefix("rien")
+            || bas.hasPrefix("le texte") || bas.hasPrefix("aucun") || bas.hasPrefix("rien")
+            || bas.hasPrefix("keine information") || bas.hasPrefix("nessuna informazione")
     }
 
     func convertir(markdown: String, titreParDefaut: String, diapositives demande: Int,
@@ -348,8 +372,13 @@ final class ConvertisseurPresentation {
         }() : nil
         // Ce qui est prêt, dans l'ordre où la présentation le montrera. La phrase d'ouverture
         // s'écrit en dernier : le titre l'attend sans retarder le reste.
+        // L'image de la diapositive de titre : celle du chapeau, connue d'emblée ; à défaut, à la
+        // fin, la première image du rapport qu'aucune diapositive n'a reprise.
+        var imageTitre = rapport.imagesChapeau.first
+        var imagesReprises = Set<String>()
         func pretes(_ phrase: String = "") -> [String] {
-            ["# \(rapport.titre)" + (phrase.isEmpty ? "" : "\n\n\(phrase)")] + (diapoPlan.map { [$0] } ?? []) + diapos
+            ["# \(rapport.titre)" + (phrase.isEmpty ? "" : "\n\n\(phrase)") + (imageTitre.map { "\n\n\($0)" } ?? "")]
+                + (diapoPlan.map { [$0] } ?? []) + diapos
         }
 
         for (s, k) in zip(contenu, plan.parSection) {
@@ -367,14 +396,24 @@ final class ConvertisseurPresentation {
             let autre = s.blocs.first { $0.genre == .mermaid }
                 ?? s.blocs.first { $0.genre == .tableau && $0.texte.components(separatedBy: "\n").count <= 7 }
             let proseMince = s.texte.count < 400
-            let visuel = k == 1 ? (carte ?? (proseMince ? autre : nil)) : (carte ?? autre)
+            var visuel = (k == 1 ? (carte ?? (proseMince ? autre : nil)) : (carte ?? autre))?.texte
+            // Sans carte ni diagramme, une section presque sans prose montre sa photo, sa phrase en
+            // légende, recopiée telle quelle, plutôt que des puces creuses. Le seuil est plus bas que
+            // pour un diagramme : 250 caractères de vrai contenu ne se sacrifient pas à une photo,
+            // ils l'accompagnent.
+            if visuel == nil, s.texte.count < 150, let photo = s.images.first {
+                visuel = s.texte.isEmpty ? photo : "\(s.texte)\n\n\(photo)"
+            }
             let kTexte = k - (visuel == nil ? 0 : 1)
+            // Les autres images de la section illustrent ses diapositives de texte, une chacune, sous
+            // les puces : le diaporama agrandit une image seule dans la place qui reste.
+            let illustrations = s.images.filter { !(visuel?.hasSuffix($0) ?? false) }
 
             if kTexte > 0 {
                 do {
                     let (lot, omis) = try await genererSection(s, nombre: kTexte, fenetre: fenetre, regle: regle)
                     let source = VerificationsPresentation.nombres(s.texte + "\n" + s.blocs.map(\.texte).joined(separator: "\n"))
-                    for d in lot {
+                    for (i, d) in lot.enumerated() {
                         var gardees: [String] = []
                         for p in d.puces.map(VerificationsPresentation.nettoyer)
                         where !p.isEmpty && !Self.estParasite(p, titreSection: s.titre) {
@@ -384,7 +423,12 @@ final class ConvertisseurPresentation {
                         // Toutes écartées : on garde la diapositive, sans les puces fautives, plutôt
                         // que de rompre le compte demandé.
                         let titre = VerificationsPresentation.nettoyer(d.titre)
-                        diapos.append((["## \(titre)", ""] + gardees.map { "- \($0)" }).joined(separator: "\n"))
+                        var diapo = (["## \(titre)", ""] + gardees.map { "- \($0)" }).joined(separator: "\n")
+                        if i < illustrations.count {
+                            diapo += "\n\n" + illustrations[i]
+                            imagesReprises.insert(illustrations[i])
+                        }
+                        diapos.append(diapo)
                         resumes.append((["## \(titre)"] + gardees.map { "- \($0)" }).joined(separator: "\n"))
                     }
                     if !Self.estOmissionVide(omis) { omissions.append(.partielle(section: s.titre, ceQuiManque: omis)) }
@@ -396,7 +440,10 @@ final class ConvertisseurPresentation {
                     omissions.append(.nonConvertie(s.titre))
                 }
             }
-            if let v = visuel { diapos.append("## \(s.titre)\n\n\(v.texte)") }
+            if let v = visuel {
+                diapos.append("## \(s.titre)\n\n\(v)")
+                s.images.filter { v.hasSuffix($0) }.forEach { imagesReprises.insert($0) }
+            }
         }
 
         // Ouverture, plan, à retenir, sources : l'app les écrit ; le modèle ne fournit que la phrase
@@ -418,6 +465,9 @@ final class ConvertisseurPresentation {
                     && c.split(separator: " ").count <= 25
                     && VerificationsPresentation.nombres(c).allSatisfy(nombresDuRapport.contains)
             }
+        if imageTitre == nil {
+            imageTitre = rapport.sections.flatMap(\.images).first { !imagesReprises.contains($0) }
+        }
         var finale = pretes(phrase)
         finale.append("## \(fixes.retenir)\n\n" + retenir.map { "- \($0)" }.joined(separator: "\n"))
         if plan.sources == 1, let src = rapport.sources { finale.append(diapositiveSources(src, markdown: markdown)) }

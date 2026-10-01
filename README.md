@@ -1104,6 +1104,24 @@ l'attend sans retarder le reste. L'écran de conversion en montre la liste qui s
 déplié : la présentation qui se constitue dans l'autre partie de l'écran pendant qu'on continue à
 lire le rapport. Au banc, sur 10 diapositives : 2, puis 5, 7, 9 et 10 prêtes.
 
+**Les images du rapport passent dans la présentation — le 2026-10-01**, à la demande de Patrick
+(« utilise plus les images »). Jusque-là, la conversion les jetait toutes, rangées avec les
+métadonnées. Désormais :
+
+- la diapositive de titre prend l'image du chapeau, ou à défaut la première image du rapport
+  qu'aucune diapositive n'a reprise ;
+- chaque diapositive de texte d'une section reçoit l'une de ses images, sous les puces : le
+  diaporama agrandit une image seule dans la place qui reste ;
+- une section presque sans prose (moins de 150 caractères) et sans carte ni diagramme montre sa
+  photo, sa phrase recopiée en légende. Le seuil est plus bas que pour un diagramme : au premier
+  essai, 250 caractères de vrai contenu (un budget, une consultation) s'étaient effacés derrière
+  une photo.
+
+Seules les images que le diaporama sait afficher sont reprises : adresse web ou image embarquée
+(`data:`). Un chemin relatif ne s'afficherait pas — la présentation s'écrit dans un dossier
+temporaire, loin du rapport. Éprouvé sur `tools/documents-test/Rapport illustré 2026 (fr).md` :
+six images sur huit diapositives, rendues dans le navigateur.
+
 **L'essai dans l'app a trouvé ce que le banc n'avait pas vu**, sur le rapport allemand de test :
 la consigne de langue, écrite en allemand, fuyait en puce (« Schreibe ausschließlich auf
 Deutsch ») puis en conclusion — elle est désormais une consigne marquée hors du texte, et les

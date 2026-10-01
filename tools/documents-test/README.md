@@ -10,6 +10,7 @@ le français, par exemple — et l'option **Traduire les documents** activée da
 | `Jahresbericht 2026 (de).md` | le même, en allemand : c'est la langue qui rallonge le plus |
 | `Presentazione conti 2026 (it).md` | le diaporama et son export PowerPoint |
 | `Präsentation Rechnung 2026 (de).md` | idem |
+| `Rapport illustré 2026 (fr).md` | la conversion en présentation (1.3) d'un rapport illustré : photo de couverture, photos sous les puces, photo seule avec sa légende. Les photos sont des images d'exemple de picsum.photos, sans rapport avec le texte. |
 
 ## Ce que chaque document contient, et pourquoi
 

@@ -20,7 +20,7 @@ let plan = PlanDiapositives.repartir(min(max(5, demande), PlanDiapositives.maxim
 print("── « \(rapport.titre) » — \(md.count) caractères, langue \(rapport.langue)")
 print("   au plus \(PlanDiapositives.maximumUtile(rapport)) diapositives utiles")
 for (s, n) in zip(rapport.contenu, plan.parSection) {
-    print("   \(String(format: "%2d", n)) diapo. · \(String(format: "%6d", s.texte.count)) car. · \(s.blocs.count) visuel(s) · \(s.titre)")
+    print("   \(String(format: "%2d", n)) diapo. · \(String(format: "%6d", s.texte.count)) car. · \(s.blocs.count) visuel(s) · \(s.images.count) image(s) · \(s.titre)")
 }
 print("   fixes : ouverture \(plan.ouverture), plan \(plan.plan), à retenir \(plan.retenir), sources \(plan.sources)")
 
