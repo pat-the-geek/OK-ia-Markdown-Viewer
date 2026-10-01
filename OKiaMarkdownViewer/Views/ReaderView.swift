@@ -124,13 +124,18 @@ struct ReaderView: View {
             if env["OKIA_OPEN_SLIDES"] != nil && hasSlides {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { presenting = true }
             }
-            // OKIA_AI ouvre le résumé ou la discussion au lancement. Le contenu affiché
-            // reste celui du vrai modèle : le harnais ouvre la porte, il n'écrit pas la
+            // OKIA_AI ouvre le résumé, la discussion ou la conversion au lancement. Le contenu
+            // affiché reste celui du vrai modèle : le harnais ouvre la porte, il n'écrit pas la
             // réponse — contrairement à OKIA_FAKE_AI, dont le texte est fabriqué et n'a
             // donc rien à faire sur une capture publiée.
+            // « convert » ouvre la conversion en présentation, dont l'entrée est un menu qu'on ne
+            // pilote pas en arrière-plan. OKIA_AI_DELAY la retarde (en secondes), le temps de
+            // filmer le rapport qu'on parcourt avant.
+            let delai = Double(env["OKIA_AI_DELAY"] ?? "") ?? 0.5
             switch env["OKIA_AI"] {
             case "summary": DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showSummary = true }
             case "chat":    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showChat = true }
+            case "convert": DispatchQueue.main.asyncAfter(deadline: .now() + delai) { showConverter = true }
             default: break
             }
         }
