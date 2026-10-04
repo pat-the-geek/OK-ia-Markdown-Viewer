@@ -184,6 +184,14 @@ struct MarkdownWebView: UIViewRepresentable {
             case "rendered":
                 parent.webController.reapplyFontScale()
                 parent.webController.onRendered?()
+                #if DEBUG
+                // Harnais de capture : OKIA_SHOT_JS s'exécute une fois le document rendu — défiler
+                // jusqu'à une section, ouvrir un aperçu — pour cadrer une capture sans toucher.
+                if let js = ProcessInfo.processInfo.environment["OKIA_SHOT_JS"], !js.isEmpty,
+                   let vue = message.webView {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { vue.evaluateJavaScript(js) }
+                }
+                #endif
             case "renderError":
                 break
             default:

@@ -1042,6 +1042,39 @@ transmis, pas l'écran de son auteur. Le thème regarde celui qui lit ; le desti
 un document qui ne dépend pas d'un réglage qu'il n'a pas choisi. C'est aussi ce qui garde une
 identité constante aux rapports produits avec md Viewer.
 
+#### Les rapports de veille de fornews.ai : notes de bas de page et le reste — le 2026-10-04
+
+**Demandé par Patrick, via la session fornews.ai** : md Viewer est le lecteur privilégié des
+rapports de veille, et leurs notes `[^n]` s'affichaient en brut. Spécification et rapports réels
+dans le dépôt fornews : `docs/md-viewer/instructions-rapports-de-veille.md`,
+`rapport-veille-reel-2026-10-04.md` (nouveau look, appels dans les cadres HTML) et
+`rapport-veille-reel-753.md` (59 appels, 28 notes).
+
+- **Notes de bas de page** (`transformFootnotes`, `render.js`). Un pré-traitement plutôt que
+  l'extension `marked-footnote` : les callouts sont parsés à part, et l'extension y aurait ouvert
+  une section Notes par callout. Chaque appel devient un exposant cliquable, un même numéro
+  appelé plusieurs fois garde des retours distincts (`fnref-3-1`, `fnref-3-2`), deux appels collés
+  se lisent « 6,3 ». Les définitions forment une section **Notes** (Notes, Anmerkungen, Notas,
+  Note selon la langue de la section d'entités ou du frontmatter), **là où elles étaient** : dans
+  les deux rapports, après les sources et avant le contrôle qualité ou l'avertissement final, qui
+  reste le dernier élément. Rien n'est touché dans le code, en bloc ou inline.
+- **Aller-retour et aperçu.** Un appel descend à sa note, ↩ remonte, en défilement doux rattrapé à
+  l'arrivée (les images chargées en route décalaient la cible). Survol d'un appel sur Mac : la note
+  en aperçu. Au toucher sur iPhone et iPad : l'aperçu, avec « Aller à la note ↓ ».
+- **Export Word : de vraies notes de fin**, une par appel (Word ne connaît pas la note appelée
+  deux fois), avec l'adresse de l'article. La section Notes n'est pas répétée. Au passage, l'export
+  descend désormais dans les blocs HTML : la synthèse des rapports, logée dans un cadre
+  `fornews-cadre`, en disparaissait entièrement.
+- **Dates et montants** balisés par fornews : trois pastilles dans la légende (« Dates passées »,
+  « Dates à venir », « Montants », en cinq langues) et le gras à l'export.
+- **`<mark>` sans classe et `==surligné==`** (Obsidian) : un fond tiré du thème. En sombre, le thème
+  OK-ia gardait le fond pâle du clair sous un texte clair, illisible : il a désormais le sien, ce qui
+  assombrit aussi la pastille des liens wiki, comme dans les autres thèmes.
+
+Vérifié dans le navigateur (structure, liens, aller-retour) et sur les simulateurs iPhone 17 Pro et
+iPad Pro 13", en clair et en sombre. Le .docx est bien formé et porte ses notes de fin ; son
+ouverture par Word reste à confirmer, comme l'aperçu au survol dans l'app Mac.
+
 #### Six nouvelles transitions pour le diaporama — réalisées le 2026-10-01
 
 **Demandé le 2026-10-01** : cinq transitions classiques de plus, validées par Patrick, puis une

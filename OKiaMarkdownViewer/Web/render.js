@@ -27,6 +27,16 @@
     'Carte indisponible hors connexion':
       { en: 'Map unavailable offline', de: 'Karte offline nicht verfügbar',
         es: 'Mapa no disponible sin conexión', it: 'Mappa non disponibile offline' },
+    'Aller à la note':
+      { en: 'Go to the note', de: 'Zur Anmerkung', es: 'Ir a la nota', it: 'Vai alla nota' },
+    'Retour au texte':
+      { en: 'Back to the text', de: 'Zurück zum Text', es: 'Volver al texto', it: 'Torna al testo' },
+    'Dates passées':
+      { en: 'Past dates', de: 'Vergangene Daten', es: 'Fechas pasadas', it: 'Date passate' },
+    'Dates à venir':
+      { en: 'Upcoming dates', de: 'Kommende Daten', es: 'Fechas próximas', it: 'Date future' },
+    'Montants':
+      { en: 'Amounts', de: 'Beträge', es: 'Importes', it: 'Importi' },
     'Chargement de la carte…':
       { en: 'Loading the map…', de: 'Karte wird geladen…',
         es: 'Cargando el mapa…', it: 'Caricamento della mappa…' }
@@ -256,6 +266,142 @@
   }
 
   /* =========================================================================
+     3b. LE TEXTE HORS CODE — les transformations qui suivent ne touchent jamais un bloc
+     de code (``` ou ~~~) ni du code inline. `fn` reçoit chaque morceau de prose.
+     ========================================================================= */
+  function surLaProse(lines, fn) {
+    var fence = null;
+    return lines.map(function (l) {
+      var f = l.match(/^\s{0,3}(`{3,}|~{3,})/);
+      if (fence) {
+        if (f && f[1].charAt(0) === fence.charAt(0) && f[1].length >= fence.length) fence = null;
+        return l;
+      }
+      if (f) { fence = f[1]; return l; }
+      // Les parties impaires sont du code inline, laissé tel quel.
+      return l.split(/(`[^`]*`)/).map(function (part, i) { return i % 2 ? part : fn(part); }).join('');
+    });
+  }
+
+  /* =========================================================================
+     3c. NOTES DE BAS DE PAGE  « …phrase.[^3] » + « [^3]: [Titre](url) · Média · date »
+     Demandées par fornews.ai, dont les rapports de veille appellent leurs sources ainsi.
+     Un pré-traitement plutôt que l'extension marked-footnote : les callouts sont parsés à
+     part (transformCallouts), et l'extension y aurait ouvert une section Notes par callout.
+     Ici, les appels deviennent des exposants et les définitions une seule section, quel que
+     soit l'endroit d'où on les appelle — callout, cadre HTML ou prose.
+     ========================================================================= */
+  var NOTES_TITRE = { fr: 'Notes', en: 'Notes', de: 'Anmerkungen', es: 'Notas', it: 'Note' };
+  var FN_DEF = /^\[\^([^\]\s]+)\]:[ \t]?(.*)$/;
+  var HR = /^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/;
+
+  // La langue du document, pour le titre de la section : celle du titre de sa section
+  // d'entités (fornews l'écrit dans la langue du rapport), sinon celle du frontmatter.
+  function langueDuDocument(body, meta) {
+    var m, re = /^##\s+(.+?)\s*$/gm;
+    while ((m = re.exec(body))) {
+      if (!isEntityHeading(m[1])) continue;
+      var a = m[1].trim().toLowerCase();
+      if (a.normalize) a = a.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      if (/^entidad/.test(a)) return 'es';
+      if (/^entit(?:y|ies)$/.test(a)) return 'en';
+      if (a === 'entita') return 'it';
+      if (/^entit(?:at|aet)/.test(a)) return 'de';
+      return 'fr';
+    }
+    var code = String((meta && (meta.lang || meta.langue || meta.language)) || '').slice(0, 2).toLowerCase();
+    return NOTES_TITRE[code] ? code : null;
+  }
+
+  function transformFootnotes(md, langue) {
+    var lines = md.split(/\r?\n/);
+    // 1. Retirer les définitions, hors code, en retenant où elles étaient.
+    var defs = {}, out = [], place = -1, fence = null;
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i];
+      var f = l.match(/^\s{0,3}(`{3,}|~{3,})/);
+      if (fence) {
+        if (f && f[1].charAt(0) === fence.charAt(0) && f[1].length >= fence.length) fence = null;
+        out.push(l); continue;
+      }
+      if (f) { fence = f[1]; out.push(l); continue; }
+      var d = l.match(FN_DEF);
+      if (!d) { out.push(l); continue; }
+      var texte = d[2];
+      while (i + 1 < lines.length && /^(?: {2,}|\t)\S/.test(lines[i + 1])) texte += ' ' + lines[++i].trim();
+      if (!(d[1] in defs)) defs[d[1]] = texte;            // la première définition l'emporte
+      if (place < 0) place = out.length;
+    }
+    var etiquettes = Object.keys(defs);
+    if (!etiquettes.length) return md;
+
+    // 2. Les appels deviennent des exposants. Un même numéro peut être appelé plusieurs
+    //    fois : chaque appel a son identifiant de retour (fnref-3-1, fnref-3-2…).
+    var appels = {}, ordre = [], numeros = {};
+    function idDe(e) { return e.replace(/[^\w-]/g, '_'); }
+    function numeroDe(e) {
+      if (!(e in numeros)) numeros[e] = /^\d+$/.test(e) ? e : String(Object.keys(numeros).length + 1);
+      return numeros[e];
+    }
+    out = surLaProse(out, function (prose) {
+      return prose.replace(/\[\^([^\]\s]+)\](?!:)/g, function (m, e) {
+        if (!(e in defs)) return m;
+        var n = appels[e] = (appels[e] || 0) + 1;
+        if (n === 1) ordre.push(e);
+        return '<sup class="fn-ref"><a href="#fn-' + idDe(e) + '" id="fnref-' + idDe(e) + '-' + n +
+               '" data-fn="' + idDe(e) + '">' + escapeHtml(numeroDe(e)) + '</a></sup>';
+      // Deux appels collés, « [^6][^3] », se lisent 6,3 et non 63 : la virgule ne va qu'entre
+      // appels contigus — une règle CSS « sup + sup » sauterait le texte qui les sépare.
+      }).replace(/<\/sup><sup class="fn-ref">/g, '</sup><sup class="fn-ref fn-suite">');
+    });
+
+    // 3. La section Notes : les notes appelées dans l'ordre des appels, puis les autres.
+    var liste = ordre.concat(etiquettes.filter(function (e) { return !(e in appels); }));
+    var items = liste.map(function (e) {
+      var id = idDe(e), n = appels[e] || 0, retours = '';
+      for (var k = 1; k <= n; k++) {
+        retours += ' <a href="#fnref-' + id + '-' + k + '" class="fn-back" aria-label="' +
+                   escapeHtml(TXT('Retour au texte')) + '">↩\uFE0E' + (n > 1 ? '<sup>' + k + '</sup>' : '') + '</a>';
+      }
+      return '<li id="fn-' + id + '" value="' + escapeHtml(numeroDe(e)) + '">' +
+             '<span class="fn-texte">' + marked.parseInline(defs[e]) + '</span>' + retours + '</li>';
+    }).join('');
+    // Une seule ligne, sans ligne vide : marked garde le bloc HTML entier.
+    var section = '<section class="footnotes" id="notes"><h2>' + escapeHtml(NOTES_TITRE[langue] || 'Notes') +
+                  '</h2><ol>' + items + '</ol></section>';
+
+    // 4. Où la poser : là où étaient les définitions. Mais un document qui se termine par un
+    //    filet puis une ligne en italique (l'avertissement sur les erreurs de l'IA) garde
+    //    cette ligne en dernier : la section passe alors avant le filet.
+    var fin = out.length - 1;
+    while (fin >= 0 && !out[fin].trim()) fin--;
+    if (fin > 0 && /^\s*([*_])(?!\1).*\1\s*$/.test(out[fin])) {
+      var filet = fin - 1;
+      while (filet >= 0 && !out[filet].trim()) filet--;
+      while (filet > 0 && HR.test(out[filet])) {          // un ou plusieurs filets d'affilée
+        var avant = filet - 1;
+        while (avant >= 0 && !out[avant].trim()) avant--;
+        if (avant >= 0 && HR.test(out[avant])) filet = avant; else break;
+      }
+      if (filet >= 0 && HR.test(out[filet]) && place > filet) place = filet;
+    }
+    if (place < 0 || place > out.length) place = out.length;
+    out.splice(place, 0, '', section, '');
+    return out.join('\n');
+  }
+
+  /* =========================================================================
+     3d. ==SURLIGNÉ== — la syntaxe d'Obsidian, rendue comme <mark>, hors du code.
+     Une ligne de « = » (titre souligné) n'est pas touchée : il faut du texte entre.
+     ========================================================================= */
+  function transformHighlights(md) {
+    if (md.indexOf('==') < 0) return md;
+    return surLaProse(md.split(/\r?\n/), function (prose) {
+      return prose.replace(/(^|[^=])==(?=[^\s=])([^\n]*?[^\s=])==(?!=)/g, '$1<mark>$2</mark>');
+    }).join('\n');
+  }
+
+  /* =========================================================================
      4. WIKI-LINKS  [[Name]] / [[Name|Alias]]
      ========================================================================= */
   function transformWikiLinks(md) {
@@ -380,14 +526,31 @@
     return { subtypes: subtypes, entities: entities };
   }
 
-  function buildLegend(subtypes) {
+  // Dates et montants : fornews les balise lui-même dans la prose, avec trois teintes
+  // tenues hors de la palette des entités. La légende les nomme quand le document en porte.
+  var TEINTES_FORNEWS = [
+    { rgb: '100,116,139', libelle: 'Dates passées' },
+    { rgb: '67,56,202',   libelle: 'Dates à venir' },
+    { rgb: '101,163,13',  libelle: 'Montants' }
+  ];
+  function teintesPresentes(body) {
+    return TEINTES_FORNEWS.filter(function (t) {
+      return new RegExp('class="ner-tag"[^>]*--ner-rgb:\\s*' + t.rgb.replace(/,/g, '\\s*,\\s*')).test(body);
+    });
+  }
+
+  function buildLegend(subtypes, teintes) {
     var keys = Object.keys(subtypes);
-    if (!keys.length) return '';
+    teintes = teintes || [];
+    if (!keys.length && !teintes.length) return '';
     var chips = keys.map(function (k) {
       var rgb = subtypes[k].join(',');
       return '<span class="ner-chip" style="--ner-rgb:' + rgb + '">' +
              '<span class="ner-dot"></span>' + escapeHtml(k) + '</span>';
-    });
+    }).concat(teintes.map(function (t) {
+      return '<span class="ner-chip" style="--ner-rgb:' + t.rgb + '">' +
+             '<span class="ner-dot"></span>' + escapeHtml(TXT(t.libelle)) + '</span>';
+    }));
     return '<div class="ner-legend">' + chips.join('') + '</div>';
   }
 
@@ -396,7 +559,7 @@
     if (names.length) {
       names.sort(function (a, b) { return b.length - a.length; });
       var pattern = new RegExp('(' + names.map(escapeRegExp).join('|') + ')', 'g');
-      var SKIP = { CODE: 1, PRE: 1, A: 1, MARK: 1, SCRIPT: 1, STYLE: 1, H1: 1, H2: 1, H3: 1 };
+      var SKIP = { CODE: 1, PRE: 1, A: 1, MARK: 1, SUP: 1, SCRIPT: 1, STYLE: 1, H1: 1, H2: 1, H3: 1 };
       var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
       var todo = [], node;
       while ((node = walker.nextNode())) {
@@ -427,6 +590,111 @@
       var key = h.textContent.trim();
       if (subtypes[key]) h.style.color = 'rgb(' + subtypes[key].join(',') + ')';
     });
+  }
+
+  /* =========================================================================
+     3c (suite). NOTES : aller-retour et aperçu
+     Le clic sur un appel descend à sa note, ↩ remonte à l'appel, en défilement doux et
+     avec un éclat sur la cible. Avec une souris (Mac), survoler un appel montre la note ;
+     au doigt (iPhone, iPad), toucher un appel l'ouvre en aperçu, d'où l'on peut descendre
+     à la note — sans quoi chaque source lue ferait perdre sa place dans le texte.
+     ========================================================================= */
+  var apercuNote = null, apercuMinuteur = null;
+
+  function fermerApercu() {
+    clearTimeout(apercuMinuteur);
+    if (apercuNote) { apercuNote.remove(); apercuNote = null; }
+  }
+
+  function allerA(id) {
+    var cible = document.getElementById(id);
+    if (!cible) return;
+    fermerApercu();
+    cible.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Les images chargées en route (loading="lazy") allongent la page pendant le trajet : la
+    // cible n'est plus où le défilement visait. À l'arrivée, on rattrape sans animation.
+    var rattraper = function () {
+      var r = cible.getBoundingClientRect();
+      if (r.top < 40 || r.bottom > window.innerHeight - 40) cible.scrollIntoView({ block: 'center' });
+    };
+    var fini = false, arrivee = function () {
+      if (fini) return;
+      fini = true;
+      window.removeEventListener('scrollend', arrivee);
+      rattraper();
+      setTimeout(rattraper, 400);                  // une image encore en route
+    };
+    window.addEventListener('scrollend', arrivee);
+    setTimeout(arrivee, 1200);                     // WebKit sans scrollend
+    var hote = cible.closest('li') || cible.closest('sup') || cible;
+    hote.classList.remove('fn-cible');
+    void hote.offsetWidth;                         // relancer l'éclat s'il est déjà posé
+    hote.classList.add('fn-cible');
+    setTimeout(function () { hote.classList.remove('fn-cible'); }, 1800);
+  }
+
+  function montrerApercu(lien, auDoigt) {
+    var note = document.getElementById(lien.getAttribute('href').slice(1));
+    if (!note) return;
+    fermerApercu();
+    var boite = document.createElement('div');
+    boite.className = 'fn-apercu';
+    var texte = note.querySelector('.fn-texte');
+    boite.innerHTML = '<span class="fn-apercu-num">' + escapeHtml(lien.textContent) + '</span> ' +
+                      (texte ? texte.innerHTML : '');
+    if (auDoigt) {
+      var aller = document.createElement('a');
+      aller.href = '#' + note.id;
+      aller.className = 'fn-apercu-aller';
+      aller.textContent = TXT('Aller à la note') + ' ↓';
+      aller.addEventListener('click', function (e) { e.preventDefault(); allerA(note.id); });
+      boite.appendChild(aller);
+    }
+    boite.addEventListener('mouseenter', function () { clearTimeout(apercuMinuteur); });
+    boite.addEventListener('mouseleave', function () { apercuMinuteur = setTimeout(fermerApercu, 200); });
+    document.body.appendChild(boite);
+    // Sous l'appel, ou au-dessus s'il n'y a plus la place ; jamais hors de l'écran.
+    var r = lien.getBoundingClientRect(), b = boite.getBoundingClientRect();
+    var gauche = Math.max(12, Math.min(r.left - 24, window.innerWidth - b.width - 12));
+    var haut = r.bottom + 8;
+    if (haut + b.height > window.innerHeight - 12 && r.top - b.height - 8 > 12) haut = r.top - b.height - 8;
+    boite.style.left = (gauche + window.scrollX) + 'px';
+    boite.style.top = (haut + window.scrollY) + 'px';
+    apercuNote = boite;
+  }
+
+  var notesEcoutees = false;
+  function attachFootnotes(container) {
+    fermerApercu();
+    if (!container.querySelector('sup.fn-ref, .footnotes')) return;
+    if (notesEcoutees) return;                       // un seul jeu d'écouteurs, sur le document
+    notesEcoutees = true;
+    var souris = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    document.addEventListener('click', function (e) {
+      var lien = e.target.closest && e.target.closest('sup.fn-ref a, a.fn-back');
+      if (!lien) {
+        if (apercuNote && !apercuNote.contains(e.target)) fermerApercu();
+        return;
+      }
+      e.preventDefault();
+      if (lien.classList.contains('fn-back') || souris) allerA(lien.getAttribute('href').slice(1));
+      else montrerApercu(lien, true);
+    });
+    if (souris) {
+      document.addEventListener('mouseover', function (e) {
+        var lien = e.target.closest && e.target.closest('sup.fn-ref a');
+        if (!lien) return;
+        clearTimeout(apercuMinuteur);
+        apercuMinuteur = setTimeout(function () { montrerApercu(lien, false); }, 250);
+      });
+      document.addEventListener('mouseout', function (e) {
+        var lien = e.target.closest && e.target.closest('sup.fn-ref a');
+        if (!lien) return;
+        clearTimeout(apercuMinuteur);
+        apercuMinuteur = setTimeout(fermerApercu, 200);
+      });
+    }
+    window.addEventListener('scroll', function () { if (apercuNote && souris) fermerApercu(); }, { passive: true });
   }
 
   /* =========================================================================
@@ -997,11 +1265,13 @@
 
       var header = buildHeader(meta, body, filename);
       var ner = extractEntities(body);
-      var legend = buildLegend(ner.subtypes);
+      var legend = buildLegend(ner.subtypes, teintesPresentes(body));
 
-      // 2 → 2b → 3 → 4 (string transforms before parse)
+      // 2 → 2b → 3c → 3d → 3 → 4 (string transforms before parse)
       body = transformMermaid(body);
       body = transformLeaflet(body);
+      body = transformFootnotes(body, langueDuDocument(body, meta)); // 3c, avant les callouts
+      body = transformHighlights(body);                           // 3d
 
       body = transformCallouts(body);                             // 3
       body = transformWikiLinks(body);                            // 4
@@ -1011,6 +1281,7 @@
 
       dedupeTitle(container, header.title);                       // remove duplicate H1
       highlightEntities(container, ner.entities, ner.subtypes);   // 6 (DOM-safe)
+      attachFootnotes(container);                                 // 3c aller-retour, aperçu
       hideRedundantSecondImage(container);
       watchImages(container);                                     // 5 drop images that fail
       attachImageZoom(container);                                 // tap image → full-screen
@@ -1043,6 +1314,7 @@
   function renderFragment(container, md) {
     var body = transformMermaid(md);
     body = transformLeaflet(body);
+    body = transformHighlights(body);
     body = transformCallouts(body);
     body = transformWikiLinks(body);
     container.innerHTML = withLazyImages(marked.parse(body, { breaks: true, gfm: true }));
@@ -1197,7 +1469,8 @@
   function pushRun(out, text, fmt) {
     if (!text) return;
     var last = out[out.length - 1];
-    if (last && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code) {
+    // Un appel de note reste seul dans son run : il deviendra une note de fin.
+    if (last && !last.note && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code) {
       last.text += text;
     } else {
       out.push({ text: text, bold: !!fmt.bold, italic: !!fmt.italic, code: !!fmt.code });
@@ -1212,10 +1485,21 @@
       if (c.nodeType !== 1) continue;
       var tag = c.tagName;
       if (tag === 'IMG' || tag === 'BR') { if (tag === 'BR') pushRun(out, '\n', fmt); continue; }
+      // Un appel de note devient une note de fin à l'export : un run à part, qui porte l'id.
+      if (tag === 'SUP' && c.classList.contains('fn-ref')) {
+        var lienNote = c.querySelector('a');
+        if (lienNote) out.push({ text: lienNote.textContent, note: lienNote.getAttribute('data-fn') });
+        continue;
+      }
+      if (tag === 'A' && c.classList.contains('fn-back')) continue;
       var f = { bold: fmt.bold, italic: fmt.italic, code: fmt.code };
       if (tag === 'STRONG' || tag === 'B') f.bold = true;
       if (tag === 'EM' || tag === 'I') f.italic = true;
       if (tag === 'CODE' && node.tagName !== 'PRE') f.code = true;
+      // Dates et montants balisés par fornews : la couleur ne passe pas dans Word ni
+      // PowerPoint, le gras les garde visibles.
+      if (tag === 'MARK' && /--ner-rgb:\s*(100,\s*116,\s*139|67,\s*56,\s*202|101,\s*163,\s*13)/
+          .test(c.getAttribute('style') || '')) f.bold = true;
       collectRuns(c, f, out);
     }
   }
@@ -1532,10 +1816,26 @@
     var tasks = [];     // async image tasks
     var blocks = [];
     var kids = Array.prototype.slice.call(container.children);
+    var BLOC = /^(P|H[1-6]|UL|OL|TABLE|BLOCKQUOTE|PRE|IMG|DIV|SECTION|DETAILS|FIGURE|HR)$/;
 
-    kids.forEach(function (el) {
+    kids.forEach(function visit(el) {
       var tag = el.tagName;
       if (el.classList && el.classList.contains('okia-meta')) return;
+      // La section Notes devient les notes de fin de Word : chaque note avec son texte et
+      // l'adresse de l'article, que le lien seul aurait perdue.
+      if (el.classList && el.classList.contains('footnotes')) {
+        var titreNotes = el.querySelector('h2');
+        var notes = [];
+        el.querySelectorAll('li[id^="fn-"]').forEach(function (li) {
+          var texte = li.querySelector('.fn-texte') || li;
+          var r = runsOf(texte);
+          var url = texte.querySelector('a[href^="http"]');
+          if (url) r.push({ text: ' — ' + url.getAttribute('href') });
+          notes.push({ id: li.id.slice(3), label: li.getAttribute('value') || '', runs: r });
+        });
+        if (notes.length) blocks.push({ t: 'notes', title: titreNotes ? runsOf(titreNotes) : [], items: notes });
+        return;
+      }
       if (el.classList && el.classList.contains('ner-legend')) return;
       if (el.classList && el.classList.contains('okia-title')) return;   // passed as doc title
       if (/^H[1-6]$/.test(tag)) {
@@ -1589,6 +1889,13 @@
         if (titleEl) { var tr = runsOf(titleEl); tr.forEach(function (x) { x.bold = true; }); runs = runs.concat(tr); runs.push({ text: ' — ', bold: false }); }
         if (contentEl) runs = runs.concat(runsOf(contentEl));
         if (runs.length) blocks.push({ t: 'quote', runs: runs });
+      } else if (/^(DIV|SECTION|DETAILS|SUMMARY|FIGURE)$/.test(tag)) {
+        // Les blocs HTML des rapports fornews (cadres, cartes de chiffres, sources repliées) :
+        // on descend dans ceux qui portent des blocs, on garde en paragraphe ceux qui ne
+        // portent que du texte. Sans quoi la synthèse, logée dans un cadre, disparaissait.
+        var enfants = Array.prototype.slice.call(el.children);
+        if (enfants.some(function (k) { return BLOC.test(k.tagName); })) enfants.forEach(visit);
+        else { var rr = runsOf(el); if (rr.length) blocks.push({ t: 'paragraph', runs: rr }); }
       }
     });
 

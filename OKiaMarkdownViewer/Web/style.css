@@ -234,6 +234,68 @@ mark.ner-tag {
   display: inline-block;
 }
 
+/* ---- Surligné ==…== et <mark> sans classe --------------------------------- */
+/* Sans règle, WebKit garde son jaune et du texte noir, même en sombre. */
+mark:not([class]) {
+  background: var(--accent-pale);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* ---- Notes de bas de page ------------------------------------------------- */
+sup.fn-ref { font-size: 0.72em; line-height: 0; vertical-align: super; white-space: nowrap; }
+sup.fn-ref a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0 0.12em;
+  border-radius: 3px;
+}
+/* Le filet des liens du texte alourdirait un exposant d'un caractère. */
+sup.fn-ref a, a.fn-back, .fn-apercu-aller { border-bottom: none; text-decoration: none; }
+/* Deux appels collés, « [^6][^3] », se lisent 6,3 et non 63 (classe posée par render.js). */
+sup.fn-ref.fn-suite::before { content: ","; color: var(--muted); }
+sup.fn-ref.fn-cible a, .footnotes li.fn-cible { animation: okia-fn-eclat 1.8s ease-out; }
+@keyframes okia-fn-eclat {
+  0%, 30% { background: var(--accent-pale); }
+  100%    { background: transparent; }
+}
+.footnotes {
+  margin-top: 2.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.92em;
+}
+.footnotes h2 { margin-top: 0.6rem; }
+.footnotes ol { padding-left: 1.8em; }
+.footnotes li { margin: 0.4em 0; padding: 2px 6px; border-radius: 6px; }
+.footnotes li::marker { color: var(--accent); font-weight: 700; }
+.fn-back { margin-left: 0.3em; color: var(--accent); text-decoration: none; }
+.fn-back sup { font-size: 0.7em; }
+.fn-apercu {
+  position: absolute;
+  z-index: 60;
+  max-width: min(440px, calc(100vw - 24px));
+  padding: 10px 14px;
+  background: var(--card-bg);
+  color: var(--fg);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.18);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.fn-apercu-num { color: var(--accent); font-weight: 800; }
+.fn-apercu-aller {
+  display: block;
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+@media print { .fn-apercu { display: none; } }
+
 /* ---- In-document search highlight ---------------------------------------- */
 mark.search-hit {
   background: rgba(232, 151, 46, 0.35);
@@ -305,6 +367,9 @@ pre.mermaid.mermaid-error::after { content: none; }
     --heading-color: var(--fg);
     --th-bg: #2a2a31;
     --zebra: rgba(255,255,255,.03);
+    /* Le fond pâle du clair, sous un texte clair, rendait le surligné illisible : un orange
+       sombre, comme les autres thèmes en ont un. */
+    --accent-pale: #3A2A14;
   }
   /* The mermaid SVG itself is rendered with light OK-ia colors; keep it on a light card. */
   pre.mermaid { color: var(--noir); }

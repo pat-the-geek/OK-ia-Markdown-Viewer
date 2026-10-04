@@ -19,6 +19,16 @@ struct OOXMLRun: Equatable {
     var bold = false
     var italic = false
     var code = false
+    /// Un appel de note : l'identifiant de la note (`3` pour `[^3]`), `text` portant le numéro
+    /// affiché. Word en fait une vraie note de fin.
+    var note: String? = nil
+}
+
+/// Une note de bas de page du document, telle que la section Notes la porte.
+struct OOXMLNote: Equatable {
+    var id: String
+    var label: String
+    var runs: [OOXMLRun]
 }
 
 /// An embedded raster image (already decoded bytes + pixel size + mime).
@@ -37,6 +47,8 @@ enum OOXMLBlock: Equatable {
     case list(ordered: Bool, items: [[OOXMLRun]])
     case table(rows: [[[OOXMLRun]]])          // rows → cells → runs
     case image(OOXMLImage, caption: [OOXMLRun])
+    /// La section Notes : Word la remplace par des notes de fin quand le texte les appelle.
+    case notes(title: [OOXMLRun], items: [OOXMLNote])
 }
 
 // MARK: - XML helpers
@@ -149,7 +161,25 @@ enum DocxBuilder {
         var rels = ""
         var relId = 0
 
+        // Les notes du document, par identifiant. Chaque appel devient une note de fin, que
+        // Word numérote lui-même : il ne connaît pas la note appelée deux fois, un second appel
+        // en fait donc une seconde note, au même texte.
+        var notesParId: [String: OOXMLNote] = [:]
+        for case .notes(_, let items) in blocks { for n in items { notesParId[n.id] = n } }
+        var notesDeFin: [String] = []
+
         func runXML(_ r: OOXMLRun) -> String {
+            if let id = r.note {
+                guard let note = notesParId[id] else {
+                    return "<w:r><w:rPr><w:vertAlign w:val=\"superscript\"/></w:rPr><w:t>\(XML.esc(r.text))</w:t></w:r>"
+                }
+                let numero = notesDeFin.count + 1
+                notesDeFin.append("<w:endnote w:id=\"\(numero)\"><w:p><w:pPr><w:pStyle w:val=\"EndnoteText\"/></w:pPr>" +
+                                  "<w:r><w:rPr><w:rStyle w:val=\"EndnoteReference\"/></w:rPr><w:endnoteRef/></w:r>" +
+                                  "<w:r><w:t xml:space=\"preserve\"> </w:t></w:r>" +
+                                  note.runs.map(runXML).joined() + "</w:p></w:endnote>")
+                return "<w:r><w:rPr><w:rStyle w:val=\"EndnoteReference\"/></w:rPr><w:endnoteReference w:id=\"\(numero)\"/></w:r>"
+            }
             var props = ""
             if r.bold { props += "<w:b/>" }
             if r.italic { props += "<w:i/>" }
@@ -227,34 +257,69 @@ enum DocxBuilder {
             case .image(let img, let caption):
                 body += imageXML(img)
                 if !caption.isEmpty { body += para(caption, style: "Caption") }
+            case .notes(let title, let items):
+                // Appelées dans le texte, elles sont déjà des notes de fin ; sinon, une liste.
+                let appelees = blocks.contains { b in
+                    switch b {
+                    case .paragraph(let r), .quote(let r), .heading(_, let r): return r.contains { $0.note != nil }
+                    case .list(_, let its): return its.contains { $0.contains { $0.note != nil } }
+                    case .table(let rows): return rows.contains { $0.contains { $0.contains { $0.note != nil } } }
+                    default: return false
+                    }
+                }
+                if !appelees {
+                    if !title.isEmpty { body += para(title, style: "Heading2") }
+                    for n in items {
+                        body += "<w:p><w:pPr><w:pStyle w:val=\"ListParagraph\"/><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"2\"/></w:numPr></w:pPr>\(runsXML(n.runs))</w:p>"
+                    }
+                }
             }
         }
+        let avecNotes = !notesDeFin.isEmpty
 
         let document = """
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
-        <w:body>\(body)<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>
+        <w:body>\(body)<w:sectPr>\(avecNotes ? "<w:endnotePr><w:numFmt w:val=\"decimal\"/></w:endnotePr>" : "")<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>
         """
 
         var zip = OOXMLZip()
-        zip.add("[Content_Types].xml", xml: contentTypes)
+        zip.add("[Content_Types].xml", xml: contentTypes(avecNotes: avecNotes))
         zip.add("_rels/.rels", xml: rootRels)
         zip.add("word/document.xml", xml: document)
         zip.add("word/styles.xml", xml: stylesXML)
         zip.add("word/numbering.xml", xml: numberingXML)
+        if avecNotes {
+            zip.add("word/endnotes.xml", xml: """
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">\
+            <w:endnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:endnote>\
+            <w:endnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:endnote>\
+            \(notesDeFin.joined())</w:endnotes>
+            """)
+            zip.add("word/settings.xml", xml: """
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">\
+            <w:endnotePr><w:numFmt w:val="decimal"/><w:endnote w:id="-1"/><w:endnote w:id="0"/></w:endnotePr></w:settings>
+            """)
+        }
+        let notesRels = avecNotes
+            ? "<Relationship Id=\"rIdEndnotes\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes\" Target=\"endnotes.xml\"/>" +
+              "<Relationship Id=\"rIdSettings\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings\" Target=\"settings.xml\"/>"
+            : ""
         let docRels = """
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\
         <Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>\
         <Relationship Id="rIdNum" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>\
-        \(rels)</Relationships>
+        \(notesRels)\(rels)</Relationships>
         """
         zip.add("word/_rels/document.xml.rels", xml: docRels)
         for entry in images { zip.add("word/media/\(entry.name)", entry.img.data) }
         return zip.finalize()
     }
 
-    private static let contentTypes = """
+    private static func contentTypes(avecNotes: Bool) -> String { """
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\
     <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\
@@ -264,8 +329,9 @@ enum DocxBuilder {
     <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>\
     <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>\
     <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>\
+    \(avecNotes ? "<Override PartName=\"/word/endnotes.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml\"/><Override PartName=\"/word/settings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml\"/>" : "")\
     </Types>
-    """
+    """ }
 
     private static let rootRels = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -287,6 +353,8 @@ enum DocxBuilder {
     <w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:pPr><w:ind w:left="480"/><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="E8972E"/></w:pBdr><w:spacing w:before="120" w:after="120"/></w:pPr><w:rPr><w:i/><w:color w:val="555555"/></w:rPr></w:style>\
     <w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="Caption"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="777777"/></w:rPr></w:style>\
     <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:pPr><w:ind w:left="420"/></w:pPr></w:style>\
+    <w:style w:type="paragraph" w:styleId="EndnoteText"><w:name w:val="endnote text"/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr></w:style>\
+    <w:style w:type="character" w:styleId="EndnoteReference"><w:name w:val="endnote reference"/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style>\
     </w:styles>
     """
 
@@ -432,6 +500,9 @@ enum PptxBuilder {
         for b in slide.blocks {
             switch b {
             case .heading, .paragraph, .quote, .list: textRun.append(b)
+            case .notes(let title, let notes):
+                if !title.isEmpty { textRun.append(.heading(level: 2, runs: title)) }
+                textRun.append(.list(ordered: true, items: notes.map(\.runs)))
             case .table(let rows): flush(); items.append(.table(rows))
             case .image(let img, _): flush(); items.append(.image(img))
             }
@@ -500,6 +571,7 @@ enum PptxBuilder {
         var rPr = "<a:rPr lang=\"fr-FR\" sz=\"\(size)\""
         if r.bold || bold { rPr += " b=\"1\"" }
         if r.italic { rPr += " i=\"1\"" }
+        if r.note != nil { rPr += " baseline=\"30000\"" }
         rPr += ">"
         if r.code { rPr += "<a:latin typeface=\"Menlo\"/>" }
         rPr += "</a:rPr>"
@@ -679,7 +751,8 @@ enum OOXMLExportBridge {
         return a.map { OOXMLRun(text: $0["text"] as? String ?? "",
                                 bold: $0["bold"] as? Bool ?? false,
                                 italic: $0["italic"] as? Bool ?? false,
-                                code: $0["code"] as? Bool ?? false) }
+                                code: $0["code"] as? Bool ?? false,
+                                note: $0["note"] as? String) }
     }
 
     private static func image(_ d: [String: Any], _ downloaded: [String: OOXMLImage]) -> OOXMLImage? {
@@ -710,6 +783,11 @@ enum OOXMLExportBridge {
         case "image":
             if let img = image(d, downloaded) { return .image(img, caption: runs(d["caption"])) }
             return nil
+        case "notes":
+            let items = (d["items"] as? [[String: Any]] ?? []).map {
+                OOXMLNote(id: $0["id"] as? String ?? "", label: $0["label"] as? String ?? "", runs: runs($0["runs"]))
+            }
+            return items.isEmpty ? nil : .notes(title: runs(d["title"]), items: items)
         case "map":
             let markers = (d["markers"] as? [String]) ?? []
             let text = "🗺 Carte — " + markers.joined(separator: " · ")
