@@ -921,11 +921,12 @@ constats, tirés du code tel qu'il est :
   rappelle pas `OKIA.render`. Le DOM, donc la traduction, survit. Ce qu'il faut éprouver, c'est
   que le pliage ne **recrée** pas la `WKWebView` elle-même — si SwiftUI reconstruit la vue, tout
   repart à zéro, et cela ne se verra qu'à l'essai ;
-- **`render.js` n'écoute pas `resize`.** Les cartes Leaflet n'appellent `invalidateSize()` qu'au
-  moment du rendu. Déplier l'appareil laisserait donc une carte à ses anciennes dimensions,
-  bande grise comprise. Le diaporama, lui, écoute déjà `resize` et `orientationchange` et
-  recalcule la diapositive courante (`presentation.js`) : c'est le même traitement qu'il faut
-  donner au lecteur ;
+- **les cartes suivent leur cadre — fait le 2026-10-04.** Rectification : Leaflet suivait déjà la
+  fenêtre (`trackResize`). Ce qu'il ne voyait pas, c'est un cadre qui change sans elle : avec le
+  thème Éditorial, colonne plus étroite, la carte se croyait large de 978 px dans un cadre de 674.
+  Un `ResizeObserver` par carte (`suivreLeCadre`, `render.js`) la remesure à la fin du mouvement ;
+  vérifié sur iPad, 790 puis 690 px, carte entière. Le pliage du Duo, qui change le cadre, est
+  couvert du même coup ;
 - **la règle paysage de `style.css` raisonne en orientation.** Sur un écran intérieur presque
   carré, l'orientation ne dit plus grand-chose ; une règle fondée sur la largeur dirait mieux ce
   qu'elle veut dire.

@@ -954,6 +954,34 @@
     return function () { if (note.parentNode) note.parentNode.removeChild(note); };
   }
 
+  // Une carte Leaflet mesure son cadre à sa création, puis ne suit que la fenêtre
+  // (`trackResize`). Or le cadre change aussi sans elle : un thème de lecture à colonne plus
+  // étroite (Éditorial : 978 px mesurés, la carte en croyait toujours 978 dans un cadre de
+  // 674), la taille du texte, le Split View, et demain le pliage du Duo. La carte gardait sa
+  // mesure — tuiles grises, centre décalé. Un observateur par cadre, qui attend la fin du
+  // mouvement, puis la carte se remesure en gardant son centre.
+  var observateurCartes = null;
+  function suivreLeCadre(el) {
+    if (!window.ResizeObserver) return;
+    if (!observateurCartes) {
+      var minuteurs = new WeakMap();
+      observateurCartes = new ResizeObserver(function (entrees) {
+        entrees.forEach(function (entree) {
+          var cadre = entree.target;
+          clearTimeout(minuteurs.get(cadre));
+          minuteurs.set(cadre, setTimeout(function () {
+            var carte = cadre._leafletMap;
+            if (!carte || !cadre.offsetWidth) return;
+            var taille = carte.getSize();
+            if (taille.x === cadre.clientWidth && taille.y === cadre.clientHeight) return;
+            try { carte.invalidateSize({ pan: false }); } catch (e) {}
+          }, 120));
+        });
+      });
+    }
+    observateurCartes.observe(el);
+  }
+
   function renderLeafletMaps(container) {
     if (typeof L === 'undefined') return;
     var maps = Array.prototype.slice.call(container.querySelectorAll('.okia-map'));
@@ -982,6 +1010,7 @@
         scrollWheelZoom: true
       });
       el._leafletMap = map;   // expose for the slideshow to re-measure on fit/resize
+      suivreLeCadre(el);
 
       // The backgrounds come from OpenFreeMap: the very "positron" and "dark" styles CARTO
       // withdrew behind an API key, rebuilt from OpenStreetMap data and served without key,
