@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (46)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (47)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec l'Xcode **stable** (27.0) : le script
 > refuse d'envoyer depuis une bêta.
@@ -30,7 +30,66 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (46)
+## What to Test — 1.3 (47)
+
+```
+Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
+
+NOUVEAU — LA BARRE EN LIQUID GLASS
+• La barre du lecteur devient deux capsules de verre qui flottent sur la page :
+  le document défile dessous. Le titre ne s'affiche que s'il tient en entier.
+• Pliez ou tournez l'appareil en haut d'un document : le titre doit rester
+  visible sous la barre, jamais caché dessous.
+• Changez de thème (bouton Aa) sur un document avec une carte : la carte doit
+  suivre la nouvelle largeur, sans bande grise.
+• Les noms surlignés ne doivent plus l'être au milieu d'un mot (« Si » dans
+  « Siri »).
+
+NOUVEAU — IPHONE DUO (si vous en avez un)
+• Déplié, le sommaire, le résumé et la discussion s'ouvrent de l'autre côté de
+  la pliure, à côté du document. Plié, ils restent des feuilles.
+• La page va jusqu'au bord ; seul le coin de l'heure et de la caméra est évité.
+
+NOUVEAU — LES RAPPORTS DE VEILLE FORNEWS : NOTES DE BAS DE PAGE
+Ouvrez un rapport de veille de fornews.ai.
+• Les appels de source deviennent des exposants orange. Touchez-en un (iPhone,
+  iPad) : la note s'ouvre en aperçu, avec « Aller à la note ». Sur Mac, survolez-le.
+• La section « Notes » réunit les sources, avec leurs liens. ↩ ramène à l'appel.
+• L'avertissement final doit rester le tout dernier élément du rapport.
+• Dates et montants colorés : la légende en haut les nomme.
+• Exportez en Word : les sources deviennent des notes de fin, et la synthèse doit
+  être là. Dites-nous ce que Word en affiche.
+
+NOUVEAU — CONVERTIR UN RAPPORT EN PRÉSENTATION (Apple Intelligence)
+Ouvrez un rapport, puis bouton Apple Intelligence du lecteur → « Convertir en présentation ».
+• Choisissez 5, 10, 15, 20 ou 25 diapositives, ou « Autre ». La présentation doit
+  compter exactement ce nombre.
+• Suivez l'avancement : la liste des diapositives prêtes doit s'allonger au fur
+  et à mesure, titre et plan d'abord. Puis « Lancer le diaporama ».
+• Vérifiez les chiffres : chacun doit se retrouver dans le rapport. Signalez tout
+  chiffre ou tout nom qui n'y figure pas.
+• Les diagrammes et la carte du rapport doivent être repris tels quels.
+• Les images du rapport passent dans la présentation : dites-nous si une image
+  tombe mal ou si une section manque.
+• La présentation garde la langue du rapport : essayez un rapport en anglais ou en
+  allemand.
+• « Laissé de côté » doit dire honnêtement ce qui manque, surtout à 5 diapositives.
+• « Enregistrer le fichier .md » : le fichier doit s'ouvrir dans md Viewer.
+• Dites-nous combien de temps a pris la conversion, et sur quel appareil.
+• Nécessite un appareil compatible Apple Intelligence ; tout se calcule sur
+  l'appareil.
+
+
+TOUJOURS À ESSAYER — DIAPORAMA, EXPORT POWERPOINT, THÈMES
+• Onze transitions au diaporama (menu du diaporama → Transition), dont le Damier
+  aux cases qui pivotent ; « Réduire les animations » les change en fondu.
+• L'export PowerPoint reprend la transition choisie ; dites-nous ce qu'en garde
+  Keynote.
+• Bouton « Aa » : cinq thèmes de lecture, en clair et en sombre ; le PDF reste
+  aux couleurs OK-ia.
+```
+
+## What to Test — 1.3 (46) — archive
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
