@@ -1021,6 +1021,27 @@ enfant — l'ouvrir ou la fermer ne recrée pas sa vue web. Vérifié sur l'iPho
 deux parties ; portrait : une feuille). L'iPad ne se laisse pas tourner par l'app : son paysage reste
 à voir sur l'appareil. `OKIA_ORIENTATION=paysage`, harnais Debug, tourne l'iPhone au lancement.
 
+#### La présentation qui se construit sous les yeux — le 2026-10-08
+
+**Demandé par Patrick** : sur écran large, voir chaque diapositive au fur et à mesure de sa
+création. La conversion en présentation s'ouvre désormais **dans la seconde partie** (Duo déplié,
+grand écran en paysage) — le rapport reste lisible à côté — et dans une feuille ailleurs. Dans les
+deux cas, la liste des titres a laissé place aux **vignettes** : chaque diapositive prête est rendue
+par le moteur du diaporama lui-même (`OKIA_PRESENT.chantier`, `presentation.js`) — thème, images,
+cartes, diagrammes —, la suivante est annoncée par une case en pointillés, et la vue suit la
+dernière tant qu'on ne remonte pas en voir une plus ancienne. À la fin, les vignettes restent ; le
+diaporama s'ouvre par-dessus. La conversion est tenue par le lecteur (`ConversionEnCours`) : elle
+survit à la feuille refermée et à la partie qui s'efface quand on tourne l'appareil. Seule une
+diapositive dont le texte change repasse au rendu. Vérifié sur l'iPhone 17 Pro Max (paysage) et
+l'iPhone 17 Pro (feuille), avec `OKIA_FAKE_AI`, qui rejoue désormais une conversion (et un résumé)
+au simulateur. Le Duo déplié reste à voir : même vue que le Pro Max.
+
+**Correctif, même jour** : le résumé et la discussion ne défilaient pas dans la seconde partie. Ils
+fabriquaient leur document dans `body` — un nouvel identifiant à chaque passage —, et le lecteur
+voisin relance ce `body` sans arrêt (traduction, défilement) : 8 841 rendus en 40 secondes, la page
+ramenée en haut à chaque fois. `MarkdownWebView` ne rend plus un document au même nom et au même
+texte.
+
 #### Duo — deux parties de part et d'autre de la pliure — le 2026-10-08
 
 - **Le sommaire, le résumé et la discussion s'ouvrent dans la seconde partie** quand le Duo est

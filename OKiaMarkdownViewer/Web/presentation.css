@@ -568,3 +568,75 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* ---- chantier : la présentation qui se construit pendant la conversion ------ */
+/* Les commandes du diaporama n'ont rien à faire ici : on regarde, on ne présente pas. */
+body.present-chantier .deck,
+body.present-chantier .present-progress,
+body.present-chantier .nav-arrow,
+body.present-chantier .present-end,
+body.present-chantier .present-menu-btn,
+body.present-chantier .present-grid-btn,
+body.present-chantier .present-counter { display: none; }
+body.present-chantier { --chantier-fond: #EEEEF1; }
+@media (prefers-color-scheme: dark) {
+  body.present-chantier { --chantier-fond: #121216; }
+}
+.chantier {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  align-content: start;
+  background: var(--chantier-fond);
+  padding: 16px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom))
+           max(16px, env(safe-area-inset-left));
+}
+.chantier-item {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.chantier-item.chantier-neuve { opacity: 0; transform: translateY(18px) scale(0.97); }
+.chantier-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+/* La diapositive à sa taille de conception, réduite par le JS depuis le coin haut gauche. */
+.chantier-frame .slide.chantier-slide {
+  inset: auto;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: top left;
+  pointer-events: none;
+}
+/* La prochaine diapositive, que le modèle est en train d'écrire. */
+.chantier-attente .chantier-frame {
+  background: transparent;
+  box-shadow: none;
+  border: 2px dashed rgba(232, 151, 46, 0.55);
+  box-sizing: border-box;
+}
+.chantier-lueur {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(232, 151, 46, 0.18) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: chantier-lueur 1.6s linear infinite;
+}
+@keyframes chantier-lueur {
+  from { background-position: 120% 0; }
+  to   { background-position: -120% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chantier-item { transition: none; }
+  .chantier-lueur { animation: none; }
+}

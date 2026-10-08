@@ -972,7 +972,136 @@
     post('presentStarted', { count: sections.length });
   }
 
-  window.OKIA_PRESENT = { start: start, next: next, prev: prev, exit: exit,
+  /* ---- chantier : la présentation qui se construit -------------------------- */
+  // Pendant la conversion d'un rapport, l'app envoie les diapositives prêtes au fur et à
+  // mesure. Chacune est rendue par le même moteur que le diaporama — même thème, mêmes
+  // images, cartes et diagrammes — dans une vignette, sous la précédente. La dernière à
+  // venir est annoncée par une case en attente. Rien ne se rend deux fois : seule une
+  // diapositive dont le texte a changé repasse au rendu.
+  var chantierEl = null, chantierMd = [], chantierFile = Promise.resolve();
+
+  function preparerChantier() {
+    if (chantierEl) return;
+    document.body.classList.add('present-chantier');
+    try {
+      var savedTheme = localStorage.getItem('okia.theme');
+      if (savedTheme && THEMES.some(function (t) { return t.key === savedTheme; })) theme = savedTheme;
+    } catch (e) {}
+    setTheme(theme);
+    chantierEl = document.createElement('div');
+    chantierEl.id = 'chantier';
+    chantierEl.className = 'chantier';
+    document.body.appendChild(chantierEl);
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        Array.prototype.forEach.call(chantierEl.querySelectorAll('.chantier-frame'), echelleVignette);
+      }, 120);
+    });
+  }
+
+  // La diapositive garde sa taille de conception (1280 × 720) ; la vignette la réduit.
+  function echelleVignette(frame) {
+    var section = frame.querySelector('.slide');
+    if (!section) return;
+    section.style.transform = 'scale(' + ((frame.clientWidth || 320) / 1280).toFixed(4) + ')';
+  }
+
+  function itemChantier(i) {
+    var items = chantierEl.querySelectorAll('.chantier-item:not(.chantier-attente)');
+    if (items[i]) return items[i];
+    // Mesuré avant d'ajouter la vignette : le lecteur était-il en bas, à suivre la conversion ?
+    // Celui qui est remonté voir une diapositive plus ancienne n'est pas ramené en bas.
+    var bas = chantierEl.scrollHeight - chantierEl.scrollTop - chantierEl.clientHeight;
+    var item = document.createElement('div');
+    item.className = 'chantier-item chantier-neuve';
+    item._suivre = bas < 120;
+    var frame = document.createElement('div');
+    frame.className = 'chantier-frame';
+    var section = document.createElement('section');
+    section.className = 'slide active chantier-slide';
+    var canvas = document.createElement('div');
+    canvas.className = 'slide-canvas';
+    var inner = document.createElement('div');
+    inner.className = 'slide-inner markdown-body';
+    canvas.appendChild(inner);
+    section.appendChild(canvas);
+    frame.appendChild(section);
+    var num = document.createElement('span');
+    num.className = 'overview-num';
+    num.textContent = i + 1;
+    frame.appendChild(num);
+    item.appendChild(frame);
+    var attente = chantierEl.querySelector('.chantier-attente');
+    chantierEl.insertBefore(item, attente);
+    echelleVignette(frame);
+    return item;
+  }
+
+  function rendreVignette(i, md) {
+    var item = itemChantier(i);
+    var section = item.querySelector('.slide');
+    var inner = item.querySelector('.slide-inner');
+    section.classList.remove('slide-map');
+    // Une diapositive qui échoue au rendu garde son texte brut ; elle ne bloque pas la file.
+    var rendu;
+    try { rendu = Promise.resolve(window.OKIA.renderFragment(inner, md)); }
+    catch (e) { rendu = Promise.resolve(); }
+    return rendu
+      .catch(function () {})
+      .then(function () {
+        fitSlide(section);
+        echelleVignette(item.querySelector('.chantier-frame'));
+        if (item.classList.contains('chantier-neuve')) {
+          void item.offsetWidth;
+          item.classList.remove('chantier-neuve');
+          if (item._suivre) {
+            (chantierEl.querySelector('.chantier-attente') || item)
+              .scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        }
+      });
+  }
+
+  // La case de la prochaine diapositive, tant que la conversion n'est pas finie.
+  function caseEnAttente(numero, visible) {
+    var attente = chantierEl.querySelector('.chantier-attente');
+    if (!visible) { if (attente) attente.remove(); return; }
+    if (!attente) {
+      attente = document.createElement('div');
+      attente.className = 'chantier-item chantier-attente';
+      attente.innerHTML = '<div class="chantier-frame"><div class="chantier-lueur"></div>' +
+        '<span class="overview-num"></span></div>';
+      chantierEl.appendChild(attente);
+    }
+    attente.querySelector('.overview-num').textContent = numero;
+  }
+
+  // payload : { slides: [markdown…] } pendant la conversion, ou { md: "…" } une fois finie ;
+  // prevues : le nombre attendu ; fini : plus rien à attendre.
+  function chantier(payload) {
+    preparerChantier();
+    // Les blancs autour d'une diapositive ne comptent pas : la présentation enregistrée, une
+    // fois finie, ne doit pas faire repasser au rendu celles déjà montrées en route.
+    var slides = (payload.slides || splitSlides(payload.md || ''))
+      .map(function (md) { return String(md).trim(); })
+      .filter(function (md) { return md.length > 0; });
+    slides.forEach(function (md, i) {
+      if (chantierMd[i] === md) return;
+      chantierMd[i] = md;
+      chantierFile = chantierFile
+        .then(function () { return rendreVignette(i, md); })
+        .catch(function (e) { console.error('chantier', i, e); });
+    });
+    chantierFile = chantierFile.then(function () {
+      var items = chantierEl.querySelectorAll('.chantier-item:not(.chantier-attente)');
+      for (var k = items.length - 1; k >= slides.length; k--) items[k].remove();
+      chantierMd.length = Math.min(chantierMd.length, slides.length);
+      caseEnAttente(slides.length + 1, !payload.fini && slides.length < (payload.prevues || 0));
+    });
+  }
+
+  window.OKIA_PRESENT = { start: start, chantier: chantier, next: next, prev: prev, exit: exit,
                           collectSlide: collectSlide, collectAllSlides: collectAllSlides,
                           collectSlideExtras: collectSlideExtras,
                           collectAllSlidesExtras: collectAllSlidesExtras,

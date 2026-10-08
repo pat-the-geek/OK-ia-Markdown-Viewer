@@ -33,6 +33,8 @@ struct ReaderView: View {
     @State private var showConverter = false
     @State private var presentationEnAttente: MarkdownDocument?
     @State private var presentationConvertie: MarkdownDocument?
+    /// La conversion en cours, partagée par la feuille et la seconde partie.
+    @StateObject private var conversion = ConversionEnCours()
     /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
     /// texte, au lieu de rester une marge vide sur toute la hauteur.
     @State private var appareilPliable = false
@@ -206,6 +208,7 @@ struct ReaderView: View {
             case "sommaire":   panneauDuo = .sommaire
             case "resume":     panneauDuo = .resume
             case "discussion": panneauDuo = .discussion
+            case "conversion": panneauDuo = .conversion
             default: break
             }
         }
@@ -229,7 +232,7 @@ struct ReaderView: View {
             switch env["OKIA_AI"] {
             case "summary": DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showSummary = true }
             case "chat":    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showChat = true }
-            case "convert": DispatchQueue.main.asyncAfter(deadline: .now() + delai) { showConverter = true }
+            case "convert": DispatchQueue.main.asyncAfter(deadline: .now() + delai) { ouvrir(.conversion) }
             default: break
             }
         }
@@ -252,9 +255,9 @@ struct ReaderView: View {
             if let d = presentationEnAttente { presentationEnAttente = nil; presentationConvertie = d }
         }) {
             PresentationConverterView(document: document,
-                                      titreAffiche: title.isEmpty ? document.filename : title) { d in
-                presentationEnAttente = d
-            }
+                                      titreAffiche: title.isEmpty ? document.filename : title,
+                                      onPresenter: { d in presentationEnAttente = d },
+                                      conversion: conversion)
         }
         // La présentation convertie est un document neuf, dans la langue du rapport : rien à
         // hériter de la traduction du lecteur.
@@ -275,6 +278,8 @@ struct ReaderView: View {
         // Reset transient UI when the document changes.
         .onChange(of: document.id) { _, _ in
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
+            conversion.annuler()
+            if panneauDuo == .conversion { panneauDuo = nil }
         }
         .onChange(of: translator.state) { _, etat in
             // La barre du lecteur montre le titre du document : quand le document passe
@@ -617,6 +622,7 @@ struct ReaderView: View {
         case .sommaire:   showTOC = true
         case .resume:     showSummary = true
         case .discussion: showChat = true
+        case .conversion: showConverter = true
         }
     }
 
@@ -632,6 +638,12 @@ struct ReaderView: View {
             case .discussion:
                 DocumentChatView(sourceTitle: title.isEmpty ? document.filename : title,
                                  sourceMarkdown: document.text)
+            case .conversion:
+                // La présentation se construit à côté du rapport, qu'on continue de lire.
+                PresentationConverterView(document: document,
+                                          titreAffiche: title.isEmpty ? document.filename : title,
+                                          onPresenter: { d in presentationConvertie = d },
+                                          conversion: conversion)
             }
         }
         .environment(\.fermerPanneau, { panneauDuo = nil })
@@ -662,7 +674,7 @@ struct ReaderView: View {
                     Button { ouvrir(.discussion) } label: {
                         Label(tr("Discuter avec le document"), systemImage: "text.bubble")
                     }
-                    Button { showConverter = true } label: {
+                    Button { ouvrir(.conversion) } label: {
                         Label(tr("Convertir en présentation"), systemImage: "rectangle.on.rectangle.angled")
                     }
                 } label: {
@@ -993,6 +1005,17 @@ final class DocumentSummarizer: ObservableObject {
     @Published private(set) var partialDocument = false
 
     func summarize(_ markdown: String) {
+        #if DEBUG
+        // Harnais : le simulateur échoue à générer. OKIA_FAKE_AI pose un résumé factice, assez
+        // long pour éprouver le défilement de la seconde partie.
+        if let flag = ProcessInfo.processInfo.environment["OKIA_FAKE_AI"], !flag.isEmpty, flag != "off" {
+            partialDocument = true
+            let chapitre = (1...8).map { "Paragraphe \($0) du chapitre, assez long pour remplir l’écran et obliger à défiler jusqu’en bas de la seconde partie." }
+                .joined(separator: "\n\n")
+            state = .done("# Résumé factice\n\n" + (1...4).map { "## Chapitre \($0)\n\n" + chapitre }.joined(separator: "\n\n"))
+            return
+        }
+        #endif
         #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
             state = .loading
@@ -1705,5 +1728,5 @@ private struct DetecteurCharniere: UIViewRepresentable {
 
 /// Ce que la seconde partie du Duo peut montrer à côté du document.
 enum PanneauDuo: Hashable {
-    case sommaire, resume, discussion
+    case sommaire, resume, discussion, conversion
 }
