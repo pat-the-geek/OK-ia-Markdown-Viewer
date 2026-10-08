@@ -813,10 +813,14 @@ Mac. `MARKETING_VERSION` passe à `1.3`.
 développer pour l'iPhone Duo. Apple refuse tout binaire compilé par une bêta : le script de
 livraison affiche désormais l'Xcode employé et **refuse d'envoyer depuis une bêta** (`--no-upload`
 reste permis). La garde se place avant l'incrément du numéro de build, pour qu'un refus ne
-laisse rien derrière lui. Pour compiler avec la bêta :
+laisse rien derrière lui.
+
+**Depuis le 2026-10-08, la version candidate remplace la bêta** : `Xcode-27.1-RC.app` (27A9275),
+installé à côté de `Xcode.app`, qui livre toujours tant que 27.1 n'est pas sorti. Son SDK iOS
+est le 27.1 et l'appareil « iPhone Duo » existe dans le simulateur. Pour compiler avec elle :
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode-27.1.0-Beta.app/Contents/Developer xcodebuild …
+DEVELOPER_DIR=/Applications/Xcode-27.1-RC.app/Contents/Developer xcodebuild …
 ```
 
 **Les interfaces du Duo, vérifiées dans le SDK 27.1 bêta** — plus seulement dans les présentations
