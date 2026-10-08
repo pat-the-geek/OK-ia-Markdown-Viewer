@@ -81,6 +81,16 @@ body {
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+/* Duo : la page passe sous la colonne réservée par le système et ne contourne que son coin
+   haut (caméra, heure, réseau), posé par OKIA.setBordsLibres. */
+html.okia-bords-libres body { padding-left: 0; padding-right: 0; }
+html.okia-bords-libres .markdown-body::before {
+  content: "";
+  float: right;
+  width: var(--okia-coin-l, 0);
+  height: var(--okia-coin-h, 0);
+}
+
 .markdown-body {
   max-width: var(--reading-max);
   margin: 0 auto;

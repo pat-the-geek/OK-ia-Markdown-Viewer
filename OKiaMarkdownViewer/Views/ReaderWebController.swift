@@ -46,9 +46,23 @@ final class ReaderWebController: ObservableObject {
         eval("window.OKIA && window.OKIA.setTheme(\(jsString(theme)))")
     }
 
-    /// L'expression JavaScript qui pose le thème — à placer devant l'appel de rendu, séparée
-    /// par une virgule : c'est une expression, pas une instruction.
-    var themeScript: String { "window.OKIA.setTheme(\(jsString(theme)))" }
+    // MARK: Duo — la colonne de droite rendue au texte
+    /// Sur un appareil pliable, le système garde à droite une colonne pour la caméra, l'heure
+    /// et le réseau : 84 points de marge sur toute la hauteur. Seul son haut est occupé. La page
+    /// ne contourne plus que ce coin (`largeur` × `hauteur`, en points) ; ailleurs, le texte
+    /// prend toute la largeur. (0, 0) rend la marge d'avant.
+    private(set) var coinLibre: (largeur: Int, hauteur: Int) = (0, 0)
+
+    func setCoinLibre(largeur: CGFloat, hauteur: CGFloat) {
+        coinLibre = (Int(largeur.rounded()), Int(hauteur.rounded()))
+        eval("window.OKIA && window.OKIA.setBordsLibres(\(coinLibre.largeur), \(coinLibre.hauteur))")
+    }
+
+    /// L'expression JavaScript qui pose le thème — et la largeur libérée sur le Duo — à placer
+    /// devant l'appel de rendu, séparée par une virgule : c'est une expression, pas une instruction.
+    var themeScript: String {
+        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibre.largeur), \(coinLibre.hauteur))"
+    }
 
     // MARK: TOC
     func scrollToHeading(_ id: String) {

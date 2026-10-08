@@ -1380,6 +1380,22 @@
   var THEMES_LECTURE = ['okia', 'administratif', 'editorial', 'lecture', 'contraste'];
   var currentTheme = 'okia';
 
+  // Duo : la colonne que le système garde à droite (caméra, heure, réseau) retenait tout le
+  // texte, sur toute la hauteur. On ne contourne plus que son haut, où sont la caméra et
+  // l'heure : un flottant de la taille de ce coin, en tête de page. (0, 0) rend la marge.
+  function setBordsLibres(largeur, hauteur) {
+    var racine = document.documentElement;
+    if (largeur > 0) {
+      racine.classList.add('okia-bords-libres');
+      racine.style.setProperty('--okia-coin-l', largeur + 'px');
+      racine.style.setProperty('--okia-coin-h', Math.max(0, hauteur) + 'px');
+    } else {
+      racine.classList.remove('okia-bords-libres');
+      racine.style.removeProperty('--okia-coin-l');
+      racine.style.removeProperty('--okia-coin-h');
+    }
+  }
+
   function setTheme(key) {
     if (THEMES_LECTURE.indexOf(key) === -1) key = 'okia';
     currentTheme = key;
@@ -2672,6 +2688,7 @@
     exportModel: exportModel,
     setFontScale: setFontScale,
     setTheme: setTheme,
+    setBordsLibres: setBordsLibres,
     scrollToHeading: scrollToHeading,
     search: search,
     searchNext: searchNext,

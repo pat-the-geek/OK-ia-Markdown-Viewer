@@ -33,6 +33,10 @@ struct ReaderView: View {
     @State private var showConverter = false
     @State private var presentationEnAttente: MarkdownDocument?
     @State private var presentationConvertie: MarkdownDocument?
+    /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
+    /// texte, au lieu de rester une marge vide sur toute la hauteur.
+    @State private var appareilPliable = false
+    @State private var margeDroite: CGFloat = 0
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     /// Thème de lecture (1.3), retenu comme la taille du texte. Clé d'un `ReaderTheme`.
@@ -81,7 +85,10 @@ struct ReaderView: View {
                             onTitle: { title = $0 },
                             webController: web, onExternalLink: handleExternalLink,
                             topInset: barHeight)
-                .ignoresSafeArea(edges: .bottom)
+                // Sur le Duo, la page passe aussi sous la colonne de droite : elle n'en contourne
+                // que le coin haut (OKIA.setBordsLibres). Ailleurs, la marge latérale protège
+                // l'encoche de la caméra : on la garde.
+                .ignoresSafeArea(edges: appareilPliable ? [.bottom, .horizontal] : .bottom)
 
             VStack(spacing: 0) {
                 titleBar
@@ -92,10 +99,22 @@ struct ReaderView: View {
             .background(
                 GeometryReader { proxy in
                     Color.clear
-                        .onAppear { barHeight = proxy.size.height }
+                        .onAppear { barHeight = proxy.size.height; margeDroite = proxy.safeAreaInsets.trailing }
                         .onChange(of: proxy.size.height) { _, h in barHeight = h }
+                        .onChange(of: proxy.safeAreaInsets.trailing) { _, m in margeDroite = m }
                 }
             )
+            #if DUO_SDK && !targetEnvironment(macCatalyst)
+            .background {
+                if #available(iOS 27.1, *) {
+                    DetecteurCharniere { appareilPliable = $0 }
+                        .frame(width: 0, height: 0)
+                }
+            }
+            #endif
+            .onChange(of: appareilPliable) { _, _ in poserCoinLibre() }
+            .onChange(of: margeDroite) { _, _ in poserCoinLibre() }
+            .onChange(of: barHeight) { _, _ in poserCoinLibre() }
 
             TranslationHostView(translator: translator)
         }
@@ -447,18 +466,63 @@ struct ReaderView: View {
 
     // MARK: Title bar
 
+    /// Le coin que la page contourne sur le Duo : la largeur de la colonne réservée, sur la
+    /// hauteur de la caméra, de l'heure et du réseau, moins ce que la barre couvre déjà.
+    /// Hors Duo, rien : la page garde sa marge.
+    private func poserCoinLibre() {
+        guard appareilPliable, margeDroite > 0 else {
+            web.setCoinLibre(largeur: 0, hauteur: 0)
+            return
+        }
+        web.setCoinLibre(largeur: margeDroite, hauteur: max(0, 140 - barHeight))
+    }
+
+    /// La barre de titre, en Liquid Glass : deux capsules de verre qui flottent sur la page —
+    /// le titre d'un côté, les commandes de l'autre — au lieu d'une bande mate qui la coupait.
+    /// Le document défile dessous et s'y devine.
     private var titleBar: some View {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                // Le titre entier s'il tient, sinon la seule maison : une capsule réduite à « … »
+                // (l'écran plié du Duo, un iPhone en portrait) n'apprenait rien — le titre est de
+                // toute façon en tête du document.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) {
+                        boutonAccueil
+                        Text(title.isEmpty ? document.filename : title)
+                            .font(.system(size: 16, weight: .heavy))
+                            .lineLimit(1)
+                    }
+                    boutonAccueil
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .glassEffect(.regular.interactive(), in: .capsule)
+
+                Spacer(minLength: 4)
+
+                barreDeCommandes
+                    .fixedSize()
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .glassEffect(.regular.interactive(), in: .capsule)
+            }
+        }
+        .font(.system(size: 17, weight: .semibold))
+        .tint(orange)
+        .padding(.horizontal, 10)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+    }
+
+    private var boutonAccueil: some View {
+        Button(action: onHome) { Image(systemName: "house") }
+            .accessibilityLabel(tr("Écran d’accueil"))
+    }
+
+    /// Les commandes de la barre de titre.
+    private var barreDeCommandes: some View {
         HStack(spacing: 14) {
-            Button(action: onHome) { Image(systemName: "house") }
-                .accessibilityLabel(tr("Écran d’accueil"))
-
-            Text(title.isEmpty ? document.filename : title)
-                .font(.system(size: 16, weight: .heavy))
-                .lineLimit(1)
-                .truncationMode(.tail)
-
-            Spacer(minLength: 4)
-
             // Diaporama — present the document as full-screen slides (split on "---").
             if hasSlides {
                 Button { presenting = true } label: { Image(systemName: "play.rectangle") }
@@ -546,12 +610,6 @@ struct ReaderView: View {
             Button(action: onOpen) { Image(systemName: "folder") }
                 .accessibilityLabel(tr("Ouvrir un fichier"))
         }
-        .font(.system(size: 17, weight: .semibold))
-        .tint(orange)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
 
     // MARK: Search bar
@@ -588,8 +646,9 @@ struct ReaderView: View {
         .tint(orange)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 6)
     }
 
     // MARK: Text size
@@ -1497,3 +1556,23 @@ struct PresentationWebView: UIViewRepresentable {
         }
     }
 }
+
+#if DUO_SDK && !targetEnvironment(macCatalyst)
+/// Dit si l'appareil a une charnière (Duo). `UIHingeInteraction` reçoit l'état de la charnière
+/// dès qu'elle entre dans la hiérarchie, puis à chaque changement ; sans charnière, `hinge` est
+/// nil. Plus sûr que de deviner l'appareil à ses marges : un iPhone en paysage en a aussi.
+@available(iOS 27.1, *)
+private struct DetecteurCharniere: UIViewRepresentable {
+    var surChangement: (Bool) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let vue = UIView()
+        vue.isUserInteractionEnabled = false
+        let suivi = surChangement
+        vue.addInteraction(UIHingeInteraction { _, maj in suivi(maj.hinge != nil) })
+        return vue
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+#endif

@@ -1007,6 +1007,37 @@ C'est le point de départ des travaux : deux parties de part et d'autre de la pl
 (`ArrangementView`), la barre d'outils du système à la place de la nôtre, et la conversion qui
 remplit l'autre partie au lieu d'une feuille.
 
+#### Duo — la page jusqu'au bord, et la barre en Liquid Glass — le 2026-10-08
+
+**Demandé par Patrick** : « utilise au maximum la place d'affichage, évite les marges et utilise
+au max les effets mirror glass. La marge de droite est inutile et pas esthétique » — déplié comme
+plié.
+
+- **La colonne de droite rendue au texte.** Le système du Duo garde à droite 84 points de marge
+  sur toute la hauteur (relevé : écran 951 × 669 déplié, marges 0 / 84 / 34 en haut, à droite, en
+  bas), alors que seuls la caméra, l'heure et le réseau en occupent le haut. Sur le Duo, la page
+  passe désormais dessous et ne contourne que ce coin, par un flottant de 84 × (140 − hauteur de
+  la barre) points (`OKIA.setBordsLibres`, `html.okia-bords-libres`). Deux causes à lever : la vue
+  web ne débordait pas sur les côtés (`.ignoresSafeArea(edges: [.bottom, .horizontal])` sur le Duo
+  seulement), et son défilement ajoutait la marge sur les côtés (`contentInsetAdjustmentBehavior`
+  passé de `.always` à `.scrollableAxes`).
+- **Le Duo est reconnu à sa charnière**, pas à ses marges — un iPhone en paysage en a aussi, pour
+  son encoche, et la garde : `UIHingeInteraction` reçoit l'état de la charnière dès son arrivée
+  dans la hiérarchie, `hinge` est nil sans charnière (`DetecteurCharniere`).
+- **La barre de titre en Liquid Glass**, sur tous les appareils : deux capsules de verre qui
+  flottent sur la page (`GlassEffectContainer`, `.glassEffect(.regular.interactive())`), le titre
+  d'un côté, les commandes de l'autre ; la recherche aussi. Le titre ne s'affiche que s'il tient
+  entier (`ViewThatFits`) : la capsule réduite à « … » de l'écran plié n'apprenait rien.
+- **Un document s'ouvre tout en haut** : la barre de verre se mesure en deux temps et le Duo change
+  la largeur en cours de route — la page partait décalée, le titre à moitié sous la barre.
+- **`DUO_SDK`** : la charnière n'existe que dans le SDK 27.1, et l'Xcode stable 27.0, qui livre
+  encore, a la même version de Swift — `#if compiler` ne les distingue pas. La condition est posée
+  par SDK dans `project.yml` ; ⚠️ à retirer quand 27.1 sera l'Xcode minimal (un SDK 27.2 la ferait
+  tomber).
+
+Vérifié au simulateur (Duo plié et déplié, iPhone 17 Pro en portrait) ; compilé avec l'Xcode
+stable (iOS et Mac) et avec la RC.
+
 #### Thèmes de lecture — réalisés le 2026-10-01
 
 **Ce qui est en place.** Les cinq thèmes ci-dessous, chacun en clair et en sombre, se choisissent

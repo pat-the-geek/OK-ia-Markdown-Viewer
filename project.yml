@@ -22,6 +22,19 @@ settings:
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+  # Duo (1.3) : la charnière (UIHingeInteraction…) n'existe qu'à partir du SDK iOS 27.1. L'Xcode
+  # stable (27.0) livre encore, et sa version de Swift est la même que celle de la 27.1 :
+  # `#if compiler` ne les distingue pas. DUO_SDK n'est donc défini que pour les SDK 27.1 — le code
+  # Duo s'entoure de `#if DUO_SDK`. ⚠️ Avec un SDK 27.2, la condition tombe : à retirer quand
+  # 27.1 sera l'Xcode minimal. Les deux conditions sont écrites en entier par configuration :
+  # $(inherited) dans une valeur conditionnelle ne reprendrait pas DEBUG.
+  configs:
+    Debug:
+      "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "DEBUG DUO_SDK"
+      "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "DEBUG DUO_SDK"
+    Release:
+      "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "DUO_SDK"
+      "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "DUO_SDK"
 
 targets:
   OKiaMarkdownViewer:

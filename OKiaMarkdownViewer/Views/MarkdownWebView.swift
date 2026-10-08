@@ -47,7 +47,11 @@ struct MarkdownWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
-        webView.scrollView.contentInsetAdjustmentBehavior = .always
+        // Les marges du système ne s'ajoutent que dans le sens du défilement. `.always` les
+        // ajoutait aussi sur les côtés : sur le Duo, la colonne réservée à droite restait un
+        // vide de 84 points sous lequel la page ne passait pas. Les côtés sont tenus par la page
+        // elle-même (`env(safe-area-inset-*)` dans style.css), qui protège l'encoche des iPhone.
+        webView.scrollView.contentInsetAdjustmentBehavior = .scrollableAxes
 
         context.coordinator.webView = webView
         webController.webView = webView
@@ -184,6 +188,17 @@ struct MarkdownWebView: UIViewRepresentable {
             case "rendered":
                 parent.webController.reapplyFontScale()
                 parent.webController.onRendered?()
+                // Un document qui s'ouvre presque en haut s'ouvre tout en haut. La hauteur de la
+                // barre de verre se mesure en deux temps, et le Duo change la largeur de la page
+                // en cours de route : la page partait décalée de quelques dizaines de points, le
+                // titre à moitié sous la barre. Plus loin, c'est un défilement voulu (la
+                // discussion descend à la dernière question) : on n'y touche pas.
+                if let vue = message.webView {
+                    let defilement = vue.scrollView, haut = -defilement.adjustedContentInset.top
+                    if defilement.contentOffset.y > haut, defilement.contentOffset.y < haut + 120 {
+                        defilement.setContentOffset(CGPoint(x: defilement.contentOffset.x, y: haut), animated: false)
+                    }
+                }
                 #if DEBUG
                 // Harnais de capture : OKIA_SHOT_JS s'exécute une fois le document rendu — défiler
                 // jusqu'à une section, ouvrir un aperçu — pour cadrer une capture sans toucher.
