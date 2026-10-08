@@ -986,6 +986,27 @@ iPhone Duo*, *Raise the bar with iPhone Duo*). Ce qui suit dit ce que chaque not
   un « téléphone » dont l'écran n'aura rien d'un téléphone. Même vigilance pour `UIScreen.main`,
   qu'on n'emploie nulle part — c'est à vérifier à chaque ajout, pas une fois.
 
+#### Duo — état des lieux avec Xcode 27.1 RC, le 2026-10-08
+
+**Les captures noires du simulateur sont expliquées.** Le Duo a deux écrans : l'intérieur
+(2853 × 2007 déplié) et l'extérieur (1398 × 2034). `simctl io … screenshot` vise par défaut
+l'intérieur, éteint quand l'appareil est plié : d'où le noir. Plié, il faut
+`screenshot --display=1` ; déplié, la capture par défaut suffit. `--display=2` se bloque encore —
+on ne s'en sert pas. Plier et déplier se fait dans **Device Hub**
+(`Xcode-27.1-RC.app/Contents/Applications/DeviceHub.app`, qui remplace l'app Simulator) : les
+trois icônes de posture à droite de la barre du bas ; aucune commande `simctl` n'a été trouvée.
+
+**md Viewer compilé avec le SDK 27.1, sans une ligne de Duo :**
+- **déplié (paysage)** : l'app occupe tout l'écran, sans mode de compatibilité. Mais le texte et
+  la barre de titre traversent la pliure, au milieu, et une bande à droite reste au système
+  (heure, réseau) ;
+- **plié** : le lecteur s'adapte à l'écran extérieur, à côté de la bande réservée à la caméra.
+  La barre de titre y est trop chargée : huit icônes, et le titre réduit à « Ukr… ».
+
+C'est le point de départ des travaux : deux parties de part et d'autre de la pliure
+(`ArrangementView`), la barre d'outils du système à la place de la nôtre, et la conversion qui
+remplit l'autre partie au lieu d'une feuille.
+
 #### Thèmes de lecture — réalisés le 2026-10-01
 
 **Ce qui est en place.** Les cinq thèmes ci-dessous, chacun en clair et en sombre, se choisissent
