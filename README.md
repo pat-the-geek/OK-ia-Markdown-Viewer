@@ -1333,3 +1333,80 @@ soit :
 Store Connect. Les tailles connues sont listées dans [`store/screenshots.md`](store/screenshots.md)
 et régénérées par `scripts/screenshots.sh` ; il faudra y ajouter le format le jour où Apple le
 demande.
+
+### 1.4 — l'option Analytic : vos documents prennent vie
+
+**Demandé par Patrick le 2026-10-08.** Une option payante, **Analytic**, qui fait d'un document lu
+un document exploité : on détecte ses entités, on les rassemble, on les situe sur une carte, et
+l'on importe des PDF et des Word mis en forme pour md Viewer. **On valorise au maximum le
+document.** La 1.4 est nécessaire : achat intégré, nouveaux écrans, cache partagé.
+
+**Slogan** — proposés : « **md Viewer — vos documents prennent vie.** » / « **md Viewer — your
+documents come alive.** » ; variantes : « Lisez plus loin que le texte » / « Read beyond the
+text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be great!*
+
+#### Ce que comprend l'option
+
+1. **La détection d'entités**, avec **le même algorithme que fornews** (`FornewsCore` : `NLTagger`,
+   `FiltreEntitesNER`, vérificateurs ; même équipe de signature, le paquet peut être partagé).
+   - **Un rapport fornews est exploité d'abord** : sa section `## Entités`, ses balises de dates et
+     de montants, ses cartes `leaflet`, ses sources. On ne va chercher sur **Wikidata** que ce que
+     le document ne donne pas.
+   - **Si fornews est installé**, on interroge d'abord sa base, puis Wikidata ; et une entité
+     s'ouvre dans fornews par son **QID**.
+   - **Un petit cache local** des entités déjà résolues, **partagé entre les appareils par
+     iCloud**.
+2. **Une galerie d'entités par genre** (personnes, organisations, lieux, produits…) et **une carte**
+   des entités localisées — **en plein écran sur demande**. Quand l'écran le permet (Duo déplié,
+   grand écran en paysage, Mac), elles s'ouvrent **dans la partie de droite**, à côté du document,
+   comme le sommaire aujourd'hui.
+3. **L'import de documents Word et PDF — sur Mac seulement.** On en génère un **rapport au format
+   md Viewer**, comme fornews génère un rapport d'article : on reprend au maximum le code de
+   fornews. Pendant l'import, **un compte à rebours inspiré de celui de fornews**
+   (`CompteReboursDemandeView`), qui montre les éléments au fur et à mesure qu'ils sont détectés.
+4. **Des modèles plus poussés** (Private Cloud Compute) — idée, voir les décisions ci-dessous.
+5. **Le lien avec fornews** (base d'entités, ouverture par QID).
+
+#### Prix
+
+**2 francs sur Mac, 2 francs sur les autres appareils.** ⚠️ md Viewer est un achat universel (une
+seule fiche pour iOS et Mac) : un achat intégré fait sur iPhone est rendu sur Mac. Facturer deux
+fois suppose **deux produits distincts** — « Analytic » (iPhone, iPad) et « Analytic pour Mac »
+(avec l'import) —, le Mac ne regardant que le sien. Le palier de 2 francs est à vérifier dans App
+Store Connect. Le paywall de fornews (`FornewsAchat`) sert de base.
+
+#### Réponses aux questions de Patrick
+
+- **Utiliser la base de fornews quand il est installé ?** Oui, c'est possible : les deux apps sont
+  signées par la même équipe (PU9BSXN2V5), et fornews partage déjà le groupe d'apps
+  `group.ai.fornews.native`. md Viewer peut le rejoindre et **lire** le cache d'entités que fornews
+  y déposerait — il faut que fornews l'y publie (aujourd'hui, le groupe sert à ses widgets). L'ordre
+  voulu tient : fornews d'abord, Wikidata ensuite.
+- **Ouvrir une entité dans fornews par son QID ?** Pas encore : ses liens ouvrent une entité par
+  son identifiant interne (`fornews://entite/<UUID>`). Il faut une route `fornews://entite?qid=Q…`
+  côté fornews.
+- **Stocker les images d'un document dans le Markdown ?** Oui, sans format maison : une image
+  embarquée en `data:image/…;base64,…` est déjà affichée par md Viewer (et reprise par la
+  conversion en présentation). Le prix : un tiers de poids en plus, et un fichier lourd à ouvrir
+  pour un document très illustré. Pour l'import Word et PDF, le format établi **TextBundle /
+  TextPack** (le `.md` et un dossier `assets/`, zippés en `.textpack`, lus par Bear, Ulysses, iA
+  Writer) ferait mieux : md Viewer apprendrait à l'ouvrir. Proposition : `data:` pour quelques
+  petites images, TextPack au-delà.
+
+#### ⛔ Décisions à prendre avant d'écrire du code
+
+- **Private Cloud Compute contredit un engagement publié.** La feuille de route du site dit, sous
+  « Ce que nous ne ferons pas » : *pas d'IA distante — pas même sur les serveurs d'Apple*, et la
+  politique de confidentialité : *le contenu de vos documents n'est envoyé à aucun serveur*. PCC
+  est exécuté sur les serveurs d'Apple. Si on le fait : choix explicite, document par document,
+  et les deux pages réécrites avant la sortie.
+- **Wikidata est une requête réseau** : les noms d'entités d'un document partiraient vers
+  Wikimedia. À dire dans la politique de confidentialité, et sans doute à proposer plutôt qu'à
+  imposer.
+- **Deux achats de 2 francs pour une même personne** (iPhone et Mac) : à confirmer, et à dire
+  clairement dans la fiche.
+- **Lire un `.docx` dans une app Catalyst** : AppKit sait le faire, UIKit pas d'office — l'import
+  Word sur Mac passera peut-être par une extraction maison (le `.docx` est un zip de XML). À
+  éprouver d'abord.
+
+Liste des tâches : `TACHES-1.4.md`.
