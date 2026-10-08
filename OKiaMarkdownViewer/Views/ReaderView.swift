@@ -36,7 +36,12 @@ struct ReaderView: View {
     /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
     /// texte, au lieu de rester une marge vide sur toute la hauteur.
     @State private var appareilPliable = false
+    /// La charnière est ouverte : l'écran intérieur, assez grand pour deux parties.
+    @State private var charniereOuverte = false
+    /// Ce que la seconde partie du Duo montre, à côté du document ; nil : une seule partie.
+    @State private var panneauDuo: PanneauDuo?
     @State private var margeDroite: CGFloat = 0
+    @State private var margeGauche: CGFloat = 0
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     /// Thème de lecture (1.3), retenu comme la taille du texte. Clé d'un `ReaderTheme`.
@@ -80,6 +85,31 @@ struct ReaderView: View {
     }
 
     var body: some View {
+        #if DUO_SDK && !targetEnvironment(macCatalyst)
+        if #available(iOS 27.1, *) {
+            // Duo : le lecteur et, à côté, une seconde partie — de l'autre côté de la pliure quand
+            // l'appareil est déplié. L'ArrangementView est toujours là, même vide : changer la
+            // structure au moment d'ouvrir la seconde partie recréerait la vue web, et le
+            // document repartirait de zéro.
+            ArrangementView {
+                // Seul, le lecteur prend tout : sans cela, la seconde partie vide gardait sa moitié.
+                lecteur
+                    .splitArrangementLayoutRatio(deuxParties ? nil : 1)
+            } secondary: {
+                if let panneau = panneauDuo, deuxParties {
+                    secondePartie(panneau)
+                }
+            }
+            .arrangementViewStyle(.split)
+        } else {
+            lecteur
+        }
+        #else
+        lecteur
+        #endif
+    }
+
+    private var lecteur: some View {
         ZStack(alignment: .top) {
             MarkdownWebView(document: document, tapped: $tapped, tappedImage: $tappedImage,
                             onTitle: { title = $0 },
@@ -99,21 +129,30 @@ struct ReaderView: View {
             .background(
                 GeometryReader { proxy in
                     Color.clear
-                        .onAppear { barHeight = proxy.size.height; margeDroite = proxy.safeAreaInsets.trailing }
+                        .onAppear {
+                            barHeight = proxy.size.height
+                            margeDroite = proxy.safeAreaInsets.trailing
+                            margeGauche = proxy.safeAreaInsets.leading
+                        }
                         .onChange(of: proxy.size.height) { _, h in barHeight = h }
                         .onChange(of: proxy.safeAreaInsets.trailing) { _, m in margeDroite = m }
+                        .onChange(of: proxy.safeAreaInsets.leading) { _, m in margeGauche = m }
                 }
             )
             #if DUO_SDK && !targetEnvironment(macCatalyst)
             .background {
                 if #available(iOS 27.1, *) {
-                    DetecteurCharniere { appareilPliable = $0 }
+                    DetecteurCharniere { pliable, ouverte in
+                        appareilPliable = pliable
+                        charniereOuverte = ouverte
+                    }
                         .frame(width: 0, height: 0)
                 }
             }
             #endif
             .onChange(of: appareilPliable) { _, _ in poserCoinLibre() }
             .onChange(of: margeDroite) { _, _ in poserCoinLibre() }
+            .onChange(of: margeGauche) { _, _ in poserCoinLibre() }
             .onChange(of: barHeight) { _, _ in poserCoinLibre() }
 
             TranslationHostView(translator: translator)
@@ -134,6 +173,15 @@ struct ReaderView: View {
                              traduire: traductionActive)
         }
         #if DEBUG
+        // OKIA_DUO_PANNEAU ouvre la seconde partie du Duo au lancement : sommaire, resume, discussion.
+        .onAppear {
+            switch ProcessInfo.processInfo.environment["OKIA_DUO_PANNEAU"] {
+            case "sommaire":   panneauDuo = .sommaire
+            case "resume":     panneauDuo = .resume
+            case "discussion": panneauDuo = .discussion
+            default: break
+            }
+        }
         // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_OPEN_SLIDES
         // ouvre le diaporama dès l'affichage, ce qu'aucune variable ne savait faire — la
         // présentation n'était atteignable que par un bouton, donc impossible à capturer
@@ -470,11 +518,12 @@ struct ReaderView: View {
     /// hauteur de la caméra, de l'heure et du réseau, moins ce que la barre couvre déjà.
     /// Hors Duo, rien : la page garde sa marge.
     private func poserCoinLibre() {
-        guard appareilPliable, margeDroite > 0 else {
+        let colonne = max(margeDroite, margeGauche)
+        guard appareilPliable, colonne > 0 else {
             web.setCoinLibre(largeur: 0, hauteur: 0)
             return
         }
-        web.setCoinLibre(largeur: margeDroite, hauteur: max(0, 140 - barHeight))
+        web.setCoinLibre(largeur: colonne, hauteur: max(0, 140 - barHeight), aGauche: margeGauche > margeDroite)
     }
 
     /// La barre de titre, en Liquid Glass : deux capsules de verre qui flottent sur la page —
@@ -515,6 +564,40 @@ struct ReaderView: View {
         .padding(.bottom, 6)
     }
 
+    /// Deux parties : sur un appareil pliable, ouvert, quand une seconde partie est demandée.
+    private var deuxParties: Bool { appareilPliable && charniereOuverte && panneauDuo != nil }
+
+    /// Ouvre le sommaire, le résumé ou la discussion : dans la seconde partie quand le Duo est
+    /// déplié — à côté du document, qu'on continue de lire — sinon dans une feuille, comme avant.
+    private func ouvrir(_ panneau: PanneauDuo) {
+        if appareilPliable && charniereOuverte {
+            panneauDuo = panneau
+            return
+        }
+        switch panneau {
+        case .sommaire:   showTOC = true
+        case .resume:     showSummary = true
+        case .discussion: showChat = true
+        }
+    }
+
+    /// La seconde partie du Duo.
+    @ViewBuilder private func secondePartie(_ panneau: PanneauDuo) -> some View {
+        Group {
+            switch panneau {
+            case .sommaire:
+                TableOfContentsView(items: web.toc) { item in web.scrollToHeading(item.id) }
+            case .resume:
+                DocumentSummaryView(sourceTitle: title.isEmpty ? document.filename : title,
+                                    sourceMarkdown: document.text)
+            case .discussion:
+                DocumentChatView(sourceTitle: title.isEmpty ? document.filename : title,
+                                 sourceMarkdown: document.text)
+            }
+        }
+        .environment(\.fermerPanneau, { panneauDuo = nil })
+    }
+
     private var boutonAccueil: some View {
         Button(action: onHome) { Image(systemName: "house") }
             .accessibilityLabel(tr("Écran d’accueil"))
@@ -534,10 +617,10 @@ struct ReaderView: View {
             // model is unavailable: no greyed-out entries, no sheet that would only fail.
             if DocumentSummarizer.isAvailable {
                 Menu {
-                    Button { showSummary = true } label: {
+                    Button { ouvrir(.resume) } label: {
                         Label(tr("Résumé du document"), systemImage: "doc.text")
                     }
-                    Button { showChat = true } label: {
+                    Button { ouvrir(.discussion) } label: {
                         Label(tr("Discuter avec le document"), systemImage: "text.bubble")
                     }
                     Button { showConverter = true } label: {
@@ -556,7 +639,7 @@ struct ReaderView: View {
                         .presentationCompactAdaptation(.popover)
                 }
 
-            Button { showTOC = true } label: { Image(systemName: "list.bullet") }
+            Button { ouvrir(.sommaire) } label: { Image(systemName: "list.bullet") }
                 .disabled(web.toc.isEmpty)
                 .accessibilityLabel(tr("Sommaire (accessibilité)"))
 
@@ -1110,13 +1193,14 @@ struct DocumentSummaryView: View {
     @State private var ignoredTap: TappedDiagram?
     @State private var ignoredImage: TappedImage?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.fermerPanneau) private var fermerPanneau
 
     var body: some View {
         NavigationStack {
             content
                 .navigationTitle(tr("Résumé du document"))
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("OK") { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) { Button("OK") { (fermerPanneau ?? { dismiss() })() } }
                     ToolbarItem(placement: .cancellationAction) {
                         Button { summarizer.summarize(sourceMarkdown) } label: {
                             Image(systemName: "arrow.clockwise")
@@ -1563,16 +1647,24 @@ struct PresentationWebView: UIViewRepresentable {
 /// nil. Plus sûr que de deviner l'appareil à ses marges : un iPhone en paysage en a aussi.
 @available(iOS 27.1, *)
 private struct DetecteurCharniere: UIViewRepresentable {
-    var surChangement: (Bool) -> Void
+    /// (appareil pliable, charnière ouverte)
+    var surChangement: (Bool, Bool) -> Void
 
     func makeUIView(context: Context) -> UIView {
         let vue = UIView()
         vue.isUserInteractionEnabled = false
         let suivi = surChangement
-        vue.addInteraction(UIHingeInteraction { _, maj in suivi(maj.hinge != nil) })
+        vue.addInteraction(UIHingeInteraction { _, maj in
+            suivi(maj.hinge != nil, maj.hinge.map { $0.status != .closed } ?? false)
+        })
         return vue
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 #endif
+
+/// Ce que la seconde partie du Duo peut montrer à côté du document.
+enum PanneauDuo: Hashable {
+    case sommaire, resume, discussion
+}

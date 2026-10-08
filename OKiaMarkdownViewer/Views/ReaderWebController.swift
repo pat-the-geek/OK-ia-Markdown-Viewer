@@ -51,17 +51,21 @@ final class ReaderWebController: ObservableObject {
     /// et le réseau : 84 points de marge sur toute la hauteur. Seul son haut est occupé. La page
     /// ne contourne plus que ce coin (`largeur` × `hauteur`, en points) ; ailleurs, le texte
     /// prend toute la largeur. (0, 0) rend la marge d'avant.
-    private(set) var coinLibre: (largeur: Int, hauteur: Int) = (0, 0)
+    private(set) var coinLibre: (largeur: Int, hauteur: Int, gauche: Bool) = (0, 0, false)
 
-    func setCoinLibre(largeur: CGFloat, hauteur: CGFloat) {
-        coinLibre = (Int(largeur.rounded()), Int(hauteur.rounded()))
-        eval("window.OKIA && window.OKIA.setBordsLibres(\(coinLibre.largeur), \(coinLibre.hauteur))")
+    func setCoinLibre(largeur: CGFloat, hauteur: CGFloat, aGauche: Bool = false) {
+        coinLibre = (Int(largeur.rounded()), Int(hauteur.rounded()), aGauche)
+        eval("window.OKIA && window.OKIA.setBordsLibres(\(coinLibreArguments))")
+    }
+
+    private var coinLibreArguments: String {
+        "\(coinLibre.largeur), \(coinLibre.hauteur), '\(coinLibre.gauche ? "gauche" : "droite")'"
     }
 
     /// L'expression JavaScript qui pose le thème — et la largeur libérée sur le Duo — à placer
     /// devant l'appel de rendu, séparée par une virgule : c'est une expression, pas une instruction.
     var themeScript: String {
-        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibre.largeur), \(coinLibre.hauteur))"
+        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibreArguments))"
     }
 
     // MARK: TOC

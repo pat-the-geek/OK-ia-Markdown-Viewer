@@ -86,7 +86,7 @@ body {
 html.okia-bords-libres body { padding-left: 0; padding-right: 0; }
 html.okia-bords-libres .markdown-body::before {
   content: "";
-  float: right;
+  float: var(--okia-coin-cote, right);
   width: var(--okia-coin-l, 0);
   height: var(--okia-coin-h, 0);
 }

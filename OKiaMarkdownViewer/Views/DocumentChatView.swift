@@ -416,6 +416,7 @@ struct DocumentChatView: View {
     @FocusState private var inputFocused: Bool
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.fermerPanneau) private var fermerPanneau
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -436,7 +437,7 @@ struct DocumentChatView: View {
             .navigationTitle(tr("Discuter avec le document"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("OK") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("OK") { (fermerPanneau ?? { dismiss() })() } }
                 ToolbarItem(placement: .cancellationAction) {
                     Button { chat.reset() } label: { Image(systemName: "eraser") }
                         .disabled(chat.isEmpty || chat.isResponding)

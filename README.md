@@ -1007,6 +1007,27 @@ C'est le point de départ des travaux : deux parties de part et d'autre de la pl
 (`ArrangementView`), la barre d'outils du système à la place de la nôtre, et la conversion qui
 remplit l'autre partie au lieu d'une feuille.
 
+#### Duo — deux parties de part et d'autre de la pliure — le 2026-10-08
+
+- **Le sommaire, le résumé et la discussion s'ouvrent dans la seconde partie** quand le Duo est
+  déplié (`ArrangementView`, style `.split` : le document d'un côté de la pliure, eux de l'autre),
+  et dans une feuille partout ailleurs — Duo plié compris. Leur bouton « Fermer » / « OK » ferme
+  alors la partie (`\.fermerPanneau`, l'environnement), et choisir un titre du sommaire fait
+  défiler le document sans le refermer : on va d'un titre à l'autre.
+- **L'`ArrangementView` est toujours là, même seule** : changer la structure au moment d'ouvrir la
+  seconde partie recréerait la vue web, et le document repartirait de zéro. Mais une seconde
+  partie vide gardait sa moitié d'écran : seul, le document prend tout
+  (`splitArrangementLayoutRatio(1)`).
+- **La charnière dit aussi si l'appareil est ouvert** (`UIHinge.status`) : plié, pas de seconde
+  partie.
+- **La colonne réservée change de côté** : tenu en paysage, l'écran extérieur la met à gauche. Le
+  coin contourné suit (`setBordsLibres(…, 'gauche')`).
+- **Une page lue en haut reste en haut après un pliage ou une rotation** (`VueWebLecteur`). Relevé
+  au pliage : la marge du haut restait juste (51,7 points), mais WebKit recalait le défilement à 0
+  au lieu de −51,7, le titre sous la barre. `window.scrollTo(0, 0)` n'y peut rien : il ignore la
+  marge native. La vue suit l'état « en haut » au fil du défilement, en ignorant la seconde qui
+  suit un changement de taille, et recale la page derrière WebKit. Vaut pour tous les iPhone.
+
 #### Duo — la page jusqu'au bord, et la barre en Liquid Glass — le 2026-10-08
 
 **Demandé par Patrick** : « utilise au maximum la place d'affichage, évite les marges et utilise

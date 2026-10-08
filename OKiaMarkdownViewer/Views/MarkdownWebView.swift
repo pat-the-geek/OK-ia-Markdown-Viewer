@@ -41,7 +41,7 @@ struct MarkdownWebView: UIViewRepresentable {
         config.userContentController = controller
         config.defaultWebpagePreferences.allowsContentJavaScript = true
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = VueWebLecteur(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         webView.isOpaque = false
@@ -61,16 +61,7 @@ struct MarkdownWebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         // Inset the scroll content below the floating title/search bar overlay.
-        let inset = max(0, topInset)
-        if abs(webView.scrollView.contentInset.top - inset) > 0.5 {
-            let wasAtTop = webView.scrollView.contentOffset.y <= -webView.scrollView.adjustedContentInset.top + 1
-            webView.scrollView.contentInset.top = inset
-            webView.scrollView.verticalScrollIndicatorInsets.top = inset
-            // Keep the very top of the document visible when the inset first applies.
-            if wasAtTop {
-                webView.scrollView.contentOffset.y = -webView.scrollView.adjustedContentInset.top
-            }
-        }
+        (webView as? VueWebLecteur)?.margeHaute = max(0, topInset)
 
         // Re-render only when the document actually changes.
         if context.coordinator.loadedDocumentID != document.id {
@@ -213,5 +204,63 @@ struct MarkdownWebView: UIViewRepresentable {
                 break
             }
         }
+    }
+}
+
+/// La vue web du lecteur : elle garde sa marge du haut — la place de la barre de verre — et une
+/// page lue tout en haut reste tout en haut quand la vue change de taille (pliage du Duo,
+/// rotation, Split View). Relevé au pliage : la marge restait juste (51,7 points), mais le
+/// défilement finissait à 0 au lieu de −51,7, le titre sous la barre. `window.scrollTo(0, 0)`
+/// ne s'en charge pas : il ignore la marge native. Plus bas dans le document, le repère de
+/// lecture de WebKit est le bon : on n'y touche pas.
+final class VueWebLecteur: WKWebView {
+    var margeHaute: CGFloat = 0 {
+        didSet { if abs(margeHaute - oldValue) > 0.5 { appliquerMarge() } }
+    }
+
+    private var tailleConnue: CGSize = .zero
+    /// La page est-elle lue tout en haut ? Suivi au fil du défilement, sauf pendant un changement
+    /// de taille : WebKit y recale lui-même le défilement, par étapes, et chacune ferait croire
+    /// que le lecteur a quitté le haut.
+    private var enHaut = true
+    private var transitionJusqua = Date.distantPast
+    private var suiviDefilement: NSKeyValueObservation?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard suiviDefilement == nil else { return }
+        suiviDefilement = scrollView.observe(\.contentOffset) { [weak self] defilement, _ in
+            MainActor.assumeIsolated {
+                guard let self, Date() > self.transitionJusqua else { return }
+                self.enHaut = defilement.contentOffset.y <= -defilement.adjustedContentInset.top + 1
+            }
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        appliquerMarge()
+        guard bounds.size != tailleConnue else { return }
+        let premiereFois = tailleConnue == .zero
+        tailleConnue = bounds.size
+        guard enHaut, !premiereFois else { return }
+        transitionJusqua = Date().addingTimeInterval(1.0)
+        // WebKit recale son défilement après la mise en page : on repasse derrière lui, deux fois.
+        for delai in [0.15, 0.6] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delai) { [weak self] in
+                guard let self else { return }
+                self.scrollView.contentOffset.y = -self.scrollView.adjustedContentInset.top
+            }
+        }
+    }
+
+    private func appliquerMarge() {
+        let defilement = scrollView
+        guard abs(defilement.contentInset.top - margeHaute) > 0.5 else { return }
+        // Une page lue tout en haut reste en haut, titre visible sous la barre.
+        let enHaut = defilement.contentOffset.y <= -defilement.adjustedContentInset.top + 1
+        defilement.contentInset.top = margeHaute
+        defilement.verticalScrollIndicatorInsets.top = margeHaute
+        if enHaut { defilement.contentOffset.y = -defilement.adjustedContentInset.top }
     }
 }
