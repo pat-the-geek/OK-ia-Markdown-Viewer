@@ -1036,6 +1036,12 @@ diapositive dont le texte change repasse au rendu. Vérifié sur l'iPhone 17 Pro
 l'iPhone 17 Pro (feuille), avec `OKIA_FAKE_AI`, qui rejoue désormais une conversion (et un résumé)
 au simulateur. Le Duo déplié reste à voir : même vue que le Pro Max.
 
+**Le Mac aussi, même jour** : une fenêtre d'au moins 900 points de large ouvre la conversion, le
+résumé et la discussion à côté du document ; plus étroite, elle garde ses feuilles. Tourné pour la
+feuille de route (OK-ia#483) : le film a montré que la vue ne suivait pas les nouvelles vignettes —
+le test « le lecteur est en bas » échouait pendant le défilement animé. Elle suit désormais tant
+que le lecteur ne fait pas défiler lui-même.
+
 **Correctif, même jour** : le résumé et la discussion ne défilaient pas dans la seconde partie. Ils
 fabriquaient leur document dans `body` — un nouvel identifiant à chaque passage —, et le lecteur
 voisin relance ce `body` sans arrêt (traduction, défilement) : 8 841 rendus en 40 secondes, la page

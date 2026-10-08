@@ -979,6 +979,10 @@
   // venir est annoncée par une case en attente. Rien ne se rend deux fois : seule une
   // diapositive dont le texte a changé repasse au rendu.
   var chantierEl = null, chantierMd = [], chantierFile = Promise.resolve();
+  // La vue suit la dernière diapositive, sauf si le lecteur fait défiler lui-même : remonté voir
+  // une diapositive plus ancienne, il n'est pas ramené en bas ; redescendu en bas, il suit de
+  // nouveau. Seuls ses gestes comptent — le défilement animé de la vue ne décide de rien.
+  var suivreLaFin = true;
 
   function preparerChantier() {
     if (chantierEl) return;
@@ -992,6 +996,17 @@
     chantierEl.id = 'chantier';
     chantierEl.className = 'chantier';
     document.body.appendChild(chantierEl);
+    var geste = null;
+    function aPrisLaMain() {
+      clearTimeout(geste);
+      geste = setTimeout(function () {
+        var bas = chantierEl.scrollHeight - chantierEl.scrollTop - chantierEl.clientHeight;
+        suivreLaFin = bas < 150;
+      }, 250);
+    }
+    ['wheel', 'touchmove', 'keydown'].forEach(function (type) {
+      chantierEl.addEventListener(type, aPrisLaMain, { passive: true });
+    });
     window.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
@@ -1010,12 +1025,8 @@
   function itemChantier(i) {
     var items = chantierEl.querySelectorAll('.chantier-item:not(.chantier-attente)');
     if (items[i]) return items[i];
-    // Mesuré avant d'ajouter la vignette : le lecteur était-il en bas, à suivre la conversion ?
-    // Celui qui est remonté voir une diapositive plus ancienne n'est pas ramené en bas.
-    var bas = chantierEl.scrollHeight - chantierEl.scrollTop - chantierEl.clientHeight;
     var item = document.createElement('div');
     item.className = 'chantier-item chantier-neuve';
-    item._suivre = bas < 120;
     var frame = document.createElement('div');
     frame.className = 'chantier-frame';
     var section = document.createElement('section');
@@ -1055,7 +1066,7 @@
         if (item.classList.contains('chantier-neuve')) {
           void item.offsetWidth;
           item.classList.remove('chantier-neuve');
-          if (item._suivre) {
+          if (suivreLaFin) {
             (chantierEl.querySelector('.chantier-attente') || item)
               .scrollIntoView({ behavior: 'smooth', block: 'end' });
           }

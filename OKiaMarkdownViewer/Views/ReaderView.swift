@@ -601,7 +601,9 @@ struct ReaderView: View {
     /// plus large que haut. Un iPhone en portrait, ou le Duo plié, n'en a pas la place.
     private var deuxPartiesPossibles: Bool {
         #if targetEnvironment(macCatalyst)
-        return false                     // le Mac garde ses feuilles, pour l'instant
+        // Le Mac, dès que sa fenêtre est assez large : la conversion, le résumé et la discussion
+        // s'ouvrent à côté du document. Une fenêtre étroite garde ses feuilles.
+        return tailleEcran.width >= 900
         #else
         if appareilPliable { return charniereOuverte }
         return tailleEcran.width > tailleEcran.height && tailleEcran.width >= 800
