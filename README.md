@@ -1338,7 +1338,7 @@ demande.
 
 **Demandé par Patrick le 2026-10-08.** Une option payante, **Analytic**, qui fait d'un document lu
 un document exploité : on détecte ses entités, on les rassemble, on les situe sur une carte, et
-l'on importe des PDF et des Word mis en forme pour md Viewer. **On valorise au maximum le
+l'on importe des PDF, des Word et des PowerPoint mis en forme pour md Viewer. **On valorise au maximum le
 document.** La 1.4 est nécessaire : achat intégré, nouveaux écrans, cache partagé.
 
 **Slogan** — proposés : « **md Viewer — vos documents prennent vie.** » / « **md Viewer — your
@@ -1360,9 +1360,14 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    des entités localisées — **en plein écran sur demande**. Quand l'écran le permet (Duo déplié,
    grand écran en paysage, Mac), elles s'ouvrent **dans la partie de droite**, à côté du document,
    comme le sommaire aujourd'hui.
-3. **L'import de documents Word et PDF — sur Mac seulement.** On en génère un **rapport au format
-   md Viewer**, comme fornews génère un rapport d'article : on reprend au maximum le code de
-   fornews. Pendant l'import, **un compte à rebours inspiré de celui de fornews**
+3. **L'import de documents Word, PDF et PowerPoint — sur Mac seulement.** Un Word ou un PDF
+   devient un **rapport au format md Viewer**, comme fornews génère un rapport d'article : on
+   reprend au maximum le code de fornews. **Un PowerPoint devient une présentation md Viewer**
+   (ajouté par Patrick le 2026-10-08) : une diapositive par bloc séparé par `---`, titres, puces,
+   tableaux, images, et les notes de l'orateur. C'est le chemin inverse de l'export PowerPoint,
+   que `OOXMLExport.swift` écrit déjà : un `.pptx` est un zip de XML, lisible sans bibliothèque —
+   les diapositives (`ppt/slides/slideN.xml`) dans l'ordre de `presentation.xml`, leurs images dans
+   `ppt/media/`, leurs notes dans `ppt/notesSlides/`. Pendant l'import, **un compte à rebours inspiré de celui de fornews**
    (`CompteReboursDemandeView`), qui montre les éléments au fur et à mesure qu'ils sont détectés.
 4. **Des modèles plus poussés** (Private Cloud Compute) — idée, voir les décisions ci-dessous.
 5. **Le lien avec fornews** (base d'entités, ouverture par QID).

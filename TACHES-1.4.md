@@ -54,7 +54,7 @@ Wikidata ne comble que ce qui manque.
       identifiant interne (`fornews://entite/<UUID>`) : route `fornews://entite?qid=Q…` à ajouter
       côté fornews.
 
-## ④ Import Word et PDF — Mac seulement
+## ④ Import Word, PDF et PowerPoint — Mac seulement
 
 - [ ] Extraction du texte et des images : PDFKit pour le PDF ; pour le `.docx`, éprouver d'abord ce
       que Catalyst sait lire (AppKit le fait, UIKit pas d'office) — sinon extraction du zip XML.
@@ -62,6 +62,10 @@ Wikidata ne comble que ce qui manque.
       reprendre au maximum son code (`GenerateurRapportAnalyste`).
 - [ ] **Compte à rebours** pendant l'import, inspiré de `CompteReboursDemandeView` de fornews, qui
       montre les éléments détectés au fur et à mesure.
+- [ ] **PowerPoint → présentation md Viewer** (ajouté par Patrick le 08/10) : lire le `.pptx` (zip
+      de XML, le chemin inverse d'`OOXMLExport`) — diapositives dans l'ordre de `presentation.xml`,
+      titre en `##`, puces, tableaux, images de `ppt/media/`, notes de l'orateur ; une diapositive
+      par bloc séparé par `---`. Les transitions connues reviennent en transition du diaporama.
 - [ ] **Images** : `data:image/…;base64` pour quelques petites images (déjà lu par md Viewer) ;
       au-delà, le format **TextBundle / TextPack** (`.md` + `assets/`, zippé en `.textpack`) —
       md Viewer apprend à l'ouvrir.
