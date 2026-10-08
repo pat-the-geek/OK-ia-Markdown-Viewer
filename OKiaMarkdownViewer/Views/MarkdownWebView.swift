@@ -64,6 +64,15 @@ struct MarkdownWebView: UIViewRepresentable {
         (webView as? VueWebLecteur)?.margeHaute = max(0, topInset)
 
         // Re-render only when the document actually changes.
+        // Le résumé et la discussion fabriquent leur document dans `body` : un nouvel identifiant
+        // à chaque passage, pour le même texte. Dans la seconde partie, le lecteur voisin relance
+        // ce `body` sans arrêt (traduction, défilement) : la page se rendait des milliers de fois
+        // et revenait en haut, impossible à faire défiler. Même nom, même texte : on garde la page.
+        if context.coordinator.loadedDocumentID != document.id,
+           context.coordinator.loadedText == document.text,
+           context.coordinator.loadedFilename == document.filename {
+            context.coordinator.loadedDocumentID = document.id
+        }
         if context.coordinator.loadedDocumentID != document.id {
             context.coordinator.parent = self
             if context.coordinator.pageReady {
@@ -89,6 +98,8 @@ struct MarkdownWebView: UIViewRepresentable {
         weak var webView: WKWebView?
         var pageReady = false
         var loadedDocumentID: UUID?
+        var loadedText: String?
+        var loadedFilename: String?
 
         init(_ parent: MarkdownWebView) { self.parent = parent }
 
@@ -137,6 +148,8 @@ struct MarkdownWebView: UIViewRepresentable {
             guard let mdJSON = jsonString(doc.text),
                   let nameJSON = jsonString(doc.filename) else { return }
             loadedDocumentID = doc.id
+            loadedText = doc.text
+            loadedFilename = doc.filename
             let call = parent.showsHeader
                 ? "window.OKIA.render(\(mdJSON), \(nameJSON))"
                 : "window.OKIA.renderPlain(\(mdJSON))"
