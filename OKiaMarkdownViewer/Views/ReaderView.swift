@@ -38,8 +38,9 @@ struct ReaderView: View {
     @State private var appareilPliable = false
     /// La charnière est ouverte : l'écran intérieur, assez grand pour deux parties.
     @State private var charniereOuverte = false
-    /// Ce que la seconde partie du Duo montre, à côté du document ; nil : une seule partie.
+    /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
     @State private var panneauDuo: PanneauDuo?
+    @State private var tailleEcran: CGSize = .zero
     @State private var margeDroite: CGFloat = 0
     @State private var margeGauche: CGFloat = 0
     @State private var barHeight: CGFloat = 0
@@ -101,12 +102,30 @@ struct ReaderView: View {
                 }
             }
             .arrangementViewStyle(.split)
+            // La taille de tout l'écran, mesurée hors des parties : mesurer le lecteur ferait
+            // osciller la décision — deux parties le réduisent de moitié, il ne serait plus large.
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
         } else {
-            lecteur
+            coteACote
         }
         #else
-        lecteur
+        coteACote
         #endif
+    }
+
+    /// Deux parties sans `ArrangementView` — iOS 27.1 n'existe que pour le Duo : un iPhone Pro Max
+    /// ou un iPad en paysage, sous iOS 26 et 27.0, met la seconde partie à droite du document. Le
+    /// document reste le premier enfant de la pile : l'ouvrir ou la fermer ne recrée pas sa vue web.
+    private var coteACote: some View {
+        HStack(spacing: 0) {
+            lecteur
+            if deuxParties, let panneau = panneauDuo {
+                Divider().ignoresSafeArea()
+                secondePartie(panneau)
+                    .frame(width: max(320, tailleEcran.width * 0.4))
+            }
+        }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
     }
 
     private var lecteur: some View {
@@ -175,6 +194,14 @@ struct ReaderView: View {
         #if DEBUG
         // OKIA_DUO_PANNEAU ouvre la seconde partie du Duo au lancement : sommaire, resume, discussion.
         .onAppear {
+            // OKIA_ORIENTATION=paysage tourne l'app en paysage, pour essayer les deux parties d'un
+            // grand écran sans toucher au simulateur (l'écran du Mac peut être verrouillé).
+            #if !targetEnvironment(macCatalyst)
+            if ProcessInfo.processInfo.environment["OKIA_ORIENTATION"] == "paysage",
+               let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
+            }
+            #endif
             switch ProcessInfo.processInfo.environment["OKIA_DUO_PANNEAU"] {
             case "sommaire":   panneauDuo = .sommaire
             case "resume":     panneauDuo = .resume
@@ -564,13 +591,25 @@ struct ReaderView: View {
         .padding(.bottom, 6)
     }
 
-    /// Deux parties : sur un appareil pliable, ouvert, quand une seconde partie est demandée.
-    private var deuxParties: Bool { appareilPliable && charniereOuverte && panneauDuo != nil }
+    /// L'écran a-t-il la place de deux parties ? Le Duo déplié, de part et d'autre de sa pliure ;
+    /// ailleurs, un grand écran en paysage — iPhone Pro Max, iPad : au moins 800 points de large,
+    /// plus large que haut. Un iPhone en portrait, ou le Duo plié, n'en a pas la place.
+    private var deuxPartiesPossibles: Bool {
+        #if targetEnvironment(macCatalyst)
+        return false                     // le Mac garde ses feuilles, pour l'instant
+        #else
+        if appareilPliable { return charniereOuverte }
+        return tailleEcran.width > tailleEcran.height && tailleEcran.width >= 800
+        #endif
+    }
 
-    /// Ouvre le sommaire, le résumé ou la discussion : dans la seconde partie quand le Duo est
-    /// déplié — à côté du document, qu'on continue de lire — sinon dans une feuille, comme avant.
+    /// Deux parties : quand l'écran en a la place et qu'une seconde partie est demandée.
+    private var deuxParties: Bool { deuxPartiesPossibles && panneauDuo != nil }
+
+    /// Ouvre le sommaire, le résumé ou la discussion : dans la seconde partie quand l'écran en a la
+    /// place — à côté du document, qu'on continue de lire — sinon dans une feuille, comme avant.
     private func ouvrir(_ panneau: PanneauDuo) {
-        if appareilPliable && charniereOuverte {
+        if deuxPartiesPossibles {
             panneauDuo = panneau
             return
         }

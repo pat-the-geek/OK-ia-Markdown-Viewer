@@ -1007,6 +1007,20 @@ C'est le point de départ des travaux : deux parties de part et d'autre de la pl
 (`ArrangementView`), la barre d'outils du système à la place de la nôtre, et la conversion qui
 remplit l'autre partie au lieu d'une feuille.
 
+#### Deux parties en paysage sur grand écran — le 2026-10-08
+
+**Demandé par Patrick** (« fais le mode paysage », comme fornews a fait servir son paysage du Max
+de base au Duo). Un iPhone Pro Max ou un iPad en paysage — au moins 800 points de large, plus
+large que haut, mesurés sur tout l'écran — ouvre le sommaire, le résumé et la discussion à droite
+du document, sur 40 % de la largeur ; en portrait, ce sont des feuilles. Le Mac garde ses feuilles.
+
+**iOS 27.1 n'existe que pour le Duo** : son runtime de simulateur, bêta comme RC, ne prend en
+charge que l'iPhone Duo. `ArrangementView` n'y est donc d'aucun secours ailleurs : hors Duo, les
+deux parties sont une simple pile horizontale (`coteACote`), où le document reste le premier
+enfant — l'ouvrir ou la fermer ne recrée pas sa vue web. Vérifié sur l'iPhone 17 Pro Max (paysage :
+deux parties ; portrait : une feuille). L'iPad ne se laisse pas tourner par l'app : son paysage reste
+à voir sur l'appareil. `OKIA_ORIENTATION=paysage`, harnais Debug, tourne l'iPhone au lancement.
+
 #### Duo — deux parties de part et d'autre de la pliure — le 2026-10-08
 
 - **Le sommaire, le résumé et la discussion s'ouvrent dans la seconde partie** quand le Duo est
