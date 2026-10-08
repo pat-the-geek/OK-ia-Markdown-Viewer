@@ -558,7 +558,10 @@
     var names = Object.keys(entities);
     if (names.length) {
       names.sort(function (a, b) { return b.length - a.length; });
-      var pattern = new RegExp('(' + names.map(escapeRegExp).join('|') + ')', 'g');
+      // Des mots entiers seulement : l'entité « Si » se surlignait au milieu de « Six Colors » et
+      // de « Siri ». Pas de \b, qui ignore les lettres accentuées : des bornes Unicode.
+      var pattern = new RegExp('(?<![\\p{L}\\p{N}])(' + names.map(escapeRegExp).join('|') +
+                               ')(?![\\p{L}\\p{N}])', 'gu');
       var SKIP = { CODE: 1, PRE: 1, A: 1, MARK: 1, SUP: 1, SCRIPT: 1, STYLE: 1, H1: 1, H2: 1, H3: 1 };
       var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
       var todo = [], node;
