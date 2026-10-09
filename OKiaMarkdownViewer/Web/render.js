@@ -1684,7 +1684,11 @@
     });
     // Le cadre d'un diagramme compte aussi : sans lui, la coupe tombait entre le cadre et le dessin.
     // La pastille plein écran déborde au-dessus de son cadre : la coupe ne la tranche pas non plus.
-    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre, hr, .okia-agrandir'), function (e) {
+    // Les tuiles de fornews non plus (Patrick) : le contrôle qualité et la frise passent entiers à
+    // la page suivante ; s'ils sont trop hauts, chacune de leurs tuiles reste au moins entière —
+    // un chiffre, une échéance de l'agenda.
+    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre, hr, .okia-agrandir, ' +
+        '.fornews-controle, .fornews-frise, .fornews-chiffre, .fornews-echeance, [data-chiffre], [data-barre]'), function (e) {
       var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
     });
     Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
