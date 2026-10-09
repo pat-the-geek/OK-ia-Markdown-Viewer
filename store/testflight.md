@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (61)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (62)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (61)
+## What to Test — 1.3 (62)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -42,7 +42,8 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le mode livre : iPhone Duo partiellement replié, iPad ou grand iPhone en
   paysage. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
-  léger rebond. Un coin corné indique qu'il y a une suite. Signalez tout blanc
+  léger rebond. Sur iPad, rien ne doit se lire sous la barre de l'heure.
+  Signalez tout blanc
   en bas de page qui ne précède ni un titre ni un grand visuel, tout objet
   coupé entre deux pages, toute page de droite qui répète celle de gauche.
 • Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
@@ -51,7 +52,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
   Dans le livre, le bouton plein écran d'une carte l'ouvre aussi. Le plein
   écran suit le mode jour/nuit et le thème de lecture.
-• Touchez une page pour faire revenir la barre, une seconde fois pour la renvoyer.
+• Touchez une page pour faire revenir la barre, encore pour la renvoyer.
 • iPhone Duo déplié ou plié : les commandes sont rangées dans la colonne de
   droite, et la page va jusqu'à elle.
 
