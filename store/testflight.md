@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (57)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (58)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,22 +30,25 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (57)
+## What to Test — 1.3 (58)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
-  thème Éditorial, à colonne étroite). Signalez toute ligne trop longue à lire.
+  thème Éditorial, à colonne étroite — mais pas dans le livre, où chaque page
+  est pleine). Signalez toute ligne trop longue à lire.
 • Le mode livre : iPhone Duo partiellement replié, iPad ou grand iPhone en
   paysage. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
   léger rebond. Un coin corné indique qu'il y a une suite. Signalez tout blanc
   en bas de page qui ne précède ni un titre ni un grand visuel.
-• Dans le livre comme en portrait, touchez un diagramme, la chronologie d'un
-  rapport ou un tableau : il s'ouvre en plein écran, en entier ; pincez pour
-  agrandir. Dans le livre, le bouton plein écran d'une carte l'ouvre aussi en plein écran.
+• Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
+  tableau, signale qu'il s'ouvre en plein écran (à gauche sur la page de droite
+  du livre). Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour
+  agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
+  Dans le livre, le bouton plein écran d'une carte l'ouvre aussi.
 • Touchez une page pour faire revenir la barre, une seconde fois pour la renvoyer.
 • iPhone Duo déplié ou plié : les commandes sont rangées dans la colonne de
   droite, et la page va jusqu'à elle.
