@@ -1747,9 +1747,17 @@
   }
 
   // Cache ce qui dépasse la page : le haut de la page suivante, sous la dernière ligne entière.
-  function cacheLivre(depuis, H) {
-    var c = document.getElementById('okia-cache-livre');
-    if (depuis == null || depuis < 0) { if (c) c.remove(); return; }
+  // haut, marge : la page commence à `haut`, sous une bande de `marge` points (Patrick : un peu
+  // d'air en haut de page) ; la fin de la page précédente, qui tombe dans cette bande, est cachée.
+  function cacheLivre(depuis, H, haut, marge) {
+    var c = document.getElementById('okia-cache-livre'), t = document.getElementById('okia-cache-haut');
+    if (depuis == null) { if (c) c.remove(); if (t) t.remove(); return; }
+    if (haut > 0 && marge > 0) {
+      if (!t) { t = document.createElement('div'); t.id = 'okia-cache-haut'; document.body.appendChild(t); }
+      t.style.cssText = 'position:absolute;left:0;right:0;top:' + (haut - marge) + 'px;height:' + marge +
+        'px;background:var(--bg);z-index:2147483000;';
+    } else if (t) { t.remove(); }
+    if (depuis < 0) { if (c) c.remove(); return; }
     if (!c) { c = document.createElement('div'); c.id = 'okia-cache-livre'; document.body.appendChild(c); }
     // Au-dessus de tout, et opaque au toucher : une carte de la page suivante, cachée dessous,
     // attrapait sinon le doigt (ses commandes passent au-dessus d'un z-index ordinaire), et la

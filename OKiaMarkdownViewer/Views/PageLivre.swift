@@ -107,6 +107,8 @@ struct PageLivre: UIViewRepresentable {
 /// d'une page imprimée.
 @MainActor
 final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
+    /// Un peu d'air au-dessus de la première ligne de chaque page (Patrick).
+    static let margeHaut: CGFloat = 14
     private weak var gauche: WKWebView?
     private weak var droite: WKWebView?
     private var coupes: [CGFloat] = [0]
@@ -220,7 +222,8 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         // Pendant qu'une page tourne, les deux vues montrent les pages du tour : les replacer
         // maintenant décalait la page de droite (vide, ou la gauche en double). Après le tour.
         if tour != nil || enPreparation { recalculerPlusTard(); return }
-        let h = floor(min(visible(g), visible(d)))
+        // La page commence un peu sous le haut de l'écran : sa hauteur utile en est d'autant réduite.
+        let h = floor(min(visible(g), visible(d))) - Self.margeHaut
         guard h > 100 else { return }
         let lu = debut(2 * planche)
         g.evaluateJavaScript("window.OKIA ? window.OKIA.coupuresLivre(\(Int(h))) : [0]") { [weak self] r, _ in
@@ -245,10 +248,11 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         guard let g = gauche, let d = droite else { return }
         let pg = 2 * planche, pd = pg + 1
         let cacheG = debut(pd), cacheD: CGFloat = pd + 1 < coupes.count ? debut(pd + 1) : -1
-        g.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheG)), \(Int(hauteur)))")
-        d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)))")
-        g.scrollView.contentOffset.y = debut(pg) - g.scrollView.adjustedContentInset.top
-        d.scrollView.contentOffset.y = debut(pd) - d.scrollView.adjustedContentInset.top
+        let m = Int(Self.margeHaut)
+        g.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheG)), \(Int(hauteur)), \(Int(debut(pg))), \(m))")
+        d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)), \(Int(debut(pd))), \(m))")
+        g.scrollView.contentOffset.y = debut(pg) - g.scrollView.adjustedContentInset.top - Self.margeHaut
+        d.scrollView.contentOffset.y = debut(pd) - d.scrollView.adjustedContentInset.top - Self.margeHaut
         poserCoins()
     }
 
