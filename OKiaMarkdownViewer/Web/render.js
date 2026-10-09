@@ -1419,9 +1419,18 @@
     };
   }
 
+  // N'envoie que ce qui a changé : les réductions d'images du livre, défaites puis refaites à
+  // chaque calcul, reviennent au même — la page de droite n'a pas à se recharger, ni le livre à
+  // se recalculer sans fin.
+  var dernierMiroir = '';
   function envoyerMiroir() {
     clearTimeout(attenteMiroir);
-    attenteMiroir = setTimeout(function () { post('miroir', instantane()); }, 250);
+    attenteMiroir = setTimeout(function () {
+      var m = instantane(), cle = m.html + '|' + m.theme + '|' + m.fontSize;
+      if (cle === dernierMiroir) return;
+      dernierMiroir = cle;
+      post('miroir', m);
+    }, 250);
   }
 
   // En livre, toutes les images se chargent tout de suite : une image paresseuse, encore sans
@@ -1436,12 +1445,14 @@
   function suivreMiroir(actif) {
     if (observateurMiroir) { observateurMiroir.disconnect(); observateurMiroir = null; }
     document.removeEventListener('load', imageChargee, true);
+    dernierMiroir = '';
     if (!actif) return;
     imagesImmediates(document.getElementById('content'));
     document.addEventListener('load', imageChargee, true);
     observateurMiroir = new MutationObserver(envoyerMiroir);
     var contenu = document.getElementById('content');
-    if (contenu) observateurMiroir.observe(contenu, { childList: true, subtree: true, characterData: true });
+    if (contenu) observateurMiroir.observe(contenu, { childList: true, subtree: true, characterData: true,
+                                                      attributes: true, attributeFilter: ['style'] });
     observateurMiroir.observe(document.documentElement,
                               { attributes: true, attributeFilter: ['data-okia-theme', 'style'] });
     envoyerMiroir();
@@ -1488,40 +1499,85 @@
     }
   }
 
-  // Les débuts de page du livre, en coordonnées du document, pour des pages de hauteur H :
-  // une coupe ne tranche jamais une ligne, une image, un diagramme ou une carte — elle remonte
-  // au-dessus. Un élément plus haut qu'une page, lui, se coupe où il faut.
+  // Les débuts de page du livre, en coordonnées du document, pour des pages de hauteur H. Le
+  // moins de blanc possible en bas de page (Patrick) : une coupe ne tranche jamais une ligne ;
+  // une image ou un diagramme qui ne tient pas est réduit pour remplir la place, s'il garde au
+  // moins la moitié de sa taille — sinon il passe à la page suivante. Un titre ne reste jamais
+  // seul en bas de page. Le blanc ne reste donc que devant un titre ou un grand visuel.
   function coupuresLivre(H) {
     var contenu = document.getElementById('content');
     if (!contenu || !(H > 0)) return [0];
-    var sy = window.scrollY || 0, boites = [];
+    // Les réductions précédentes sont défaites, pour mesurer à neuf. Le résultat final est le
+    // même d'une fois à l'autre : la copie envoyée à la page de droite ne change pas.
+    Array.prototype.forEach.call(contenu.querySelectorAll('[data-okia-reduit]'), function (e) {
+      e.style.maxHeight = ''; e.style.width = ''; e.removeAttribute('data-okia-reduit');
+    });
+    for (var essai = 0; essai < 60; essai++) {
+      var r = calculerCoupes(contenu, H);
+      if (!r.reduire) return r.coupes;
+      r.reduire.el.style.maxHeight = r.reduire.h + 'px';
+      r.reduire.el.style.width = 'auto';
+      r.reduire.el.setAttribute('data-okia-reduit', '1');
+    }
+    return calculerCoupes(contenu, H).coupes;
+  }
+
+  function calculerCoupes(contenu, H) {
+    var sy = window.scrollY || 0, lignes = [], visuels = [], blocs = [], titres = [];
     var marche = document.createTreeWalker(contenu, NodeFilter.SHOW_TEXT), r = document.createRange(), n;
     while ((n = marche.nextNode())) {
       if (!n.nodeValue.trim()) continue;
       r.selectNodeContents(n);
       var rs = r.getClientRects();
-      for (var i = 0; i < rs.length; i++) if (rs[i].height > 0) boites.push([rs[i].top + sy, rs[i].bottom + sy]);
+      for (var i = 0; i < rs.length; i++) if (rs[i].height > 0) lignes.push([rs[i].top + sy, rs[i].bottom + sy]);
     }
-    Array.prototype.forEach.call(contenu.querySelectorAll('img, svg, .okia-map, tr, pre, hr'), function (e) {
-      var b = e.getBoundingClientRect();
-      if (b.height > 0) boites.push([b.top + sy, b.bottom + sy]);
+    function boite(e) { var b = e.getBoundingClientRect(); return [b.top + sy, b.bottom + sy, e]; }
+    Array.prototype.forEach.call(contenu.querySelectorAll('img, pre.mermaid svg'), function (e) {
+      var b = boite(e); if (b[1] - b[0] > 0) visuels.push(b);
     });
+    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre:not(.mermaid), hr'), function (e) {
+      var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
+    });
+    Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
+      var b = boite(e); if (b[1] - b[0] > 0) titres.push(b);
+    });
+    var cs = getComputedStyle(contenu);
+    var ligne = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 17) * 1.6;
+    var boites = lignes.concat(visuels, blocs);
     var total = Math.max(document.documentElement.scrollHeight, contenu.getBoundingClientRect().bottom + sy);
     var coupes = [0], debut = 0;
     while (debut + H < total && coupes.length < 5000) {
-      var cible = debut + H, coupe = cible, bouge = true;
+      var cible = debut + H, coupe = cible;
+      // 1. Un visuel à cheval sur la coupe : réduit pour tenir, s'il en garde au moins la moitié.
+      for (var v = 0; v < visuels.length; v++) {
+        var t = visuels[v][0], b = visuels[v][1], h = b - t, reste = cible - t - 8;
+        if (t >= debut && t < cible - 0.5 && b > cible + 0.5 && reste >= h * 0.5 && reste >= 90) {
+          return { reduire: { el: visuels[v][2], h: Math.floor(reste) } };
+        }
+      }
+      // 2. Rien n'est tranché : la coupe remonte au-dessus de ce qui la chevauche.
+      var bouge = true;
       while (bouge) {
         bouge = false;
         for (var j = 0; j < boites.length; j++) {
-          var t = boites[j][0], b = boites[j][1];
-          if (t < coupe - 0.5 && b > coupe + 0.5 && (b - t) < H * 0.9) { coupe = t; bouge = true; }
+          var bt = boites[j][0], bb = boites[j][1];
+          if (bt < coupe - 0.5 && bb > coupe + 0.5 && (bb - bt) < H * 0.9) { coupe = bt; bouge = true; }
+        }
+      }
+      // 3. Un titre suivi de moins de deux lignes passe à la page suivante.
+      bouge = true;
+      while (bouge) {
+        bouge = false;
+        for (var k = 0; k < titres.length; k++) {
+          var tt = titres[k][0], tb = titres[k][1];
+          if (tt > debut + H * 0.3 && tt < coupe - 0.5 && tb + ligne * 2 > coupe) { coupe = tt; bouge = true; }
         }
       }
       if (coupe <= debut + H * 0.3) coupe = cible;
       coupes.push(Math.floor(coupe));
       debut = coupe;
     }
-    return coupes;
+    return { coupes: coupes };
   }
 
   // Cache ce qui dépasse la page : le haut de la page suivante, sous la dernière ligne entière.
