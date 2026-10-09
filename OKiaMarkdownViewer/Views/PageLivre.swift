@@ -46,6 +46,7 @@ struct PageLivre: UIViewRepresentable {
     /// Un diagramme, un bloc ou une image touché : il s'ouvre en plein écran, comme à gauche.
     var surDiagramme: (TappedDiagram) -> Void = { _ in }
     var surImage: (TappedImage) -> Void = { _ in }
+    var surCarte: (TappedCarte) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -55,6 +56,7 @@ struct PageLivre: UIViewRepresentable {
         controller.add(context.coordinator, name: "tapPage")
         controller.add(context.coordinator, name: "diagramTapped")
         controller.add(context.coordinator, name: "imageTapped")
+        controller.add(context.coordinator, name: "carteTapped")
         controller.addUserScript(WKUserScript(
             source: "window.OKIA_LANG = '\(Localization.shared.code)';",
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -84,6 +86,9 @@ struct PageLivre: UIViewRepresentable {
             if message.name == "tapPage" { parent.surToucher(); return }
             if message.name == "diagramTapped", let d = message.body as? [String: Any], let svg = d["svg"] as? String {
                 parent.surDiagramme(TappedDiagram(svg: svg, title: (d["title"] as? String) ?? "")); return
+            }
+            if message.name == "carteTapped", let d = message.body as? [String: Any], let cfg = d["cfg"] as? String {
+                parent.surCarte(TappedCarte(cfg: cfg)); return
             }
             if message.name == "imageTapped", let d = message.body as? [String: Any], let src = d["src"] as? String {
                 parent.surImage(TappedImage(src: src)); return

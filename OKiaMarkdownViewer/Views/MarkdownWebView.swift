@@ -28,7 +28,7 @@ struct MarkdownWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "imageTapped", "toc", "miroir", "tapPage"] {
+        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "imageTapped", "toc", "miroir", "tapPage", "carteTapped"] {
             controller.add(context.coordinator, name: name)
         }
 
@@ -179,6 +179,10 @@ struct MarkdownWebView: UIViewRepresentable {
             case "imageTapped":
                 if let dict = message.body as? [String: Any], let src = dict["src"] as? String {
                     parent.tappedImage = TappedImage(src: src)
+                }
+            case "carteTapped":
+                if let d = message.body as? [String: Any], let cfg = d["cfg"] as? String {
+                    parent.webController.onCarte?(TappedCarte(cfg: cfg))
                 }
             case "tapPage":
                 parent.webController.onTapPage?()

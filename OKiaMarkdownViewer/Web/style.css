@@ -89,6 +89,14 @@ body {
 /* Mode livre (Duo partiellement replié) : les deux pages prennent la même largeur de texte,
    pour que la page de droite reprenne exactement là où s'arrête celle de gauche. */
 html.okia-livre .markdown-body { width: var(--okia-livre-l); max-width: none; }
+/* Plein écran natif d'une carte. */
+html.okia-carte-seule body { padding: 0; }
+html.okia-carte-seule .markdown-body { max-width: none; padding: 0; margin: 0; }
+html.okia-carte-seule .okia-map { height: 100vh !important; height: 100dvh !important;
+                                  margin: 0; border-radius: 0; border: 0; }
+html.okia-carte-seule .okia-fs-control { display: none; }
+/* Le bouton Fermer de l'app occupe le coin haut droit : les commandes de la carte passent dessous. */
+html.okia-carte-seule .leaflet-top.leaflet-right { top: 72px; }
 /* Duo, barre visible : la colonne du système ne garde que la place des boutons de verre. */
 html.okia-marge-outils body { padding-left: 0; padding-right: var(--okia-marge-outils); }
 html.okia-livre-gauche .markdown-body { margin: 0 0 0 auto; }

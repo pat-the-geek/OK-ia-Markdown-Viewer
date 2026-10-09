@@ -316,3 +316,72 @@ struct ImageZoomView: View {
         )
     }
 }
+
+// MARK: - Carte en plein écran
+
+/// Une carte touchée dans le livre, à ouvrir en plein écran : sa configuration, telle que la page
+/// l'a reçue (base64 du JSON).
+struct TappedCarte: Identifiable, Equatable {
+    let id = UUID()
+    let cfg: String
+}
+
+/// La carte seule, sur tout l'écran : la même pile que le lecteur (Leaflet + MapLibre), sa
+/// navigation à deux doigts, et un bouton pour revenir au livre.
+struct CarteZoomView: View {
+    let carte: TappedCarte
+    @Environment(\.dismiss) private var dismiss
+    private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
+
+    var body: some View {
+        CarteWebView(cfg: carte.cfg)
+            .ignoresSafeArea()
+            .overlay(alignment: .topTrailing) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 18, weight: .bold))
+                        .padding(12)
+                        .glassEffect(.regular.interactive(), in: .circle)
+                }
+                .tint(orange)
+                .padding(16)
+                .accessibilityLabel(tr("Fermer (accessibilité)"))
+            }
+            .statusBarHidden(true)
+    }
+}
+
+private struct CarteWebView: UIViewRepresentable {
+    let cfg: String
+
+    func makeCoordinator() -> Coordinator { Coordinator(cfg: cfg) }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let controller = WKUserContentController()
+        controller.addUserScript(WKUserScript(
+            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        let config = WKWebViewConfiguration()
+        config.userContentController = controller
+        let vue = WKWebView(frame: .zero, configuration: config)
+        vue.navigationDelegate = context.coordinator
+        vue.scrollView.isScrollEnabled = false
+        vue.scrollView.contentInsetAdjustmentBehavior = .never
+        if let page = Bundle.main.url(forResource: "renderer", withExtension: "html", subdirectory: "Web")
+            ?? Bundle.main.url(forResource: "renderer", withExtension: "html") {
+            vue.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent())
+        }
+        return vue
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        let cfg: String
+        init(cfg: String) { self.cfg = cfg }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            let sur = cfg.filter { $0.isLetter || $0.isNumber || "+/=".contains($0) }
+            webView.evaluateJavaScript("window.OKIA && window.OKIA.carteSeule('\(sur)')")
+        }
+    }
+}

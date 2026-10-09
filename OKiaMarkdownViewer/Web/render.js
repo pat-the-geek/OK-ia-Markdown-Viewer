@@ -949,6 +949,12 @@
         L.DomEvent.disableClickPropagation(box);
         L.DomEvent.on(a, 'click', function (e) {
           L.DomEvent.preventDefault(e);
+          // Dans le livre, la page n'est qu'une moitié d'écran : la carte s'ouvre en plein écran
+          // natif, comme un diagramme, plutôt que de remplir sa seule page.
+          if (document.documentElement.classList.contains('okia-livre') && mapEl.getAttribute('data-okia-map')) {
+            post('carteTapped', { cfg: mapEl.getAttribute('data-okia-map') });
+            return;
+          }
           var full = mapEl.classList.toggle('okia-map-fullscreen');
           document.body.classList.toggle('okia-map-has-fullscreen', full);
           a.innerHTML = full ? '✕' : '⛶';
@@ -1671,6 +1677,15 @@
     // page ne tournait plus.
     c.style.cssText = 'position:absolute;left:0;right:0;top:' + depuis + 'px;height:' + (H + 60) +
       'px;background:var(--bg);z-index:2147483000;';
+  }
+
+  // Plein écran natif d'une carte : la page ne montre qu'elle, sur toute la hauteur.
+  function carteSeule(b64) {
+    var c = document.getElementById('content');
+    if (!c) return;
+    document.documentElement.classList.add('okia-carte-seule');
+    c.innerHTML = '<div class="okia-map" data-okia-map="' + b64 + '"></div>';
+    renderLeafletMaps(c);
   }
 
   function setTheme(key) {
@@ -2971,6 +2986,7 @@
     largeurNaturelle: largeurNaturelle,
     setLargeurLivre: setLargeurLivre,
     setMargeOutils: setMargeOutils,
+    carteSeule: carteSeule,
     coupuresLivre: coupuresLivre,
     cacheLivre: cacheLivre,
     scrollToHeading: scrollToHeading,

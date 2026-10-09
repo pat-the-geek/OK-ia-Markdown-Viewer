@@ -63,6 +63,8 @@ final class ReaderWebController: ObservableObject {
     var onMiroir: (([String: Any]) -> Void)?
     /// Un toucher sur la page elle-même (ni lien, ni image, ni carte…).
     var onTapPage: (() -> Void)?
+    /// Une carte à ouvrir en plein écran (depuis le livre).
+    var onCarte: ((TappedCarte) -> Void)?
 
     func suivreMiroir(_ actif: Bool) {
         eval("window.OKIA && window.OKIA.suivreMiroir(\(actif))")

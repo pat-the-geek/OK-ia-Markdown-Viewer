@@ -48,6 +48,7 @@ struct ReaderView: View {
     /// sur une page la fait revenir, un second la renvoie — comme dans Livres.
     @State private var barreLivreVisible = false
     @State private var paginationLivre = PaginationLivre()
+    @State private var tappedCarte: TappedCarte?
     /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
     @State private var panneauDuo: PanneauDuo?
     @State private var tailleEcran: CGSize = .zero
@@ -112,7 +113,8 @@ struct ReaderView: View {
                 } else if modeLivre {
                     PageLivre(livre: livre, surPret: { demarrerLivre() },
                               surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
-                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 })
+                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
+                              surCarte: { tappedCarte = $0 })
                         .ignoresSafeArea(edges: [.bottom, .horizontal])
                 }
             }
@@ -150,7 +152,8 @@ struct ReaderView: View {
                 // Le livre sur grand écran en paysage : la page de droite prend la moitié.
                 PageLivre(livre: livre, surPret: { demarrerLivre() },
                           surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
-                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 })
+                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
+                              surCarte: { tappedCarte = $0 })
                     .frame(width: tailleEcran.width / 2)
                     .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
@@ -233,6 +236,9 @@ struct ReaderView: View {
         }
         .fullScreenCover(item: $tappedImage) { image in
             ImageZoomView(image: image)
+        }
+        .fullScreenCover(item: $tappedCarte) { carte in
+            CarteZoomView(carte: carte)
         }
         .fullScreenCover(isPresented: $presenting) {
             // Le diaporama reçoit le traducteur du lecteur, pas un neuf : sa mémoire
@@ -677,6 +683,7 @@ struct ReaderView: View {
         let livre = self.livre, web = self.web, pagination = paginationLivre
         web.onMiroir = { livre.poser($0); pagination.recalculerPlusTard() }
         web.onTapPage = { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } }
+        web.onCarte = { tappedCarte = $0 }
         web.suivreMiroir(true)
         web.largeurNaturelle { a in
             livre.largeurNaturelle { b in
