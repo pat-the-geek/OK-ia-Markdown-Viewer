@@ -142,7 +142,17 @@ struct ReaderView: View {
                 Divider().ignoresSafeArea()
                 secondePartie(panneau)
                     .frame(width: max(320, tailleEcran.width * 0.4))
+            } else if modeLivre {
+                // Le livre sur grand écran en paysage : la page de droite prend la moitié.
+                PageLivre(livre: livre, surPret: { demarrerLivre() },
+                          surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } })
+                    .frame(width: tailleEcran.width / 2)
+                    .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
+        }
+        .onChange(of: modeLivre) { _, actif in if actif { demarrerLivre() } else { arreterLivre() } }
+        .onChange(of: barreLivreVisible) { _, _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { demarrerLivre() }
         }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
     }
@@ -635,9 +645,19 @@ struct ReaderView: View {
         max(0, barHeight - (web.webView?.scrollView.safeAreaInsets.top ?? 0))
     }
 
-    /// Le mode livre : le Duo partiellement replié, sans panneau ouvert. La partie droite montre
-    /// la suite du document, et l'on tourne les doubles pages d'un balayage.
-    private var modeLivre: Bool { appareilPliable && charnierePartielle && panneauDuo == nil }
+    /// Le mode livre : le Duo partiellement replié, ou un iPad ou un grand iPhone en paysage, sans
+    /// panneau ouvert. La partie droite montre la suite du document, et l'on tourne les doubles
+    /// pages d'un balayage.
+    private var modeLivre: Bool {
+        guard panneauDuo == nil else { return false }
+        if appareilPliable { return charnierePartielle }
+        // iPad et grand iPhone tenus en paysage : deux pages côte à côte, comme un livre ouvert.
+        #if targetEnvironment(macCatalyst)
+        return false
+        #else
+        return deuxPartiesPossibles
+        #endif
+    }
 
     /// Ouvre le livre : la page de gauche envoie sa copie à celle de droite, les deux prennent la
     /// même largeur de texte — la plus petite des deux —, puis leur défilement se lie.
