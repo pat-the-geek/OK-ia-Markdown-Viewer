@@ -59,6 +59,13 @@ struct PresentationConverterView: View {
         }
         .tint(orange)
         #if DEBUG
+        // Harnais de film : OKIA_DEMO_DIAPORAMA lance le diaporama quelques secondes après la fin
+        // de la conversion — la vidéo enchaîne sans qu'on touche l'écran.
+        .onChange(of: conversion.markdownFinal) { _, md in
+            guard md != nil, ProcessInfo.processInfo.environment["OKIA_DEMO_DIAPORAMA"] != nil,
+                  case .fini(let r) = conversion.etat else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { onPresenter(r.document) }
+        }
         // Le rejeu des captures démarre seul : aucun geste à scripter.
         .task {
             if ProcessInfo.processInfo.environment["OKIA_CONVERSION_REJEU"] != nil, case .reglage = conversion.etat {

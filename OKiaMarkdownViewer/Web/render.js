@@ -1424,10 +1424,21 @@
     attenteMiroir = setTimeout(function () { post('miroir', instantane()); }, 250);
   }
 
+  // En livre, toutes les images se chargent tout de suite : une image paresseuse, encore sans
+  // hauteur, faussait les coupes de page — le livre s'arrêtait à la deuxième double page.
+  function imagesImmediates(racine) {
+    Array.prototype.forEach.call((racine || document).querySelectorAll('img[loading="lazy"]'),
+                                 function (i) { i.loading = 'eager'; });
+  }
+  var imageChargee = function (e) { if (e.target && e.target.tagName === 'IMG') envoyerMiroir(); };
+
   // Gauche : envoie une copie à chaque changement du document (rendu, traduction, thème).
   function suivreMiroir(actif) {
     if (observateurMiroir) { observateurMiroir.disconnect(); observateurMiroir = null; }
+    document.removeEventListener('load', imageChargee, true);
     if (!actif) return;
+    imagesImmediates(document.getElementById('content'));
+    document.addEventListener('load', imageChargee, true);
     observateurMiroir = new MutationObserver(envoyerMiroir);
     var contenu = document.getElementById('content');
     if (contenu) observateurMiroir.observe(contenu, { childList: true, subtree: true, characterData: true });
@@ -1441,6 +1452,7 @@
     var racine = document.documentElement, contenu = document.getElementById('content');
     if (!contenu || !m) return;
     contenu.innerHTML = m.html || '';
+    imagesImmediates(contenu);
     if (m.theme) racine.setAttribute('data-okia-theme', m.theme);
     else racine.removeAttribute('data-okia-theme');
     if (m.fontSize) racine.style.fontSize = m.fontSize;
