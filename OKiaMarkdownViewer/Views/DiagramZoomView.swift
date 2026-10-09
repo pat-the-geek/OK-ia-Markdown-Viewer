@@ -149,6 +149,9 @@ private struct ZoomWebView: UIViewRepresentable {
         webView.scrollView.maximumZoomScale = 6
         webView.scrollView.minimumZoomScale = 0.5
         webView.scrollView.bouncesZoom = true
+        // Le fond clair va d'un bord à l'autre : sans cela, la vue gardait les marges de sécurité
+        // et le noir de dessous bordait la page en haut et en bas.
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         controller.scrollView = webView.scrollView
 
         // Double-tap toggle (added on top of the web content).
@@ -168,7 +171,7 @@ private struct ZoomWebView: UIViewRepresentable {
     static func wrap(bodyHTML: String) -> String {
         """
         <!DOCTYPE html><html><head><meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=6, user-scalable=yes">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=6, user-scalable=yes, viewport-fit=cover">
         <link rel="stylesheet" href="style.css">
         <style>
           html,body{margin:0;height:100%;}
@@ -176,6 +179,10 @@ private struct ZoomWebView: UIViewRepresentable {
           body{background:#FAFAF8;display:flex;align-items:safe center;justify-content:safe center;}
           .wrap{min-width:100%;min-height:100%;display:flex;align-items:safe center;justify-content:safe center;
                 padding:24px;box-sizing:border-box;}
+          /* Un bloc plus haut que l'écran commence sous les boutons du haut et finit au-dessus
+             de ceux du zoom : le fond va d'un bord à l'autre, pas le contenu. */
+          .wrap{padding:calc(env(safe-area-inset-top) + 64px) max(24px, env(safe-area-inset-right))
+                calc(env(safe-area-inset-bottom) + 88px) max(24px, env(safe-area-inset-left));}
           /* Une largeur toujours définie : un SVG à largeur « auto » dans ce cadre souple sortait
              réduit à rien. */
           .wrap > svg{width:100% !important;max-height:none !important;height:auto;display:block;}
@@ -185,16 +192,52 @@ private struct ZoomWebView: UIViewRepresentable {
           .okia-zoom-bloc pre{white-space:pre;overflow:visible;margin:0;cursor:auto;}
           .okia-zoom-bloc pre::after{content:none;}
           .okia-zoom-bloc table{width:auto;margin:0;cursor:auto;}
+          .okia-zoom-bloc .okia-ligne{display:block;}
+          /* Écran étroit : la chronologie passe à la ligne, chaque suite alignée après la flèche. */
+          .okia-zoom-bloc.okia-replie{font-size:14px;}
+          .okia-zoom-bloc.okia-replie pre{white-space:pre-wrap;}
+          .okia-zoom-bloc.okia-replie .okia-ligne{padding-left:var(--retrait);text-indent:calc(-1 * var(--retrait));}
+          .okia-zoom-bloc.okia-replie .okia-ligne + .okia-ligne{margin-top:.5em;}
         </style></head>
         <body><div class="wrap">\(bodyHTML)</div>
         <script>
           // Un bloc plus large que l'écran (une chronologie aux longues lignes) s'ouvre en entier,
-          // réduit à la largeur ; le pincement l'agrandit ensuite.
+          // réduit à la largeur ; le pincement l'agrandit ensuite. Si la réduction le rendait
+          // illisible (iPhone en portrait), une chronologie passe plutôt à la ligne, et un tableau
+          // garde une taille lisible et défile. Mesuré au chargement et à chaque rotation : au
+          // premier passage, la vue n'a pas encore sa taille.
           (function () {
             var b = document.querySelector('.okia-zoom-bloc');
             if (!b) return;
-            var dispo = window.innerWidth - 48, l = b.scrollWidth;
-            if (l > dispo) b.style.zoom = (dispo / l).toFixed(3);
+            var pre = b.querySelector('pre'), code = pre && (pre.querySelector('code') || pre);
+            var lignes = false;
+            if (code && code.children.length === 0) {
+              var texte = code.textContent.replace(/\\n$/, '').split('\\n');
+              var fleche = texte[0].indexOf('→');
+              pre.style.setProperty('--retrait', (fleche > 0 ? fleche + 2 : 4) + 'ch');
+              code.textContent = '';
+              texte.forEach(function (l) {
+                var s = document.createElement('span');
+                s.className = 'okia-ligne';
+                s.textContent = l || ' ';
+                code.appendChild(s);
+              });
+              lignes = true;
+            }
+            function ajuster() {
+              var dispo = window.innerWidth - 48;
+              if (!(dispo > 0)) return;
+              b.style.zoom = ''; b.style.width = ''; b.classList.remove('okia-replie');
+              var l = b.scrollWidth;
+              if (l <= dispo) return;
+              var z = dispo / l;
+              if (z >= 0.6) { b.style.zoom = z.toFixed(3); return; }
+              if (lignes) { b.classList.add('okia-replie'); b.style.width = dispo + 'px'; return; }
+              b.style.zoom = '0.6';
+            }
+            ajuster();
+            window.addEventListener('load', ajuster);
+            window.addEventListener('resize', ajuster);
           })();
         </script></body></html>
         """
