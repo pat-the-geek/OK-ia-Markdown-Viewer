@@ -107,6 +107,15 @@ html.okia-livre-gauche body { padding-left: 0; padding-right: 0; }
    prend toute la largeur, l'heure et le réseau flottent dessus. */
 html.okia-livre-droite body { padding-left: 0; padding-right: 0; }
 html.okia-livre-droite .markdown-body { margin: 0; }
+/* Dans le livre, la page est la colonne : la largeur plafonnée d'un thème (Éditorial, 720 px)
+   n'y laisserait que du blanc des deux côtés. Les classes de côté sont posées aussi pendant la
+   mesure de largeurNaturelle : la mesure prend donc toute la page. */
+html.okia-livre-gauche .markdown-body,
+html.okia-livre-droite .markdown-body { max-width: none; }
+/* Côté pliure, la marge se resserre : sur le Duo, la charnière laisse déjà 40 points entre les
+   deux pages ; ailleurs, 20 points de blanc suffisent à séparer deux colonnes. */
+html.okia-livre-gauche .markdown-body { padding-right: 10px; }
+html.okia-livre-droite .markdown-body { padding-left: 10px; }
 
 /* Duo : la page passe sous la colonne réservée par le système et ne contourne que son coin
    haut (caméra, heure, réseau), posé par OKIA.setBordsLibres. */

@@ -45,7 +45,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   en bas de page qui ne précède ni un titre ni un grand visuel.
 • Dans le livre comme en portrait, touchez un diagramme, la chronologie d'un
   rapport ou un tableau : il s'ouvre en plein écran, en entier ; pincez pour
-  agrandir. Dans le livre, le bouton ⛶ d'une carte l'ouvre aussi en plein écran.
+  agrandir. Dans le livre, le bouton plein écran d'une carte l'ouvre aussi en plein écran.
 • Touchez une page pour faire revenir la barre, une seconde fois pour la renvoyer.
 • iPhone Duo déplié ou plié : les commandes sont rangées dans la colonne de
   droite, et la page va jusqu'à elle.
