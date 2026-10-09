@@ -1476,6 +1476,51 @@
     }
   }
 
+  // Les débuts de page du livre, en coordonnées du document, pour des pages de hauteur H :
+  // une coupe ne tranche jamais une ligne, une image, un diagramme ou une carte — elle remonte
+  // au-dessus. Un élément plus haut qu'une page, lui, se coupe où il faut.
+  function coupuresLivre(H) {
+    var contenu = document.getElementById('content');
+    if (!contenu || !(H > 0)) return [0];
+    var sy = window.scrollY || 0, boites = [];
+    var marche = document.createTreeWalker(contenu, NodeFilter.SHOW_TEXT), r = document.createRange(), n;
+    while ((n = marche.nextNode())) {
+      if (!n.nodeValue.trim()) continue;
+      r.selectNodeContents(n);
+      var rs = r.getClientRects();
+      for (var i = 0; i < rs.length; i++) if (rs[i].height > 0) boites.push([rs[i].top + sy, rs[i].bottom + sy]);
+    }
+    Array.prototype.forEach.call(contenu.querySelectorAll('img, svg, .okia-map, tr, pre, hr'), function (e) {
+      var b = e.getBoundingClientRect();
+      if (b.height > 0) boites.push([b.top + sy, b.bottom + sy]);
+    });
+    var total = Math.max(document.documentElement.scrollHeight, contenu.getBoundingClientRect().bottom + sy);
+    var coupes = [0], debut = 0;
+    while (debut + H < total && coupes.length < 5000) {
+      var cible = debut + H, coupe = cible, bouge = true;
+      while (bouge) {
+        bouge = false;
+        for (var j = 0; j < boites.length; j++) {
+          var t = boites[j][0], b = boites[j][1];
+          if (t < coupe - 0.5 && b > coupe + 0.5 && (b - t) < H * 0.9) { coupe = t; bouge = true; }
+        }
+      }
+      if (coupe <= debut + H * 0.3) coupe = cible;
+      coupes.push(Math.floor(coupe));
+      debut = coupe;
+    }
+    return coupes;
+  }
+
+  // Cache ce qui dépasse la page : le haut de la page suivante, sous la dernière ligne entière.
+  function cacheLivre(depuis, H) {
+    var c = document.getElementById('okia-cache-livre');
+    if (depuis == null || depuis < 0) { if (c) c.remove(); return; }
+    if (!c) { c = document.createElement('div'); c.id = 'okia-cache-livre'; document.body.appendChild(c); }
+    c.style.cssText = 'position:absolute;left:0;right:0;top:' + depuis + 'px;height:' + (H + 60) +
+      'px;background:var(--bg);z-index:900;pointer-events:none;';
+  }
+
   function setTheme(key) {
     if (THEMES_LECTURE.indexOf(key) === -1) key = 'okia';
     currentTheme = key;
@@ -2773,6 +2818,8 @@
     poserMiroir: poserMiroir,
     largeurNaturelle: largeurNaturelle,
     setLargeurLivre: setLargeurLivre,
+    coupuresLivre: coupuresLivre,
+    cacheLivre: cacheLivre,
     scrollToHeading: scrollToHeading,
     search: search,
     searchNext: searchNext,

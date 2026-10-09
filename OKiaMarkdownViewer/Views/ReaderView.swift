@@ -47,7 +47,7 @@ struct ReaderView: View {
     /// En mode livre, la barre s'efface pour rendre toute la place aux deux pages ; un toucher
     /// sur une page la fait revenir, un second la renvoie — comme dans Livres.
     @State private var barreLivreVisible = false
-    @State private var synchroLivre = SynchroLivre()
+    @State private var paginationLivre = PaginationLivre()
     /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
     @State private var panneauDuo: PanneauDuo?
     @State private var tailleEcran: CGSize = .zero
@@ -636,15 +636,15 @@ struct ReaderView: View {
     }
 
     /// Le mode livre : le Duo partiellement replié, sans panneau ouvert. La partie droite montre
-    /// la suite du document, et les deux pages défilent ensemble.
+    /// la suite du document, et l'on tourne les doubles pages d'un balayage.
     private var modeLivre: Bool { appareilPliable && charnierePartielle && panneauDuo == nil }
 
     /// Ouvre le livre : la page de gauche envoie sa copie à celle de droite, les deux prennent la
     /// même largeur de texte — la plus petite des deux —, puis leur défilement se lie.
     private func demarrerLivre() {
         guard modeLivre else { return }
-        let livre = self.livre, web = self.web, synchro = synchroLivre
-        web.onMiroir = { livre.poser($0) }
+        let livre = self.livre, web = self.web, pagination = paginationLivre
+        web.onMiroir = { livre.poser($0); pagination.recalculerPlusTard() }
         web.onTapPage = { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } }
         web.suivreMiroir(true)
         web.largeurNaturelle { a in
@@ -656,14 +656,14 @@ struct ReaderView: View {
                 }
                 // Le temps que la copie se pose et se mette en page.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    synchro.relier(gauche: web.webView?.scrollView, droite: livre.webView?.scrollView)
+                    pagination.relier(gauche: web.webView, droite: livre.webView)
                 }
             }
         }
     }
 
     private func arreterLivre() {
-        synchroLivre.delier()
+        paginationLivre.delier()
         web.onTapPage = nil
         barreLivreVisible = false
         web.suivreMiroir(false)

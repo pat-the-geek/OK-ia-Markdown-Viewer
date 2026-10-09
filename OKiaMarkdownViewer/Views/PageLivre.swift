@@ -84,54 +84,109 @@ struct PageLivre: UIViewRepresentable {
     }
 }
 
-/// Fait défiler les deux pages ensemble : le point du document qui touche le bas de la page de
-/// gauche est en haut de celle de droite. Qu'on fasse défiler l'une ou l'autre, l'autre suit.
+/// Le livre se feuillette : plus de défilement, des doubles pages. La page de gauche montre la
+/// page 2k du document, celle de droite la 2k+1 ; un balayage tourne la double page. Les pages
+/// sont coupées entre deux lignes (`OKIA.coupuresLivre`), et ce qui dépasse sous la dernière
+/// ligne est caché, comme le bas d'une page imprimée.
 @MainActor
-final class SynchroLivre {
-    private weak var gauche: UIScrollView?
-    private weak var droite: UIScrollView?
-    private var suivis: [NSKeyValueObservation] = []
-    private var enCours = false
+final class PaginationLivre: NSObject {
+    private weak var gauche: WKWebView?
+    private weak var droite: WKWebView?
+    private var coupes: [CGFloat] = [0]
+    private var hauteur: CGFloat = 0
+    private var planche = 0
+    private var gestes: [(UIView, UIGestureRecognizer)] = []
+    private var attente: DispatchWorkItem?
 
-    func relier(gauche: UIScrollView?, droite: UIScrollView?) {
+    func relier(gauche: WKWebView?, droite: WKWebView?) {
         delier()
         guard let gauche, let droite else { return }
         self.gauche = gauche
         self.droite = droite
-        suivis = [
-            gauche.observe(\.contentOffset) { [weak self] _, _ in
-                MainActor.assumeIsolated { self?.suivre(depuisGauche: true) }
-            },
-            droite.observe(\.contentOffset) { [weak self] vue, _ in
-                MainActor.assumeIsolated {
-                    // Seul un geste sur la page de droite la fait mener ; sinon, c'est elle qui suit.
-                    if vue.isTracking || vue.isDragging || vue.isDecelerating { self?.suivre(depuisGauche: false) }
-                }
+        for vue in [gauche, droite] {
+            vue.scrollView.isScrollEnabled = false
+            for (direction, sens) in [(UISwipeGestureRecognizer.Direction.left, 1), (.up, 1), (.right, -1), (.down, -1)] {
+                let g = UISwipeGestureRecognizer(target: self, action: sens > 0 ? #selector(suivante) : #selector(precedente))
+                g.direction = direction
+                vue.addGestureRecognizer(g)
+                gestes.append((vue, g))
             }
-        ]
-        suivre(depuisGauche: true)
+        }
+        recalculer()
     }
 
     func delier() {
-        suivis.forEach { $0.invalidate() }
-        suivis = []
-    }
-
-    /// La hauteur de document que montre la page de gauche.
-    private func visible(_ s: UIScrollView) -> CGFloat {
-        s.bounds.height - s.adjustedContentInset.top - s.adjustedContentInset.bottom
-    }
-
-    func suivre(depuisGauche: Bool) {
-        guard !enCours, let g = gauche, let d = droite else { return }
-        enCours = true
-        defer { enCours = false }
-        if depuisGauche {
-            let basGauche = g.contentOffset.y + g.adjustedContentInset.top + visible(g)
-            d.contentOffset.y = basGauche - d.adjustedContentInset.top
-        } else {
-            let hautDroite = d.contentOffset.y + d.adjustedContentInset.top
-            g.contentOffset.y = hautDroite - visible(g) - g.adjustedContentInset.top
+        attente?.cancel()
+        for (vue, g) in gestes { vue.removeGestureRecognizer(g) }
+        gestes = []
+        for vue in [gauche, droite].compactMap({ $0 }) {
+            vue.scrollView.isScrollEnabled = true
+            vue.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(null)")
         }
+        gauche = nil
+        droite = nil
+    }
+
+    /// Après un changement de mise en page (copie reçue, traduction, barre, taille du texte).
+    func recalculerPlusTard() {
+        attente?.cancel()
+        let tache = DispatchWorkItem { [weak self] in self?.recalculer() }
+        attente = tache
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: tache)
+    }
+
+    private func visible(_ v: WKWebView) -> CGFloat {
+        let s = v.scrollView
+        return s.bounds.height - s.adjustedContentInset.top - s.adjustedContentInset.bottom
+    }
+
+    func recalculer() {
+        guard let g = gauche, let d = droite else { return }
+        let h = floor(min(visible(g), visible(d)))
+        guard h > 100 else { return }
+        let lu = debut(2 * planche)
+        g.evaluateJavaScript("window.OKIA ? window.OKIA.coupuresLivre(\(Int(h))) : [0]") { [weak self] r, _ in
+            guard let self else { return }
+            let liste = (r as? [NSNumber])?.map { CGFloat($0.doubleValue) } ?? [0]
+            self.hauteur = h
+            self.coupes = liste.isEmpty ? [0] : liste
+            // On reste sur la double page qui contient ce qu'on lisait.
+            var k = 0
+            while 2 * (k + 1) < self.coupes.count, self.coupes[2 * (k + 1)] <= lu + 1 { k += 1 }
+            self.planche = k
+            self.afficher(anime: false)
+        }
+    }
+
+    private func debut(_ page: Int) -> CGFloat {
+        if page < coupes.count { return coupes[page] }
+        return (coupes.last ?? 0) + hauteur * CGFloat(page - coupes.count + 1)
+    }
+
+    private func afficher(anime: Bool) {
+        guard let g = gauche, let d = droite else { return }
+        let pg = 2 * planche, pd = pg + 1
+        let cacheG = debut(pd), cacheD: CGFloat = pd + 1 < coupes.count ? debut(pd + 1) : -1
+        g.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheG)), \(Int(hauteur)))")
+        d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)))")
+        let poser = {
+            g.scrollView.contentOffset.y = self.debut(pg) - g.scrollView.adjustedContentInset.top
+            d.scrollView.contentOffset.y = self.debut(pd) - d.scrollView.adjustedContentInset.top
+        }
+        if anime {
+            UIView.transition(with: g, duration: 0.25, options: [.transitionCrossDissolve], animations: {})
+            UIView.transition(with: d, duration: 0.25, options: [.transitionCrossDissolve], animations: {})
+        }
+        poser()
+    }
+
+    @objc private func suivante() { tourner(1) }
+    @objc private func precedente() { tourner(-1) }
+
+    private func tourner(_ sens: Int) {
+        let k = planche + sens
+        guard k >= 0, 2 * k < coupes.count else { return }
+        planche = k
+        afficher(anime: true)
     }
 }
