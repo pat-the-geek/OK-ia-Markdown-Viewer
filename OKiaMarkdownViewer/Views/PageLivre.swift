@@ -20,14 +20,14 @@ final class LivreController: ObservableObject {
 
     func largeurNaturelle(_ fin: @escaping (CGFloat) -> Void) {
         guard pret, let webView else { fin(0); return }
-        webView.evaluateJavaScript("window.OKIA ? window.OKIA.largeurNaturelle() : 0") { r, _ in
+        webView.evaluateJavaScript("window.OKIA ? window.OKIA.largeurNaturelle('droite') : 0") { r, _ in
             fin(CGFloat((r as? NSNumber)?.doubleValue ?? 0))
         }
     }
 
     func setLargeurLivre(_ largeur: CGFloat) {
         guard pret, let webView else { largeurEnAttente = largeur; return }
-        webView.evaluateJavaScript("window.OKIA && window.OKIA.setLargeurLivre(\(Int(largeur.rounded())))")
+        webView.evaluateJavaScript("window.OKIA && window.OKIA.setLargeurLivre(\(Int(largeur.rounded())), 'droite')")
     }
 
     fileprivate func estPret() {
@@ -41,12 +41,15 @@ struct PageLivre: UIViewRepresentable {
     @ObservedObject var livre: LivreController
     /// Appelé quand la page est prête à recevoir copie et largeur.
     var surPret: () -> Void
+    /// Un toucher sur la page : comme à gauche, il montre ou efface la barre.
+    var surToucher: () -> Void = {}
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
         controller.add(context.coordinator, name: "ready")
+        controller.add(context.coordinator, name: "tapPage")
         controller.addUserScript(WKUserScript(
             source: "window.OKIA_LANG = '\(Localization.shared.code)';",
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -73,6 +76,7 @@ struct PageLivre: UIViewRepresentable {
         init(_ parent: PageLivre) { self.parent = parent }
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
+            if message.name == "tapPage" { parent.surToucher(); return }
             guard message.name == "ready" else { return }
             parent.livre.estPret()
             parent.surPret()

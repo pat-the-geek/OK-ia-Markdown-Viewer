@@ -44,6 +44,9 @@ struct ReaderView: View {
     /// partie droite devient la page suivante — le mode livre.
     @State private var charnierePartielle = false
     @StateObject private var livre = LivreController()
+    /// En mode livre, la barre s'efface pour rendre toute la place aux deux pages ; un toucher
+    /// sur une page la fait revenir, un second la renvoie — comme dans Livres.
+    @State private var barreLivreVisible = false
     @State private var synchroLivre = SynchroLivre()
     /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
     @State private var panneauDuo: PanneauDuo?
@@ -107,12 +110,17 @@ struct ReaderView: View {
                 if let panneau = panneauDuo, deuxParties {
                     secondePartie(panneau)
                 } else if modeLivre {
-                    PageLivre(livre: livre) { demarrerLivre() }
-                        .ignoresSafeArea(edges: .bottom)
+                    PageLivre(livre: livre, surPret: { demarrerLivre() },
+                              surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } })
+                        .ignoresSafeArea(edges: [.bottom, .horizontal])
                 }
             }
             .arrangementViewStyle(.split)
             .onChange(of: modeLivre) { _, actif in if actif { demarrerLivre() } else { arreterLivre() } }
+            // La barre qui part ou revient change la largeur de la page de gauche : on réaligne.
+            .onChange(of: barreLivreVisible) { _, _ in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { demarrerLivre() }
+            }
             // La taille de tout l'écran, mesurée hors des parties : mesurer le lecteur ferait
             // osciller la décision — deux parties le réduisent de moitié, il ne serait plus large.
             .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
@@ -192,6 +200,7 @@ struct ReaderView: View {
         // Sur Mac, une barre « éditeur » se range dans la barre de la fenêtre.
         .toolbarRole(.editor)
         .toolbar { barreOutils }
+        .toolbar(modeLivre && !barreLivreVisible ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         // La recherche du système, réduite à un bouton tant qu'on ne cherche pas.
         .searchable(text: $searchText, isPresented: $isSearching, prompt: tr("Rechercher dans le document"))
         .searchToolbarBehavior(.minimize)
@@ -636,6 +645,7 @@ struct ReaderView: View {
         guard modeLivre else { return }
         let livre = self.livre, web = self.web, synchro = synchroLivre
         web.onMiroir = { livre.poser($0) }
+        web.onTapPage = { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } }
         web.suivreMiroir(true)
         web.largeurNaturelle { a in
             livre.largeurNaturelle { b in
@@ -654,6 +664,8 @@ struct ReaderView: View {
 
     private func arreterLivre() {
         synchroLivre.delier()
+        web.onTapPage = nil
+        barreLivreVisible = false
         web.suivreMiroir(false)
         web.onMiroir = nil
         web.setLargeurLivre(0)

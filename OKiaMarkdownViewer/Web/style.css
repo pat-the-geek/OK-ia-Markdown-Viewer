@@ -89,6 +89,14 @@ body {
 /* Mode livre (Duo partiellement replié) : les deux pages prennent la même largeur de texte,
    pour que la page de droite reprenne exactement là où s'arrête celle de gauche. */
 html.okia-livre .markdown-body { width: var(--okia-livre-l); max-width: none; }
+html.okia-livre-gauche .markdown-body { margin: 0 0 0 auto; }
+/* La page de gauche va jusqu'à la pliure : la colonne que le système garde à droite n'y porte
+   plus que le bouton de recherche, qui flotte en verre sur le texte. */
+html.okia-livre-gauche body { padding-left: 0; padding-right: 0; }
+/* La page de droite passe sous la colonne de l'heure, comme la page du Duo déplié : le texte
+   prend toute la largeur, l'heure et le réseau flottent dessus. */
+html.okia-livre-droite body { padding-left: 0; padding-right: 0; }
+html.okia-livre-droite .markdown-body { margin: 0; }
 
 /* Duo : la page passe sous la colonne réservée par le système et ne contourne que son coin
    haut (caméra, heure, réseau), posé par OKIA.setBordsLibres. */

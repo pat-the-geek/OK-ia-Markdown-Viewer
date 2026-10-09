@@ -1447,19 +1447,28 @@
   }
 
   // La largeur que la page donnerait d'elle-même au texte, sans la contrainte du livre.
-  function largeurNaturelle() {
+  // cote « gauche » : mesurée sans les marges latérales du système, que la page de gauche
+  // n'applique pas en mode livre.
+  function largeurNaturelle(cote) {
     var racine = document.documentElement, contenu = document.getElementById('content');
     var avait = racine.classList.contains('okia-livre');
     racine.classList.remove('okia-livre');
+    var classe = cote === 'droite' ? 'okia-livre-droite' : 'okia-livre-gauche';
+    var avaitClasse = racine.classList.contains(classe);
+    if (cote) racine.classList.add(classe);
     var l = contenu ? contenu.clientWidth : 0;
     if (avait) racine.classList.add('okia-livre');
+    if (cote && !avaitClasse) racine.classList.remove(classe);
     return l;
   }
 
-  function setLargeurLivre(px) {
+  // cote : « gauche » cale le texte contre la pliure, à droite de sa page ; « droite », à gauche.
+  // Le blanc que laisse la page la plus large part vers le bord, pas au milieu du livre.
+  function setLargeurLivre(px, cote) {
     var racine = document.documentElement;
+    racine.classList.remove('okia-livre-gauche', 'okia-livre-droite');
     if (px > 0) {
-      racine.classList.add('okia-livre');
+      racine.classList.add('okia-livre', cote === 'droite' ? 'okia-livre-droite' : 'okia-livre-gauche');
       racine.style.setProperty('--okia-livre-l', px + 'px');
     } else {
       racine.classList.remove('okia-livre');
@@ -2784,5 +2793,16 @@
       restoreExtras: trRestaurerExtras
     }
   };
+  // Un toucher sur la page elle-même — pas sur un lien, une image, une carte, un diagramme,
+  // une note ou un tableau : l'app s'en sert pour montrer ou effacer sa barre en mode livre.
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (e.defaultPrevented || !t || !t.closest) return;
+    if (t.closest('a, img, button, input, select, textarea, summary, table, .okia-map, ' +
+                  'pre.mermaid, sup.fn-ref, .fn-apercu, .ner-legend')) return;
+    if (window.getSelection && String(window.getSelection()).length) return;
+    post('tapPage', {});
+  });
+
   post('ready', {});
 })();
