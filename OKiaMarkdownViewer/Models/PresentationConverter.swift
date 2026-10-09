@@ -458,13 +458,20 @@ final class ConvertisseurPresentation {
         let nombresDuRapport = VerificationsPresentation.nombres(markdown)
         // Un constat qui recopie une diapositive — points-virgules, « Titre : … », plus de 25 mots —
         // n'en est pas un : on l'écarte, quitte à en garder moins de trois.
-        let retenir = ((try? await troisConstats(resumes.joined(separator: "\n\n"), regle: regle)) ?? [])
+        var retenir = ((try? await troisConstats(resumes.joined(separator: "\n\n"), regle: regle)) ?? [])
             .map(VerificationsPresentation.nettoyer)
             .filter { c in
                 !c.isEmpty && !Self.estParasite(c, titreSection: "") && !c.contains(" ; ") && !c.contains("##")
                     && c.split(separator: " ").count <= 25
                     && VerificationsPresentation.nombres(c).allSatisfy(nombresDuRapport.contains)
             }
+        // Tous écartés — vu sur un rapport court : la diapositive sortait vide. Repli : la première
+        // puce de trois diapositives différentes, déjà passées par les mêmes vérifications.
+        if retenir.isEmpty {
+            retenir = Array(diapos.compactMap { d in
+                d.components(separatedBy: "\n").first { $0.hasPrefix("- ") }.map { String($0.dropFirst(2)) }
+            }.prefix(3))
+        }
         if imageTitre == nil {
             imageTitre = rapport.sections.flatMap(\.images).first { !imagesReprises.contains($0) }
         }
