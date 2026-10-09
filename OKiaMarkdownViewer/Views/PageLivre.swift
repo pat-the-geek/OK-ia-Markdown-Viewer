@@ -215,8 +215,8 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
 
     /// Une page qui tourne, comme un livre, et qui suit le doigt : en avant, la page de droite se
     /// soulève autour de la pliure et découvre dessous la nouvelle page de droite ; son verso
-    /// montre la nouvelle page de gauche. Lâchée avant la moitié, elle retombe là où on était ;
-    /// au-delà, ou d'un geste vif, elle se pose de l'autre côté. Les images des pages viennent de
+    /// montre la nouvelle page de gauche. Son bord libre reste sous le doigt ; lâchée, elle retombe
+    /// du côté où elle penche le plus. Les images des pages viennent de
     /// WebKit (`takeSnapshot`) ; la page qui tourne vit dans la fenêtre, pour franchir la pliure.
     private final class Tour {
         let sens: Int
@@ -250,6 +250,14 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         vue.takeSnapshot(with: nil) { image, _ in fin(image) }
     }
 
+    private func apresPeinture(_ vue: WKWebView, _ fin: @escaping () -> Void) {
+        vue.callAsyncJavaScript(
+            "await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 30))));",
+            arguments: [:], in: nil, in: .page) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: fin)
+        }
+    }
+
     func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
         guard let pan = g as? UIPanGestureRecognizer else { return true }
         let v = pan.velocity(in: pan.view)
@@ -265,6 +273,15 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         preparer(sens)
     }
 
+    /// L'avancement de la page pour un déplacement du doigt : le bord libre de la page reste sous
+    /// le doigt. Vu d'en haut, ce bord est à w·cos(πp) de la charnière ; parti du bord extérieur,
+    /// il atteint la pliure quand le doigt a parcouru une largeur de page (p = ½), et se pose de
+    /// l'autre côté après deux.
+    private func avancement(dx: CGFloat, sens: Int, largeur: CGFloat) -> CGFloat {
+        let parcouru = (sens > 0 ? -dx : dx) / largeur
+        return acos(min(1, max(-1, 1 - parcouru))) / .pi
+    }
+
     @objc private func suivreDoigt(_ pan: UIPanGestureRecognizer) {
         let dx = pan.translation(in: pan.view).x
         let largeur = max(pan.view?.bounds.width ?? 400, 1)
@@ -275,18 +292,15 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
                 decisionEnAttente = nil
                 preparer(dx < 0 ? 1 : -1)
             }
-            if let t = tour {
-                let p = min(1, max(0, (t.sens > 0 ? -dx : dx) / largeur))
-                poser(t, p)
-            } else {
-                dernierAvancement = abs(dx) / largeur
-            }
-        case .ended, .cancelled, .failed:
-            let v = pan.velocity(in: pan.view).x
             let sens = tour?.sens ?? (dx < 0 ? 1 : -1)
-            let p = (sens > 0 ? -dx : dx) / largeur
-            let vif = sens > 0 ? v < -600 : v > 600
-            let valider = pan.state == .ended && (p > 0.5 || vif)
+            let p = avancement(dx: dx, sens: sens, largeur: largeur)
+            if let t = tour { poser(t, p) } else { dernierAvancement = p }
+        case .ended, .cancelled, .failed:
+            // Lâchée, la page retombe du côté où elle penche le plus : au-delà de la verticale, elle
+            // se pose de l'autre côté ; en deçà, elle revient là où on était.
+            let sens = tour?.sens ?? (dx < 0 ? 1 : -1)
+            let p = tour?.avancement ?? avancement(dx: dx, sens: sens, largeur: largeur)
+            let valider = pan.state == .ended && p > 0.5
             if let t = tour { finir(t, valider: valider) } else if enPreparation { decisionEnAttente = valider }
         default:
             break
@@ -304,16 +318,30 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
             self.image(reste) { ancienne in
                 guard let recto, let ancienne else { self.enPreparation = false; return }
                 // L'ancienne page reste visible sous la page qui tourne, jusqu'à ce qu'elle la couvre.
+                // Posée à côté de la vue web, pas dedans : sa capture la reprenait, et le verso
+                // montrait l'ancienne page au lieu de la nouvelle.
                 let cache = UIImageView(image: ancienne)
-                cache.frame = reste.bounds
-                reste.addSubview(cache)
+                if let parent = reste.superview {
+                    cache.frame = reste.frame
+                    parent.insertSubview(cache, aboveSubview: reste)
+                } else {
+                    cache.frame = reste.bounds
+                    reste.addSubview(cache)
+                }
+                // La page qui va se lever garde son image le temps de la préparation : sans elle,
+                // elle passait au blanc pendant que WebKit peignait la page suivante dessous.
+                let attente = UIImageView(image: recto)
+                attente.frame = leve.frame
+                leve.superview?.insertSubview(attente, aboveSubview: leve)
                 self.planche = k
                 self.afficher(anime: false)
-                // Le temps que WebKit dessine la nouvelle double page, qui donnera le verso.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                // Le verso est la nouvelle page : on attend que WebKit l'ait peinte (deux images
+                // d'affichage dans la page), sans quoi l'image reprenait l'ancienne.
+                self.apresPeinture(reste) {
                     self.image(reste) { verso in
                         let t = self.construire(recto: recto, verso: verso ?? ancienne, leve: leve,
                                                 reste: reste, cache: cache, sens: sens, fenetre: fenetre)
+                        attente.removeFromSuperview()
                         self.tour = t
                         self.enPreparation = false
                         if let valider = self.decisionEnAttente {
@@ -398,17 +426,42 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         CATransaction.commit()
     }
 
+    /// La chute de la page, sous la pesanteur. Mesurée depuis la verticale (φ = 0, la page dressée
+    /// au-dessus de la pliure), la page lâchée accélère vers le côté où elle penche — φ'' = k·sin φ,
+    /// comme une feuille qui bascule —, se pose à plat (φ = ±π/2) et rebondit un peu, puis se tait.
+    /// Tournée d'un coup (balayage vertical), elle reçoit juste l'élan qu'il faut pour passer la
+    /// verticale, et tombe ensuite d'elle-même.
     private func finir(_ t: Tour, valider: Bool) {
-        let depart = t.avancement, cible: CGFloat = valider ? 1 : 0
-        let duree = max(0.18, 0.5 * Double(abs(cible - depart)))
-        let debut = CACurrentMediaTime()
-        // Une horloge d'affichage plutôt qu'une animation implicite : la page part d'où le doigt
-        // l'a laissée, et l'ombre suit la même courbe.
+        let k: CGFloat = 34                       // rad/s² : la pesanteur, à l'échelle d'une page
+        let cible: CGFloat = valider ? .pi / 2 : -.pi / 2
+        var phi = CGFloat.pi * t.avancement - .pi / 2
+        // L'élan de départ : un petit coup vers le côté choisi ; s'il faut d'abord remonter jusqu'à
+        // la verticale, juste assez d'énergie pour la franchir (½ω² + k·cos φ > k).
+        let doitRemonter = valider ? phi < 0 : phi > 0
+        var omega: CGFloat = doitRemonter ? sqrt(2 * k * (1 - cos(phi))) * 1.12 + 0.6 : 1.2
+        if !valider { omega = -omega }
+        var rebonds = 0
+        var avant = CACurrentMediaTime()
         let horloge = CADisplayLink(target: Pas { lien in
-            let x = min(1, (CACurrentMediaTime() - debut) / duree)
-            let lisse = CGFloat(1 - pow(1 - x, 3))
-            self.poser(t, depart + (cible - depart) * lisse)
-            if x >= 1 {
+            let maintenant = CACurrentMediaTime()
+            var reste = min(0.05, maintenant - avant)
+            avant = maintenant
+            // Petits pas d'intégration : la chute reste juste même si une image saute.
+            while reste > 0 {
+                let dt = CGFloat(min(reste, 1.0 / 240))
+                reste -= Double(dt)
+                omega += k * sin(phi) * dt
+                phi += omega * dt
+                // À plat : la page touche, rebondit un peu, puis s'arrête.
+                if (valider && phi >= cible) || (!valider && phi <= cible) {
+                    phi = cible
+                    omega = -omega * 0.18
+                    rebonds += 1
+                    if abs(omega) < 0.7 || rebonds > 1 { omega = 0 }
+                }
+            }
+            self.poser(t, (phi + .pi / 2) / .pi)
+            if omega == 0 && phi == cible {
                 lien.invalidate()
                 self.conclure(t, valide: valider)
             }
