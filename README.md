@@ -2,6 +2,11 @@
 
 > Ce que les algorithmes ignorent encore. — [ok-ia.ch](https://ok-ia.ch)
 
+**md Viewer est fait pour lire ce que génèrent les IA.** Les assistants d'IA écrivent en
+Markdown — rapports, synthèses, veilles, comptes rendus, avec leurs tableaux, leurs diagrammes
+Mermaid et leurs cartes. md Viewer en fait de vrais documents à lire, à présenter, à résumer et
+à traduire, plutôt qu'un texte brut constellé d'astérisques.
+
 Application iOS native (SwiftUI) qui ouvre des fichiers **Markdown contenant des diagrammes
 Mermaid** et les affiche **exactement selon le principe du viewer de ok-ia.ch** : même charte,
 même pipeline (frontmatter, callouts Obsidian, wiki-links, coloration NER), même thème Mermaid
