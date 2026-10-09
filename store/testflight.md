@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (50)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (51)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,57 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (50)
+## What to Test — 1.3 (51)
+
+```
+Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
+
+NOUVEAU — LA PRÉSENTATION SE CONSTRUIT SOUS VOS YEUX
+Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
+• Chaque diapositive apparaît en vignette dès qu'elle est prête, avec le thème,
+  les images et la carte ; une case en pointillés annonce la suivante.
+• En paysage sur iPhone Pro Max ou iPad, sur l'iPhone Duo déplié et sur Mac
+  (fenêtre large), la conversion s'ouvre à droite du rapport : continuez de lire.
+• La vue suit la dernière diapositive. Remontez en voir une plus ancienne : elle
+  ne doit pas vous ramener en bas ; redescendez, elle suit de nouveau.
+• À la fin, « Lancer le diaporama » ; en le quittant, les vignettes sont toujours là.
+• Tournez l'appareil pendant la conversion : elle doit continuer.
+• Choisissez 5, 10, 15, 20 ou 25 diapositives : la présentation doit compter
+  exactement ce nombre. Signalez tout chiffre ou nom absent du rapport.
+• La dernière diapositive, « À retenir », doit toujours porter des puces, même
+  pour un rapport court.
+• Dites-nous combien de temps a pris la conversion, et sur quel appareil.
+
+CORRIGÉ — LE RÉSUMÉ ET LA DISCUSSION DÉFILENT À DROITE
+• En paysage, le résumé et la discussion ouverts à droite du document se font
+  défiler jusqu'en bas, même pendant une traduction.
+• Sur Mac, ils s'ouvrent aussi à droite quand la fenêtre est large.
+
+LA BARRE EN LIQUID GLASS
+• La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
+  d'un document : le titre doit rester visible sous la barre.
+• Les noms surlignés ne doivent plus l'être au milieu d'un mot.
+
+DEUX PARTIES EN PAYSAGE ET SUR LE DUO
+• En paysage (Pro Max, iPad) ou Duo déplié, le sommaire, le résumé et la
+  discussion s'ouvrent à côté du document. En portrait, ce sont des feuilles.
+• Sur le Duo, la page va jusqu'au bord ; seul le coin de l'heure est évité.
+
+RAPPORTS DE VEILLE FORNEWS : NOTES DE BAS DE PAGE
+• Touchez un appel de source orange : la note s'ouvre en aperçu. Sur Mac, survolez-le.
+• Export Word : les sources deviennent des notes de fin. Dites-nous ce qu'en affiche Word.
+
+TOUJOURS À ESSAYER — DIAPORAMA, EXPORT POWERPOINT, THÈMES
+• Onze transitions au diaporama, dont le Damier ; l'export PowerPoint reprend la
+  transition choisie : dites-nous ce qu'en garde Keynote.
+• Bouton « Aa » : cinq thèmes de lecture, en clair et en sombre.
+• Nécessite un appareil compatible Apple Intelligence pour la conversion, le
+  résumé et la discussion ; tout se calcule sur l'appareil.
+```
+
+---
+
+## What to Test — 1.3 (50) — archive
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
