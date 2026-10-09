@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (59)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (60)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (59)
+## What to Test — 1.3 (60)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -43,7 +43,8 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   paysage. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
   léger rebond. Un coin corné indique qu'il y a une suite. Signalez tout blanc
-  en bas de page qui ne précède ni un titre ni un grand visuel.
+  en bas de page qui ne précède ni un titre ni un grand visuel, et toute
+  tuile, image ou chronologie coupée entre deux pages.
 • Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
   tableau, signale qu'il s'ouvre en plein écran (à gauche sur la page de droite
   du livre). Aussi la frise, le déroulé et l'agenda des rapports fornews. Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour
@@ -83,7 +84,6 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
 LA BARRE EN LIQUID GLASS
 • La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
   d'un document : le titre doit rester visible sous la barre.
-• Les noms surlignés ne doivent plus l'être au milieu d'un mot.
 
 DEUX PARTIES EN PAYSAGE ET SUR LE DUO
 • En paysage (Pro Max, iPad) ou Duo déplié, le sommaire, le résumé et la
