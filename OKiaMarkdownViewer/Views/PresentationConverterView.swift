@@ -54,9 +54,7 @@ struct PresentationConverterView: View {
             .navigationTitle(tr("Convertir en présentation"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(tr("Fermer")) { conversion.annuler(); fermer() }
-                }
+                ToolbarItem(placement: .cancellationAction) { boutonFermer }
             }
         }
         .tint(orange)
@@ -74,6 +72,10 @@ struct PresentationConverterView: View {
                 PlanDiapositives.maximumUtile(RapportDecoupe(markdown: md, titreParDefaut: nom))
             }.value
         }
+    }
+
+    private var boutonFermer: some View {
+        Button(tr("Fermer")) { conversion.annuler(); fermer() }
     }
 
     /// Dans la seconde partie, « Fermer » la replie ; dans une feuille, la referme.

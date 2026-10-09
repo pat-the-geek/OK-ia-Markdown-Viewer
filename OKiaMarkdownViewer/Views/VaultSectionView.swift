@@ -12,73 +12,44 @@ struct VaultSectionView: View {
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
+    /// Le coffre, en sections de la liste d'accueil : l'en-tête porte ses réglages, puis une
+    /// section par tranche de dates.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                Text(tr("Coffre"))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button { patternDraft = vault.pattern; showSettings = true } label: {
-                    Image(systemName: "slider.horizontal.3")
-                }
-                .tint(orange)
-                .accessibilityLabel(tr("Réglages du coffre"))
-                .popover(isPresented: $showSettings) {
-                    settingsControls.presentationCompactAdaptation(.popover)
-                }
-                Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
-                    .font(.caption.weight(.semibold))
-                    .tint(orange)
-            }
-            .padding(.horizontal, 4)
-
+        Section {
             if !vault.hasFolder {
                 Button(action: onPick) {
-                    Label(tr("Choisir le dossier du coffre…"),
-                          systemImage: "folder.badge.gearshape")
-                        .font(.callout)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                    Label(tr("Choisir le dossier du coffre…"), systemImage: "folder.badge.gearshape")
                 }
-                .buttonStyle(.bordered)
                 .tint(orange)
             } else if vault.reports.isEmpty {
                 Text(tr("Aucun rapport trouvé dans les dossiers « %@ » de « %@ ».",
                         vault.pattern, vault.folderName ?? ""))
                     .font(.footnote)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
-            } else {
-                ForEach(groupes) { groupe in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(groupe.titre)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 4)
-
-                        VStack(spacing: 0) {
-                            ForEach(groupe.elements) { report in
-                                ligne(report)
-                                if report.id != groupe.elements.last?.id {
-                                    Divider().padding(.leading, 44)
-                                }
-                            }
-                        }
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                    .padding(.top, 6)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            HStack(spacing: 12) {
+                Text(tr("Coffre") + (vault.folderName.map { " · \($0)" } ?? ""))
+                Spacer()
+                Button { patternDraft = vault.pattern; showSettings = true } label: {
+                    Image(systemName: "slider.horizontal.3")
                 }
-
-                if let name = vault.folderName {
-                    Text(name).font(.caption2).foregroundStyle(.tertiary).padding(.horizontal, 4)
+                .accessibilityLabel(tr("Réglages du coffre"))
+                .popover(isPresented: $showSettings) {
+                    settingsControls.presentationCompactAdaptation(.popover)
+                }
+                Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
+            }
+            .tint(orange)
+            .textCase(nil)
+        }
+        if vault.hasFolder {
+            ForEach(groupes) { groupe in
+                Section(groupe.titre) {
+                    ForEach(groupe.elements) { report in ligne(report) }
                 }
             }
         }
-        .frame(maxWidth: 480)
-        .padding(.top, 8)
     }
 
     /// Les rapports du coffre, découpés comme les récents. Le coffre montre les quinze
@@ -90,27 +61,22 @@ struct VaultSectionView: View {
 
     private func ligne(_ report: VaultReport) -> some View {
         Button { onOpen(report) } label: {
-            HStack(spacing: 12) {
-                Image(systemName: report.downloaded ? "doc.text" : "arrow.down.doc")
-                    .foregroundStyle(orange)
+            Label {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(report.name)
-                        .font(.callout.weight(.medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text("\(report.subfolder) · \(DecoupageParDate.mention(pour: report.modified))")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption).foregroundStyle(.tertiary)
+            } icon: {
+                Image(systemName: report.downloaded ? "doc.text" : "arrow.down.doc")
+                    .foregroundStyle(orange)
             }
-            .padding(.vertical, 10).padding(.horizontal, 12)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .tint(.primary)
     }
 
     private var settingsControls: some View {

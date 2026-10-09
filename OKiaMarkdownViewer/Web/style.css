@@ -77,7 +77,10 @@ html, body {
 body {
   font-family: var(--font-body);
   line-height: var(--line-height);
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+  /* Pas de marge haute : la vue web passe sous la barre d'outils du système, et c'est sa
+     marge native (contentInset) qui écarte la page de la barre. La compter ici aussi la
+     doublait — un grand vide au-dessus du titre. */
+  padding: 0 env(safe-area-inset-right)
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 

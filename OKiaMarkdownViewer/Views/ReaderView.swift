@@ -50,6 +50,7 @@ struct ReaderView: View {
     /// Thème de lecture (1.3), retenu comme la taille du texte. Clé d'un `ReaderTheme`.
     @AppStorage("okia.readerTheme") private var readerTheme = ReaderTheme.okia.rawValue
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var tailleHorizontale
     @AppStorage("okia.autoTranslate") private var autoTranslate = false
     @StateObject private var translator = DocumentTranslator()
     /// Faux quand le lecteur a demandé à revoir l'original. La traduction reste en
@@ -58,7 +59,6 @@ struct ReaderView: View {
     /// La langue du document, devinée dès le rendu. Elle sert à griser la langue d'arrivée
     /// qui n'aurait rien à traduire, et à annoncer d'où l'on part.
     @State private var langueDetectee: String?
-    @FocusState private var searchFocused: Bool
     @ObservedObject private var loc = Localization.shared
 
     private let minScale = 0.7, maxScale = 2.0, scaleStep = 0.1
@@ -130,36 +130,36 @@ struct ReaderView: View {
         .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
     }
 
+    /// Le lecteur, sous la barre d'outils du système : le titre, la maison, les commandes en
+    /// groupes de Liquid Glass — l'allure d'une app iOS ou macOS, sur le modèle de fornews, et
+    /// non plus celle d'une page web. Le document défile sous la barre, que le système voile.
     private var lecteur: some View {
+        NavigationStack {
         ZStack(alignment: .top) {
             MarkdownWebView(document: document, tapped: $tapped, tappedImage: $tappedImage,
                             onTitle: { title = $0 },
-                            webController: web, onExternalLink: handleExternalLink,
-                            topInset: barHeight)
-                // Sur le Duo, la page passe aussi sous la colonne de droite : elle n'en contourne
-                // que le coin haut (OKIA.setBordsLibres). Ailleurs, la marge latérale protège
-                // l'encoche de la caméra : on la garde.
-                .ignoresSafeArea(edges: appareilPliable ? [.bottom, .horizontal] : .bottom)
-
-            VStack(spacing: 0) {
-                titleBar
-                if isSearching { searchBar }
-                bandeauTraduction
-            }
-            // Measure the floating bar so the web content can inset below it.
-            .background(
-                GeometryReader { proxy in
-                    Color.clear
-                        .onAppear {
-                            barHeight = proxy.size.height
-                            margeDroite = proxy.safeAreaInsets.trailing
-                            margeGauche = proxy.safeAreaInsets.leading
-                        }
-                        .onChange(of: proxy.size.height) { _, h in barHeight = h }
-                        .onChange(of: proxy.safeAreaInsets.trailing) { _, m in margeDroite = m }
-                        .onChange(of: proxy.safeAreaInsets.leading) { _, m in margeGauche = m }
-                }
-            )
+                            webController: web, onExternalLink: handleExternalLink)
+                // La page passe sous la barre (le défilement s'y voile) et, sur le Duo, sous la
+                // colonne de droite : elle n'en contourne que le coin haut (OKIA.setBordsLibres).
+                // Ailleurs, la marge latérale protège l'encoche de la caméra : on la garde.
+                .ignoresSafeArea(edges: appareilPliable ? [.top, .bottom, .horizontal] : [.top, .bottom])
+            // Les marges du système, barre comprise : le coin libre du Duo s'en déduit.
+            Color.clear
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear
+                            .onAppear {
+                                barHeight = proxy.safeAreaInsets.top
+                                margeDroite = proxy.safeAreaInsets.trailing
+                                margeGauche = proxy.safeAreaInsets.leading
+                            }
+                            .onChange(of: proxy.safeAreaInsets.top) { _, h in barHeight = h }
+                            .onChange(of: proxy.safeAreaInsets.trailing) { _, m in margeDroite = m }
+                            .onChange(of: proxy.safeAreaInsets.leading) { _, m in margeGauche = m }
+                    }
+                    .ignoresSafeArea()
+                )
+                .allowsHitTesting(false)
             #if DUO_SDK && !targetEnvironment(macCatalyst)
             .background {
                 if #available(iOS 27.1, *) {
@@ -177,6 +177,21 @@ struct ReaderView: View {
             .onChange(of: barHeight) { _, _ in poserCoinLibre() }
 
             TranslationHostView(translator: translator)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) { bandeauTraduction }
+        .navigationTitle(title.isEmpty ? document.filename : title)
+        .navigationBarTitleDisplayMode(.inline)
+        // Sur Mac, une barre « éditeur » se range dans la barre de la fenêtre.
+        .toolbarRole(.editor)
+        .toolbar { barreOutils }
+        // La recherche du système, réduite à un bouton tant qu'on ne cherche pas.
+        .searchable(text: $searchText, isPresented: $isSearching, prompt: tr("Rechercher dans le document"))
+        .searchToolbarBehavior(.minimize)
+        .onSubmit(of: .search) { web.searchNext() }
+        .onChange(of: searchText) { _, q in web.search(q) }
+        .onChange(of: isSearching) { _, actif in
+            if !actif { searchText = ""; web.clearSearch() }
+        }
         }
         .fullScreenCover(item: $tapped) { diagram in
             DiagramZoomView(diagram: diagram)
@@ -588,44 +603,6 @@ struct ReaderView: View {
         web.setCoinLibre(largeur: colonne, hauteur: max(0, 140 - barHeight), aGauche: margeGauche > margeDroite)
     }
 
-    /// La barre de titre, en Liquid Glass : deux capsules de verre qui flottent sur la page —
-    /// le titre d'un côté, les commandes de l'autre — au lieu d'une bande mate qui la coupait.
-    /// Le document défile dessous et s'y devine.
-    private var titleBar: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                // Le titre entier s'il tient, sinon la seule maison : une capsule réduite à « … »
-                // (l'écran plié du Duo, un iPhone en portrait) n'apprenait rien — le titre est de
-                // toute façon en tête du document.
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 10) {
-                        boutonAccueil
-                        Text(title.isEmpty ? document.filename : title)
-                            .font(.system(size: 16, weight: .heavy))
-                            .lineLimit(1)
-                    }
-                    boutonAccueil
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .glassEffect(.regular.interactive(), in: .capsule)
-
-                Spacer(minLength: 4)
-
-                barreDeCommandes
-                    .fixedSize()
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .glassEffect(.regular.interactive(), in: .capsule)
-            }
-        }
-        .font(.system(size: 17, weight: .semibold))
-        .tint(orange)
-        .padding(.horizontal, 10)
-        .padding(.top, 4)
-        .padding(.bottom, 6)
-    }
-
     /// L'écran a-t-il la place de deux parties ? Le Duo déplié, de part et d'autre de sa pliure ;
     /// ailleurs, un grand écran en paysage — iPhone Pro Max, iPad : au moins 800 points de large,
     /// plus large que haut. Un iPhone en portrait, ou le Duo plié, n'en a pas la place.
@@ -686,135 +663,178 @@ struct ReaderView: View {
             .accessibilityLabel(tr("Écran d’accueil"))
     }
 
-    /// Les commandes de la barre de titre.
-    private var barreDeCommandes: some View {
-        HStack(spacing: 14) {
-            // Diaporama — present the document as full-screen slides (split on "---").
-            if hasSlides {
-                Button { presenting = true } label: { Image(systemName: "play.rectangle") }
-                    .accessibilityLabel(tr("Diaporama"))
+    /// La barre d'outils du système. Les commandes y vont par groupes — chacun sa capsule de
+    /// Liquid Glass —, en icônes monochromes, comme dans fornews. Sur un iPhone tenu droit, trois
+    /// icônes, et le reste dans un menu « … » : iOS laisse tomber sans rien dire ce qui ne tient
+    /// pas dans la barre.
+    @ToolbarContentBuilder private var barreOutils: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) { boutonAccueil.teinteBarre() }
+        if isSearching {
+            // Pendant une recherche : le compte et les flèches, rien d'autre.
+            ToolbarItemGroup(placement: .primaryAction) {
+                Text(web.searchResult.count > 0 ? "\(web.searchResult.index)/\(web.searchResult.count)"
+                                                : (searchText.isEmpty ? "" : "0"))
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Button { web.searchPrev() } label: { Image(systemName: "chevron.up") }
+                    .disabled(web.searchResult.count == 0)
+                    .accessibilityLabel(tr("Précédent"))
+                Button { web.searchNext() } label: { Image(systemName: "chevron.down") }
+                    .disabled(web.searchResult.count == 0)
+                    .accessibilityLabel(tr("Suivant"))
             }
-
-            // Apple Intelligence — summary and document chat, grouped under one glyph so the
-            // title bar keeps its eight controls. The whole menu disappears when the on-device
-            // model is unavailable: no greyed-out entries, no sheet that would only fail.
-            if DocumentSummarizer.isAvailable {
-                Menu {
-                    Button { ouvrir(.resume) } label: {
-                        Label(tr("Résumé du document"), systemImage: "doc.text")
-                    }
-                    Button { ouvrir(.discussion) } label: {
-                        Label(tr("Discuter avec le document"), systemImage: "text.bubble")
-                    }
-                    Button { ouvrir(.conversion) } label: {
-                        Label(tr("Convertir en présentation"), systemImage: "rectangle.on.rectangle.angled")
-                    }
-                } label: {
-                    AppleIntelligenceGlyph(size: 18)
-                }
-                .accessibilityLabel("Apple Intelligence")
+        } else if tailleHorizontale == .compact {
+            ToolbarItemGroup(placement: .primaryAction) {
+                boutonIntelligence
+                boutonApparence
+                menuPlus
             }
-
-            Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
-                .accessibilityLabel(tr("Apparence"))
-                .popover(isPresented: $showTextSize) {
-                    appearanceControls
-                        .presentationCompactAdaptation(.popover)
-                }
-
-            Button { ouvrir(.sommaire) } label: { Image(systemName: "list.bullet") }
-                .disabled(web.toc.isEmpty)
-                .accessibilityLabel(tr("Sommaire (accessibilité)"))
-
-            // Traduire — le geste ponctuel, à côté du réglage qui, lui, traduit tout seul.
-            // Le menu n'apparaît que si l'appareil sait traduire ET que la langue du
-            // document est connue : un bouton qui ne peut rien faire ne vaut pas la place
-            // qu'il prend dans une barre qui en compte déjà huit.
-            if let source = langueDetectee {
-                Menu {
-                    Section(tr("Traduire depuis %@", nomDeLangue(source))) {
-                        ForEach(AppLanguage.allCases.filter { $0 != .system }) { langue in
-                            Button {
-                                traduireVers(langue.rawValue)
-                            } label: {
-                                Label {
-                                    Text("\(langue.drapeau)  \(langue.nativeName)")
-                                } icon: {
-                                    if cibleActive == langue.rawValue { Image(systemName: "checkmark") }
-                                }
-                            }
-                            .disabled(langue.rawValue == source)
-                        }
-                    }
-                    if translator.demandeCible != nil {
-                        Divider()
-                        Button {
-                            afficheTraduction.toggle()
-                            web.afficherTraduction(afficheTraduction)
-                            if afficheTraduction { web.reappliquerExtras() } else { web.restaurerExtras() }
-                            web.titreCourant { t in if !t.isEmpty { title = t } }
-                        } label: {
-                            Label(afficheTraduction ? tr("Voir l’original") : tr("Voir la traduction"),
-                                  systemImage: afficheTraduction ? "arrow.uturn.backward" : "character.book.closed")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "character.book.closed")
-                }
-                .accessibilityLabel(tr("Traduire"))
+        } else {
+            ToolbarItemGroup(placement: .primaryAction) {
+                if hasSlides { boutonDiaporama }
+                boutonIntelligence
             }
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.15)) { isSearching.toggle() }
-                if isSearching { searchFocused = true } else { searchText = ""; web.clearSearch() }
-            } label: { Image(systemName: "magnifyingglass") }
-                .accessibilityLabel(tr("Rechercher"))
-
-            Button { showShareOptions = true } label: { Image(systemName: "square.and.arrow.up") }
-                .accessibilityLabel(tr("Partager"))
-
-            Button(action: onOpen) { Image(systemName: "folder") }
-                .accessibilityLabel(tr("Ouvrir un fichier"))
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItemGroup(placement: .primaryAction) {
+                boutonApparence
+                boutonSommaire
+                if langueDetectee != nil { menuTraduction }
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItemGroup(placement: .primaryAction) {
+                boutonPartage
+                boutonOuvrir
+            }
         }
     }
 
-    // MARK: Search bar
+    // MARK: Les commandes
 
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField(tr("Rechercher dans le document"), text: $searchText)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .focused($searchFocused)
-                .submitLabel(.search)
-                .onChange(of: searchText) { _, q in web.search(q) }
-                .onSubmit { web.searchNext() }
+    private var boutonDiaporama: some View {
+        // Diaporama — present the document as full-screen slides (split on "---").
+        Button { presenting = true } label: { Image(systemName: "play.rectangle") }
+            .teinteBarre()
+            .accessibilityLabel(tr("Diaporama"))
+    }
 
-            if web.searchResult.count > 0 {
-                Text("\(web.searchResult.index)/\(web.searchResult.count)")
-                    .font(.footnote.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            } else if !searchText.isEmpty {
-                Text("0").font(.footnote).foregroundStyle(.secondary)
+    /// Apple Intelligence — résumé, discussion et conversion sous un seul glyphe. Le menu entier
+    /// disparaît quand le modèle de l'appareil n'est pas disponible : ni entrée grisée, ni
+    /// feuille qui ne ferait qu'échouer.
+    @ViewBuilder private var boutonIntelligence: some View {
+        if DocumentSummarizer.isAvailable {
+            Menu {
+                Button { ouvrir(.resume) } label: {
+                    Label(tr("Résumé du document"), systemImage: "doc.text")
+                }
+                Button { ouvrir(.discussion) } label: {
+                    Label(tr("Discuter avec le document"), systemImage: "text.bubble")
+                }
+                Button { ouvrir(.conversion) } label: {
+                    Label(tr("Convertir en présentation"), systemImage: "rectangle.on.rectangle.angled")
+                }
+            } label: {
+                Image(systemName: "apple.intelligence")
             }
+            .teinteBarre()
+            .accessibilityLabel("Apple Intelligence")
+        }
+    }
 
-            Button { web.searchPrev() } label: { Image(systemName: "chevron.up") }
-                .disabled(web.searchResult.count == 0)
-            Button { web.searchNext() } label: { Image(systemName: "chevron.down") }
-                .disabled(web.searchResult.count == 0)
+    private var boutonApparence: some View {
+        Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
+            .teinteBarre()
+            .accessibilityLabel(tr("Apparence"))
+            .popover(isPresented: $showTextSize) {
+                appearanceControls
+                    .presentationCompactAdaptation(.popover)
+            }
+    }
 
-            Button("OK") {
-                withAnimation(.easeInOut(duration: 0.15)) { isSearching = false }
-                searchText = ""; web.clearSearch(); searchFocused = false
+    private var boutonSommaire: some View {
+        Button { ouvrir(.sommaire) } label: { Image(systemName: "list.bullet") }
+            .teinteBarre()
+            .disabled(web.toc.isEmpty)
+            .accessibilityLabel(tr("Sommaire (accessibilité)"))
+    }
+
+    private var boutonPartage: some View {
+        Button { showShareOptions = true } label: { Image(systemName: "square.and.arrow.up") }
+            .teinteBarre()
+            .accessibilityLabel(tr("Partager"))
+    }
+
+    private var boutonOuvrir: some View {
+        Button(action: onOpen) { Image(systemName: "folder") }
+            .teinteBarre()
+            .accessibilityLabel(tr("Ouvrir un fichier"))
+    }
+
+    /// Traduire — le geste ponctuel, à côté du réglage qui, lui, traduit tout seul. Il n'apparaît
+    /// que si l'appareil sait traduire ET que la langue du document est connue.
+    @ViewBuilder private var menuTraduction: some View {
+        if let source = langueDetectee {
+            Menu {
+                elementsTraduction(source)
+            } label: {
+                Image(systemName: "character.book.closed")
+            }
+            .teinteBarre()
+            .accessibilityLabel(tr("Traduire"))
+        }
+    }
+
+    @ViewBuilder private func elementsTraduction(_ source: String) -> some View {
+        Section(tr("Traduire depuis %@", nomDeLangue(source))) {
+            ForEach(AppLanguage.allCases.filter { $0 != .system }) { langue in
+                Button {
+                    traduireVers(langue.rawValue)
+                } label: {
+                    Label {
+                        Text("\(langue.drapeau)  \(langue.nativeName)")
+                    } icon: {
+                        if cibleActive == langue.rawValue { Image(systemName: "checkmark") }
+                    }
+                }
+                .disabled(langue.rawValue == source)
             }
         }
-        .tint(orange)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .padding(.horizontal, 10)
-        .padding(.bottom, 6)
+        if translator.demandeCible != nil {
+            Divider()
+            Button {
+                afficheTraduction.toggle()
+                web.afficherTraduction(afficheTraduction)
+                if afficheTraduction { web.reappliquerExtras() } else { web.restaurerExtras() }
+                web.titreCourant { t in if !t.isEmpty { title = t } }
+            } label: {
+                Label(afficheTraduction ? tr("Voir l’original") : tr("Voir la traduction"),
+                      systemImage: afficheTraduction ? "arrow.uturn.backward" : "character.book.closed")
+            }
+        }
+    }
+
+    /// iPhone tenu droit : ce qui ne tient pas dans la barre.
+    private var menuPlus: some View {
+        Menu {
+            if hasSlides {
+                Button { presenting = true } label: { Label(tr("Diaporama"), systemImage: "play.rectangle") }
+            }
+            Button { ouvrir(.sommaire) } label: { Label(tr("Sommaire"), systemImage: "list.bullet") }
+                .disabled(web.toc.isEmpty)
+            if let source = langueDetectee {
+                Menu {
+                    elementsTraduction(source)
+                } label: {
+                    Label(tr("Traduire"), systemImage: "character.book.closed")
+                }
+            }
+            Divider()
+            Button { showShareOptions = true } label: { Label(tr("Partager"), systemImage: "square.and.arrow.up") }
+            Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
+        } label: {
+            Image(systemName: "ellipsis")
+        }
+        .teinteBarre()
+        .accessibilityLabel(tr("Plus"))
     }
 
     // MARK: Text size
@@ -1294,17 +1314,21 @@ struct DocumentSummaryView: View {
             content
                 .navigationTitle(tr("Résumé du document"))
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("OK") { (fermerPanneau ?? { dismiss() })() } }
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button { summarizer.summarize(sourceMarkdown) } label: {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        .disabled(isWorking)
-                        .accessibilityLabel(tr("Régénérer le résumé"))
-                    }
+                    ToolbarItem(placement: .confirmationAction) { boutonOK }
+                    ToolbarItem(placement: .cancellationAction) { boutonRegenerer }
                 }
         }
         .task { if case .idle = summarizer.state { summarizer.summarize(sourceMarkdown) } }
+    }
+
+    private var boutonOK: some View {
+        Button("OK") { (fermerPanneau ?? { dismiss() })() }
+    }
+
+    private var boutonRegenerer: some View {
+        Button { summarizer.summarize(sourceMarkdown) } label: { Image(systemName: "arrow.clockwise") }
+            .disabled(isWorking)
+            .accessibilityLabel(tr("Régénérer le résumé"))
     }
 
     private var isWorking: Bool {
@@ -1400,8 +1424,22 @@ struct PresentationView: View {
             .onAppear {
                 requestLandscapeIfPhone()
                 trad.absorber(memoireHeritee)
+                barreDeFenetre(visible: false)
             }
+            .onDisappear { barreDeFenetre(visible: true) }
             .overlay { TranslationHostView(translator: trad) }
+    }
+
+    /// Sur Mac, la barre de la fenêtre reste au-dessus d'une présentation plein écran et en cache
+    /// le haut : le diaporama la retire le temps de la séance.
+    private func barreDeFenetre(visible: Bool) {
+        #if targetEnvironment(macCatalyst)
+        for scene in UIApplication.shared.connectedScenes {
+            guard let titlebar = (scene as? UIWindowScene)?.titlebar else { continue }
+            titlebar.toolbar?.isVisible = visible
+            titlebar.titleVisibility = visible ? .visible : .hidden
+        }
+        #endif
     }
 
     /// On iPhone, the deck reads best in landscape ("en largeur"); nudge the scene.
@@ -1761,4 +1799,17 @@ private struct DetecteurCharniere: UIViewRepresentable {
 /// Ce que la seconde partie du Duo peut montrer à côté du document.
 enum PanneauDuo: Hashable {
     case sommaire, resume, discussion, conversion
+}
+
+extension View {
+    /// Les icônes de la barre en monochrome sur iPhone et iPad — sans quoi elles prendraient
+    /// l'orange de l'app. Sur Mac, la barre de la fenêtre les dessine elle-même ; une teinte
+    /// imposée les posait sur des pastilles noires.
+    @ViewBuilder func teinteBarre() -> some View {
+        #if targetEnvironment(macCatalyst)
+        self
+        #else
+        tint(.primary)
+        #endif
+    }
 }

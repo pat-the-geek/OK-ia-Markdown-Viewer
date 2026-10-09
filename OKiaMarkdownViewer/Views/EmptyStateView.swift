@@ -19,79 +19,95 @@ struct EmptyStateView: View {
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                Spacer(minLength: 40)
-
-                Image(systemName: "flowchart")
-                    .font(.system(size: 60, weight: .bold))
-                    .foregroundStyle(orange)
-
-                VStack(spacing: 6) {
-                    Text("OK-ia Markdown Viewer")
-                        .font(.system(size: 25, weight: .heavy))
-                    Text(tr("Ce que les algorithmes ignorent encore."))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .italic()
+        // L'allure d'une app, pas d'une page : la barre du système porte les actions, et les
+        // fichiers sont des listes groupées — la maison du Mac, de l'iPad et de l'iPhone.
+        NavigationStack {
+            List {
+                if recents.isEmpty && !vault.hasFolder {
+                    accueilVide
                 }
-                .multilineTextAlignment(.center)
-
-                VStack(spacing: 12) {
-                    Button(action: onOpen) {
-                        Label(tr("Ouvrir un fichier"), systemImage: "folder")
-                            .font(.headline)
-                            .frame(maxWidth: 280)
-                            .padding(.vertical, 12)
+                ForEach(Array(groupesRecents.enumerated()), id: \.element.id) { rang, groupe in
+                    Section {
+                        ForEach(groupe.elements) { item in ligneRecente(item) }
+                            .onDelete { positions in positions.map { groupe.elements[$0] }.forEach(recentsStore.remove) }
+                    } header: {
+                        Text(rang == 0 ? tr("Récents") + " · " + groupe.titre : groupe.titre)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(orange)
-
-                    Button(action: onSample) {
-                        Label(tr("Voir un exemple"), systemImage: "doc.text")
-                            .frame(maxWidth: 280)
-                            .padding(.vertical, 6)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(orange)
                 }
-
-                if !recents.isEmpty {
-                    recentsSection
-                }
-
                 VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault)
-
-                Spacer(minLength: 24)
-
-                HStack(spacing: 20) {
-                    Button { showSettings = true } label: {
-                        Label(tr("Réglages"), systemImage: "gearshape")
-                            .font(.footnote)
-                    }
-                    Button { showAbout = true } label: {
-                        Label(tr("Librairies & licences"),
-                              systemImage: "info.circle")
-                            .font(.footnote)
-                    }
+                Section {
+                    EmptyView()
+                } footer: {
+                    signature
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-
-                Image("OKiaWideLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 72)
-                    .opacity(0.7)
-                    .accessibilityLabel("OK-ia")
-                    .padding(.bottom, 16)
             }
-            .padding(.horizontal)
-            .frame(maxWidth: .infinity)
+            .listStyle(.insetGrouped)
+            .navigationTitle("md Viewer")
+            .toolbar { barreAccueil }
         }
         .onAppear { vault.refresh() }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
+    }
+
+    @ToolbarContentBuilder private var barreAccueil: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Menu {
+                Button { showSettings = true } label: { Label(tr("Réglages"), systemImage: "gearshape") }
+                Button { showAbout = true } label: {
+                    Label(tr("Librairies & licences"), systemImage: "info.circle")
+                }
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .teinteBarre()
+            .accessibilityLabel(tr("Réglages"))
+        }
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button(action: onSample) { Image(systemName: "doc.text.image") }
+                .teinteBarre()
+                .accessibilityLabel(tr("Voir un exemple"))
+            Button(action: onOpen) { Image(systemName: "folder") }
+                .teinteBarre()
+                .accessibilityLabel(tr("Ouvrir un fichier"))
+        }
+    }
+
+    /// Rien d'ouvert encore : l'écran vide du système, avec les deux premiers gestes.
+    private var accueilVide: some View {
+        Section {
+            ContentUnavailableView {
+                Label("OK-ia Markdown Viewer", systemImage: "flowchart")
+            } description: {
+                Text(tr("Ce que les algorithmes ignorent encore."))
+            } actions: {
+                Button(tr("Ouvrir un fichier"), action: onOpen)
+                    .buttonStyle(.borderedProminent)
+                Button(tr("Voir un exemple"), action: onSample)
+            }
+            .tint(orange)
+        }
+        .listRowBackground(Color.clear)
+    }
+
+    /// La signature, au pied de la liste : la devise et le logo OK-ia.
+    private var signature: some View {
+        VStack(spacing: 8) {
+            Image("OKiaWideLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 64)
+                .opacity(0.6)
+                .accessibilityLabel("OK-ia")
+            // La devise, sauf quand l'écran vide la porte déjà.
+            if !(recents.isEmpty && !vault.hasFolder) {
+                Text(tr("Ce que les algorithmes ignorent encore."))
+                    .font(.caption)
+                    .italic()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 12)
     }
 
     /// Les récents, découpés par date d'ouverture. Une liste de douze noms ne dit pas
@@ -101,60 +117,25 @@ struct EmptyStateView: View {
         DecoupageParDate.grouper(recents, date: \.openedAt)
     }
 
-    private var recentsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(tr("Récents"))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
-
-            ForEach(groupesRecents) { groupe in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(groupe.titre)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 4)
-
-                    VStack(spacing: 0) {
-                        ForEach(groupe.elements) { item in
-                            ligneRecente(item)
-                            if item.id != groupe.elements.last?.id {
-                                Divider().padding(.leading, 44)
-                            }
-                        }
-                    }
-                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
-                }
-            }
-        }
-        .frame(maxWidth: 480)
-        .padding(.top, 8)
-    }
-
     private func ligneRecente(_ item: RecentFile) -> some View {
         Button { onRecent(item) } label: {
-            HStack(spacing: 12) {
-                Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")
-                    .foregroundStyle(orange)
+            Label {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.name)
-                        .font(.callout.weight(.medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(DecoupageParDate.mention(pour: item.openedAt))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+            } icon: {
+                Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")
+                    .foregroundStyle(orange)
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        // Le nom en noir, l'icône seule en orange : un bouton de liste prendrait sinon la couleur
+        // de l'app pour tout son libellé.
+        .tint(.primary)
         .contextMenu {
             Button(role: .destructive) { recentsStore.remove(item) } label: {
                 Label(tr("Retirer de la liste"), systemImage: "trash")
