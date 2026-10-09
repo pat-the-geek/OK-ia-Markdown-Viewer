@@ -86,6 +86,10 @@ body {
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+/* Mode livre (Duo partiellement replié) : les deux pages prennent la même largeur de texte,
+   pour que la page de droite reprenne exactement là où s'arrête celle de gauche. */
+html.okia-livre .markdown-body { width: var(--okia-livre-l); max-width: none; }
+
 /* Duo : la page passe sous la colonne réservée par le système et ne contourne que son coin
    haut (caméra, heure, réseau), posé par OKIA.setBordsLibres. */
 html.okia-bords-libres body { padding-left: 0; padding-right: 0; }

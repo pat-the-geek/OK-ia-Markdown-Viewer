@@ -58,6 +58,24 @@ final class ReaderWebController: ObservableObject {
         eval("window.OKIA && window.OKIA.setBordsLibres(\(coinLibreArguments))")
     }
 
+    // MARK: Duo — le mode livre
+    /// Reçoit la copie du document rendu, à chaque changement, tant que le miroir est suivi.
+    var onMiroir: (([String: Any]) -> Void)?
+
+    func suivreMiroir(_ actif: Bool) {
+        eval("window.OKIA && window.OKIA.suivreMiroir(\(actif))")
+    }
+
+    func largeurNaturelle(_ fin: @escaping (CGFloat) -> Void) {
+        webView?.evaluateJavaScript("window.OKIA ? window.OKIA.largeurNaturelle() : 0") { r, _ in
+            fin(CGFloat((r as? NSNumber)?.doubleValue ?? 0))
+        }
+    }
+
+    func setLargeurLivre(_ largeur: CGFloat) {
+        eval("window.OKIA && window.OKIA.setLargeurLivre(\(Int(largeur.rounded())))")
+    }
+
     private var coinLibreArguments: String {
         "\(coinLibre.largeur), \(coinLibre.hauteur), '\(coinLibre.gauche ? "gauche" : "droite")'"
     }

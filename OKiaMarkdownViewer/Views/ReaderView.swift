@@ -40,6 +40,11 @@ struct ReaderView: View {
     @State private var appareilPliable = false
     /// La charnière est ouverte : l'écran intérieur, assez grand pour deux parties.
     @State private var charniereOuverte = false
+    /// Partiellement repliée : le système coupe l'écran à la pliure. Sans panneau ouvert, la
+    /// partie droite devient la page suivante — le mode livre.
+    @State private var charnierePartielle = false
+    @StateObject private var livre = LivreController()
+    @State private var synchroLivre = SynchroLivre()
     /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
     @State private var panneauDuo: PanneauDuo?
     @State private var tailleEcran: CGSize = .zero
@@ -97,13 +102,17 @@ struct ReaderView: View {
             ArrangementView {
                 // Seul, le lecteur prend tout : sans cela, la seconde partie vide gardait sa moitié.
                 lecteur
-                    .splitArrangementLayoutRatio(deuxParties ? nil : 1)
+                    .splitArrangementLayoutRatio(deuxParties || modeLivre ? nil : 1)
             } secondary: {
                 if let panneau = panneauDuo, deuxParties {
                     secondePartie(panneau)
+                } else if modeLivre {
+                    PageLivre(livre: livre) { demarrerLivre() }
+                        .ignoresSafeArea(edges: .bottom)
                 }
             }
             .arrangementViewStyle(.split)
+            .onChange(of: modeLivre) { _, actif in if actif { demarrerLivre() } else { arreterLivre() } }
             // La taille de tout l'écran, mesurée hors des parties : mesurer le lecteur ferait
             // osciller la décision — deux parties le réduisent de moitié, il ne serait plus large.
             .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
@@ -139,36 +148,32 @@ struct ReaderView: View {
             MarkdownWebView(document: document, tapped: $tapped, tappedImage: $tappedImage,
                             onTitle: { title = $0 },
                             webController: web, onExternalLink: handleExternalLink,
-                            // Le Duo ne compte pas la rangée du titre dans la marge de la vue web :
-                            // on la lui donne, pour que la page défile sous le verre sans s'y cacher.
-                            topInset: appareilPliable ? barHeight : 0)
+                            // Le Duo ne compte pas toute la rangée du titre dans la marge de la vue
+                            // web : on lui donne ce qui manque, pour que la page défile sous le verre
+                            // sans s'y cacher.
+                            topInset: appareilPliable ? margeHauteDuo : 0)
                 // La page passe sous la barre, où le défilement se voile ; sur le Duo, aussi sous la
                 // colonne de droite, où le système range les commandes. Ailleurs, la marge latérale
                 // protège l'encoche de la caméra.
                 .ignoresSafeArea(edges: appareilPliable ? [.top, .bottom, .horizontal] : [.top, .bottom])
-            // Les marges du système, barre comprise : le coin libre du Duo s'en déduit.
+            // Le haut réel du contenu, sous la barre : sur le Duo, la vue web n'en reçoit qu'une
+            // partie dans sa marge, et le haut du document se cachait sous la rangée du titre.
             Color.clear
                 .background(
                     GeometryReader { proxy in
                         Color.clear
-                            .onAppear {
-                                barHeight = proxy.safeAreaInsets.top
-                                margeDroite = proxy.safeAreaInsets.trailing
-                                margeGauche = proxy.safeAreaInsets.leading
-                            }
-                            .onChange(of: proxy.safeAreaInsets.top) { _, h in barHeight = h }
-                            .onChange(of: proxy.safeAreaInsets.trailing) { _, m in margeDroite = m }
-                            .onChange(of: proxy.safeAreaInsets.leading) { _, m in margeGauche = m }
+                            .onAppear { barHeight = proxy.frame(in: .global).minY }
+                            .onChange(of: proxy.frame(in: .global).minY) { _, h in barHeight = h }
                     }
-                    .ignoresSafeArea()
                 )
                 .allowsHitTesting(false)
             #if DUO_SDK && !targetEnvironment(macCatalyst)
             .background {
                 if #available(iOS 27.1, *) {
-                    DetecteurCharniere { pliable, ouverte in
+                    DetecteurCharniere { pliable, ouverte, partielle in
                         appareilPliable = pliable
                         charniereOuverte = ouverte
+                        charnierePartielle = partielle
                     }
                         .frame(width: 0, height: 0)
                 }
@@ -614,6 +619,44 @@ struct ReaderView: View {
         if appareilPliable { return charniereOuverte }
         return tailleEcran.width > tailleEcran.height && tailleEcran.width >= 800
         #endif
+    }
+
+    /// Ce que la marge native de la vue web ne couvre pas de la barre, sur le Duo.
+    private var margeHauteDuo: CGFloat {
+        max(0, barHeight - (web.webView?.scrollView.safeAreaInsets.top ?? 0))
+    }
+
+    /// Le mode livre : le Duo partiellement replié, sans panneau ouvert. La partie droite montre
+    /// la suite du document, et les deux pages défilent ensemble.
+    private var modeLivre: Bool { appareilPliable && charnierePartielle && panneauDuo == nil }
+
+    /// Ouvre le livre : la page de gauche envoie sa copie à celle de droite, les deux prennent la
+    /// même largeur de texte — la plus petite des deux —, puis leur défilement se lie.
+    private func demarrerLivre() {
+        guard modeLivre else { return }
+        let livre = self.livre, web = self.web, synchro = synchroLivre
+        web.onMiroir = { livre.poser($0) }
+        web.suivreMiroir(true)
+        web.largeurNaturelle { a in
+            livre.largeurNaturelle { b in
+                let largeur = min(a, b)
+                if largeur > 0 {
+                    web.setLargeurLivre(largeur)
+                    livre.setLargeurLivre(largeur)
+                }
+                // Le temps que la copie se pose et se mette en page.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    synchro.relier(gauche: web.webView?.scrollView, droite: livre.webView?.scrollView)
+                }
+            }
+        }
+    }
+
+    private func arreterLivre() {
+        synchroLivre.delier()
+        web.suivreMiroir(false)
+        web.onMiroir = nil
+        web.setLargeurLivre(0)
     }
 
     /// Deux parties : quand l'écran en a la place et qu'une seconde partie est demandée.
@@ -1778,15 +1821,16 @@ struct PresentationWebView: UIViewRepresentable {
 /// nil. Plus sûr que de deviner l'appareil à ses marges : un iPhone en paysage en a aussi.
 @available(iOS 27.1, *)
 private struct DetecteurCharniere: UIViewRepresentable {
-    /// (appareil pliable, charnière ouverte)
-    var surChangement: (Bool, Bool) -> Void
+    /// (appareil pliable, charnière ouverte, partiellement repliée)
+    var surChangement: (Bool, Bool, Bool) -> Void
 
     func makeUIView(context: Context) -> UIView {
         let vue = UIView()
         vue.isUserInteractionEnabled = false
         let suivi = surChangement
         vue.addInteraction(UIHingeInteraction { _, maj in
-            suivi(maj.hinge != nil, maj.hinge.map { $0.status != .closed } ?? false)
+            suivi(maj.hinge != nil, maj.hinge.map { $0.status != .closed } ?? false,
+                  maj.hinge.map { $0.status == .partiallyOpen } ?? false)
         })
         return vue
     }

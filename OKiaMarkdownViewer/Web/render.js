@@ -1403,6 +1403,70 @@
   }
 
 
+  /* =========================================================================
+     MODE LIVRE (Duo partiellement replié) — la page de droite est le miroir de celle de
+     gauche : le document déjà rendu, traductions comprises, recopié tel quel. Les deux pages
+     prennent la même largeur de texte, sans quoi la suite ne tomberait pas juste.
+     ========================================================================= */
+  var observateurMiroir = null, attenteMiroir = null;
+
+  function instantane() {
+    var racine = document.documentElement, contenu = document.getElementById('content');
+    return {
+      html: contenu ? contenu.innerHTML : '',
+      theme: racine.getAttribute('data-okia-theme') || '',
+      fontSize: racine.style.fontSize || ''
+    };
+  }
+
+  function envoyerMiroir() {
+    clearTimeout(attenteMiroir);
+    attenteMiroir = setTimeout(function () { post('miroir', instantane()); }, 250);
+  }
+
+  // Gauche : envoie une copie à chaque changement du document (rendu, traduction, thème).
+  function suivreMiroir(actif) {
+    if (observateurMiroir) { observateurMiroir.disconnect(); observateurMiroir = null; }
+    if (!actif) return;
+    observateurMiroir = new MutationObserver(envoyerMiroir);
+    var contenu = document.getElementById('content');
+    if (contenu) observateurMiroir.observe(contenu, { childList: true, subtree: true, characterData: true });
+    observateurMiroir.observe(document.documentElement,
+                              { attributes: true, attributeFilter: ['data-okia-theme', 'style'] });
+    envoyerMiroir();
+  }
+
+  // Droite : pose la copie.
+  function poserMiroir(m) {
+    var racine = document.documentElement, contenu = document.getElementById('content');
+    if (!contenu || !m) return;
+    contenu.innerHTML = m.html || '';
+    if (m.theme) racine.setAttribute('data-okia-theme', m.theme);
+    else racine.removeAttribute('data-okia-theme');
+    if (m.fontSize) racine.style.fontSize = m.fontSize;
+  }
+
+  // La largeur que la page donnerait d'elle-même au texte, sans la contrainte du livre.
+  function largeurNaturelle() {
+    var racine = document.documentElement, contenu = document.getElementById('content');
+    var avait = racine.classList.contains('okia-livre');
+    racine.classList.remove('okia-livre');
+    var l = contenu ? contenu.clientWidth : 0;
+    if (avait) racine.classList.add('okia-livre');
+    return l;
+  }
+
+  function setLargeurLivre(px) {
+    var racine = document.documentElement;
+    if (px > 0) {
+      racine.classList.add('okia-livre');
+      racine.style.setProperty('--okia-livre-l', px + 'px');
+    } else {
+      racine.classList.remove('okia-livre');
+      racine.style.removeProperty('--okia-livre-l');
+    }
+  }
+
   function setTheme(key) {
     if (THEMES_LECTURE.indexOf(key) === -1) key = 'okia';
     currentTheme = key;
@@ -2696,6 +2760,10 @@
     setFontScale: setFontScale,
     setTheme: setTheme,
     setBordsLibres: setBordsLibres,
+    suivreMiroir: suivreMiroir,
+    poserMiroir: poserMiroir,
+    largeurNaturelle: largeurNaturelle,
+    setLargeurLivre: setLargeurLivre,
     scrollToHeading: scrollToHeading,
     search: search,
     searchNext: searchNext,
