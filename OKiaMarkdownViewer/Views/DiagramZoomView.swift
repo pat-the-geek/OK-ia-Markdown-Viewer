@@ -176,7 +176,9 @@ private struct ZoomWebView: UIViewRepresentable {
           body{background:#FAFAF8;display:flex;align-items:safe center;justify-content:safe center;}
           .wrap{min-width:100%;min-height:100%;display:flex;align-items:safe center;justify-content:safe center;
                 padding:24px;box-sizing:border-box;}
-          .wrap svg{max-width:100%;height:auto;display:block;}
+          /* Une largeur toujours définie : un SVG à largeur « auto » dans ce cadre souple sortait
+             réduit à rien. */
+          .wrap > svg{width:100% !important;max-height:none !important;height:auto;display:block;}
           .wrap img{max-width:100%;max-height:100%;height:auto;display:block;border-radius:8px;}
           /* Un bloc de texte agrandi — chronologie, tableau : en entier, sans retour à la ligne. */
           .okia-zoom-bloc{max-width:none;margin:0;padding:0;font-size:17px;}

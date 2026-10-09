@@ -734,7 +734,16 @@
     var diagramme = t.closest('pre.mermaid[data-rendered="1"]');
     if (diagramme) {
       var svg = diagramme.querySelector('svg');
-      if (svg) post('diagramTapped', { svg: svg.outerHTML, title: diagramme.getAttribute('data-okia-titre') || '' });
+      if (svg) {
+        // Le livre réduit parfois un diagramme pour remplir le bas d'une page (largeur auto,
+        // hauteur plafonnée) : copié tel quel, il s'ouvrait vide en plein écran. La copie
+        // repart de sa taille d'origine.
+        var copie = svg.cloneNode(true);
+        if (copie.hasAttribute('data-okia-reduit')) {
+          copie.style.maxHeight = ''; copie.style.width = ''; copie.removeAttribute('data-okia-reduit');
+        }
+        post('diagramTapped', { svg: copie.outerHTML, title: diagramme.getAttribute('data-okia-titre') || '' });
+      }
       return;
     }
     var img = t.closest('img.okia-zoomable');
@@ -1436,8 +1445,24 @@
 
   function instantane() {
     var racine = document.documentElement, contenu = document.getElementById('content');
+    // Les cartes partent en coquilles stables (leur config et leur hauteur) : leurs tuiles, qui
+    // arrivent sans cesse, changeaient la copie à chaque instant, et le livre se recalculait.
+    var html = '';
+    if (contenu) {
+      var copie = contenu.cloneNode(true);
+      var vraies = contenu.querySelectorAll('.okia-map[data-okia-map]');
+      Array.prototype.forEach.call(copie.querySelectorAll('.okia-map[data-okia-map]'), function (el, i) {
+        var coquille = document.createElement('div');
+        coquille.className = 'okia-map';
+        coquille.setAttribute('data-okia-map', el.getAttribute('data-okia-map'));
+        var h = vraies[i] ? vraies[i].getBoundingClientRect().height : 0;
+        if (h > 0) coquille.style.height = Math.round(h) + 'px';
+        el.parentNode.replaceChild(coquille, el);
+      });
+      html = copie.innerHTML;
+    }
     return {
-      html: contenu ? contenu.innerHTML : '',
+      html: html,
       theme: racine.getAttribute('data-okia-theme') || '',
       fontSize: racine.style.fontSize || ''
     };
@@ -1473,7 +1498,14 @@
     if (!actif) return;
     imagesImmediates(document.getElementById('content'));
     document.addEventListener('load', imageChargee, true);
-    observateurMiroir = new MutationObserver(envoyerMiroir);
+    observateurMiroir = new MutationObserver(function (changements) {
+      // Ce qui se passe dans une carte (tuiles, marqueurs) ne change pas la page.
+      var utile = changements.some(function (m) {
+        var el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+        return !(el && el.closest && el.closest('.okia-map'));
+      });
+      if (utile) envoyerMiroir();
+    });
     var contenu = document.getElementById('content');
     if (contenu) observateurMiroir.observe(contenu, { childList: true, subtree: true, characterData: true,
                                                       attributes: true, attributeFilter: ['style'] });
@@ -1494,7 +1526,7 @@
       var neuve = document.createElement('div');
       neuve.className = 'okia-map';
       neuve.setAttribute('data-okia-map', el.getAttribute('data-okia-map'));
-      neuve.style.height = el.getBoundingClientRect().height + 'px';
+      neuve.style.height = el.style.height || (el.getBoundingClientRect().height + 'px');
       el.parentNode.replaceChild(neuve, el);
     });
     try { renderLeafletMaps(contenu); } catch (e) {}
@@ -1634,8 +1666,11 @@
     var c = document.getElementById('okia-cache-livre');
     if (depuis == null || depuis < 0) { if (c) c.remove(); return; }
     if (!c) { c = document.createElement('div'); c.id = 'okia-cache-livre'; document.body.appendChild(c); }
+    // Au-dessus de tout, et opaque au toucher : une carte de la page suivante, cachée dessous,
+    // attrapait sinon le doigt (ses commandes passent au-dessus d'un z-index ordinaire), et la
+    // page ne tournait plus.
     c.style.cssText = 'position:absolute;left:0;right:0;top:' + depuis + 'px;height:' + (H + 60) +
-      'px;background:var(--bg);z-index:900;pointer-events:none;';
+      'px;background:var(--bg);z-index:2147483000;';
   }
 
   function setTheme(key) {
