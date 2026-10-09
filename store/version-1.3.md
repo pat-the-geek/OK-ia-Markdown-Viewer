@@ -26,7 +26,7 @@ Vos fichiers Markdown méritent mieux qu'un texte brut.
 
 Les assistants d'IA écrivent en Markdown : rapports, synthèses, veilles, comptes rendus. md Viewer est fait pour lire ce qu'ils produisent.
 
-md Viewer les ouvre comme de vrais documents : titres, tableaux, diagrammes, cartes et encadrés s'affichent proprement, sur iPhone, iPad et Mac. Ouvrez un fichier depuis Fichiers, un e-mail ou une autre app : il est prêt à lire.
+md Viewer en fait de vrais documents : titres, tableaux, diagrammes, cartes et encadrés s'affichent proprement, sur iPhone, iPad et Mac. Ouvrez un fichier depuis Fichiers, un e-mail ou une autre app : il est prêt à lire.
 
 Un rapport à présenter ? L'app en fait un diaporama : vous choisissez le nombre de diapositives et vous les voyez se construire une à une, avec les images, les cartes et les diagrammes du rapport. Besoin de l'essentiel ? Elle résume le document et répond à vos questions. Il est écrit dans une autre langue ? Elle le traduit. Tout se passe sur votre appareil, même sans connexion. Gratuit, sans compte.
 
@@ -80,7 +80,7 @@ Your Markdown files deserve better than plain text.
 
 AI assistants write in Markdown: reports, briefs, news digests, meeting notes. md Viewer is made for reading what they produce.
 
-md Viewer opens them as real documents: headings, tables, diagrams, maps and callouts display cleanly on iPhone, iPad and Mac. Open a file from Files, an email or another app: it is ready to read.
+md Viewer turns them into real documents: headings, tables, diagrams, maps and callouts display cleanly on iPhone, iPad and Mac. Open a file from Files, an email or another app: it is ready to read.
 
 A report to present? The app turns it into a slideshow: choose the number of slides and watch them build one by one, with the report's images, maps and diagrams. Need the gist? It summarises the document and answers your questions about it. Written in another language? It translates it. Everything happens on your device, even offline. Free, no account.
 
@@ -133,7 +133,7 @@ Ihre Markdown-Dateien verdienen mehr als reinen Text.
 
 KI-Assistenten schreiben in Markdown: Berichte, Zusammenfassungen, Nachrichtenüberblicke, Protokolle. md Viewer ist dafür gemacht, zu lesen, was sie erzeugen.
 
-md Viewer öffnet sie als echte Dokumente: Überschriften, Tabellen, Diagramme, Karten und Hinweisboxen erscheinen sauber auf iPhone, iPad und Mac. Öffnen Sie eine Datei aus Dateien, einer E-Mail oder einer anderen App: Sie ist sofort lesbar.
+md Viewer macht daraus echte Dokumente: Überschriften, Tabellen, Diagramme, Karten und Hinweisboxen erscheinen sauber auf iPhone, iPad und Mac. Öffnen Sie eine Datei aus Dateien, einer E-Mail oder einer anderen App: Sie ist sofort lesbar.
 
 Ein Bericht zum Präsentieren? Die App macht daraus eine Diashow: Sie wählen die Anzahl der Folien und sehen zu, wie sie eine nach der anderen entstehen, mit den Bildern, Karten und Diagrammen des Berichts. Sie brauchen das Wesentliche? Die App fasst das Dokument zusammen und beantwortet Ihre Fragen dazu. Es ist in einer anderen Sprache geschrieben? Sie übersetzt es. Alles geschieht auf Ihrem Gerät, auch offline. Kostenlos, ohne Konto.
 
@@ -186,7 +186,7 @@ Tus archivos Markdown merecen algo mejor que texto plano.
 
 Los asistentes de IA escriben en Markdown: informes, resúmenes, boletines, actas. md Viewer está hecho para leer lo que producen.
 
-md Viewer los abre como documentos de verdad: títulos, tablas, diagramas, mapas y recuadros se muestran con claridad en iPhone, iPad y Mac. Abre un archivo desde Archivos, un correo u otra app: está listo para leer.
+md Viewer convierte esos textos en documentos de verdad: títulos, tablas, diagramas, mapas y recuadros se muestran con claridad en iPhone, iPad y Mac. Abre un archivo desde Archivos, un correo u otra app: está listo para leer.
 
 ¿Un informe que presentar? La app lo convierte en una presentación: eliges el número de diapositivas y las ves construirse una a una, con las imágenes, los mapas y los diagramas del informe. ¿Necesitas lo esencial? Resume el documento y responde a tus preguntas. ¿Está escrito en otro idioma? Lo traduce. Todo ocurre en tu dispositivo, incluso sin conexión. Gratis, sin cuenta.
 
@@ -239,7 +239,7 @@ I tuoi file Markdown meritano più di un testo semplice.
 
 Gli assistenti di IA scrivono in Markdown: rapporti, sintesi, rassegne, verbali. md Viewer è fatto per leggere ciò che producono.
 
-md Viewer li apre come veri documenti: titoli, tabelle, diagrammi, mappe e riquadri si vedono con chiarezza su iPhone, iPad e Mac. Apri un file da File, da un'e-mail o da un'altra app: è pronto da leggere.
+md Viewer trasforma questi testi in veri documenti: titoli, tabelle, diagrammi, mappe e riquadri si vedono con chiarezza su iPhone, iPad e Mac. Apri un file da File, da un'e-mail o da un'altra app: è pronto da leggere.
 
 Un rapporto da presentare? L'app lo trasforma in una presentazione: scegli il numero di diapositive e le vedi comporsi una dopo l'altra, con le immagini, le mappe e i diagrammi del rapporto. Ti serve l'essenziale? Riassume il documento e risponde alle tue domande. È scritto in un'altra lingua? Lo traduce. Tutto avviene sul tuo dispositivo, anche offline. Gratis, senza account.
 
