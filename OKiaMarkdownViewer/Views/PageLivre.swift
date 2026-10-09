@@ -85,11 +85,12 @@ struct PageLivre: UIViewRepresentable {
 }
 
 /// Le livre se feuillette : plus de défilement, des doubles pages. La page de gauche montre la
-/// page 2k du document, celle de droite la 2k+1 ; un balayage tourne la double page. Les pages
-/// sont coupées entre deux lignes (`OKIA.coupuresLivre`), et ce qui dépasse sous la dernière
-/// ligne est caché, comme le bas d'une page imprimée.
+/// page 2k du document, celle de droite la 2k+1. Les pages glissent sous le doigt, comme dans
+/// Kindle : on peut commencer à tourner, regarder, revenir. Elles sont coupées entre deux lignes
+/// (`OKIA.coupuresLivre`), et ce qui dépasse sous la dernière ligne est caché, comme le bas
+/// d'une page imprimée.
 @MainActor
-final class PaginationLivre: NSObject {
+final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
     private weak var gauche: WKWebView?
     private weak var droite: WKWebView?
     private var coupes: [CGFloat] = [0]
@@ -105,7 +106,13 @@ final class PaginationLivre: NSObject {
         self.droite = droite
         for vue in [gauche, droite] {
             vue.scrollView.isScrollEnabled = false
-            for (direction, sens) in [(UISwipeGestureRecognizer.Direction.left, 1), (.up, 1), (.right, -1), (.down, -1)] {
+            vue.clipsToBounds = true
+            let glisser = UIPanGestureRecognizer(target: self, action: #selector(glisser(_:)))
+            glisser.delegate = self
+            vue.addGestureRecognizer(glisser)
+            gestes.append((vue, glisser))
+            // Balayer vers le haut ou le bas tourne aussi la page, d'un seul coup.
+            for (direction, sens) in [(UISwipeGestureRecognizer.Direction.up, 1), (.down, -1)] {
                 let g = UISwipeGestureRecognizer(target: self, action: sens > 0 ? #selector(suivante) : #selector(precedente))
                 g.direction = direction
                 vue.addGestureRecognizer(g)
@@ -169,24 +176,97 @@ final class PaginationLivre: NSObject {
         let cacheG = debut(pd), cacheD: CGFloat = pd + 1 < coupes.count ? debut(pd + 1) : -1
         g.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheG)), \(Int(hauteur)))")
         d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)))")
-        let poser = {
-            g.scrollView.contentOffset.y = self.debut(pg) - g.scrollView.adjustedContentInset.top
-            d.scrollView.contentOffset.y = self.debut(pd) - d.scrollView.adjustedContentInset.top
+        g.scrollView.contentOffset.y = debut(pg) - g.scrollView.adjustedContentInset.top
+        d.scrollView.contentOffset.y = debut(pd) - d.scrollView.adjustedContentInset.top
+    }
+
+    // MARK: Le glissement
+
+    /// L'image des pages qu'on quitte, posée sur chaque page le temps du geste ; la vue web montre
+    /// déjà la double page d'arrivée, que l'image découvre en glissant. (Déplacer la vue web
+    /// elle-même la laissait vide : WebKit ne dessine pas ce qu'il croit hors de l'écran.)
+    private var images: [UIView] = []
+    private var sensEnCours = 0
+
+    func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
+        guard let pan = g as? UIPanGestureRecognizer else { return true }
+        let v = pan.velocity(in: pan.view)
+        return abs(v.x) > abs(v.y)
+    }
+
+    private var vues: [WKWebView] { [gauche, droite].compactMap { $0 } }
+
+    /// Prépare le glissement vers la double page voisine ; faux s'il n'y en a pas.
+    private func commencer(_ sens: Int) -> Bool {
+        let k = planche + sens
+        guard k >= 0, 2 * k < coupes.count, sensEnCours == 0 else { return false }
+        sensEnCours = sens
+        images = vues.map { vue in
+            let image = vue.snapshotView(afterScreenUpdates: false) ?? UIView()
+            image.frame = vue.bounds
+            // Une ombre sur le bord qui avance : la page se lit comme une feuille posée dessus.
+            image.layer.shadowColor = UIColor.black.cgColor
+            image.layer.shadowOpacity = 0.18
+            image.layer.shadowRadius = 10
+            image.layer.shadowOffset = CGSize(width: sens > 0 ? 4 : -4, height: 0)
+            image.layer.shadowPath = UIBezierPath(rect: image.bounds).cgPath
+            vue.addSubview(image)
+            return image
         }
-        if anime {
-            UIView.transition(with: g, duration: 0.25, options: [.transitionCrossDissolve], animations: {})
-            UIView.transition(with: d, duration: 0.25, options: [.transitionCrossDissolve], animations: {})
+        planche = k
+        afficher(anime: false)
+        deplacer(0)
+        return true
+    }
+
+    /// dx : le déplacement du doigt. Les pages quittées le suivent et découvrent les nouvelles.
+    private func deplacer(_ dx: CGFloat) {
+        for image in images { image.transform = CGAffineTransform(translationX: dx, y: 0) }
+    }
+
+    private func finir(valider: Bool, vitesse: CGFloat = 0) {
+        let sens = sensEnCours
+        let l = vues.first?.bounds.width ?? 400
+        UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
+            self.deplacer(valider ? (sens > 0 ? -l : l) : 0)
+        } completion: { _ in
+            self.images.forEach { $0.removeFromSuperview() }
+            self.images = []
+            self.sensEnCours = 0
+            if !valider {
+                self.planche -= sens
+                self.afficher(anime: false)
+            }
         }
-        poser()
+    }
+
+    @objc private func glisser(_ pan: UIPanGestureRecognizer) {
+        let dx = pan.translation(in: pan.view).x
+        switch pan.state {
+        case .changed:
+            if sensEnCours == 0 {
+                guard abs(dx) > 6, commencer(dx < 0 ? 1 : -1) else { return }
+            }
+            // Le doigt ne peut pas tirer la page dans l'autre sens que celui où elle tourne.
+            deplacer(sensEnCours > 0 ? min(0, dx) : max(0, dx))
+        case .ended, .cancelled, .failed:
+            guard sensEnCours != 0 else { return }
+            let l = vues.first?.bounds.width ?? 400
+            let v = pan.velocity(in: pan.view).x
+            let valider = pan.state == .ended
+                && (abs(dx) > l * 0.3 || abs(v) > 500) && (sensEnCours > 0 ? dx < 0 : dx > 0)
+            finir(valider: valider)
+        default:
+            break
+        }
     }
 
     @objc private func suivante() { tourner(1) }
     @objc private func precedente() { tourner(-1) }
 
+    /// Tourner d'un seul coup : le même glissement, joué jusqu'au bout.
     private func tourner(_ sens: Int) {
-        let k = planche + sens
-        guard k >= 0, 2 * k < coupes.count else { return }
-        planche = k
-        afficher(anime: true)
+        guard commencer(sens) else { return }
+        finir(valider: true)
     }
 }
