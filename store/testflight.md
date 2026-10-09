@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (58)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (59)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (58)
+## What to Test — 1.3 (59)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -46,7 +46,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   en bas de page qui ne précède ni un titre ni un grand visuel.
 • Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
   tableau, signale qu'il s'ouvre en plein écran (à gauche sur la page de droite
-  du livre). Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour
+  du livre). Aussi la frise, le déroulé et l'agenda des rapports fornews. Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour
   agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
   Dans le livre, le bouton plein écran d'une carte l'ouvre aussi.
 • Touchez une page pour faire revenir la barre, une seconde fois pour la renvoyer.
@@ -79,7 +79,6 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
   exactement ce nombre. Signalez tout chiffre ou nom absent du rapport.
 • La dernière diapositive, « À retenir », doit toujours porter des puces, même
   pour un rapport court.
-• Dites-nous combien de temps a pris la conversion, et sur quel appareil.
 
 LA BARRE EN LIQUID GLASS
 • La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
