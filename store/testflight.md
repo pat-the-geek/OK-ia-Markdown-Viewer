@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (60)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (61)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (60)
+## What to Test — 1.3 (61)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -43,13 +43,14 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   paysage. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
   léger rebond. Un coin corné indique qu'il y a une suite. Signalez tout blanc
-  en bas de page qui ne précède ni un titre ni un grand visuel, et toute
-  tuile, image ou chronologie coupée entre deux pages.
+  en bas de page qui ne précède ni un titre ni un grand visuel, tout objet
+  coupé entre deux pages, toute page de droite qui répète celle de gauche.
 • Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
   tableau, signale qu'il s'ouvre en plein écran (à gauche sur la page de droite
-  du livre). Aussi la frise, le déroulé et l'agenda des rapports fornews. Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour
-  agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
-  Dans le livre, le bouton plein écran d'une carte l'ouvre aussi.
+  du livre), comme la frise, le déroulé et l'agenda des rapports fornews.
+  Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
+  Dans le livre, le bouton plein écran d'une carte l'ouvre aussi. Le plein
+  écran suit le mode jour/nuit et le thème de lecture.
 • Touchez une page pour faire revenir la barre, une seconde fois pour la renvoyer.
 • iPhone Duo déplié ou plié : les commandes sont rangées dans la colonne de
   droite, et la page va jusqu'à elle.
@@ -71,11 +72,11 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
 • Chaque diapositive apparaît en vignette dès qu'elle est prête, avec le thème,
   les images et la carte ; une case en pointillés annonce la suivante.
 • En paysage sur iPhone Pro Max ou iPad, sur l'iPhone Duo déplié et sur Mac
-  (fenêtre large), la conversion s'ouvre à droite du rapport : continuez de lire.
+  (fenêtre large), la conversion s'ouvre à droite du rapport, qui ne doit pas
+  bouger : continuez de lire.
 • La vue suit la dernière diapositive. Remontez en voir une plus ancienne : elle
   ne doit pas vous ramener en bas ; redescendez, elle suit de nouveau.
 • À la fin, « Lancer le diaporama » ; en le quittant, les vignettes sont toujours là.
-• Tournez l'appareil pendant la conversion : elle doit continuer.
 • Choisissez 5, 10, 15, 20 ou 25 diapositives : la présentation doit compter
   exactement ce nombre. Signalez tout chiffre ou nom absent du rapport.
 • La dernière diapositive, « À retenir », doit toujours porter des puces, même
