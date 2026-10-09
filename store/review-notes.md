@@ -11,10 +11,19 @@ Pas de compte requis → laisser les champs identifiants vides ; cocher **« Sig
 ## Notes (EN — à coller)
 
 ```
-UPDATE 1.2.1 — THIS VERSION ONLY UPDATES THE APP STORE PRODUCT PAGE
-• The descriptions of the product page were rewritten, and German, Spanish and Italian
-  localizations of the page were added. The app itself is unchanged from 1.2: same features,
-  same code, only the version number differs. The testing notes below still apply.
+NEW IN 1.3 — HOW TO TEST
+• Convert to presentation (requires an Apple Intelligence device): open the sample ("View a
+  sample"), tap the ✦ button in the reader's bar, then "Convert to presentation". Choose a number
+  of slides and tap "Convert". The model writes the slides ON-DEVICE (Foundation Models,
+  SystemLanguageModel); each slide appears as a thumbnail as soon as it is ready, then
+  "Start the slideshow" presents them. No text leaves the device.
+• On a large screen (iPad or iPhone Pro Max in landscape, a wide Mac window, iPhone Duo
+  unfolded), the conversion, the summary, the chat and the table of contents open next to the
+  document instead of in a sheet.
+• Reading themes: the "Aa" button offers five themes, in light and dark.
+• iPhone Duo: the app uses the full inner screen and splits into two parts across the fold.
+• Footnotes in fornews.ai briefing reports: tapping a superscript number shows the note.
+• Built with the iOS 27.1 SDK; the minimum system stays iOS/iPadOS/macOS 26.4.
 
 md Viewer is a Markdown document (report) reader. No account or login is required.
 
@@ -46,8 +55,8 @@ NEW IN 1.2 — OPENING DOCUMENTS FROM FORNEWS.AI
   to a plain file name so it cannot point outside the folder.
 
 APPLE INTELLIGENCE (optional)
-• "Document summary" and "Chat with the document" use Foundation Models ON-DEVICE and answer
-  from the open document only. No text leaves the device.
+• "Document summary", "Chat with the document" and "Convert to presentation" use Foundation
+  Models ON-DEVICE and work from the open document only. No text leaves the device.
 • The ✦ menu only appears when Apple Intelligence is available on the device. Otherwise both
   features are hidden and the rest of the app works.
 
@@ -67,11 +76,21 @@ PLATFORMS
 ## Notes (FR — pour mémoire)
 
 ```
-MISE À JOUR 1.2.1 — CETTE VERSION NE MET À JOUR QUE LA FICHE APP STORE
-• Les descriptions de la fiche produit ont été réécrites, et des versions allemande, espagnole
-  et italienne de la fiche ont été ajoutées. L'app elle-même est inchangée depuis la 1.2 :
-  mêmes fonctions, même code, seul le numéro de version diffère. Les notes ci-dessous restent
-  valables.
+NOUVEAU EN 1.3 — COMMENT TESTER
+• Convertir en présentation (appareil compatible Apple Intelligence) : ouvrez l'exemple (« Voir
+  un exemple »), touchez le bouton ✦ de la barre du lecteur, puis « Convertir en présentation ».
+  Choisissez un nombre de diapositives et touchez « Convertir ». Le modèle rédige les diapositives
+  SUR L'APPAREIL (Foundation Models, SystemLanguageModel) ; chacune apparaît en vignette dès
+  qu'elle est prête, puis « Lancer le diaporama » les présente. Aucun texte ne quitte l'appareil.
+• Sur grand écran (iPad ou iPhone Pro Max en paysage, fenêtre Mac large, iPhone Duo déplié), la
+  conversion, le résumé, la discussion et le sommaire s'ouvrent à côté du document plutôt que
+  dans une feuille.
+• Thèmes de lecture : le bouton « Aa » propose cinq thèmes, en clair et en sombre.
+• iPhone Duo : l'app occupe tout l'écran intérieur et se partage en deux de part et d'autre de la
+  pliure.
+• Notes de bas de page des rapports de veille fornews.ai : toucher un appel en exposant montre la
+  note.
+• Compilée avec le SDK iOS 27.1 ; le système minimal reste iOS/iPadOS/macOS 26.4.
 
 md Viewer est un lecteur de documents Markdown (rapports). Aucun compte ni connexion n'est requis.
 
@@ -104,8 +123,9 @@ NOUVEAU EN 1.2 — OUVERTURE DE DOCUMENTS DEPUIS FORNEWS.AI
   à un simple nom de fichier pour ne pas désigner autre chose.
 
 APPLE INTELLIGENCE (facultatif)
-• « Résumé du document » et « Discuter avec le document » utilisent Foundation Models SUR
-  L'APPAREIL et répondent à partir du seul document ouvert. Aucun texte ne quitte l'appareil.
+• « Résumé du document », « Discuter avec le document » et « Convertir en présentation »
+  utilisent Foundation Models SUR L'APPAREIL, à partir du seul document ouvert. Aucun texte ne
+  quitte l'appareil.
 • Le menu ✦ n'apparaît que si Apple Intelligence est disponible ; sinon les deux fonctions sont
   masquées et le reste de l'app fonctionne.
 
@@ -126,7 +146,8 @@ PLATEFORMES
 
 - **Sign-in required :** Non.
 - **Export compliance :** déjà géré (`ITSAppUsesNonExemptEncryption=false`), aucune question.
-- **Build :** rattacher **`1.2 (39)`** sur **les deux plateformes** — iOS et macOS sont envoyés par
+- **Build :** rattacher le dernier build **`1.3`** de TestFlight (50 au 09/10/2026) sur **les deux plateformes** — iOS et macOS sont envoyés par
   `scripts/deploy-testflight.sh --both` depuis le même numéro, plus besoin de Transporter.
 - **Contenu généré par IA :** si le formulaire le demande, préciser que résumé, discussion et
-  traduction sont produits **sur l'appareil**, à partir du document que l'utilisateur a ouvert.
+  traduction sont produits **sur l'appareil**, à partir du document que l'utilisateur a ouvert —
+  la conversion en présentation aussi (1.3).
