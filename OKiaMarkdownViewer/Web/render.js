@@ -1561,6 +1561,8 @@
   var attenteRecoupe = null;
   var imageChargee = function (e) {
     if (!(e.target && e.target.tagName === 'IMG')) return;
+    // Les tuiles d'une carte ne changent pas la page : sa hauteur est fixée.
+    if (e.target.closest && e.target.closest('.okia-map')) return;
     envoyerMiroir();
     clearTimeout(attenteRecoupe);
     attenteRecoupe = setTimeout(function () { post('recouper', {}); }, 300);

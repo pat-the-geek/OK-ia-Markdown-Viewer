@@ -136,7 +136,54 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
             }
         }
         recalculer()
+        #if DEBUG
+        lancerDemo()
+        #endif
     }
+
+    #if DEBUG
+    /// Film du livre (OKIA_DEMO_LIVRE = secondes avant le début) : le livre tourne ses pages
+    /// lui-même, au pas d'un doigt lent — page suivante, page soulevée puis reposée, page
+    /// suivante, retour, page suivante. Les gestes injectés dans le simulateur arrivaient avec
+    /// des dizaines de secondes de retard pendant l'enregistrement.
+    private var demoLancee = false
+
+    private func lancerDemo() {
+        guard !demoLancee, let v = ProcessInfo.processInfo.environment["OKIA_DEMO_LIVRE"],
+              let attente = Double(v) else { return }
+        demoLancee = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(attente))
+            let etapes: [(sens: Int, jusqua: CGFloat, valider: Bool)] =
+                [(1, 0.72, true), (1, 0.4, false), (1, 0.72, true), (-1, 0.72, true), (1, 0.72, true)]
+            for e in etapes {
+                await self?.glisser(sens: e.sens, jusqua: e.jusqua, valider: e.valider)
+                try? await Task.sleep(for: .seconds(3.5))
+            }
+        }
+    }
+
+    /// Un doigt qui soulève la page jusqu'à `jusqua` en 2,4 s, puis la lâche : elle retombe sous
+    /// son poids, comme sous un vrai doigt.
+    private func glisser(sens: Int, jusqua: CGFloat, valider: Bool) async {
+        guard tour == nil, !enPreparation else { return }
+        decisionEnAttente = nil
+        dernierAvancement = 0
+        preparer(sens)
+        for _ in 0..<60 where tour == nil { try? await Task.sleep(for: .milliseconds(50)) }
+        guard let t = tour else { return }
+        let duree = 2.4, debut = Date()
+        while true {
+            let x = min(1, Date().timeIntervalSince(debut) / duree)
+            let e = x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2
+            poser(t, jusqua * CGFloat(e))
+            if x >= 1 { break }
+            try? await Task.sleep(for: .milliseconds(16))
+        }
+        if !valider { try? await Task.sleep(for: .milliseconds(500)) }
+        finir(t, valider: valider)
+    }
+    #endif
 
     func delier() {
         attente?.cancel()
@@ -170,6 +217,9 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
 
     func recalculer() {
         guard let g = gauche, let d = droite else { return }
+        // Pendant qu'une page tourne, les deux vues montrent les pages du tour : les replacer
+        // maintenant décalait la page de droite (vide, ou la gauche en double). Après le tour.
+        if tour != nil || enPreparation { recalculerPlusTard(); return }
         let h = floor(min(visible(g), visible(d)))
         guard h > 100 else { return }
         let lu = debut(2 * planche)
