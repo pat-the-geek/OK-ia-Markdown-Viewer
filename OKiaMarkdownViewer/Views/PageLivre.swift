@@ -85,8 +85,8 @@ struct PageLivre: UIViewRepresentable {
 }
 
 /// Le livre se feuillette : plus de défilement, des doubles pages. La page de gauche montre la
-/// page 2k du document, celle de droite la 2k+1. Les pages glissent sous le doigt, comme dans
-/// Kindle : on peut commencer à tourner, regarder, revenir. Elles sont coupées entre deux lignes
+/// page 2k du document, celle de droite la 2k+1. Un balayage tourne la page, comme dans un livre.
+/// Elles sont coupées entre deux lignes
 /// (`OKIA.coupuresLivre`), et ce qui dépasse sous la dernière ligne est caché, comme le bas
 /// d'une page imprimée.
 @MainActor
@@ -106,12 +106,12 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         self.droite = droite
         for vue in [gauche, droite] {
             vue.scrollView.isScrollEnabled = false
-            vue.clipsToBounds = true
-            let glisser = UIPanGestureRecognizer(target: self, action: #selector(glisser(_:)))
-            glisser.delegate = self
-            vue.addGestureRecognizer(glisser)
-            gestes.append((vue, glisser))
-            // Balayer vers le haut ou le bas tourne aussi la page, d'un seul coup.
+            // Le doigt tourne la page vers la gauche (suivante) ou la droite (précédente).
+            let doigt = UIPanGestureRecognizer(target: self, action: #selector(suivreDoigt(_:)))
+            doigt.delegate = self
+            vue.addGestureRecognizer(doigt)
+            gestes.append((vue, doigt))
+            // Balayer vers le haut ou le bas tourne la page d'un seul coup.
             for (direction, sens) in [(UISwipeGestureRecognizer.Direction.up, 1), (.down, -1)] {
                 let g = UISwipeGestureRecognizer(target: self, action: sens > 0 ? #selector(suivante) : #selector(precedente))
                 g.direction = direction
@@ -180,93 +180,232 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         d.scrollView.contentOffset.y = debut(pd) - d.scrollView.adjustedContentInset.top
     }
 
-    // MARK: Le glissement
+    // MARK: La page qui tourne
 
-    /// L'image des pages qu'on quitte, posée sur chaque page le temps du geste ; la vue web montre
-    /// déjà la double page d'arrivée, que l'image découvre en glissant. (Déplacer la vue web
-    /// elle-même la laissait vide : WebKit ne dessine pas ce qu'il croit hors de l'écran.)
-    private var images: [UIView] = []
-    private var sensEnCours = 0
+    /// Une page qui tourne, comme un livre, et qui suit le doigt : en avant, la page de droite se
+    /// soulève autour de la pliure et découvre dessous la nouvelle page de droite ; son verso
+    /// montre la nouvelle page de gauche. Lâchée avant la moitié, elle retombe là où on était ;
+    /// au-delà, ou d'un geste vif, elle se pose de l'autre côté. Les images des pages viennent de
+    /// WebKit (`takeSnapshot`) ; la page qui tourne vit dans la fenêtre, pour franchir la pliure.
+    private final class Tour {
+        let sens: Int
+        let leve: WKWebView
+        let reste: WKWebView
+        let cache: UIView
+        let scene: CALayer
+        let page: CATransformLayer
+        let ombre: CALayer
+        let ombreDos: CALayer
+        /// L'ombre que la page levée jette sur la page qu'elle découvre, ou sur celle où elle va se poser.
+        let ombrePortee: CAGradientLayer
+        let cadre: CGRect
+        var avancement: CGFloat = 0
+        init(sens: Int, leve: WKWebView, reste: WKWebView, cache: UIView, scene: CALayer,
+             page: CATransformLayer, ombre: CALayer, ombreDos: CALayer,
+             ombrePortee: CAGradientLayer, cadre: CGRect) {
+            self.sens = sens; self.leve = leve; self.reste = reste; self.cache = cache
+            self.scene = scene; self.page = page; self.ombre = ombre; self.ombreDos = ombreDos
+            self.ombrePortee = ombrePortee; self.cadre = cadre
+        }
+    }
+
+    private var tour: Tour?
+    private var enPreparation = false
+    /// Le doigt a lâché pendant la préparation : la décision attend que la page soit prête.
+    private var decisionEnAttente: Bool?
+    private var dernierAvancement: CGFloat = 0
+
+    private func image(_ vue: WKWebView, _ fin: @escaping (UIImage?) -> Void) {
+        vue.takeSnapshot(with: nil) { image, _ in fin(image) }
+    }
 
     func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
         guard let pan = g as? UIPanGestureRecognizer else { return true }
         let v = pan.velocity(in: pan.view)
-        return abs(v.x) > abs(v.y)
+        return abs(v.x) > abs(v.y) && tour == nil && !enPreparation
     }
 
-    private var vues: [WKWebView] { [gauche, droite].compactMap { $0 } }
+    @objc private func suivante() { tournerDUnCoup(1) }
+    @objc private func precedente() { tournerDUnCoup(-1) }
 
-    /// Prépare le glissement vers la double page voisine ; faux s'il n'y en a pas.
-    private func commencer(_ sens: Int) -> Bool {
-        let k = planche + sens
-        guard k >= 0, 2 * k < coupes.count, sensEnCours == 0 else { return false }
-        sensEnCours = sens
-        images = vues.map { vue in
-            let image = vue.snapshotView(afterScreenUpdates: false) ?? UIView()
-            image.frame = vue.bounds
-            // Une ombre sur le bord qui avance : la page se lit comme une feuille posée dessus.
-            image.layer.shadowColor = UIColor.black.cgColor
-            image.layer.shadowOpacity = 0.18
-            image.layer.shadowRadius = 10
-            image.layer.shadowOffset = CGSize(width: sens > 0 ? 4 : -4, height: 0)
-            image.layer.shadowPath = UIBezierPath(rect: image.bounds).cgPath
-            vue.addSubview(image)
-            return image
-        }
-        planche = k
-        afficher(anime: false)
-        deplacer(0)
-        return true
+    private func tournerDUnCoup(_ sens: Int) {
+        guard tour == nil, !enPreparation else { return }
+        decisionEnAttente = true
+        preparer(sens)
     }
 
-    /// dx : le déplacement du doigt. Les pages quittées le suivent et découvrent les nouvelles.
-    private func deplacer(_ dx: CGFloat) {
-        for image in images { image.transform = CGAffineTransform(translationX: dx, y: 0) }
-    }
-
-    private func finir(valider: Bool, vitesse: CGFloat = 0) {
-        let sens = sensEnCours
-        let l = vues.first?.bounds.width ?? 400
-        UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
-            self.deplacer(valider ? (sens > 0 ? -l : l) : 0)
-        } completion: { _ in
-            self.images.forEach { $0.removeFromSuperview() }
-            self.images = []
-            self.sensEnCours = 0
-            if !valider {
-                self.planche -= sens
-                self.afficher(anime: false)
-            }
-        }
-    }
-
-    @objc private func glisser(_ pan: UIPanGestureRecognizer) {
+    @objc private func suivreDoigt(_ pan: UIPanGestureRecognizer) {
         let dx = pan.translation(in: pan.view).x
+        let largeur = max(pan.view?.bounds.width ?? 400, 1)
         switch pan.state {
         case .changed:
-            if sensEnCours == 0 {
-                guard abs(dx) > 6, commencer(dx < 0 ? 1 : -1) else { return }
+            if tour == nil && !enPreparation {
+                guard abs(dx) > 6 else { return }
+                decisionEnAttente = nil
+                preparer(dx < 0 ? 1 : -1)
             }
-            // Le doigt ne peut pas tirer la page dans l'autre sens que celui où elle tourne.
-            deplacer(sensEnCours > 0 ? min(0, dx) : max(0, dx))
+            if let t = tour {
+                let p = min(1, max(0, (t.sens > 0 ? -dx : dx) / largeur))
+                poser(t, p)
+            } else {
+                dernierAvancement = abs(dx) / largeur
+            }
         case .ended, .cancelled, .failed:
-            guard sensEnCours != 0 else { return }
-            let l = vues.first?.bounds.width ?? 400
             let v = pan.velocity(in: pan.view).x
-            let valider = pan.state == .ended
-                && (abs(dx) > l * 0.3 || abs(v) > 500) && (sensEnCours > 0 ? dx < 0 : dx > 0)
-            finir(valider: valider)
+            let sens = tour?.sens ?? (dx < 0 ? 1 : -1)
+            let p = (sens > 0 ? -dx : dx) / largeur
+            let vif = sens > 0 ? v < -600 : v > 600
+            let valider = pan.state == .ended && (p > 0.5 || vif)
+            if let t = tour { finir(t, valider: valider) } else if enPreparation { decisionEnAttente = valider }
         default:
             break
         }
     }
 
-    @objc private func suivante() { tourner(1) }
-    @objc private func precedente() { tourner(-1) }
-
-    /// Tourner d'un seul coup : le même glissement, joué jusqu'au bout.
-    private func tourner(_ sens: Int) {
-        guard commencer(sens) else { return }
-        finir(valider: true)
+    /// Construit la page qui tournera, à plat, prête à suivre le doigt.
+    private func preparer(_ sens: Int) {
+        guard let g = gauche, let d = droite, let fenetre = g.window else { return }
+        let k = planche + sens
+        guard k >= 0, 2 * k < coupes.count else { decisionEnAttente = nil; return }
+        enPreparation = true
+        let leve = sens > 0 ? d : g, reste = sens > 0 ? g : d
+        image(leve) { recto in
+            self.image(reste) { ancienne in
+                guard let recto, let ancienne else { self.enPreparation = false; return }
+                // L'ancienne page reste visible sous la page qui tourne, jusqu'à ce qu'elle la couvre.
+                let cache = UIImageView(image: ancienne)
+                cache.frame = reste.bounds
+                reste.addSubview(cache)
+                self.planche = k
+                self.afficher(anime: false)
+                // Le temps que WebKit dessine la nouvelle double page, qui donnera le verso.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.image(reste) { verso in
+                        let t = self.construire(recto: recto, verso: verso ?? ancienne, leve: leve,
+                                                reste: reste, cache: cache, sens: sens, fenetre: fenetre)
+                        self.tour = t
+                        self.enPreparation = false
+                        if let valider = self.decisionEnAttente {
+                            self.decisionEnAttente = nil
+                            self.finir(t, valider: valider)
+                        } else {
+                            self.poser(t, self.dernierAvancement)
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    private func construire(recto: UIImage, verso: UIImage, leve: WKWebView, reste: WKWebView,
+                            cache: UIView, sens: Int, fenetre: UIWindow) -> Tour {
+        let cadre = leve.convert(leve.bounds, to: fenetre)
+        let scene = CALayer()
+        scene.frame = fenetre.bounds
+        var perspective = CATransform3DIdentity
+        perspective.m34 = -1 / 1800
+        scene.sublayerTransform = perspective
+
+        let page = CATransformLayer()
+        page.bounds = CGRect(origin: .zero, size: cadre.size)
+        // La charnière de la page est la pliure : son bord gauche en avant, son bord droit en arrière.
+        page.anchorPoint = CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
+        page.position = CGPoint(x: sens > 0 ? cadre.minX : cadre.maxX, y: cadre.midY)
+
+        func face(_ image: UIImage, retournee: Bool) -> (CALayer, CALayer) {
+            let f = CALayer()
+            f.frame = page.bounds
+            f.contents = image.cgImage
+            f.contentsGravity = .resize
+            f.isDoubleSided = false
+            if retournee { f.transform = CATransform3DMakeRotation(.pi, 0, 1, 0) }
+            let o = CALayer()
+            o.frame = f.bounds
+            o.backgroundColor = UIColor.black.cgColor
+            o.opacity = 0
+            f.addSublayer(o)
+            page.addSublayer(f)
+            return (f, o)
+        }
+        let (_, ombre) = face(recto, retournee: false)
+        let (_, ombreDos) = face(verso, retournee: true)
+        // L'ombre portée : une bande dégradée au pied du bord libre de la page, sous elle.
+        let ombrePortee = CAGradientLayer()
+        ombrePortee.startPoint = CGPoint(x: 0, y: 0.5)
+        ombrePortee.endPoint = CGPoint(x: 1, y: 0.5)
+        ombrePortee.opacity = 0
+        scene.addSublayer(ombrePortee)
+        scene.addSublayer(page)
+        fenetre.layer.addSublayer(scene)
+        return Tour(sens: sens, leve: leve, reste: reste, cache: cache, scene: scene, page: page,
+                    ombre: ombre, ombreDos: ombreDos, ombrePortee: ombrePortee, cadre: cadre)
+    }
+
+    /// p : de 0 (à plat, du côté de départ) à 1 (posée de l'autre côté).
+    private func poser(_ t: Tour, _ p: CGFloat) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        t.avancement = p
+        t.page.transform = CATransform3DMakeRotation((t.sens > 0 ? -1 : 1) * .pi * p, 0, 1, 0)
+        // La lumière : la page s'assombrit en se levant, son verso s'éclaire en se posant.
+        t.ombre.opacity = Float(p < 0.5 ? 0.36 * p : 0.18)
+        t.ombreDos.opacity = Float(p > 0.5 ? 0.36 * (1 - p) : 0.18)
+        // Le bord libre de la page, vu d'en haut, et l'ombre qui tombe juste à côté, du côté qu'il
+        // découvre (avant la moitié) ou qu'il recouvre (après). Plus la page est levée, plus
+        // l'ombre est large et soutenue.
+        let w = t.cadre.width, levee = sin(.pi * p)
+        let charniere = t.sens > 0 ? t.cadre.minX : t.cadre.maxX
+        let bord = charniere + (t.sens > 0 ? 1 : -1) * w * cos(.pi * p)
+        let largeur = 24 + 90 * levee
+        // Vers où l'ombre s'étend depuis le bord : loin de la charnière avant la moitié, vers elle après.
+        let versLaDroite = (t.sens > 0) == (p < 0.5)
+        t.ombrePortee.frame = CGRect(x: versLaDroite ? bord : bord - largeur, y: t.cadre.minY,
+                                     width: largeur, height: t.cadre.height)
+        let fonce = UIColor.black.withAlphaComponent(0.45).cgColor, clair = UIColor.clear.cgColor
+        t.ombrePortee.colors = versLaDroite ? [fonce, clair] : [clair, fonce]
+        t.ombrePortee.opacity = Float(levee)
+        CATransaction.commit()
+    }
+
+    private func finir(_ t: Tour, valider: Bool) {
+        let depart = t.avancement, cible: CGFloat = valider ? 1 : 0
+        let duree = max(0.18, 0.5 * Double(abs(cible - depart)))
+        let debut = CACurrentMediaTime()
+        // Une horloge d'affichage plutôt qu'une animation implicite : la page part d'où le doigt
+        // l'a laissée, et l'ombre suit la même courbe.
+        let horloge = CADisplayLink(target: Pas { lien in
+            let x = min(1, (CACurrentMediaTime() - debut) / duree)
+            let lisse = CGFloat(1 - pow(1 - x, 3))
+            self.poser(t, depart + (cible - depart) * lisse)
+            if x >= 1 {
+                lien.invalidate()
+                self.conclure(t, valide: valider)
+            }
+        }, selector: #selector(Pas.tic(_:)))
+        horloge.add(to: .main, forMode: .common)
+    }
+
+    private func conclure(_ t: Tour, valide: Bool) {
+        if valide {
+            t.scene.removeFromSuperlayer()
+            t.cache.removeFromSuperview()
+            tour = nil
+        } else {
+            // Reposée : on revient à la double page d'avant, puis on retire la page.
+            planche -= t.sens
+            afficher(anime: false)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                t.scene.removeFromSuperlayer()
+                t.cache.removeFromSuperview()
+                self.tour = nil
+            }
+        }
+    }
+}
+
+/// La cible d'une horloge d'affichage : CADisplayLink veut un objet et un sélecteur.
+private final class Pas: NSObject {
+    let action: (CADisplayLink) -> Void
+    init(_ action: @escaping (CADisplayLink) -> Void) { self.action = action }
+    @objc func tic(_ lien: CADisplayLink) { action(lien) }
 }
