@@ -224,9 +224,23 @@ private struct ZoomWebView: UIViewRepresentable {
               });
               lignes = true;
             }
+            // Une chronologie de fornews (frise, déroulé, agenda) se dessine en pourcentages de
+            // sa largeur : elle prend tout l'écran, et sa frise défile si l'écran est étroit.
+            var fornews = !!b.querySelector('.fornews-frise, .fornews-deroule, .fornews-agenda');
             function ajuster() {
               var dispo = window.innerWidth - 48;
               if (!(dispo > 0)) return;
+              if (fornews) {
+                // Écran étroit (iPhone en portrait) : la frise, plus large que lui, se réduit pour
+                // tenir en entier plutôt que de défiler — tant qu'elle reste lisible.
+                b.style.zoom = ''; b.style.width = dispo + 'px';
+                var f = b.querySelector('.fornews-frise');
+                if (f && f.scrollWidth > f.clientWidth + 1) {
+                  var zf = f.clientWidth / f.scrollWidth;
+                  if (zf >= 0.55) { b.style.zoom = zf.toFixed(3); b.style.width = (dispo / zf) + 'px'; }
+                }
+                return;
+              }
               b.style.zoom = ''; b.style.width = ''; b.classList.remove('okia-replie');
               var l = b.scrollWidth;
               if (l <= dispo) return;

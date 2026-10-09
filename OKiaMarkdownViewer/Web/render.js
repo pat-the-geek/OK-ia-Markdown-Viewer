@@ -746,10 +746,16 @@
   // Un bloc qui défile en largeur (chronologie, tableau) emporterait un bouton posé en lui :
   // le bouton va dans une enveloppe, qui ne défile pas. L'image aussi, pour que le bouton
   // tienne à son coin et non à celui de la page.
+  // Les chronologies que fornews écrit en HTML — la frise des mois, le déroulé, l'agenda —
+  // s'agrandissent comme un tableau : en entier, avec la largeur de l'écran.
+  var FORNEWS_AGRANDIR = '.fornews-frise, .fornews-deroule, .fornews-agenda';
+
   function poserBoutonsAgrandir(container) {
-    Array.prototype.forEach.call(container.querySelectorAll('pre:not(.mermaid), table, img.okia-zoomable'), function (el) {
+    Array.prototype.forEach.call(container.querySelectorAll('pre:not(.mermaid), table, img.okia-zoomable, ' + FORNEWS_AGRANDIR), function (el) {
       if (el.parentElement && el.parentElement.classList.contains('okia-agrandissable')) return;
       if (el.closest('.okia-zoom-bloc, .fn-apercu, .okia-map')) return;
+      // Ce qui est dans une chronologie s'ouvre avec elle : un seul bouton, le sien.
+      if (!el.matches(FORNEWS_AGRANDIR) && el.parentElement && el.parentElement.closest(FORNEWS_AGRANDIR)) return;
       var env = document.createElement(el.tagName === 'IMG' ? 'span' : 'div');
       env.className = 'okia-agrandissable' + (el.tagName === 'IMG' ? ' okia-agrandissable-image' : '');
       el.parentNode.insertBefore(env, el);
@@ -778,7 +784,7 @@
       // Le bouton ouvre l'objet de son enveloppe, ou le diagramme qui le porte.
       e.preventDefault();
       var hote = bouton.parentElement;
-      t = hote && (hote.matches('pre.mermaid') ? hote : hote.querySelector('pre, table, img'));
+      t = hote && (hote.matches('pre.mermaid') ? hote : hote.firstElementChild);
       if (!t) return;
     } else if (t.closest('a, button, input, select, textarea, summary, sup.fn-ref, .okia-map, .fn-apercu')) return;
     if (window.getSelection && String(window.getSelection()).length) return;
@@ -802,7 +808,7 @@
       if (img.style.display !== 'none') post('imageTapped', { src: img.currentSrc || img.src });
       return;
     }
-    var bloc = t.closest('pre:not(.mermaid), table');
+    var bloc = t.closest(FORNEWS_AGRANDIR) || t.closest('pre:not(.mermaid), table');
     if (bloc) {
       // Le titre de la section : on remonte depuis l'enveloppe du bouton, s'il y en a une.
       var depart = bloc.parentElement && bloc.parentElement.classList.contains('okia-agrandissable') ? bloc.parentElement : bloc;
@@ -3072,7 +3078,7 @@
     var t = e.target;
     if (e.defaultPrevented || !t || !t.closest) return;
     if (t.closest('a, img, button, input, select, textarea, summary, table, .okia-map, ' +
-                  'pre, sup.fn-ref, .fn-apercu, .ner-legend')) return;
+                  'pre, sup.fn-ref, .fn-apercu, .ner-legend, ' + FORNEWS_AGRANDIR)) return;
     if (window.getSelection && String(window.getSelection()).length) return;
     post('tapPage', {});
   });
