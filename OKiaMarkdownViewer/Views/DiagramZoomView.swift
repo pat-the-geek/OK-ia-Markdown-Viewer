@@ -169,14 +169,18 @@ private struct ZoomWebView: UIViewRepresentable {
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
     static func wrap(bodyHTML: String) -> String {
-        """
-        <!DOCTYPE html><html><head><meta charset="utf-8">
+        // Les couleurs du lecteur : son thème de lecture, et le jour ou la nuit de l'appareil
+        // (style.css suit prefers-color-scheme, que la vue web reçoit de l'app).
+        let theme = (UserDefaults.standard.string(forKey: "okia.readerTheme") ?? "okia").filter(\.isLetter)
+        let attribut = theme.isEmpty || theme == "okia" ? "" : " data-okia-theme=\"\(theme)\""
+        return """
+        <!DOCTYPE html><html\(attribut)><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=6, user-scalable=yes, viewport-fit=cover">
         <link rel="stylesheet" href="style.css">
         <style>
           html,body{margin:0;height:100%;}
-          /* Light framed canvas so the OK-ia mermaid palette stays true even in dark mode */
-          body{background:#FAFAF8;display:flex;align-items:safe center;justify-content:safe center;}
+          /* Le fond du lecteur, clair le jour, sombre la nuit. */
+          body{background:var(--bg);color:var(--fg);display:flex;align-items:safe center;justify-content:safe center;}
           .wrap{min-width:100%;min-height:100%;display:flex;align-items:safe center;justify-content:safe center;
                 padding:24px;box-sizing:border-box;}
           /* Un bloc plus haut que l'écran commence sous les boutons du haut et finit au-dessus
@@ -186,6 +190,9 @@ private struct ZoomWebView: UIViewRepresentable {
           /* Une largeur toujours définie : un SVG à largeur « auto » dans ce cadre souple sortait
              réduit à rien. */
           .wrap > svg{width:100% !important;max-height:none !important;height:auto;display:block;}
+          /* Un diagramme garde sa carte claire, comme dans le lecteur : la palette OK-ia est
+             dessinée pour un fond clair. */
+          .wrap > svg{background:var(--diagram-frame);border-radius:12px;padding:16px;box-sizing:border-box;}
           .wrap img{max-width:100%;max-height:100%;height:auto;display:block;border-radius:8px;}
           /* Un bloc de texte agrandi — chronologie, tableau : en entier, sans retour à la ligne. */
           .okia-zoom-bloc{max-width:none;margin:0;padding:0;font-size:17px;}
