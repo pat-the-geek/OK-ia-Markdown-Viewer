@@ -1749,6 +1749,17 @@ struct PresentationWebView: UIViewRepresentable {
             envoyerTraduction(parent.translator.memoire, actif: parent.traduire)
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.start(\(mdJSON));",
                                        completionHandler: nil)
+            #if DEBUG
+            // Harnais de film : le diaporama passe lui-même trois diapositives, une toutes les
+            // 4 s, pour qu'on voie qu'on est dans une présentation.
+            if ProcessInfo.processInfo.environment["OKIA_DEMO_DIAPORAMA"] != nil {
+                for i in 1...3 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4.0 * Double(i)) { [weak webView] in
+                        webView?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.next();")
+                    }
+                }
+            }
+            #endif
         }
 
         func handleNativeKey(_ key: String) {

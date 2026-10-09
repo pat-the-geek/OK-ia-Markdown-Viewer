@@ -47,11 +47,13 @@ struct MarkdownWebView: UIViewRepresentable {
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
-        // Les marges du système ne s'ajoutent que dans le sens du défilement. `.always` les
-        // ajoutait aussi sur les côtés : sur le Duo, la colonne réservée à droite restait un
-        // vide de 84 points sous lequel la page ne passait pas. Les côtés sont tenus par la page
-        // elle-même (`env(safe-area-inset-*)` dans style.css), qui protège l'encoche des iPhone.
-        webView.scrollView.contentInsetAdjustmentBehavior = .scrollableAxes
+        // Les marges du système, posées à la main en haut et en bas (VueWebLecteur), jamais sur
+        // les côtés : les côtés sont tenus par la page elle-même (`env(safe-area-inset-*)` dans
+        // style.css), qui protège l'encoche des iPhone. `.always` laissait sur le Duo un vide de
+        // 84 points sous la colonne réservée ; `.scrollableAxes` l'ajoutait et le retirait tour à
+        // tour pendant que WebKit remettait la page en forme — la page changeait de largeur dix
+        // fois par seconde et tremblait (Duo, conversion ouverte à côté du rapport).
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
 
         context.coordinator.webView = webView
         webController.webView = webView
@@ -277,12 +279,22 @@ final class VueWebLecteur: WKWebView {
         }
     }
 
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        appliquerMarge()
+    }
+
     private func appliquerMarge() {
         let defilement = scrollView
-        guard abs(defilement.contentInset.top - margeHaute) > 0.5 else { return }
+        // Ce que le système ajoutait de lui-même en haut et en bas, plus la part de barre que sa
+        // marge ne couvre pas.
+        let haut = safeAreaInsets.top + margeHaute, bas = safeAreaInsets.bottom
+        guard abs(defilement.contentInset.top - haut) > 0.5 || abs(defilement.contentInset.bottom - bas) > 0.5
+        else { return }
         // Une page lue tout en haut reste en haut, titre visible sous la barre.
         let enHaut = defilement.contentOffset.y <= -defilement.adjustedContentInset.top + 1
-        defilement.contentInset.top = margeHaute
+        defilement.contentInset.top = haut
+        defilement.contentInset.bottom = bas
         defilement.verticalScrollIndicatorInsets.top = margeHaute
         if enHaut { defilement.contentOffset.y = -defilement.adjustedContentInset.top }
     }
