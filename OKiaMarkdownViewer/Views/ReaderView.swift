@@ -138,10 +138,13 @@ struct ReaderView: View {
         ZStack(alignment: .top) {
             MarkdownWebView(document: document, tapped: $tapped, tappedImage: $tappedImage,
                             onTitle: { title = $0 },
-                            webController: web, onExternalLink: handleExternalLink)
-                // La page passe sous la barre (le défilement s'y voile) et, sur le Duo, sous la
-                // colonne de droite : elle n'en contourne que le coin haut (OKIA.setBordsLibres).
-                // Ailleurs, la marge latérale protège l'encoche de la caméra : on la garde.
+                            webController: web, onExternalLink: handleExternalLink,
+                            // Le Duo ne compte pas la rangée du titre dans la marge de la vue web :
+                            // on la lui donne, pour que la page défile sous le verre sans s'y cacher.
+                            topInset: appareilPliable ? barHeight : 0)
+                // La page passe sous la barre, où le défilement se voile ; sur le Duo, aussi sous la
+                // colonne de droite, où le système range les commandes. Ailleurs, la marge latérale
+                // protège l'encoche de la caméra.
                 .ignoresSafeArea(edges: appareilPliable ? [.top, .bottom, .horizontal] : [.top, .bottom])
             // Les marges du système, barre comprise : le coin libre du Duo s'en déduit.
             Color.clear
@@ -591,16 +594,12 @@ struct ReaderView: View {
 
     // MARK: Title bar
 
-    /// Le coin que la page contourne sur le Duo : la largeur de la colonne réservée, sur la
-    /// hauteur de la caméra, de l'heure et du réseau, moins ce que la barre couvre déjà.
-    /// Hors Duo, rien : la page garde sa marge.
+    /// Plus de coin à contourner. Il réservait, en haut de la page, la place de la caméra et de
+    /// l'heure du Duo quand notre barre flottait sur la page ; la barre du système range
+    /// désormais ses commandes dans la colonne réservée, et la page garde les marges que le
+    /// système lui donne. Le coin, lui, rognait le titre et les images : de la place perdue.
     private func poserCoinLibre() {
-        let colonne = max(margeDroite, margeGauche)
-        guard appareilPliable, colonne > 0 else {
-            web.setCoinLibre(largeur: 0, hauteur: 0)
-            return
-        }
-        web.setCoinLibre(largeur: colonne, hauteur: max(0, 140 - barHeight), aGauche: margeGauche > margeDroite)
+        web.setCoinLibre(largeur: 0, hauteur: 0)
     }
 
     /// L'écran a-t-il la place de deux parties ? Le Duo déplié, de part et d'autre de sa pliure ;

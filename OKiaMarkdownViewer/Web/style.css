@@ -57,7 +57,9 @@
      suivante, et 820 px en fait à peu près 85. C'est un choix assumé — sur Mac et iPad, la
      colonne à 720 laissait trop de blanc de part et d'autre pour ce qu'elle donnait à lire.
      ⚠️ Sans effet sur téléphone, où l'écran est plus étroit que l'une comme l'autre. */
-  --reading-max: 820px;
+  /* Pas de plafond (Patrick, 09/10/2026) : « le moins de marge possible », la plus grande
+     surface d'affichage. Le thème Éditorial garde sa colonne étroite, c'est sa raison d'être. */
+  --reading-max: none;
   --reading-pad: 14px;
 
   font-size: 17px;
@@ -103,7 +105,7 @@ html.okia-bords-libres .markdown-body::before {
 
 /* Landscape: widen the reading column and reduce side padding for wide diagrams */
 @media (orientation: landscape) {
-  :root { --reading-max: 1040px; --reading-pad: 22px; }
+  :root { --reading-pad: 18px; }
 }
 
 .loading { color: var(--muted); text-align: center; padding: 40vh 0; font-size: 1.2rem; }
