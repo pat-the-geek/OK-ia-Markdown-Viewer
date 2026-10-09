@@ -682,6 +682,7 @@ struct ReaderView: View {
         guard modeLivre else { return }
         let livre = self.livre, web = self.web, pagination = paginationLivre
         web.onMiroir = { livre.poser($0); pagination.recalculerPlusTard() }
+        web.onRecouper = { pagination.recalculerPlusTard() }
         web.onTapPage = { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } }
         web.onCarte = { tappedCarte = $0 }
         web.suivreMiroir(true)
@@ -706,6 +707,7 @@ struct ReaderView: View {
         barreLivreVisible = false
         web.suivreMiroir(false)
         web.onMiroir = nil
+        web.onRecouper = nil
         web.setLargeurLivre(0)
     }
 

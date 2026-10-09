@@ -61,6 +61,8 @@ final class ReaderWebController: ObservableObject {
     // MARK: Duo — le mode livre
     /// Reçoit la copie du document rendu, à chaque changement, tant que le miroir est suivi.
     var onMiroir: (([String: Any]) -> Void)?
+    /// Une image vient de se charger : le texte n'a pas changé, mais les coupes de page, si.
+    var onRecouper: (() -> Void)?
     /// Un toucher sur la page elle-même (ni lien, ni image, ni carte…).
     var onTapPage: (() -> Void)?
     /// Une carte à ouvrir en plein écran (depuis le livre).

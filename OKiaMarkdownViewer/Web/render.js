@@ -1555,7 +1555,16 @@
     Array.prototype.forEach.call((racine || document).querySelectorAll('img[loading="lazy"]'),
                                  function (i) { i.loading = 'eager'; });
   }
-  var imageChargee = function (e) { if (e.target && e.target.tagName === 'IMG') envoyerMiroir(); };
+  // Une image chargée ne change pas le HTML — la copie, dédoublonnée, ne repartait pas — mais elle
+  // prend sa hauteur : les coupes de page se recalculent, sans quoi une image restait tranchée
+  // en bas de page.
+  var attenteRecoupe = null;
+  var imageChargee = function (e) {
+    if (!(e.target && e.target.tagName === 'IMG')) return;
+    envoyerMiroir();
+    clearTimeout(attenteRecoupe);
+    attenteRecoupe = setTimeout(function () { post('recouper', {}); }, 300);
+  };
 
   // Gauche : envoie une copie à chaque changement du document (rendu, traduction, thème).
   function suivreMiroir(actif) {
@@ -1686,9 +1695,11 @@
     // La pastille plein écran déborde au-dessus de son cadre : la coupe ne la tranche pas non plus.
     // Les tuiles de fornews non plus (Patrick) : le contrôle qualité et la frise passent entiers à
     // la page suivante ; s'ils sont trop hauts, chacune de leurs tuiles reste au moins entière —
-    // un chiffre, une échéance de l'agenda.
+    // un chiffre, une échéance de l'agenda. De même le bandeau, une échéance lointaine, une
+    // coupure de presse et la rangée des médias.
     Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre, hr, .okia-agrandir, ' +
-        '.fornews-controle, .fornews-frise, .fornews-chiffre, .fornews-echeance, [data-chiffre], [data-barre]'), function (e) {
+        '.fornews-controle, .fornews-frise, .fornews-chiffre, .fornews-echeance, [data-chiffre], [data-barre], ' +
+        '.fornews-bandeau, .fornews-horizon, [data-coupure], .fornews-medias'), function (e) {
       var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
     });
     Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
