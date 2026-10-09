@@ -25,6 +25,17 @@ l'app. Sur le Mac, la conversion, le résumé et la discussion s'ouvrent à côt
 l'iPhone, dans une feuille ; sur l'iPad, à côté en paysage (`IPAD_PAYSAGE=1`, une fois le
 simulateur tourné à la main — l'app ne sait pas le tourner seule), en feuille en portrait.
 
+**Refait le 09/10/2026 au soir, avec le nouveau look** (barre du système en Liquid Glass, mode
+livre). Sur l'iPad, le paysage ouvre désormais le livre : lecteur, thèmes, Mermaid et carte se
+prennent **en portrait** (page pleine, barre visible), conversion, diaporama et discussion **en
+paysage** (Patrick). Par langue : `scripts/screenshots.sh <l> ipad` (portrait — règle la langue et
+redémarre), rotation à la main, puis `IPAD_PAYSAGE=1 scripts/screenshots.sh <l> ipad` ; chaque
+passe ne remplace que ses scènes. Sur le Mac, l'app se met en clair d'elle-même (`OKIA_CLAIR`,
+Debug), sans toucher au réglage de la machine. **Le résumé et la discussion du Mac sont générés en
+direct** : relire chaque réponse, et refaire une scène seule avec `SOLO=<scène>` si le modèle se
+trompe — il l'a fait en français, en espagnol et en italien (discussion) et en anglais (résumé).
+Le résumé espagnol garde, en tête, « alcanza niveles récord », qu'aucun essai n'a évité.
+
 **L'iPad en paysage, langue par langue** (fait le 09/10/2026 pour les cinq) : régler la langue
 (`simctl spawn <iPad> defaults write -g AppleLanguages -array <l>` et `AppleLocale`), redémarrer le
 simulateur, le tourner — bouton ↻ du panneau « Simulateur iOS » de l'app Claude, ou Device Hub —,

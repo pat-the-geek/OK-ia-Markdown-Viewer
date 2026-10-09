@@ -40,6 +40,9 @@ CIBLE="${2:-tout}"
 harnais_de() {
   local question plateforme="${2:-mac}"
   echo "OKIA_UI_LANG=$LANGUE"
+  # Le Mac garde l'apparence de son réglage (Patrick est en sombre) : l'app se met en clair
+  # elle-même le temps de la capture, comme les simulateurs.
+  [ "$plateforme" = mac ] && echo "OKIA_CLAIR=1"
   # Le thème est retenu d'un lancement à l'autre : chaque scène dit le sien, sans quoi celle des
   # thèmes déteindrait sur les suivantes.
   [ "$1" = 4-themes ] || echo "OKIA_THEME=okia"
@@ -85,6 +88,12 @@ rejeu_de() { case "$1" in 2-conversion) cat "store/scenes/$LANGUE/3-diaporama.md
 # s'y annonce disponible (il emprunte le modèle du Mac hôte) mais la génération échoue.
 # Cette scène-là reste au Mac.
 scene_reservee_au_mac() { case "$1" in 7-resume) return 0 ;; *) return 1 ;; esac; }
+
+# L'iPad couché ouvre le mode livre : bon pour ce qui s'ouvre à côté du document, mais un
+# document court y laisse la page de droite vide, et le livre cache la barre. Lecteur, thèmes,
+# Mermaid et carte se prennent donc en portrait ; conversion, diaporama et discussion en paysage
+# (Patrick, 09/10/2026). Une passe par orientation : IPAD_PAYSAGE=1 ne prend que les secondes.
+ipad_en_paysage() { case "$1" in 2-conversion|3-diaporama|8-discussion) return 0 ;; *) return 1 ;; esac; }
 
 # Région du simulateur : le format de date suit la locale, pas seulement la langue.
 locale_systeme() { case "$LANGUE" in en) echo en_US ;; es) echo es_ES ;; *) echo "${LANGUE}_CH" ;; esac; }  # es_CH n'existe pas
@@ -167,13 +176,18 @@ capture_appareil() {
 
   # Les captures d'une passe précédente ne survivent pas : une scène renommée laisserait
   # l'ancienne image en place, prête à partir avec les autres.
-  rm -f "store/screenshots/$dossier/$LANGUE"/*.png
+  # Sur l'iPad, chaque passe ne remplace que ses scènes : l'autre orientation garde les siennes.
+  if [ "$dossier" != "ipad-13" ]; then rm -f "store/screenshots/$dossier/$LANGUE"/*.png; fi
   mkdir -p "store/screenshots/$dossier/$LANGUE"
   for scene in store/scenes/"$LANGUE"/*.md; do
     local base titre
     base="$(basename "$scene" .md)"
     titre="$(head -1 "$scene" | sed 's/^# *//')"
     if scene_reservee_au_mac "$base"; then continue; fi
+    if [ "$dossier" = "ipad-13" ]; then
+      if [ -n "${IPAD_PAYSAGE:-}" ]; then ipad_en_paysage "$base" || continue
+      else ipad_en_paysage "$base" && continue; fi
+    fi
     # simctl transmet à l'app ce qui est préfixé SIMCTL_CHILD_.
     local -a sim_extra=()
     while IFS= read -r paire; do
@@ -303,12 +317,14 @@ capture_mac() {
   caffeinate -d -u &
   local veille=$!
   trap 'kill "$veille" 2>/dev/null || true' RETURN
-  rm -f "store/screenshots/$dossier/$LANGUE"/*.png
+  # SOLO=<scène> ne refait que celle-là (une réponse du modèle à reprendre) : les autres restent.
+  [ -n "${SOLO:-}" ] || rm -f "store/screenshots/$dossier/$LANGUE"/*.png
   mkdir -p "store/screenshots/$dossier/$LANGUE"
 
   for scene in store/scenes/"$LANGUE"/*.md; do
     local base titre extra
     base="$(basename "$scene" .md)"
+    if [ -n "${SOLO:-}" ] && [ "$base" != "$SOLO" ]; then continue; fi
     titre="$(head -1 "$scene" | sed 's/^# *//')"
     pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
     sleep 1
@@ -319,7 +335,7 @@ capture_mac() {
     # Le harnais éventuel de la scène : sans lui il faudrait cliquer, ce qu'une capture
     # headless ne sait pas faire.
     for v in OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG OKIA_AI_DELAY OKIA_THEME \
-             OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET; do launchctl unsetenv "$v"; done
+             OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET OKIA_CLAIR; do launchctl unsetenv "$v"; done
     while IFS= read -r paire; do
       [ -n "$paire" ] && launchctl setenv "${paire%%=*}" "${paire#*=}"
     done < <(harnais_de "$base" mac)
@@ -364,7 +380,7 @@ capture_mac() {
   kill "$veille" 2>/dev/null || true
   for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI \
            OKIA_AI_QUESTION OKIA_UI_LANG OKIA_AI_DELAY OKIA_THEME OKIA_APPARENCE \
-           OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET; do launchctl unsetenv "$v"; done
+           OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET OKIA_CLAIR; do launchctl unsetenv "$v"; done
   # On rend la machine dans l'état où on l'a trouvée.
   [ -n "$ancien_scale" ] && { defaults write "$BUNDLE" okia.fontScale -float "$ancien_scale" 2>/dev/null || true; }
   [ -n "$ancien_cadre" ] && { defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "$ancien_cadre" 2>/dev/null || true; }

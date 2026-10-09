@@ -230,6 +230,7 @@ struct OKiaMarkdownViewerApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .modifier(ApparenceDeCapture())
                 // Handles file URLs (cold + warm "Open in…") and the mdviewer:// scheme.
                 .onOpenURL { url in
                     store.handleIncoming(url)
@@ -244,6 +245,22 @@ struct OKiaMarkdownViewerApp: App {
                 .keyboardShortcut("o", modifiers: .command)
             }
         }
+    }
+}
+
+/// Captures App Store (Debug) : OKIA_CLAIR force l'apparence claire de l'app, sans toucher au
+/// réglage du Mac — les simulateurs se mettent en clair d'eux-mêmes, le Mac non.
+private struct ApparenceDeCapture: ViewModifier {
+    func body(content: Content) -> some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["OKIA_CLAIR"] != nil {
+            content.preferredColorScheme(.light)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }
 
