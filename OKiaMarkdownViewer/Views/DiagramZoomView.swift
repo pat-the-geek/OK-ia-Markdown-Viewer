@@ -173,8 +173,8 @@ private struct ZoomWebView: UIViewRepresentable {
         <style>
           html,body{margin:0;height:100%;}
           /* Light framed canvas so the OK-ia mermaid palette stays true even in dark mode */
-          body{background:#FAFAF8;display:flex;align-items:center;justify-content:center;}
-          .wrap{min-width:100%;min-height:100%;display:flex;align-items:center;justify-content:center;
+          body{background:#FAFAF8;display:flex;align-items:safe center;justify-content:safe center;}
+          .wrap{min-width:100%;min-height:100%;display:flex;align-items:safe center;justify-content:safe center;
                 padding:24px;box-sizing:border-box;}
           .wrap svg{max-width:100%;height:auto;display:block;}
           .wrap img{max-width:100%;max-height:100%;height:auto;display:block;border-radius:8px;}
@@ -184,7 +184,17 @@ private struct ZoomWebView: UIViewRepresentable {
           .okia-zoom-bloc pre::after{content:none;}
           .okia-zoom-bloc table{width:auto;margin:0;cursor:auto;}
         </style></head>
-        <body><div class="wrap">\(bodyHTML)</div></body></html>
+        <body><div class="wrap">\(bodyHTML)</div>
+        <script>
+          // Un bloc plus large que l'écran (une chronologie aux longues lignes) s'ouvre en entier,
+          // réduit à la largeur ; le pincement l'agrandit ensuite.
+          (function () {
+            var b = document.querySelector('.okia-zoom-bloc');
+            if (!b) return;
+            var dispo = window.innerWidth - 48, l = b.scrollWidth;
+            if (l > dispo) b.style.zoom = (dispo / l).toFixed(3);
+          })();
+        </script></body></html>
         """
     }
 

@@ -1488,6 +1488,16 @@
     if (!contenu || !m) return;
     contenu.innerHTML = m.html || '';
     imagesImmediates(contenu);
+    // Une carte copiée n'est qu'une coquille : son fond se dessine dans un canvas que la copie ne
+    // reprend pas. On la remplace par une carte neuve, de la même hauteur, avec la même config.
+    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map[data-okia-map]'), function (el) {
+      var neuve = document.createElement('div');
+      neuve.className = 'okia-map';
+      neuve.setAttribute('data-okia-map', el.getAttribute('data-okia-map'));
+      neuve.style.height = el.getBoundingClientRect().height + 'px';
+      el.parentNode.replaceChild(neuve, el);
+    });
+    try { renderLeafletMaps(contenu); } catch (e) {}
     if (m.theme) racine.setAttribute('data-okia-theme', m.theme);
     else racine.removeAttribute('data-okia-theme');
     if (m.fontSize) racine.style.fontSize = m.fontSize;
@@ -1573,7 +1583,8 @@
     Array.prototype.forEach.call(contenu.querySelectorAll('img, pre.mermaid svg'), function (e) {
       var b = boite(e); if (b[1] - b[0] > 0) visuels.push(b);
     });
-    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre:not(.mermaid), hr'), function (e) {
+    // Le cadre d'un diagramme compte aussi : sans lui, la coupe tombait entre le cadre et le dessin.
+    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre, hr'), function (e) {
       var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
     });
     Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
