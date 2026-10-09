@@ -75,11 +75,6 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
   pour un rapport court.
 • Dites-nous combien de temps a pris la conversion, et sur quel appareil.
 
-CORRIGÉ — LE RÉSUMÉ ET LA DISCUSSION DÉFILENT À DROITE
-• En paysage, le résumé et la discussion ouverts à droite du document se font
-  défiler jusqu'en bas, même pendant une traduction.
-• Sur Mac, ils s'ouvrent aussi à droite quand la fenêtre est large.
-
 LA BARRE EN LIQUID GLASS
 • La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
   d'un document : le titre doit rester visible sous la barre.
@@ -89,10 +84,6 @@ DEUX PARTIES EN PAYSAGE ET SUR LE DUO
 • En paysage (Pro Max, iPad) ou Duo déplié, le sommaire, le résumé et la
   discussion s'ouvrent à côté du document. En portrait, ce sont des feuilles.
 • Sur le Duo, la page va jusqu'au bord ; seul le coin de l'heure est évité.
-
-RAPPORTS DE VEILLE FORNEWS : NOTES DE BAS DE PAGE
-• Touchez un appel de source orange : la note s'ouvre en aperçu. Sur Mac, survolez-le.
-• Export Word : les sources deviennent des notes de fin. Dites-nous ce qu'en affiche Word.
 
 TOUJOURS À ESSAYER — DIAPORAMA, EXPORT POWERPOINT, THÈMES
 • Onze transitions au diaporama, dont le Damier ; l'export PowerPoint reprend la
