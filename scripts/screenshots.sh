@@ -30,13 +30,19 @@ CIBLE="${2:-tout}"
 
 # Certaines scènes ne sont pas de simples documents : elles ouvrent un écran que seul un
 # geste atteindrait. La règle vit ici, une fois, pour les deux plateformes.
-#   4-presentation → le diaporama          5-resume → le résumé IA
-#                                          6-discussion → la discussion IA, une question posée
+#   2-conversion → la conversion en présentation, rejouée (voir rejeu_de)
+#   3-diaporama  → le diaporama            4-themes     → le panneau « Aa », thème Lecture longue
+#   7-resume     → le résumé IA            8-discussion → la discussion IA, une question posée
+# Sur grand écran (Mac, iPad en paysage), la conversion, le résumé et la discussion s'ouvrent à
+# côté du document ; sur l'iPhone, dans une feuille — l'app en décide, comme pour un lecteur.
 # Une variable par ligne — une valeur peut contenir des espaces. Deuxième argument : la
 # plateforme, « mac » ou « sim », car toutes deux n'ouvrent pas le même écran d'IA.
 harnais_de() {
   local question plateforme="${2:-mac}"
   echo "OKIA_UI_LANG=$LANGUE"
+  # Le thème est retenu d'un lancement à l'autre : chaque scène dit le sien, sans quoi celle des
+  # thèmes déteindrait sur les suivantes.
+  [ "$1" = 4-themes ] || echo "OKIA_THEME=okia"
   case "$LANGUE" in
     en) question="Which fields have the most initiatives?" ;;
     de) question="Welche Bereiche haben die meisten Initiativen?" ;;
@@ -45,10 +51,16 @@ harnais_de() {
     *)  question="Quels domaines comptent le plus d'initiatives ?" ;;
   esac
   case "$1" in
-    4-presentation) echo "OKIA_OPEN_SLIDES=1" ;;
-    5-resume)       echo "OKIA_AI=summary" ;;
-    6-discussion)
-      echo "OKIA_AI=chat"
+    2-conversion)
+      echo "OKIA_AI=convert"; echo "OKIA_AI_DELAY=2"
+      # Figée à 7 diapositives sur 10 : la présentation est en train de se construire.
+      echo "OKIA_CONVERSION_ARRET=7"
+      ;;
+    3-diaporama)    echo "OKIA_OPEN_SLIDES=1" ;;
+    4-themes)       echo "OKIA_THEME=lecture"; echo "OKIA_APPARENCE=1" ;;
+    7-resume)       echo "OKIA_AI=summary"; echo "OKIA_AI_DELAY=1" ;;
+    8-discussion)
+      echo "OKIA_AI=chat"; echo "OKIA_AI_DELAY=1"
       # La question n'a de sens que là où le modèle répond. En simulateur la génération
       # échoue (GenerationError -1) : on s'en tient au premier écran de la discussion, dont
       # les questions proposées sortent du document lui-même — rien de fabriqué.
@@ -58,13 +70,21 @@ harnais_de() {
   esac
 }
 
-# Une réponse du modèle met plus longtemps à venir qu'une page à se dessiner.
-attente_de() { case "$1" in 5-resume|6-discussion) echo 30 ;; *) echo "$ATTENTE" ;; esac; }
+# Une réponse du modèle met plus longtemps à venir qu'une page à se dessiner ; le rejeu de la
+# conversion, lui, livre une diapositive toutes les 0,8 s après l'ouverture.
+attente_de() { case "$1" in 7-resume|8-discussion) echo 30 ;; 2-conversion) echo 18 ;; 4-themes) echo 12 ;; *) echo "$ATTENTE" ;; esac; }
+
+# La conversion ne se capture pas en direct : le simulateur ne génère pas, et le modèle du Mac
+# met un temps variable. Elle rejoue la présentation que le vrai modèle a écrite pour cette
+# langue (tools/ConversionBench, sur le Mac) et qui sert aussi la scène du diaporama. Le contenu
+# vient du modèle ; seul le rythme est simulé. Une valeur sur plusieurs lignes : elle ne passe
+# pas par harnais_de.
+rejeu_de() { case "$1" in 2-conversion) cat "store/scenes/$LANGUE/3-diaporama.md" ;; *) ;; esac; }
 
 # Le résumé demande une génération, et le simulateur en est incapable : Apple Intelligence
 # s'y annonce disponible (il emprunte le modèle du Mac hôte) mais la génération échoue.
 # Cette scène-là reste au Mac.
-scene_reservee_au_mac() { case "$1" in 5-resume) return 0 ;; *) return 1 ;; esac; }
+scene_reservee_au_mac() { case "$1" in 7-resume) return 0 ;; *) return 1 ;; esac; }
 
 # Région du simulateur : le format de date suit la locale, pas seulement la langue.
 locale_systeme() { case "$LANGUE" in en) echo en_US ;; es) echo es_ES ;; *) echo "${LANGUE}_CH" ;; esac; }  # es_CH n'existe pas
@@ -124,11 +144,19 @@ capture_appareil() {
   if [ "$(xcrun simctl spawn "$dev" defaults read -g AppleLanguages 2>/dev/null | tr -d ' \n(),"' )" != "$LANGUE" ]; then
     xcrun simctl spawn "$dev" defaults write -g AppleLanguages -array "$LANGUE" >/dev/null 2>&1 || true
     xcrun simctl spawn "$dev" defaults write -g AppleLocale -string "$(locale_systeme)" >/dev/null 2>&1 || true
+    # Le redémarrage remet l'iPad en portrait, et le paysage ne se rétablit qu'à la main, dans
+    # Device Hub (redémarrer SpringBoard seul n'y suffit pas : l'orientation ne lui parvient
+    # plus). En paysage, la langue se règle donc avant, simulateur tourné ensuite.
+    if [ -n "${IPAD_PAYSAGE:-}" ] && [ "$dossier" = "ipad-13" ]; then
+      die "iPad en paysage : régler d'abord la langue « $LANGUE », redémarrer, tourner, puis relancer"
+    fi
     xcrun simctl shutdown "$dev" >/dev/null 2>&1 || true
     xcrun simctl bootstatus "$dev" -b >/dev/null 2>&1 || true
   fi
 
   xcrun simctl install "$dev" "$APP" >/dev/null
+  # Les captures sont en clair, quel que soit l'état où un essai a laissé le simulateur.
+  xcrun simctl ui "$dev" appearance light >/dev/null 2>&1 || true
 
   # Barre d'état figée : l'usage App Store veut une heure neutre, du wifi plein et une
   # batterie pleine. Sans quoi chaque capture porte l'heure de sa génération — et, si
@@ -137,6 +165,9 @@ capture_appareil() {
     --time "09:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
     --cellularMode notSupported --batteryState charged --batteryLevel 100 >/dev/null 2>&1 || true
 
+  # Les captures d'une passe précédente ne survivent pas : une scène renommée laisserait
+  # l'ancienne image en place, prête à partir avec les autres.
+  rm -f "store/screenshots/$dossier/$LANGUE"/*.png
   mkdir -p "store/screenshots/$dossier/$LANGUE"
   for scene in store/scenes/"$LANGUE"/*.md; do
     local base titre
@@ -148,13 +179,21 @@ capture_appareil() {
     while IFS= read -r paire; do
       [ -n "$paire" ] && sim_extra+=("SIMCTL_CHILD_$paire")
     done < <(harnais_de "$base" sim)
+    # L'orientation est dite à chaque lancement : un simulateur garde celle du dernier essai.
+    if [ "$dossier" = "ipad-13" ] && [ -n "${IPAD_PAYSAGE:-}" ]; then
+      sim_extra+=("SIMCTL_CHILD_OKIA_ORIENTATION=paysage")
+    else
+      sim_extra+=("SIMCTL_CHILD_OKIA_ORIENTATION=portrait")
+    fi
+    local rejeu; rejeu="$(rejeu_de "$base")"
+    [ -n "$rejeu" ] && sim_extra+=("SIMCTL_CHILD_OKIA_CONVERSION_REJEU=$rejeu")
     xcrun simctl terminate "$dev" "$BUNDLE" >/dev/null 2>&1 || true
     # (l'expansion protégée : un tableau vide fait échouer set -u en bash 3.2)
     env ${sim_extra[@]+"${sim_extra[@]}"} \
       SIMCTL_CHILD_OKIA_RENDER_CONTENT="$(cat "$scene")" \
       SIMCTL_CHILD_OKIA_RENDER_NAME="$titre.md" \
       xcrun simctl launch "$dev" "$BUNDLE" >/dev/null
-    sleep "$ATTENTE"
+    sleep "$(attente_de "$base")"
     xcrun simctl io "$dev" screenshot "store/screenshots/$dossier/$LANGUE/$base.png" >/dev/null 2>&1
     # Le framebuffer du simulateur est opaque mais garde un canal alpha, qu'Apple ne veut pas.
     aplatir "store/screenshots/$dossier/$LANGUE/$base.png"
@@ -264,6 +303,7 @@ capture_mac() {
   caffeinate -d -u &
   local veille=$!
   trap 'kill "$veille" 2>/dev/null || true' RETURN
+  rm -f "store/screenshots/$dossier/$LANGUE"/*.png
   mkdir -p "store/screenshots/$dossier/$LANGUE"
 
   for scene in store/scenes/"$LANGUE"/*.md; do
@@ -275,12 +315,15 @@ capture_mac() {
     launchctl setenv OKIA_RENDER_CONTENT "$(cat "$scene")"
     launchctl setenv OKIA_RENDER_NAME "$titre.md"
     launchctl setenv OKIA_SHOT_SIZE "$FENETRE"
+    launchctl setenv OKIA_FONT_SCALE 1.0
     # Le harnais éventuel de la scène : sans lui il faudrait cliquer, ce qu'une capture
     # headless ne sait pas faire.
-    for v in OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
+    for v in OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG OKIA_AI_DELAY OKIA_THEME \
+             OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET; do launchctl unsetenv "$v"; done
     while IFS= read -r paire; do
       [ -n "$paire" ] && launchctl setenv "${paire%%=*}" "${paire#*=}"
     done < <(harnais_de "$base" mac)
+    [ -n "$(rejeu_de "$base")" ] && launchctl setenv OKIA_CONVERSION_REJEU "$(rejeu_de "$base")"
     # Attendre la fenêtre plutôt qu'un délai fixe : selon la charge, elle apparaît en deux
     # secondes ou en douze, et un délai constant rate l'une ou l'autre. Puis laisser le
     # contenu se dessiner — tuiles vectorielles et Mermaid arrivent après la fenêtre.
@@ -309,9 +352,19 @@ capture_mac() {
   done
 
   pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
+  # La taille de texte de l'utilisateur lui est rendue par l'app elle-même (OKIA_FONT_SCALE).
+  for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION \
+           OKIA_AI_DELAY OKIA_THEME OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET; do
+    launchctl unsetenv "$v"
+  done
+  launchctl setenv OKIA_FONT_SCALE restaurer
+  open -n "$bin_app"; sleep 8
+  pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
+  launchctl unsetenv OKIA_FONT_SCALE
   kill "$veille" 2>/dev/null || true
   for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI \
-           OKIA_AI_QUESTION OKIA_UI_LANG; do launchctl unsetenv "$v"; done
+           OKIA_AI_QUESTION OKIA_UI_LANG OKIA_AI_DELAY OKIA_THEME OKIA_APPARENCE \
+           OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET; do launchctl unsetenv "$v"; done
   # On rend la machine dans l'état où on l'a trouvée.
   [ -n "$ancien_scale" ] && { defaults write "$BUNDLE" okia.fontScale -float "$ancien_scale" 2>/dev/null || true; }
   [ -n "$ancien_cadre" ] && { defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "$ancien_cadre" 2>/dev/null || true; }

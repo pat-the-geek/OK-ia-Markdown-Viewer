@@ -202,8 +202,38 @@ struct ReaderView: View {
             if ProcessInfo.processInfo.environment["OKIA_ORIENTATION"] == "paysage",
                let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
                 scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
+                // L'iPad ignore la demande ci-dessus (app multitâche) : on tourne l'appareil lui-même.
+                UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+                UIViewController.attemptRotationToDeviceOrientation()
+            }
+            // « portrait » remet droit un simulateur qu'un essai précédent a laissé couché.
+            if ProcessInfo.processInfo.environment["OKIA_ORIENTATION"] == "portrait",
+               let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
+                UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+                UIViewController.attemptRotationToDeviceOrientation()
             }
             #endif
+            // OKIA_THEME fixe le thème de lecture ; OKIA_APPARENCE ouvre le panneau « Aa » — les
+            // captures des thèmes, sans toucher à l'écran.
+            if let theme = ProcessInfo.processInfo.environment["OKIA_THEME"], ReaderTheme(rawValue: theme) != nil {
+                readerTheme = theme
+            }
+            // OKIA_FONT_SCALE fixe la taille du texte le temps des captures, en gardant de côté celle
+            // de l'utilisateur ; « restaurer » la lui rend. Le conteneur de l'app est protégé : le
+            // script ne peut pas la rétablir lui-même.
+            if let echelle = ProcessInfo.processInfo.environment["OKIA_FONT_SCALE"] {
+                let cle = "okia.fontScale.avantCapture", d = UserDefaults.standard
+                if echelle == "restaurer" {
+                    if d.object(forKey: cle) != nil { fontScale = d.double(forKey: cle); d.removeObject(forKey: cle) }
+                } else if let v = Double(echelle) {
+                    if d.object(forKey: cle) == nil { d.set(fontScale, forKey: cle) }
+                    fontScale = v
+                }
+            }
+            if ProcessInfo.processInfo.environment["OKIA_APPARENCE"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { showTextSize = true }
+            }
             switch ProcessInfo.processInfo.environment["OKIA_DUO_PANNEAU"] {
             case "sommaire":   panneauDuo = .sommaire
             case "resume":     panneauDuo = .resume
@@ -230,8 +260,8 @@ struct ReaderView: View {
             // filmer le rapport qu'on parcourt avant.
             let delai = Double(env["OKIA_AI_DELAY"] ?? "") ?? 0.5
             switch env["OKIA_AI"] {
-            case "summary": DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showSummary = true }
-            case "chat":    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showChat = true }
+            case "summary": DispatchQueue.main.asyncAfter(deadline: .now() + delai) { ouvrir(.resume) }
+            case "chat":    DispatchQueue.main.asyncAfter(deadline: .now() + delai) { ouvrir(.discussion) }
             case "convert": DispatchQueue.main.asyncAfter(deadline: .now() + delai) { ouvrir(.conversion) }
             default: break
             }

@@ -60,6 +60,14 @@ struct PresentationConverterView: View {
             }
         }
         .tint(orange)
+        #if DEBUG
+        // Le rejeu des captures démarre seul : aucun geste à scripter.
+        .task {
+            if ProcessInfo.processInfo.environment["OKIA_CONVERSION_REJEU"] != nil, case .reglage = conversion.etat {
+                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande)
+            }
+        }
+        #endif
         .task {
             let md = document.text, nom = titreAffiche
             maximum = await Task.detached {
@@ -230,6 +238,15 @@ final class ConversionEnCours: ObservableObject {
         prevues = diapositives
         etat = .enCours(etape: 0, total: 1, section: "", titres: [], prevues: diapositives)
         #if DEBUG
+        // Harnais des captures : OKIA_CONVERSION_REJEU rejoue une présentation que le vrai modèle a
+        // écrite (sur le Mac, avec tools/ConversionBench), diapositive après diapositive. Le contenu
+        // est celui du modèle ; seul le rythme est simulé. OKIA_CONVERSION_ARRET fige le rejeu après
+        // n diapositives, conversion toujours en cours.
+        if let rejeu = ProcessInfo.processInfo.environment["OKIA_CONVERSION_REJEU"], !rejeu.isEmpty {
+            rejouer(rejeu, titre: titre,
+                    arret: Int(ProcessInfo.processInfo.environment["OKIA_CONVERSION_ARRET"] ?? ""))
+            return
+        }
         // Harnais : le simulateur ne génère pas. OKIA_FAKE_AI rejoue une conversion avec les
         // sections du rapport, une diapositive par seconde, pour éprouver les vignettes.
         if let flag = ProcessInfo.processInfo.environment["OKIA_FAKE_AI"], !flag.isEmpty, flag != "off" {
@@ -277,6 +294,27 @@ final class ConversionEnCours: ObservableObject {
     }
 
     #if DEBUG
+    private func rejouer(_ md: String, titre: String, arret: Int?) {
+        let diapos = md.components(separatedBy: "\n---\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        let total = diapos.count, jusqua = min(arret ?? total, total)
+        prevues = total
+        tache = Task { [weak self] in
+            for n in 1...max(jusqua, 1) {
+                try? await Task.sleep(for: .seconds(0.8))
+                guard let self, !Task.isCancelled, case .enCours = self.etat else { return }
+                let pretes = Array(diapos.prefix(n))
+                self.diapositives = pretes
+                self.etat = .enCours(etape: n, total: total, section: Self.titreDe(diapos[n - 1]),
+                                     titres: pretes.map(Self.titreDe), prevues: total)
+            }
+            guard let self, !Task.isCancelled, jusqua == total else { return }
+            self.markdownFinal = md
+            self.etat = .fini(Fini(document: MarkdownDocument(filename: titre + ".md", text: md),
+                                   diapositives: total, omissions: [], ecartees: 0))
+        }
+    }
+
     private func simuler(markdown: String, titre: String, diapositives demande: Int) {
         let sections = markdown.components(separatedBy: "\n## ").dropFirst().map { "## " + $0 }
         var diapos = ["# \(titre)\n\nPrésentation factice"]

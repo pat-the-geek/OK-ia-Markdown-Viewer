@@ -1,6 +1,47 @@
 # Captures d'écran — App Store
 
-## Jeu courant (4 septembre 2026)
+## Jeu de la 1.3 (9 octobre 2026)
+
+Huit scènes, cinq langues, puis un habillage légendé :
+
+```
+scripts/screenshots.sh <langue> [iphone|ipad|mac]   captures brutes → store/screenshots/
+scripts/legender.py [langue …]                       habillage → store/captures-legendees-1.3/
+```
+
+| Scène | Écran | Légende (fr) |
+|---|---|---|
+| `1-lecteur` | le lecteur, barre en Liquid Glass | Vos fichiers Markdown, enfin lisibles. |
+| `2-conversion` | la présentation qui se construit, 7 diapositives sur 10 | Un rapport devient une présentation. |
+| `3-diaporama` | le diaporama de cette présentation | Présentez-la en plein écran. |
+| `4-themes` | le panneau « Aa », thème Lecture longue | Cinq thèmes de lecture. |
+| `5-mermaid` | les diagrammes | Vos diagrammes s'affichent, pas leur code. |
+| `6-carte` | la carte | Une adresse devient une carte. |
+| `7-resume` | le résumé (Mac seulement) | L'essentiel du document, en quelques lignes. |
+| `8-discussion` | la discussion | Posez vos questions au document. |
+
+Les légendes des cinq langues sont dans `store/legendes.json` ; la police est la Nunito Black de
+l'app. Sur le Mac, la conversion, le résumé et la discussion s'ouvrent à côté du document ; sur
+l'iPhone, dans une feuille ; sur l'iPad, à côté en paysage (`IPAD_PAYSAGE=1`, une fois le
+simulateur tourné à la main — l'app ne sait pas le tourner seule), en feuille en portrait.
+
+**L'iPad en paysage, langue par langue** (fait le 09/10/2026 pour les cinq) : régler la langue
+(`simctl spawn <iPad> defaults write -g AppleLanguages -array <l>` et `AppleLocale`), redémarrer le
+simulateur, le tourner — bouton ↻ du panneau « Simulateur iOS » de l'app Claude, ou Device Hub —,
+puis `IPAD_PAYSAGE=1 scripts/screenshots.sh <l> ipad`. Le redémarrage remet l'iPad en portrait ;
+redémarrer SpringBoard seul n'y change rien : l'orientation ne lui parvient plus, l'écran reste
+droit dans un cadre couché. En paysage, le script refuse donc de changer la langue lui-même.
+`scripts/legender.py` reconnaît une capture couchée et lui donne une légende sur une ligne.
+
+**La conversion est rejouée, pas inventée.** Le simulateur ne génère pas : la présentation de
+chaque langue a été écrite par le vrai modèle, sur le Mac, avec le banc
+(`build/conversion-bench store/scenes/<l>/2-conversion.md 10 …`), et sert aussi la scène du
+diaporama (`3-diaporama.md`). L'app la rejoue diapositive après diapositive
+(`OKIA_CONVERSION_REJEU`, figée à 7 sur 10 par `OKIA_CONVERSION_ARRET`) : le contenu est celui du
+modèle, seul le rythme est simulé. Le rapport source est une commune fictive, aux photos libres
+(picsum.photos) — pas de photo de presse ni de marque tierce sur une capture App Store.
+
+## Jeu précédent (4 septembre 2026)
 
 `scripts/screenshots.sh <langue> [iphone|ipad|mac]` régénère tout, sans un clic. **Cinq langues**
 sont tenues à jour depuis le 19/09/2026 (1.2.1) : `fr`, `en`, `de`, `es`, `it` ; les scènes vivent dans
@@ -51,6 +92,11 @@ dans l'historique : `git show 05e17dc --stat`.
 | `OKIA_AI=summary\|chat` | ouvre la feuille de résumé ou de discussion |
 | `OKIA_AI_QUESTION` | pose cette question dans la discussion |
 | `OKIA_FAKE_AI` | **doublure** : force la disponibilité et sert une réponse pré-écrite |
+| `OKIA_AI=convert` | ouvre la conversion en présentation (à côté du document sur grand écran) |
+| `OKIA_AI_DELAY` | retarde l'ouverture de `OKIA_AI` (secondes) |
+| `OKIA_CONVERSION_REJEU` / `OKIA_CONVERSION_ARRET` | rejoue une présentation écrite par le modèle ; la fige après n diapositives |
+| `OKIA_THEME` / `OKIA_APPARENCE` | fixe le thème de lecture ; ouvre le panneau « Aa » |
+| `OKIA_ORIENTATION` | `portrait` ou `paysage` (l'iPhone obéit, l'iPad non) |
 
 `scripts/deploy-testflight.sh` refuse de livrer un binaire où l'une de ces chaînes apparaît.
 

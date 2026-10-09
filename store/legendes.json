@@ -1,0 +1,52 @@
+{
+  "fr": {
+    "1-lecteur": "Vos fichiers Markdown, enfin lisibles.",
+    "2-conversion": "Un rapport devient une présentation.",
+    "3-diaporama": "Présentez-la en plein écran.",
+    "4-themes": "Cinq thèmes de lecture.",
+    "5-mermaid": "Vos diagrammes s’affichent, pas leur code.",
+    "6-carte": "Une adresse devient une carte.",
+    "7-resume": "L’essentiel du document, en quelques lignes.",
+    "8-discussion": "Posez vos questions au document."
+  },
+  "en": {
+    "1-lecteur": "Your Markdown files, finally readable.",
+    "2-conversion": "A report becomes a presentation.",
+    "3-diaporama": "Present it full screen.",
+    "4-themes": "Five reading themes.",
+    "5-mermaid": "Your diagrams show up, not their code.",
+    "6-carte": "An address becomes a map.",
+    "7-resume": "The gist of the document, in a few lines.",
+    "8-discussion": "Ask the document your questions."
+  },
+  "de": {
+    "1-lecteur": "Ihre Markdown-Dateien, endlich lesbar.",
+    "2-conversion": "Aus einem Bericht wird eine Präsentation.",
+    "3-diaporama": "Im Vollbild präsentieren.",
+    "4-themes": "Fünf Lesethemen.",
+    "5-mermaid": "Ihre Diagramme erscheinen, nicht ihr Code.",
+    "6-carte": "Aus einer Adresse wird eine Karte.",
+    "7-resume": "Das Wesentliche, in wenigen Zeilen.",
+    "8-discussion": "Stellen Sie dem Dokument Ihre Fragen."
+  },
+  "es": {
+    "1-lecteur": "Tus archivos Markdown, por fin legibles.",
+    "2-conversion": "Un informe se convierte en presentación.",
+    "3-diaporama": "Preséntala a pantalla completa.",
+    "4-themes": "Cinco temas de lectura.",
+    "5-mermaid": "Tus diagramas se muestran, no su código.",
+    "6-carte": "Una dirección se convierte en mapa.",
+    "7-resume": "Lo esencial del documento, en pocas líneas.",
+    "8-discussion": "Haz tus preguntas al documento."
+  },
+  "it": {
+    "1-lecteur": "I tuoi file Markdown, finalmente leggibili.",
+    "2-conversion": "Un rapporto diventa una presentazione.",
+    "3-diaporama": "Presentala a schermo intero.",
+    "4-themes": "Cinque temi di lettura.",
+    "5-mermaid": "I tuoi diagrammi si vedono, non il loro codice.",
+    "6-carte": "Un indirizzo diventa una mappa.",
+    "7-resume": "L’essenziale del documento, in poche righe.",
+    "8-discussion": "Fai le tue domande al documento."
+  }
+}
