@@ -212,7 +212,8 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   max-height: 560px;
   height: auto;
 }
-.slide-inner pre.mermaid[data-rendered="1"]::after { content: none; }
+/* Une diapositive se projette : pas de bouton sur ses objets — les toucher les agrandit. */
+.slide-inner .okia-agrandir { display: none; }
 
 /* Design typography for the 1280px canvas (large, slide-grade). */
 .slide-inner h1 { font-size: 3rem; }
@@ -577,7 +578,8 @@ body.present-chantier .nav-arrow,
 body.present-chantier .present-end,
 body.present-chantier .present-menu-btn,
 body.present-chantier .present-grid-btn,
-body.present-chantier .present-counter { display: none; }
+body.present-chantier .present-counter,
+body.present-chantier .okia-agrandir { display: none; }
 body.present-chantier { --chantier-fond: #EEEEF1; }
 @media (prefers-color-scheme: dark) {
   body.present-chantier { --chantier-fond: #121216; }

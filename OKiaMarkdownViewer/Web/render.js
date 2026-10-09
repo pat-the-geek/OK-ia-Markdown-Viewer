@@ -39,7 +39,9 @@
       { en: 'Amounts', de: 'Beträge', es: 'Importes', it: 'Importi' },
     'Chargement de la carte…':
       { en: 'Loading the map…', de: 'Karte wird geladen…',
-        es: 'Cargando el mapa…', it: 'Caricamento della mappa…' }
+        es: 'Cargando el mapa…', it: 'Caricamento della mappa…' },
+    'Plein écran':
+      { en: 'Full screen', de: 'Vollbild', es: 'Pantalla completa', it: 'Schermo intero' }
   };
   function TXT(fr) {
     var entry = STRINGS[fr];
@@ -709,6 +711,7 @@
   function attachZoom(pre, title) {
     pre.setAttribute('data-rendered', '1');
     pre.setAttribute('data-okia-titre', title || '');
+    if (!pre.querySelector(':scope > .okia-agrandir')) pre.appendChild(boutonAgrandir());
   }
 
   /* Make content images tappable → open full-screen in a native zoom view.
@@ -723,13 +726,61 @@
     });
   }
 
+  /* Le bouton qui dit qu'un objet s'ouvre en plein écran — diagramme, image, chronologie,
+     tableau : une pastille de verre, toujours au même coin, à l'accent du thème. Il ne fait
+     que montrer le chemin : toucher l'objet lui-même l'ouvre aussi. */
+  var ICONE_AGRANDIR = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M14 4h6v6M20 4l-6.5 6.5M10 20H4v-6M4 20l6.5-6.5"/></svg>';
+
+  function boutonAgrandir() {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'okia-agrandir';
+    b.setAttribute('aria-label', TXT('Plein écran'));
+    b.title = TXT('Plein écran');
+    b.innerHTML = ICONE_AGRANDIR;
+    return b;
+  }
+
+  // Un bloc qui défile en largeur (chronologie, tableau) emporterait un bouton posé en lui :
+  // le bouton va dans une enveloppe, qui ne défile pas. L'image aussi, pour que le bouton
+  // tienne à son coin et non à celui de la page.
+  function poserBoutonsAgrandir(container) {
+    Array.prototype.forEach.call(container.querySelectorAll('pre:not(.mermaid), table, img.okia-zoomable'), function (el) {
+      if (el.parentElement && el.parentElement.classList.contains('okia-agrandissable')) return;
+      if (el.closest('.okia-zoom-bloc, .fn-apercu, .okia-map')) return;
+      var env = document.createElement(el.tagName === 'IMG' ? 'span' : 'div');
+      env.className = 'okia-agrandissable' + (el.tagName === 'IMG' ? ' okia-agrandissable-image' : '');
+      el.parentNode.insertBefore(env, el);
+      env.appendChild(el);
+      env.appendChild(boutonAgrandir());
+    });
+  }
+
+  // L'export PowerPoint lit les blocs du rendu : il les retrouve tels que marked les a faits.
+  function retirerBoutonsAgrandir(container) {
+    Array.prototype.forEach.call(container.querySelectorAll('.okia-agrandir'), function (b) { b.remove(); });
+    Array.prototype.forEach.call(container.querySelectorAll('.okia-agrandissable'), function (env) {
+      while (env.firstChild) env.parentNode.insertBefore(env.firstChild, env);
+      env.remove();
+    });
+  }
+
   /* Plein écran — un seul écouteur, sur le document : diagrammes, images, et aussi les blocs de
      texte qu'on lit mieux en grand, la chronologie d'un rapport (un bloc de code) et les
      tableaux. Il marche aussi dans la page de droite du livre, copie sans écouteurs. */
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (e.defaultPrevented || !t || !t.closest) return;
-    if (t.closest('a, button, input, select, textarea, summary, sup.fn-ref, .okia-map, .fn-apercu')) return;
+    var bouton = t.closest('.okia-agrandir');
+    if (bouton) {
+      // Le bouton ouvre l'objet de son enveloppe, ou le diagramme qui le porte.
+      e.preventDefault();
+      var hote = bouton.parentElement;
+      t = hote && (hote.matches('pre.mermaid') ? hote : hote.querySelector('pre, table, img'));
+      if (!t) return;
+    } else if (t.closest('a, button, input, select, textarea, summary, sup.fn-ref, .okia-map, .fn-apercu')) return;
     if (window.getSelection && String(window.getSelection()).length) return;
     var diagramme = t.closest('pre.mermaid[data-rendered="1"]');
     if (diagramme) {
@@ -753,7 +804,9 @@
     }
     var bloc = t.closest('pre:not(.mermaid), table');
     if (bloc) {
-      var titre = '', avant = bloc.previousElementSibling;
+      // Le titre de la section : on remonte depuis l'enveloppe du bouton, s'il y en a une.
+      var depart = bloc.parentElement && bloc.parentElement.classList.contains('okia-agrandissable') ? bloc.parentElement : bloc;
+      var titre = '', avant = depart.previousElementSibling;
       while (avant && !/^H[1-6]$/.test(avant.tagName)) avant = avant.previousElementSibling;
       if (avant) titre = avant.textContent.trim();
       post('diagramTapped', { svg: '<div class="markdown-body okia-zoom-bloc">' + bloc.outerHTML + '</div>',
@@ -943,9 +996,9 @@
         var box = L.DomUtil.create('div', 'leaflet-bar leaflet-control okia-fs-control');
         var a = L.DomUtil.create('a', '', box);
         a.href = '#';
-        a.title = 'Plein écran';
+        a.title = TXT('Plein écran');
         a.setAttribute('role', 'button');
-        a.innerHTML = '⛶';
+        a.innerHTML = ICONE_AGRANDIR;
         L.DomEvent.disableClickPropagation(box);
         L.DomEvent.on(a, 'click', function (e) {
           L.DomEvent.preventDefault(e);
@@ -957,7 +1010,7 @@
           }
           var full = mapEl.classList.toggle('okia-map-fullscreen');
           document.body.classList.toggle('okia-map-has-fullscreen', full);
-          a.innerHTML = full ? '✕' : '⛶';
+          a.innerHTML = full ? '✕' : ICONE_AGRANDIR;
           a.title = full ? 'Quitter le plein écran' : 'Plein écran';
           // Let the layout settle, then tell Leaflet its size changed.
           setTimeout(function () { map.invalidateSize(); }, 60);
@@ -1356,6 +1409,7 @@
       hideRedundantSecondImage(container);
       watchImages(container);                                     // 5 drop images that fail
       attachImageZoom(container);                                 // tap image → full-screen
+      poserBoutonsAgrandir(container);                            // ⤢ sur chaque objet agrandissable
       clearSearch();
       applyFontScale();                                           // keep chosen size across renders
       buildTOC(container);                                        // headings -> ids + TOC
@@ -1392,6 +1446,7 @@
     renderLeafletMaps(container);
     watchImages(container);
     attachImageZoom(container);
+    poserBoutonsAgrandir(container);
     return renderMermaid(container, '');
   }
 
@@ -1622,7 +1677,8 @@
       var b = boite(e); if (b[1] - b[0] > 0) visuels.push(b);
     });
     // Le cadre d'un diagramme compte aussi : sans lui, la coupe tombait entre le cadre et le dessin.
-    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre, hr'), function (e) {
+    // La pastille plein écran déborde au-dessus de son cadre : la coupe ne la tranche pas non plus.
+    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map, tr, pre, hr, .okia-agrandir'), function (e) {
       var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
     });
     Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
@@ -2150,6 +2206,7 @@
 
   // Returns a Promise of an array of block objects.
   function exportModel(container) {
+    retirerBoutonsAgrandir(container);
     var tasks = [];     // async image tasks
     var blocks = [];
     var kids = Array.prototype.slice.call(container.children);

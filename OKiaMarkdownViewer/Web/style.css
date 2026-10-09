@@ -191,24 +191,48 @@ pre {
 pre code { background: none; padding: 0; }
 /* Un bloc de texte (la chronologie d'un rapport…) s'agrandit d'un toucher, comme un diagramme. */
 pre:not(.mermaid) { position: relative; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
-pre:not(.mermaid)::after {
-  content: "⤢";
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 0.9rem;
-  color: var(--gris);
-  background: var(--card-bg);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  width: 24px;
-  height: 24px;
-  line-height: 22px;
-  text-align: center;
-  opacity: 0.85;
-  font-family: var(--font-body);
-}
 table { cursor: zoom-in; }
+
+/* Ce qui s'ouvre en plein écran le dit : une pastille de verre au coin haut droit, à l'accent
+   du thème — diagramme, image, chronologie, tableau. Elle chevauche le bord du cadre, comme un
+   badge : elle ne cache ni texte ni dessin, et n'ajoute aucune marge. Le bouton est dans une
+   enveloppe qui ne défile pas : un bloc qui défile en largeur l'emportait sinon avec son texte. */
+.okia-agrandissable { position: relative; display: block; }
+.okia-agrandissable-image { width: fit-content; max-width: 100%; margin: 1em auto; }
+.okia-agrandissable-image > img { margin: 0; }
+.okia-agrandir {
+  position: absolute;
+  top: -16px;
+  right: 10px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.8);
+  backdrop-filter: blur(12px) saturate(1.8);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .14), inset 0 1px 0 rgba(255, 255, 255, .5);
+  color: var(--accent);
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.okia-agrandir:active { transform: scale(.92); }
+.okia-agrandir svg { display: block; pointer-events: none; }
+/* Une image n'a pas de cadre à chevaucher : la pastille se pose dans son coin. */
+.okia-agrandissable-image > .okia-agrandir { top: 8px; right: 8px; }
+/* Page de droite du livre : la pastille passe à gauche de l'objet, loin de l'heure et du bord. */
+html.okia-livre-droite .okia-agrandir { right: auto; left: 10px; }
+html.okia-livre-droite .okia-agrandissable-image > .okia-agrandir { right: auto; left: 8px; }
+/* Le cadre d'un diagramme coupe ce qui dépasse : la pastille y reste visible en entier. */
+pre.mermaid[data-rendered="1"] { overflow: visible; }
+.okia-map .okia-fs-control a { display: flex; align-items: center; justify-content: center; color: var(--accent); }
 
 img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 1em auto; }
 img.okia-zoomable { cursor: zoom-in; }
@@ -394,22 +418,6 @@ pre.mermaid svg {
   margin: auto;
 }
 /* Subtle "tap to zoom" affordance, like the ok-ia.ch lightbox cue */
-pre.mermaid[data-rendered="1"]::after {
-  content: "⤢";
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  font-size: 0.95rem;
-  color: var(--gris);
-  background: var(--card-bg);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  width: 26px;
-  height: 26px;
-  line-height: 24px;
-  text-align: center;
-  opacity: 0.85;
-}
 pre.mermaid.mermaid-error {
   cursor: default;
   text-align: left;
@@ -750,7 +758,8 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   .okia-fs-control { display: none !important; }
 
   /* The "tap to zoom" badge on diagrams is an affordance, not content. */
-  pre.mermaid[data-rendered="1"]::after, pre:not(.mermaid)::after { display: none !important; }
+  .okia-agrandir { display: none !important; }
+
   pre.mermaid { cursor: auto; }
 
   a { color: var(--fg); text-decoration: underline; }
