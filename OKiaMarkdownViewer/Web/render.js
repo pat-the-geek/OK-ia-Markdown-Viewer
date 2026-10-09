@@ -1748,13 +1748,15 @@
 
   // Cache ce qui dépasse la page : le haut de la page suivante, sous la dernière ligne entière.
   // haut, marge : la page commence à `haut`, sous une bande de `marge` points (Patrick : un peu
-  // d'air en haut de page) ; la fin de la page précédente, qui tombe dans cette bande, est cachée.
+  // d'air en haut de page). Tout ce qui est au-dessus est caché, et pas seulement la bande : sur
+  // iPad, la barre de l'heure reste affichée, et la fin de la page précédente se lisait dessous.
   function cacheLivre(depuis, H, haut, marge) {
     var c = document.getElementById('okia-cache-livre'), t = document.getElementById('okia-cache-haut');
     if (depuis == null) { if (c) c.remove(); if (t) t.remove(); return; }
     if (haut > 0 && marge > 0) {
       if (!t) { t = document.createElement('div'); t.id = 'okia-cache-haut'; document.body.appendChild(t); }
-      t.style.cssText = 'position:absolute;left:0;right:0;top:' + (haut - marge) + 'px;height:' + marge +
+      var dessus = Math.max(0, haut - marge - 300);
+      t.style.cssText = 'position:absolute;left:0;right:0;top:' + dessus + 'px;height:' + (haut - dessus) +
         'px;background:var(--bg);z-index:2147483000;';
     } else if (t) { t.remove(); }
     if (depuis < 0) { if (c) c.remove(); return; }

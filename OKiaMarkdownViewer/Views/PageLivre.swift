@@ -191,10 +191,9 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         attente?.cancel()
         for (vue, g) in gestes { vue.removeGestureRecognizer(g) }
         gestes = []
-        coins.forEach { $0.removeFromSuperview() }
-        coins = []
         for vue in [gauche, droite].compactMap({ $0 }) {
             vue.scrollView.isScrollEnabled = true
+            vue.scrollView.backgroundColor = .clear
             // La largeur du livre pouvait dépasser la page devenue plus étroite : le texte gardait
             // un décalage horizontal et sortait coupé à gauche.
             vue.scrollView.contentOffset.x = 0
@@ -226,6 +225,7 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         let h = floor(min(visible(g), visible(d))) - Self.margeHaut
         guard h > 100 else { return }
         let lu = debut(2 * planche)
+        teindreFond(g, d)
         g.evaluateJavaScript("window.OKIA ? window.OKIA.coupuresLivre(\(Int(h))) : [0]") { [weak self] r, _ in
             guard let self else { return }
             let liste = (r as? [NSNumber])?.map { CGFloat($0.doubleValue) } ?? [0]
@@ -236,6 +236,22 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
             while 2 * (k + 1) < self.coupes.count, self.coupes[2 * (k + 1)] <= lu + 1 { k += 1 }
             self.planche = k
             self.afficher(anime: false)
+        }
+    }
+
+    /// Le fond du livre, celui de la page (thème, jour ou nuit) : au-dessus du début du document,
+    /// la vue web transparente laissait voir le noir de la fenêtre — une bande noire sous la barre
+    /// de l'heure sur iPad.
+    private func teindreFond(_ g: WKWebView, _ d: WKWebView) {
+        g.evaluateJavaScript("getComputedStyle(document.body).backgroundColor") { r, _ in
+            guard let css = r as? String else { return }
+            let n = css.split(whereSeparator: { !"0123456789.".contains($0) }).compactMap { Double($0) }
+            guard n.count >= 3 else { return }
+            let a = n.count >= 4 ? n[3] : 1
+            guard a > 0.5 else { return }
+            let c = UIColor(red: n[0] / 255, green: n[1] / 255, blue: n[2] / 255, alpha: 1)
+            g.scrollView.backgroundColor = c
+            d.scrollView.backgroundColor = c
         }
     }
 
@@ -253,21 +269,6 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)), \(Int(debut(pd))), \(m))")
         g.scrollView.contentOffset.y = debut(pg) - g.scrollView.adjustedContentInset.top - Self.margeHaut
         d.scrollView.contentOffset.y = debut(pd) - d.scrollView.adjustedContentInset.top - Self.margeHaut
-        poserCoins()
-    }
-
-    // MARK: Les coins cornés
-
-    /// Un coin légèrement corné dit qu'on peut tourner, et dans quel sens : en bas à droite de la
-    /// page de droite s'il y a une suite, en bas à gauche de la page de gauche s'il y a un avant.
-    private var coins: [UIView] = []
-
-    private func poserCoins() {
-        coins.forEach { $0.removeFromSuperview() }
-        coins = []
-        guard let g = gauche, let d = droite else { return }
-        if 2 * (planche + 1) < coupes.count { coins.append(CoinCorne.poser(sur: d, aDroite: true)) }
-        if planche > 0 { coins.append(CoinCorne.poser(sur: g, aDroite: false)) }
     }
 
     // MARK: La page qui tourne
@@ -602,62 +603,4 @@ private final class Pas: NSObject {
     let action: (CADisplayLink) -> Void
     init(_ action: @escaping (CADisplayLink) -> Void) { self.action = action }
     @objc func tic(_ lien: CADisplayLink) { action(lien) }
-}
-
-/// Le coin corné d'une page : le coin est replié vers l'intérieur, son revers un peu plus pâle,
-/// avec une ombre sous le pli ; à sa place, le dessous de la page, un ton plus sombre.
-private final class CoinCorne: UIView {
-    let aDroite: Bool
-    static let cote: CGFloat = 30
-
-    init(aDroite: Bool) {
-        self.aDroite = aDroite
-        super.init(frame: .zero)
-        isOpaque = false
-        isUserInteractionEnabled = false
-        backgroundColor = .clear
-    }
-    required init?(coder: NSCoder) { fatalError() }
-
-    static func poser(sur vue: UIView, aDroite: Bool) -> UIView {
-        let c = CoinCorne(aDroite: aDroite)
-        let b = vue.bounds
-        c.frame = CGRect(x: aDroite ? b.maxX - cote : b.minX, y: b.maxY - cote, width: cote, height: cote)
-        c.autoresizingMask = aDroite ? [.flexibleLeftMargin, .flexibleTopMargin] : [.flexibleRightMargin, .flexibleTopMargin]
-        vue.addSubview(c)
-        return c
-    }
-
-    override func draw(_ rect: CGRect) {
-        guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        let s = bounds.width
-        // Coin bas-droit ; le coin bas-gauche en est le miroir.
-        if !aDroite { ctx.translateBy(x: s, y: 0); ctx.scaleBy(x: -1, y: 1) }
-        let sombre = traitCollection.userInterfaceStyle == .dark
-        // Le coin replié laisse voir ce qu'il y a dessous : le fond, un ton plus sombre.
-        let dessous = UIBezierPath()
-        dessous.move(to: CGPoint(x: s, y: 0)); dessous.addLine(to: CGPoint(x: s, y: s))
-        dessous.addLine(to: CGPoint(x: 0, y: s)); dessous.close()
-        (sombre ? UIColor(white: 0.05, alpha: 1) : UIColor(white: 0.80, alpha: 1)).setFill()
-        dessous.fill()
-        // Le revers du coin, replié par-dessus la page, avec son ombre.
-        let revers = UIBezierPath()
-        revers.move(to: CGPoint(x: s, y: 0)); revers.addLine(to: CGPoint(x: 0, y: s))
-        revers.addLine(to: CGPoint(x: 0, y: 0)); revers.close()
-        ctx.saveGState()
-        ctx.setShadow(offset: CGSize(width: -1.5, height: -1.5), blur: 4,
-                      color: UIColor.black.withAlphaComponent(0.28).cgColor)
-        (sombre ? UIColor(white: 0.22, alpha: 1) : UIColor(white: 0.97, alpha: 1)).setFill()
-        revers.fill()
-        ctx.restoreGState()
-        // Un léger dégradé le long du pli : le papier s'arrondit.
-        ctx.saveGState()
-        revers.addClip()
-        let degrade = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                 colors: [UIColor.black.withAlphaComponent(0.12).cgColor,
-                                          UIColor.black.withAlphaComponent(0).cgColor] as CFArray,
-                                 locations: [0, 1])!
-        ctx.drawLinearGradient(degrade, start: CGPoint(x: s / 2, y: s / 2), end: CGPoint(x: 0, y: 0), options: [])
-        ctx.restoreGState()
-    }
 }

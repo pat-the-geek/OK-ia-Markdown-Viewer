@@ -149,13 +149,15 @@ struct ReaderView: View {
                 secondePartie(panneau)
                     .frame(width: max(320, tailleEcran.width * 0.4))
             } else if modeLivre {
-                // Le livre sur grand écran en paysage : la page de droite prend la moitié.
+                // Le livre sur grand écran en paysage : la page de droite prend la moitié. Elle passe
+                // sous la barre de l'heure comme celle de gauche : les deux pages commencent à la
+                // même hauteur, et l'iPad n'y montre plus une bande noire.
                 PageLivre(livre: livre, surPret: { demarrerLivre() },
                           surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
                               surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
                               surCarte: { tappedCarte = $0 })
                     .frame(width: tailleEcran.width / 2)
-                    .ignoresSafeArea(edges: [.bottom, .horizontal])
+                    .ignoresSafeArea(edges: [.top, .bottom, .horizontal])
             }
         }
         .onChange(of: modeLivre) { _, actif in
