@@ -230,20 +230,28 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         let cache: UIView
         let scene: CALayer
         let page: CATransformLayer
-        let ombre: CALayer
-        let ombreDos: CALayer
+        /// La page en bandes verticales, chacune articulée sur la précédente : de la charnière au
+        /// bord libre. Elles se courbent l'une après l'autre, et la page plie comme une feuille.
+        let bandes: [Bande]
         /// L'ombre que la page levée jette sur la page qu'elle découvre, ou sur celle où elle va se poser.
         let ombrePortee: CAGradientLayer
         let cadre: CGRect
         var avancement: CGFloat = 0
         init(sens: Int, leve: WKWebView, reste: WKWebView, cache: UIView, scene: CALayer,
-             page: CATransformLayer, ombre: CALayer, ombreDos: CALayer,
+             page: CATransformLayer, bandes: [Bande],
              ombrePortee: CAGradientLayer, cadre: CGRect) {
             self.sens = sens; self.leve = leve; self.reste = reste; self.cache = cache
-            self.scene = scene; self.page = page; self.ombre = ombre; self.ombreDos = ombreDos
+            self.scene = scene; self.page = page; self.bandes = bandes
             self.ombrePortee = ombrePortee; self.cadre = cadre
         }
     }
+
+    private struct Bande {
+        let couche: CATransformLayer
+        let ombre: CALayer
+        let ombreDos: CALayer
+    }
+    private static let nombreDeBandes = 14
 
     private var tour: Tour?
     private var enPreparation = false
@@ -376,23 +384,50 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         page.anchorPoint = CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
         page.position = CGPoint(x: sens > 0 ? cadre.minX : cadre.maxX, y: cadre.midY)
 
-        func face(_ image: UIImage, retournee: Bool) -> (CALayer, CALayer) {
-            let f = CALayer()
-            f.frame = page.bounds
-            f.contents = image.cgImage
-            f.contentsGravity = .resize
-            f.isDoubleSided = false
-            if retournee { f.transform = CATransform3DMakeRotation(.pi, 0, 1, 0) }
-            let o = CALayer()
-            o.frame = f.bounds
-            o.backgroundColor = UIColor.black.cgColor
-            o.opacity = 0
-            f.addSublayer(o)
-            page.addSublayer(f)
-            return (f, o)
+        // Les bandes, de la charnière vers le bord libre. Chacune porte sa part du recto et, au dos,
+        // sa part du verso — retournée, puisque la page se posera de l'autre côté de la pliure.
+        let n = Self.nombreDeBandes, largeur = cadre.width / CGFloat(n), h = cadre.height
+        var bandes: [Bande] = []
+        var parent: CALayer = page
+        for i in 0..<n {
+            let b = CATransformLayer()
+            b.bounds = CGRect(x: 0, y: 0, width: largeur, height: h)
+            b.anchorPoint = CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
+            if i == 0 {
+                b.position = CGPoint(x: sens > 0 ? 0 : cadre.width, y: h / 2)
+            } else {
+                b.position = CGPoint(x: sens > 0 ? largeur : 0, y: h / 2)
+            }
+            // La part de l'image : en avant, la i-ième bande depuis la gauche du recto ; en
+            // arrière, depuis sa droite. Le verso, lui, se lit dans l'autre sens.
+            let x0 = CGFloat(i) / CGFloat(n), x1 = CGFloat(i + 1) / CGFloat(n)
+            let partRecto = sens > 0 ? CGRect(x: x0, y: 0, width: x1 - x0, height: 1)
+                                     : CGRect(x: 1 - x1, y: 0, width: x1 - x0, height: 1)
+            let partVerso = sens > 0 ? CGRect(x: 1 - x1, y: 0, width: x1 - x0, height: 1)
+                                     : CGRect(x: x0, y: 0, width: x1 - x0, height: 1)
+            func face(_ image: UIImage, _ part: CGRect, retournee: Bool) -> CALayer {
+                let f = CALayer()
+                // Un demi-point de recouvrement : sans lui, un fil de jour passait entre deux bandes.
+                f.frame = b.bounds.insetBy(dx: -0.5, dy: 0)
+                f.contents = image.cgImage
+                f.contentsRect = part
+                f.contentsGravity = .resize
+                f.isDoubleSided = false
+                if retournee { f.transform = CATransform3DMakeRotation(.pi, 0, 1, 0) }
+                let o = CALayer()
+                o.frame = f.bounds
+                o.backgroundColor = UIColor.black.cgColor
+                o.opacity = 0
+                f.addSublayer(o)
+                b.addSublayer(f)
+                return o
+            }
+            let ombre = face(recto, partRecto, retournee: false)
+            let ombreDos = face(verso, partVerso, retournee: true)
+            parent.addSublayer(b)
+            bandes.append(Bande(couche: b, ombre: ombre, ombreDos: ombreDos))
+            parent = b
         }
-        let (_, ombre) = face(recto, retournee: false)
-        let (_, ombreDos) = face(verso, retournee: true)
         // L'ombre portée : une bande dégradée au pied du bord libre de la page, sous elle.
         let ombrePortee = CAGradientLayer()
         ombrePortee.startPoint = CGPoint(x: 0, y: 0.5)
@@ -402,7 +437,7 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         scene.addSublayer(page)
         fenetre.layer.addSublayer(scene)
         return Tour(sens: sens, leve: leve, reste: reste, cache: cache, scene: scene, page: page,
-                    ombre: ombre, ombreDos: ombreDos, ombrePortee: ombrePortee, cadre: cadre)
+                    bandes: bandes, ombrePortee: ombrePortee, cadre: cadre)
     }
 
     /// p : de 0 (à plat, du côté de départ) à 1 (posée de l'autre côté).
@@ -410,16 +445,32 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         t.avancement = p
-        t.page.transform = CATransform3DMakeRotation((t.sens > 0 ? -1 : 1) * .pi * p, 0, 1, 0)
-        // La lumière : la page s'assombrit en se levant, son verso s'éclaire en se posant.
-        t.ombre.opacity = Float(p < 0.5 ? 0.36 * p : 0.18)
-        t.ombreDos.opacity = Float(p > 0.5 ? 0.36 * (1 - p) : 0.18)
+        // La courbure : nulle à plat, plus forte page dressée. Le bord libre, qu'on tient, va devant ;
+        // la partie près de la pliure suit — la feuille se plie au lieu de pivoter d'un bloc. Les
+        // angles des bandes vont de θ − c/2 à θ + c/2, bornés à [0, π].
+        let n = t.bandes.count, theta = CGFloat.pi * p
+        let c = 1.25 * sin(.pi * p)
+        let signe: CGFloat = t.sens > 0 ? -1 : 1
+        var precedent: CGFloat = 0
+        var bordX: CGFloat = 0
+        let pas = t.cadre.width / CGFloat(n)
+        for (i, b) in t.bandes.enumerated() {
+            let f = (CGFloat(i) + 0.5) / CGFloat(n) - 0.5
+            let phi = min(.pi, max(0, theta + c * f))
+            b.couche.transform = CATransform3DMakeRotation(signe * (phi - precedent), 0, 1, 0)
+            precedent = phi
+            // La lumière suit la pente de chaque bande : le recto s'assombrit en se détournant, le
+            // verso s'éclaire en se posant.
+            b.ombre.opacity = Float(0.34 * (1 - cos(phi)) / 2)
+            b.ombreDos.opacity = Float(0.34 * (1 + cos(phi)) / 2)
+            bordX += pas * cos(phi)
+        }
         // Le bord libre de la page, vu d'en haut, et l'ombre qui tombe juste à côté, du côté qu'il
         // découvre (avant la moitié) ou qu'il recouvre (après). Plus la page est levée, plus
         // l'ombre est large et soutenue.
-        let w = t.cadre.width, levee = sin(.pi * p)
+        let levee = sin(.pi * p)
         let charniere = t.sens > 0 ? t.cadre.minX : t.cadre.maxX
-        let bord = charniere + (t.sens > 0 ? 1 : -1) * w * cos(.pi * p)
+        let bord = charniere + (t.sens > 0 ? 1 : -1) * bordX
         let largeur = 24 + 90 * levee
         // Vers où l'ombre s'étend depuis le bord : loin de la charnière avant la moitié, vers elle après.
         let versLaDroite = (t.sens > 0) == (p < 0.5)
