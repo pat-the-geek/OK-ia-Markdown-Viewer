@@ -592,8 +592,9 @@ body.present-chantier { --chantier-fond: #EEEEF1; }
   gap: 16px;
   align-content: start;
   background: var(--chantier-fond);
-  padding: 16px max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom))
-           max(16px, env(safe-area-inset-left));
+  /* Pas de marge du système sur les côtés : sur le Duo, la colonne de l'heure n'occupe que le
+     haut, où se trouve l'en-tête ; les vignettes passent dessous. */
+  padding: 16px 16px max(24px, env(safe-area-inset-bottom)) 16px;
 }
 .chantier-item {
   transition: opacity 0.5s ease, transform 0.5s ease;

@@ -178,6 +178,11 @@ private struct ZoomWebView: UIViewRepresentable {
                 padding:24px;box-sizing:border-box;}
           .wrap svg{max-width:100%;height:auto;display:block;}
           .wrap img{max-width:100%;max-height:100%;height:auto;display:block;border-radius:8px;}
+          /* Un bloc de texte agrandi — chronologie, tableau : en entier, sans retour à la ligne. */
+          .okia-zoom-bloc{max-width:none;margin:0;padding:0;font-size:17px;}
+          .okia-zoom-bloc pre{white-space:pre;overflow:visible;margin:0;cursor:auto;}
+          .okia-zoom-bloc pre::after{content:none;}
+          .okia-zoom-bloc table{width:auto;margin:0;cursor:auto;}
         </style></head>
         <body><div class="wrap">\(bodyHTML)</div></body></html>
         """

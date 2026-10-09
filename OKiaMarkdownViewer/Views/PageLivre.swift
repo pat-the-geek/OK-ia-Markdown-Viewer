@@ -43,6 +43,9 @@ struct PageLivre: UIViewRepresentable {
     var surPret: () -> Void
     /// Un toucher sur la page : comme à gauche, il montre ou efface la barre.
     var surToucher: () -> Void = {}
+    /// Un diagramme, un bloc ou une image touché : il s'ouvre en plein écran, comme à gauche.
+    var surDiagramme: (TappedDiagram) -> Void = { _ in }
+    var surImage: (TappedImage) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -50,6 +53,8 @@ struct PageLivre: UIViewRepresentable {
         let controller = WKUserContentController()
         controller.add(context.coordinator, name: "ready")
         controller.add(context.coordinator, name: "tapPage")
+        controller.add(context.coordinator, name: "diagramTapped")
+        controller.add(context.coordinator, name: "imageTapped")
         controller.addUserScript(WKUserScript(
             source: "window.OKIA_LANG = '\(Localization.shared.code)';",
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -77,6 +82,12 @@ struct PageLivre: UIViewRepresentable {
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
             if message.name == "tapPage" { parent.surToucher(); return }
+            if message.name == "diagramTapped", let d = message.body as? [String: Any], let svg = d["svg"] as? String {
+                parent.surDiagramme(TappedDiagram(svg: svg, title: (d["title"] as? String) ?? "")); return
+            }
+            if message.name == "imageTapped", let d = message.body as? [String: Any], let src = d["src"] as? String {
+                parent.surImage(TappedImage(src: src)); return
+            }
             guard message.name == "ready" else { return }
             parent.livre.estPret()
             parent.surPret()
@@ -130,6 +141,9 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         coins = []
         for vue in [gauche, droite].compactMap({ $0 }) {
             vue.scrollView.isScrollEnabled = true
+            // La largeur du livre pouvait dépasser la page devenue plus étroite : le texte gardait
+            // un décalage horizontal et sortait coupé à gauche.
+            vue.scrollView.contentOffset.x = 0
             vue.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(null)")
         }
         gauche = nil

@@ -74,6 +74,13 @@ final class ReaderWebController: ObservableObject {
         }
     }
 
+    private(set) var margeOutils = 0
+
+    func setMargeOutils(_ px: CGFloat) {
+        margeOutils = Int(px.rounded())
+        eval("window.OKIA && window.OKIA.setMargeOutils(\(margeOutils))")
+    }
+
     func setLargeurLivre(_ largeur: CGFloat) {
         eval("window.OKIA && window.OKIA.setLargeurLivre(\(Int(largeur.rounded())), 'gauche')")
     }
@@ -85,7 +92,7 @@ final class ReaderWebController: ObservableObject {
     /// L'expression JavaScript qui pose le thème — et la largeur libérée sur le Duo — à placer
     /// devant l'appel de rendu, séparée par une virgule : c'est une expression, pas une instruction.
     var themeScript: String {
-        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibreArguments))"
+        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibreArguments)), window.OKIA.setMargeOutils(\(margeOutils))"
     }
 
     // MARK: TOC

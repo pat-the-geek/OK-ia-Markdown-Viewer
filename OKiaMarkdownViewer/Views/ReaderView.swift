@@ -111,12 +111,16 @@ struct ReaderView: View {
                     secondePartie(panneau)
                 } else if modeLivre {
                     PageLivre(livre: livre, surPret: { demarrerLivre() },
-                              surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } })
+                              surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
+                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 })
                         .ignoresSafeArea(edges: [.bottom, .horizontal])
                 }
             }
             .arrangementViewStyle(.split)
-            .onChange(of: modeLivre) { _, actif in if actif { demarrerLivre() } else { arreterLivre() } }
+            .onChange(of: modeLivre) { _, actif in
+                poserCoinLibre()
+                if actif { demarrerLivre() } else { arreterLivre() }
+            }
             // La barre qui part ou revient change la largeur de la page de gauche : on réaligne.
             .onChange(of: barreLivreVisible) { _, _ in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { demarrerLivre() }
@@ -145,12 +149,16 @@ struct ReaderView: View {
             } else if modeLivre {
                 // Le livre sur grand écran en paysage : la page de droite prend la moitié.
                 PageLivre(livre: livre, surPret: { demarrerLivre() },
-                          surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } })
+                          surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
+                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 })
                     .frame(width: tailleEcran.width / 2)
                     .ignoresSafeArea(edges: [.bottom, .horizontal])
             }
         }
-        .onChange(of: modeLivre) { _, actif in if actif { demarrerLivre() } else { arreterLivre() } }
+        .onChange(of: modeLivre) { _, actif in
+                poserCoinLibre()
+                if actif { demarrerLivre() } else { arreterLivre() }
+            }
         .onChange(of: barreLivreVisible) { _, _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { demarrerLivre() }
         }
@@ -624,6 +632,9 @@ struct ReaderView: View {
     /// système lui donne. Le coin, lui, rognait le titre et les images : de la place perdue.
     private func poserCoinLibre() {
         web.setCoinLibre(largeur: 0, hauteur: 0)
+        // Sur le Duo, barre visible, la page passe sous la colonne du système et n'en garde que
+        // la place des boutons de verre (44 points et leur respiration) ; le livre gère la sienne.
+        web.setMargeOutils(appareilPliable && !modeLivre ? 52 : 0)
     }
 
     /// L'écran a-t-il la place de deux parties ? Le Duo déplié, de part et d'autre de sa pliure ;

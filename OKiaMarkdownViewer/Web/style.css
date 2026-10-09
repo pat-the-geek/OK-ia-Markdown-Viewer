@@ -89,6 +89,8 @@ body {
 /* Mode livre (Duo partiellement replié) : les deux pages prennent la même largeur de texte,
    pour que la page de droite reprenne exactement là où s'arrête celle de gauche. */
 html.okia-livre .markdown-body { width: var(--okia-livre-l); max-width: none; }
+/* Duo, barre visible : la colonne du système ne garde que la place des boutons de verre. */
+html.okia-marge-outils body { padding-left: 0; padding-right: var(--okia-marge-outils); }
 html.okia-livre-gauche .markdown-body { margin: 0 0 0 auto; }
 /* La page de gauche va jusqu'à la pliure : la colonne que le système garde à droite n'y porte
    plus que le bouton de recherche, qui flotte en verre sur le texte. */
@@ -170,6 +172,26 @@ pre {
   border: 1px solid var(--rule);
 }
 pre code { background: none; padding: 0; }
+/* Un bloc de texte (la chronologie d'un rapport…) s'agrandit d'un toucher, comme un diagramme. */
+pre:not(.mermaid) { position: relative; cursor: zoom-in; -webkit-tap-highlight-color: transparent; }
+pre:not(.mermaid)::after {
+  content: "⤢";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.9rem;
+  color: var(--gris);
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  line-height: 22px;
+  text-align: center;
+  opacity: 0.85;
+  font-family: var(--font-body);
+}
+table { cursor: zoom-in; }
 
 img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 1em auto; }
 img.okia-zoomable { cursor: zoom-in; }
@@ -711,7 +733,7 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   .okia-fs-control { display: none !important; }
 
   /* The "tap to zoom" badge on diagrams is an affordance, not content. */
-  pre.mermaid[data-rendered="1"]::after { display: none !important; }
+  pre.mermaid[data-rendered="1"]::after, pre:not(.mermaid)::after { display: none !important; }
   pre.mermaid { cursor: auto; }
 
   a { color: var(--fg); text-decoration: underline; }

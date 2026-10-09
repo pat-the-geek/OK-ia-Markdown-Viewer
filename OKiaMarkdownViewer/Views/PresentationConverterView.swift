@@ -47,7 +47,7 @@ struct PresentationConverterView: View {
                         ChantierWebView(diapositives: conversion.diapositives,
                                         markdownFinal: conversion.markdownFinal,
                                         prevues: conversion.prevues)
-                            .ignoresSafeArea(edges: .bottom)
+                            .ignoresSafeArea(edges: [.bottom, .horizontal])
                     }
                 }
             }

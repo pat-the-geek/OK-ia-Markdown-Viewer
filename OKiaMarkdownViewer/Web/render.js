@@ -703,13 +703,12 @@
   /* =========================================================================
      MERMAID rendering
      ========================================================================= */
+  // Le toucher qui agrandit est délégué au document (voir « Plein écran », plus bas) : la page
+  // de droite du livre est une copie du DOM, sans écouteurs — seul un écouteur sur le document
+  // y fonctionne aussi.
   function attachZoom(pre, title) {
     pre.setAttribute('data-rendered', '1');
-    pre.addEventListener('click', function () {
-      var svg = pre.querySelector('svg');
-      if (!svg) return;
-      post('diagramTapped', { svg: svg.outerHTML, title: title || '' });
-    });
+    pre.setAttribute('data-okia-titre', title || '');
   }
 
   /* Make content images tappable → open full-screen in a native zoom view.
@@ -721,12 +720,37 @@
       if (img.getAttribute('data-okia-zoom') === '1') return;
       img.setAttribute('data-okia-zoom', '1');
       img.classList.add('okia-zoomable');
-      img.addEventListener('click', function () {
-        if (img.style.display === 'none') return;
-        post('imageTapped', { src: img.currentSrc || img.src });
-      });
     });
   }
+
+  /* Plein écran — un seul écouteur, sur le document : diagrammes, images, et aussi les blocs de
+     texte qu'on lit mieux en grand, la chronologie d'un rapport (un bloc de code) et les
+     tableaux. Il marche aussi dans la page de droite du livre, copie sans écouteurs. */
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (e.defaultPrevented || !t || !t.closest) return;
+    if (t.closest('a, button, input, select, textarea, summary, sup.fn-ref, .okia-map, .fn-apercu')) return;
+    if (window.getSelection && String(window.getSelection()).length) return;
+    var diagramme = t.closest('pre.mermaid[data-rendered="1"]');
+    if (diagramme) {
+      var svg = diagramme.querySelector('svg');
+      if (svg) post('diagramTapped', { svg: svg.outerHTML, title: diagramme.getAttribute('data-okia-titre') || '' });
+      return;
+    }
+    var img = t.closest('img.okia-zoomable');
+    if (img) {
+      if (img.style.display !== 'none') post('imageTapped', { src: img.currentSrc || img.src });
+      return;
+    }
+    var bloc = t.closest('pre:not(.mermaid), table');
+    if (bloc) {
+      var titre = '', avant = bloc.previousElementSibling;
+      while (avant && !/^H[1-6]$/.test(avant.tagName)) avant = avant.previousElementSibling;
+      if (avant) titre = avant.textContent.trim();
+      post('diagramTapped', { svg: '<div class="markdown-body okia-zoom-bloc">' + bloc.outerHTML + '</div>',
+                              title: titre });
+    }
+  });
 
   /* Final contrast guard: after the OK-ia theme/recolor runs, force every node
      and cluster label to contrast with ITS OWN rendered fill. This fixes cases
@@ -1487,6 +1511,20 @@
 
   // cote : « gauche » cale le texte contre la pliure, à droite de sa page ; « droite », à gauche.
   // Le blanc que laisse la page la plus large part vers le bord, pas au milieu du livre.
+  // Duo, barre visible : la page passe sous la colonne que le système réserve et n'en garde que
+  // la place des boutons de verre — px, du côté de la colonne. 0 rend la marge ordinaire.
+  function setMargeOutils(px) {
+    var racine = document.documentElement;
+    if (px > 0) {
+      racine.classList.add('okia-marge-outils');
+      racine.style.setProperty('--okia-marge-outils', px + 'px');
+    } else {
+      racine.classList.remove('okia-marge-outils');
+      racine.style.removeProperty('--okia-marge-outils');
+    }
+    if (typeof window.scrollTo === 'function') window.scrollTo(0, window.scrollY);
+  }
+
   function setLargeurLivre(px, cote) {
     var racine = document.documentElement;
     racine.classList.remove('okia-livre-gauche', 'okia-livre-droite');
@@ -2886,6 +2924,7 @@
     poserMiroir: poserMiroir,
     largeurNaturelle: largeurNaturelle,
     setLargeurLivre: setLargeurLivre,
+    setMargeOutils: setMargeOutils,
     coupuresLivre: coupuresLivre,
     cacheLivre: cacheLivre,
     scrollToHeading: scrollToHeading,
@@ -2914,7 +2953,7 @@
     var t = e.target;
     if (e.defaultPrevented || !t || !t.closest) return;
     if (t.closest('a, img, button, input, select, textarea, summary, table, .okia-map, ' +
-                  'pre.mermaid, sup.fn-ref, .fn-apercu, .ner-legend')) return;
+                  'pre, sup.fn-ref, .fn-apercu, .ner-legend')) return;
     if (window.getSelection && String(window.getSelection()).length) return;
     post('tapPage', {});
   });
