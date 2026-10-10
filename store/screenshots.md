@@ -34,7 +34,8 @@ passe ne remplace que ses scènes. Sur le Mac, l'app se met en clair d'elle-mêm
 Debug), sans toucher au réglage de la machine. **Le résumé et la discussion du Mac sont générés en
 direct** : relire chaque réponse, et refaire une scène seule avec `SOLO=<scène>` si le modèle se
 trompe — il l'a fait en français, en espagnol et en italien (discussion) et en anglais (résumé).
-Le résumé espagnol garde, en tête, « alcanza niveles récord », qu'aucun essai n'a évité.
+Le résumé espagnol garde, en tête, « alcanza niveles récord », qu'aucun essai n'a évité ; Patrick
+a choisi de le garder (le reste du résumé est fidèle).
 
 **L'iPad en paysage, langue par langue** (fait le 09/10/2026 pour les cinq) : régler la langue
 (`simctl spawn <iPad> defaults write -g AppleLanguages -array <l>` et `AppleLocale`), redémarrer le
