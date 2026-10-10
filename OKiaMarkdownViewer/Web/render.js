@@ -1093,7 +1093,10 @@
       catch (e) { cfg = null; }
       if (!cfg) return;
       el.setAttribute('data-rendered', '1');
-      el.style.height = cfg.height || '420px';
+      // Une hauteur déjà posée est gardée : la page de droite du livre reconstruit la carte à la
+      // hauteur que le livre lui a donnée, et la config la remettait à 420 px — la carte, plus
+      // haute que prévu, était coupée entre deux pages.
+      if (!el.style.height) el.style.height = cfg.height || '420px';
 
       // Known offline (fornews.ai ships an airplane-mode case): say so instead of building
       // a map that can only show grey.
@@ -1578,8 +1581,10 @@
     document.addEventListener('load', imageChargee, true);
     observateurMiroir = new MutationObserver(function (changements) {
       // Ce qui se passe dans une carte (tuiles, marqueurs) ne change pas la page.
+      // La hauteur de la carte elle-même, que le livre ajuste, change la page, elle.
       var utile = changements.some(function (m) {
         var el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+        if (el && el.classList && el.classList.contains('okia-map') && m.attributeName === 'style') return true;
         return !(el && el.closest && el.closest('.okia-map'));
       });
       if (utile) envoyerMiroir();
@@ -1668,13 +1673,43 @@
     // Les réductions précédentes sont défaites, pour mesurer à neuf. Le résultat final est le
     // même d'une fois à l'autre : la copie envoyée à la page de droite ne change pas.
     Array.prototype.forEach.call(contenu.querySelectorAll('[data-okia-reduit]'), function (e) {
-      e.style.maxHeight = ''; e.style.width = ''; e.removeAttribute('data-okia-reduit');
+      if (e.classList.contains('okia-map')) e.style.height = e.getAttribute('data-okia-h0') + 'px';
+      else { e.style.maxHeight = ''; e.style.width = ''; }
+      e.removeAttribute('data-okia-reduit');
+    });
+    // Aucun élément graphique ne dépasse une page (Patrick) : une image ou un diagramme plus haut
+    // qu'elle était coupé en deux. Ils se réduisent, proportions gardées, à 85 % de la page.
+    // Le cadre d'un diagramme (marges, bord) compte dans la page : le dessin se réduit d'autant.
+    var plafondVisuel = Math.floor(H * 0.85);
+    Array.prototype.forEach.call(contenu.querySelectorAll('img, pre.mermaid svg'), function (e) {
+      if (e.closest('.okia-map')) return;
+      var h = e.getBoundingClientRect().height, cadre = e.closest('pre.mermaid');
+      var autour = cadre ? Math.max(0, cadre.getBoundingClientRect().height - h) : 0;
+      var plafond = plafondVisuel - autour;
+      if (h > plafond) {
+        e.style.maxHeight = plafond + 'px'; e.style.width = 'auto';
+        e.setAttribute('data-okia-reduit', '1');
+      }
+    });
+    // Une carte ne dépasse jamais une page (Patrick) : plus haute, elle était coupée entre deux
+    // pages. On zoome et on se déplace dedans : moins haute, elle ne perd rien.
+    Array.prototype.forEach.call(contenu.querySelectorAll('.okia-map'), function (e) {
+      if (!e.hasAttribute('data-okia-h0')) e.setAttribute('data-okia-h0', Math.round(e.getBoundingClientRect().height));
+      var h0 = parseFloat(e.getAttribute('data-okia-h0')) || 0, plafond = Math.floor(H * 0.8);
+      // Hauteur bord compris : sans quoi le cadre de la carte dépassait de deux points la place
+      // qu'on lui donnait, et elle repartait toujours à la page suivante.
+      e.style.boxSizing = 'border-box';
+      e.style.height = Math.min(h0, plafond) + 'px';
     });
     for (var essai = 0; essai < 60; essai++) {
       var r = calculerCoupes(contenu, H);
       if (!r.reduire) return r.coupes;
-      r.reduire.el.style.maxHeight = r.reduire.h + 'px';
-      r.reduire.el.style.width = 'auto';
+      if (r.reduire.el.classList.contains('okia-map')) {
+        r.reduire.el.style.height = r.reduire.h + 'px';
+      } else {
+        r.reduire.el.style.maxHeight = r.reduire.h + 'px';
+        r.reduire.el.style.width = 'auto';
+      }
       r.reduire.el.setAttribute('data-okia-reduit', '1');
     }
     return calculerCoupes(contenu, H).coupes;
@@ -1682,7 +1717,15 @@
 
   function calculerCoupes(contenu, H) {
     var sy = window.scrollY || 0, lignes = [], visuels = [], blocs = [], titres = [];
-    var marche = document.createTreeWalker(contenu, NodeFilter.SHOW_TEXT), r = document.createRange(), n;
+    // Le texte d'une carte (attribution, étiquettes, bulles cachées) n'est pas une ligne de la page :
+    // placé dans les calques de Leaflet, parfois hors du cadre, il retenait la coupe — la carte,
+    // pourtant réduite pour tenir, repartait à la page suivante. La carte compte d'un bloc.
+    var marche = document.createTreeWalker(contenu, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (t) {
+        var p = t.parentElement;
+        return p && p.closest('.okia-map') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      }
+    }), r = document.createRange(), n;
     while ((n = marche.nextNode())) {
       if (!n.nodeValue.trim()) continue;
       r.selectNodeContents(n);
@@ -1690,7 +1733,9 @@
       for (var i = 0; i < rs.length; i++) if (rs[i].height > 0) lignes.push([rs[i].top + sy, rs[i].bottom + sy]);
     }
     function boite(e) { var b = e.getBoundingClientRect(); return [b.top + sy, b.bottom + sy, e]; }
-    Array.prototype.forEach.call(contenu.querySelectorAll('img, pre.mermaid svg'), function (e) {
+    // Une carte se réduit aussi pour remplir le bas d'une page, comme une image.
+    Array.prototype.forEach.call(contenu.querySelectorAll('img, pre.mermaid svg, .okia-map'), function (e) {
+      if (e.tagName === 'IMG' && e.closest('.okia-map')) return;   // les marqueurs de la carte
       var b = boite(e); if (b[1] - b[0] > 0) visuels.push(b);
     });
     // Le cadre d'un diagramme compte aussi : sans lui, la coupe tombait entre le cadre et le dessin.
@@ -1704,8 +1749,18 @@
         '.fornews-bandeau, .fornews-horizon, [data-coupure], .fornews-medias'), function (e) {
       var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
     });
+    // Un titre reste sur la page de l'élément graphique qui le suit (Patrick) : on retient le haut
+    // de ce graphique, s'il y en a un juste après le titre.
+    var GRAPHIQUE = '.okia-map, pre, table, img, .okia-agrandissable, .fornews-frise, .fornews-deroule, ' +
+      '.fornews-agenda, .fornews-chiffres, .fornews-controle';
     Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
-      var b = boite(e); if (b[1] - b[0] > 0) titres.push(b);
+      var b = boite(e); if (!(b[1] - b[0] > 0)) return;
+      var suivant = e.nextElementSibling;
+      while (suivant && !suivant.textContent.trim() && !suivant.querySelector('img, svg, canvas') &&
+             !suivant.matches(GRAPHIQUE)) suivant = suivant.nextElementSibling;
+      var g = suivant && (suivant.matches(GRAPHIQUE) || suivant.querySelector(GRAPHIQUE)) ? boite(suivant)[0] : null;
+      b.push(g);
+      titres.push(b);
     });
     var cs = getComputedStyle(contenu);
     var ligne = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 17) * 1.6;
@@ -1717,7 +1772,8 @@
       // 1. Un visuel à cheval sur la coupe : réduit pour tenir, s'il en garde au moins la moitié.
       for (var v = 0; v < visuels.length; v++) {
         var t = visuels[v][0], b = visuels[v][1], h = b - t, reste = cible - t - 8;
-        if (t >= debut && t < cible - 0.5 && b > cible + 0.5 && reste >= h * 0.5 && reste >= 90) {
+        var plancher = visuels[v][2].classList && visuels[v][2].classList.contains('okia-map') ? 200 : 90;
+        if (t >= debut && t < cible - 0.5 && b > cible + 0.5 && reste >= h * 0.5 && reste >= plancher) {
           return { reduire: { el: visuels[v][2], h: Math.floor(reste) } };
         }
       }
@@ -1735,11 +1791,15 @@
       while (bouge) {
         bouge = false;
         for (var k = 0; k < titres.length; k++) {
-          var tt = titres[k][0], tb = titres[k][1];
+          var tt = titres[k][0], tb = titres[k][1], g = titres[k][3];
           if (tt > debut + H * 0.3 && tt < coupe - 0.5 && tb + ligne * 2 > coupe) { coupe = tt; bouge = true; }
+          // Son graphique passe à la page suivante : le titre le suit.
+          else if (g != null && tt > debut + ligne && tt < coupe - 0.5 && g >= coupe - 0.5) { coupe = tt; bouge = true; }
         }
       }
-      if (coupe <= debut + H * 0.3) coupe = cible;
+      // Repli : seule une page qui resterait vide coupe ce qui la chevauche. Avant, une coupe remontée
+      // dans le premier tiers de la page retombait sur la cible — et tranchait un graphique.
+      if (coupe <= debut + ligne) coupe = cible;
       coupes.push(Math.floor(coupe));
       debut = coupe;
     }
@@ -1752,7 +1812,20 @@
   // iPad, la barre de l'heure reste affichée, et la fin de la page précédente se lisait dessous.
   function cacheLivre(depuis, H, haut, marge) {
     var c = document.getElementById('okia-cache-livre'), t = document.getElementById('okia-cache-haut');
-    if (depuis == null) { if (c) c.remove(); if (t) t.remove(); return; }
+    if (depuis == null) {
+      if (c) c.remove(); if (t) t.remove();
+      // Hors du livre, cartes et images reprennent leur taille de lecture.
+      var tout = document.getElementById('content');
+      if (tout) {
+        Array.prototype.forEach.call(tout.querySelectorAll('[data-okia-reduit]'), function (e) {
+          e.style.maxHeight = ''; e.style.width = ''; e.removeAttribute('data-okia-reduit');
+        });
+        Array.prototype.forEach.call(tout.querySelectorAll('.okia-map[data-okia-h0]'), function (e) {
+          e.style.height = e.getAttribute('data-okia-h0') + 'px'; e.removeAttribute('data-okia-h0');
+        });
+      }
+      return;
+    }
     if (haut > 0 && marge > 0) {
       if (!t) { t = document.createElement('div'); t.id = 'okia-cache-haut'; document.body.appendChild(t); }
       var dessus = Math.max(0, haut - marge - 300);
