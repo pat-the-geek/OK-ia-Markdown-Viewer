@@ -111,6 +111,15 @@ html.okia-livre-droite body { padding-left: 0; padding-right: 0; }
    de gauche. Une hauteur d'écran de blanc sous le texte ; les coupes, elles, se calculent sur
    la page de gauche. */
 html.okia-livre-droite body { padding-bottom: 100vh; }
+/* Séparateurs de bas de page du livre : centrés dans le blanc et sur la colonne de texte. */
+.okia-separateur { position: absolute; display: flex; align-items: center; justify-content: center;
+                   color: var(--fg); pointer-events: none; }
+.okia-separateur .okia-sep-dinkus { font-size: 1.7rem; letter-spacing: 0.05em; line-height: 1; }
+.okia-separateur .okia-sep-asterisme { font-size: 2.6rem; line-height: 1; }
+.okia-separateur .okia-sep-hedera { font-size: 2.6rem; line-height: 1;
+                                    color: color-mix(in srgb, var(--accent) 65%, var(--fg)); }
+.okia-separateur .okia-sep-filet { max-width: 70%; height: auto; }
+.okia-separateur .okia-sep-encre { fill: color-mix(in srgb, var(--accent) 65%, var(--fg)); }
 html.okia-livre-droite .markdown-body { margin: 0; }
 /* Dans le livre, la page est la colonne : la largeur plafonnée d'un thème (Éditorial, 720 px)
    n'y laisserait que du blanc des deux côtés. Les classes de côté sont posées aussi pendant la

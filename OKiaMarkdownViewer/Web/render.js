@@ -1759,13 +1759,53 @@
       t.style.cssText = 'position:absolute;left:0;right:0;top:' + dessus + 'px;height:' + (haut - dessus) +
         'px;background:var(--bg);z-index:2147483000;';
     } else if (t) { t.remove(); }
-    if (depuis < 0) { if (c) c.remove(); return; }
+    var contenu = document.getElementById('content');
+    // Dernière page : pas de page suivante à cacher, mais le blanc après le texte peut recevoir
+    // un séparateur comme les autres.
+    if (depuis < 0) {
+      if (!contenu || !(haut >= 0)) { if (c) c.remove(); return; }
+      depuis = Math.ceil(contenu.getBoundingClientRect().bottom + (window.scrollY || 0));
+    }
     if (!c) { c = document.createElement('div'); c.id = 'okia-cache-livre'; document.body.appendChild(c); }
     // Au-dessus de tout, et opaque au toucher : une carte de la page suivante, cachée dessous,
     // attrapait sinon le doigt (ses commandes passent au-dessus d'un z-index ordinaire), et la
     // page ne tournait plus.
     c.style.cssText = 'position:absolute;left:0;right:0;top:' + depuis + 'px;height:' + (H + 60) +
       'px;background:var(--bg);z-index:2147483000;';
+    poserSeparateur(c, contenu, depuis, haut >= 0 ? haut + H - depuis : 0, haut);
+  }
+
+  /* Un blanc en bas de page — avant un titre ou un grand visuel qui passe à la page suivante —
+     reçoit un séparateur de typographe, centré dans le blanc et sur la colonne de texte
+     (Patrick) : astérisques espacées, astérisme, feuille aldine ou filet orné. Le choix est au
+     hasard, mais tenu par la position de la page : il ne change pas à chaque nouveau calcul. */
+  var SEPARATEURS = [
+    '<span class="okia-sep-dinkus">*&#8195;*&#8195;*</span>',
+    '<span class="okia-sep-asterisme">&#8258;</span>',
+    '<span class="okia-sep-hedera">&#10086;</span>',
+    '<svg class="okia-sep-filet" viewBox="0 0 240 20" width="240" height="20" aria-hidden="true">' +
+      '<line x1="0" y1="10" x2="96" y2="10" stroke="currentColor" stroke-width="1.4"/>' +
+      '<circle cx="96" cy="10" r="2.6" class="okia-sep-encre"/>' +
+      '<rect x="111" y="1" width="18" height="18" transform="rotate(45 120 10)" class="okia-sep-encre"/>' +
+      '<circle cx="144" cy="10" r="2.6" class="okia-sep-encre"/>' +
+      '<line x1="144" y1="10" x2="240" y2="10" stroke="currentColor" stroke-width="1.4"/></svg>'
+  ];
+  var BLANC_POUR_SEPARATEUR = 140;
+
+  function poserSeparateur(c, contenu, depuis, blanc, graine) {
+    c.innerHTML = '';
+    if (!(blanc >= BLANC_POUR_SEPARATEUR)) return;
+    var n = Math.abs(Math.round(graine || 0));
+    var i = ((n * 2654435761) >>> 0) % SEPARATEURS.length;
+    // Centré sur la colonne de texte, qui n'occupe pas toujours toute la page (pliure, thème).
+    var colonne = contenu && (contenu.querySelector('.markdown-body') || contenu);
+    var r = colonne ? colonne.getBoundingClientRect() : null;
+    var gauche = r ? r.left : 0, largeur = r ? r.width : window.innerWidth;
+    var s = document.createElement('div');
+    s.className = 'okia-separateur';
+    s.style.cssText = 'left:' + gauche + 'px;width:' + largeur + 'px;top:0;height:' + blanc + 'px;';
+    s.innerHTML = SEPARATEURS[i];
+    c.appendChild(s);
   }
 
   // Plein écran natif d'une carte : la page ne montre qu'elle, sur toute la hauteur.
