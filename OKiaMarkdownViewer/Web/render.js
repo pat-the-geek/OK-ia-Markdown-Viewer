@@ -1736,7 +1736,12 @@
     // Une carte se réduit aussi pour remplir le bas d'une page, comme une image.
     Array.prototype.forEach.call(contenu.querySelectorAll('img, pre.mermaid svg, .okia-map'), function (e) {
       if (e.tagName === 'IMG' && e.closest('.okia-map')) return;   // les marqueurs de la carte
-      var b = boite(e); if (b[1] - b[0] > 0) visuels.push(b);
+      var b = boite(e); if (!(b[1] - b[0] > 0)) return;
+      // Sous le dessin d'un diagramme, le bas de son cadre : réduit sans lui, le dessin tenait
+      // mais le cadre débordait, et le diagramme partait à la page suivante, son titre seul.
+      var cadre = e.tagName !== 'IMG' && e.closest ? e.closest('pre.mermaid') : null;
+      b.push(cadre ? Math.max(0, cadre.getBoundingClientRect().bottom + sy - b[1]) : 0);
+      visuels.push(b);
     });
     // Le cadre d'un diagramme compte aussi : sans lui, la coupe tombait entre le cadre et le dessin.
     // La pastille plein écran déborde au-dessus de son cadre : la coupe ne la tranche pas non plus.
@@ -1771,9 +1776,10 @@
       var cible = debut + H, coupe = cible;
       // 1. Un visuel à cheval sur la coupe : réduit pour tenir, s'il en garde au moins la moitié.
       for (var v = 0; v < visuels.length; v++) {
-        var t = visuels[v][0], b = visuels[v][1], h = b - t, reste = cible - t - 8;
+        var dessous = visuels[v][3] || 0;
+        var t = visuels[v][0], b = visuels[v][1], h = b - t, reste = cible - t - 8 - dessous;
         var plancher = visuels[v][2].classList && visuels[v][2].classList.contains('okia-map') ? 200 : 90;
-        if (t >= debut && t < cible - 0.5 && b > cible + 0.5 && reste >= h * 0.5 && reste >= plancher) {
+        if (t >= debut && t < cible - 0.5 && b + dessous > cible + 0.5 && reste >= h * 0.5 && reste >= plancher) {
           return { reduire: { el: visuels[v][2], h: Math.floor(reste) } };
         }
       }
@@ -1810,7 +1816,8 @@
   // haut, marge : la page commence à `haut`, sous une bande de `marge` points (Patrick : un peu
   // d'air en haut de page). Tout ce qui est au-dessus est caché, et pas seulement la bande : sur
   // iPad, la barre de l'heure reste affichée, et la fin de la page précédente se lisait dessous.
-  function cacheLivre(depuis, H, haut, marge) {
+  // sansSeparateur : la page d'à côté en porte déjà un — jamais deux à la suite (Patrick).
+  function cacheLivre(depuis, H, haut, marge, sansSeparateur) {
     var c = document.getElementById('okia-cache-livre'), t = document.getElementById('okia-cache-haut');
     if (depuis == null) {
       if (c) c.remove(); if (t) t.remove();
@@ -1845,7 +1852,7 @@
     // page ne tournait plus.
     c.style.cssText = 'position:absolute;left:0;right:0;top:' + depuis + 'px;height:' + (H + 60) +
       'px;background:var(--bg);z-index:2147483000;';
-    poserSeparateur(c, contenu, depuis, haut >= 0 ? haut + H - depuis : 0, haut);
+    poserSeparateur(c, contenu, depuis, haut >= 0 && !sansSeparateur ? haut + H - depuis : 0, haut);
   }
 
   /* Un blanc en bas de page — avant un titre ou un grand visuel qui passe à la page suivante —

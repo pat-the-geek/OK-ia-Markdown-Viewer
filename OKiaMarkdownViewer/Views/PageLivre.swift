@@ -265,8 +265,10 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         let pg = 2 * planche, pd = pg + 1
         let cacheG = debut(pd), cacheD: CGFloat = pd + 1 < coupes.count ? debut(pd + 1) : -1
         let m = Int(Self.margeHaut)
-        g.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheG)), \(Int(hauteur)), \(Int(debut(pg))), \(m))")
-        d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)), \(Int(debut(pd))), \(m))")
+        // Un séparateur à gauche : pas de second à droite, sur la même double page.
+        let sepGauche = debut(pg) + hauteur - cacheG >= 140
+        g.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheG)), \(Int(hauteur)), \(Int(debut(pg))), \(m), false)")
+        d.evaluateJavaScript("window.OKIA && window.OKIA.cacheLivre(\(Int(cacheD)), \(Int(hauteur)), \(Int(debut(pd))), \(m), \(sepGauche))")
         g.scrollView.contentOffset.y = debut(pg) - g.scrollView.adjustedContentInset.top - Self.margeHaut
         d.scrollView.contentOffset.y = debut(pd) - d.scrollView.adjustedContentInset.top - Self.margeHaut
     }
