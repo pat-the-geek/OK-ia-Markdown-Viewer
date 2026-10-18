@@ -12,62 +12,40 @@ Pas de compte requis → laisser les champs identifiants vides ; cocher **« Sig
 
 ```
 NEW IN 1.3 — HOW TO TEST
-• Convert to presentation (requires an Apple Intelligence device): open the sample ("View a
-  sample"), tap the ✦ button in the reader's bar, then "Convert to presentation". Choose a number
-  of slides and tap "Convert". The model writes the slides ON-DEVICE (Foundation Models,
-  SystemLanguageModel); each slide appears as a thumbnail as soon as it is ready, then
-  "Start the slideshow" presents them. No text leaves the device.
-• On a large screen (iPad or iPhone Pro Max in landscape, a wide Mac window, iPhone Duo
-  unfolded), the conversion, the summary, the chat and the table of contents open next to the
-  document instead of in a sheet.
+• Convert to presentation (requires an Apple Intelligence device): open the sample ("View a sample", in the home screen's toolbar), tap the Apple Intelligence button in the reader's toolbar (on iPhone held upright it may sit in the "…" menu), then "Convert to presentation". Choose a number of slides and tap "Convert". The model writes the slides ON-DEVICE (Foundation Models, SystemLanguageModel); each slide appears as a thumbnail as soon as it is ready, then "Start the slideshow" presents them. No text leaves the device.
+• On a large screen (iPad or iPhone Pro Max in landscape, a wide Mac window, iPhone Duo unfolded), the conversion, the summary, the chat and the table of contents open next to the document instead of in a sheet.
 • Reading themes: the "Aa" button offers five themes, in light and dark.
 • iPhone Duo: the app uses the full inner screen and splits into two parts across the fold.
-• Footnotes in fornews.ai briefing reports: tapping a superscript number shows the note.
+• Book mode: with the iPhone Duo half-folded, or an iPad / iPhone Pro Max in landscape, the reader shows two facing pages; swipe or drag a page to turn it. Tap a page to show or hide the toolbar. Portrait reading is unchanged (scrolling).
+• Full screen: diagrams, images, tables and timelines carry a small round button; tapping it (or the object) opens it full screen, with pinch to zoom.
 • Built with the iOS 27.1 SDK; the minimum system stays iOS/iPadOS/macOS 26.4.
 
 md Viewer is a Markdown document (report) reader. No account or login is required.
 
 HOW TO TEST
-• On launch, tap "View a sample" (FR: « Voir un exemple »). A bundled demo document opens and
-  shows every rendering feature: Markdown, Mermaid diagrams, a map, callouts, entity highlighting.
+• On launch, tap "View a sample" (FR: « Voir un exemple »). A bundled demo document opens and shows every rendering feature: Markdown, Mermaid diagrams, a map, callouts, entity highlighting.
 • Any .md file can also be opened with "Open a file" (Files app).
 • A document containing --- can be presented as a full-screen slideshow with the ▶ button.
 
 NEW IN 1.2 — ON-DEVICE DOCUMENT TRANSLATION
-• The demo document is written in French, so translation can be tested right away: in the
-  reader's bar, tap the book icon ("Translate") and pick English. The document is
-  translated paragraph by paragraph, including diagram labels; code, links and URLs stay intact.
-  The same menu then offers "Show original".
-• Translation uses Apple's Translation framework, ON-DEVICE. No text leaves the device and no
-  remote service is called.
-• If a language dictionary is not installed, the app downloads nothing on its own: it shows a
-  banner and waits for the user's tap, then the SYSTEM prompt handles the download.
-• 1.2 requires iOS/iPadOS 26.4 or macOS 26.4: the framework pieces it relies on do not exist
-  before that version.
+• The demo document is written in French, so translation can be tested right away: in the reader's bar, tap the book icon ("Translate") and pick English. The document is translated paragraph by paragraph, including diagram labels; code, links and URLs stay intact. The same menu then offers "Show original".
+• Translation uses Apple's Translation framework, ON-DEVICE. No text leaves the device and no remote service is called.
+• If a language dictionary is not installed, the app downloads nothing on its own: it shows a banner and waits for the user's tap, then the SYSTEM prompt handles the download.
 
 NEW IN 1.2 — OPENING DOCUMENTS FROM FORNEWS.AI
-• The app declares the App Group "group.ai.fornews.native". fornews.ai is a separate app from the
-  same developer (team PU9BSXN2V5). It writes a document into the shared container and opens
-  md Viewer with the URL mdviewer://fichier?nom=<file name>. This exists because iOS cannot hand a
-  file to a named app, and long reports do not fit in a URL.
-• Reviewing this path requires the fornews.ai app; everything else works without it. The shared
-  folder keeps only the last ten documents, stays on the device, and the received name is reduced
-  to a plain file name so it cannot point outside the folder.
+• The app declares the App Group "group.ai.fornews.native". fornews.ai is a separate app from the same developer (team PU9BSXN2V5). It writes a document into the shared container and opens md Viewer with the URL mdviewer://fichier?nom=<file name>. This exists because iOS cannot hand a file to a named app, and long reports do not fit in a URL.
+• Reviewing this path requires the fornews.ai app; everything else works without it. The shared folder keeps only the last ten documents, stays on the device, and the received name is reduced to a plain file name so it cannot point outside the folder.
 
 APPLE INTELLIGENCE (optional)
-• "Document summary", "Chat with the document" and "Convert to presentation" use Foundation
-  Models ON-DEVICE and work from the open document only. No text leaves the device.
-• The ✦ menu only appears when Apple Intelligence is available on the device. Otherwise both
-  features are hidden and the rest of the app works.
+• "Document summary", "Chat with the document" and "Convert to presentation" use Foundation Models ON-DEVICE and work from the open document only. No text leaves the device.
+• The Apple Intelligence menu only appears when Apple Intelligence is available on the device. Otherwise both features are hidden and the rest of the app works.
 
 NETWORK
-• The app works offline. Network is used only for map tiles (OpenFreeMap / OpenStreetMap) in
-  documents containing a map, and to download a document when the user opens an https link.
+• The app works offline. Network is used only for map tiles (OpenFreeMap / OpenStreetMap) in documents containing a map, and to download a document when the user opens an https link.
 • No user data is collected or transmitted.
 
 SIRI / SHORTCUTS (App Intents)
-• "Open report", "Open latest report" and "Summarize report" rely on an optional user-configured
-  vault folder; without one, they have no report to offer.
+• "Open report", "Open latest report" and "Summarize report" rely on an optional user-configured vault folder; without one, they have no report to offer.
 
 PLATFORMS
 • Universal app: iPhone, iPad and Mac (Mac Catalyst).

@@ -1,6 +1,6 @@
 # Version 1.3 — textes App Store Connect, prêts à coller
 
-Préparés le 09/10/2026, **rien n'est encore envoyé**. Vaut pour **iOS** et **macOS** (mêmes textes).
+Préparés le 09/10/2026, complétés le 18/10/2026 (mode livre, plein écran). Vaut pour **iOS** et **macOS** (mêmes textes).
 Nom et sous-titre inchangés (voir `listing-<langue>.md`). Les captures habillées sont dans
 [`captures-legendees-1.3/`](captures-legendees-1.3) ; les notes pour l'examinateur dans
 [`review-notes.md`](review-notes.md).
@@ -55,6 +55,8 @@ NOUVEAU
 • Cinq thèmes de lecture : OK-ia, Administratif, Éditorial, Lecture longue et Contraste élevé, en clair et en sombre.
 • Six transitions de plus au diaporama, reprises par l'export PowerPoint.
 • Une barre de lecture en Liquid Glass, et la page jusqu'aux bords de l'écran.
+• Le mode livre : iPhone Duo à moitié replié, iPad ou grand iPhone en paysage — deux pages côte à côte, que l'on tourne du doigt.
+• Diagrammes, images, tableaux et chronologies s'ouvrent en plein écran d'un toucher.
 • Sur grand écran — iPad et iPhone Pro Max en paysage, Mac, iPhone Duo déplié — la présentation, le résumé, la discussion et le sommaire s'ouvrent à côté du document.
 • Les rapports de veille de fornews.ai : notes de bas de page avec aperçu, et vraies notes de fin à l'export Word.
 
@@ -109,6 +111,8 @@ NEW
 • Five reading themes: OK-ia, Administrative, Editorial, Long read and High contrast, in light and dark.
 • Six more slideshow transitions, kept by the PowerPoint export.
 • A Liquid Glass reading bar, and the page running to the edges of the screen.
+• Book mode: on iPhone Duo half-folded, or iPad and large iPhone in landscape — two facing pages you turn with your finger.
+• Diagrams, images, tables and timelines open full screen with a tap.
 • On a large screen — iPad and iPhone Pro Max in landscape, Mac, iPhone Duo unfolded — the presentation, summary, chat and table of contents open next to the document.
 • fornews.ai briefing reports: footnotes with a preview, and real endnotes in the Word export.
 
@@ -162,6 +166,8 @@ NEU
 • Fünf Lesethemen: OK-ia, Amtlich, Redaktionell, Langes Lesen und Hoher Kontrast, hell und dunkel.
 • Sechs weitere Übergänge für die Diashow, auch im PowerPoint-Export.
 • Eine Leseleiste in Liquid Glass, und die Seite reicht bis an den Bildschirmrand.
+• Buchmodus: iPhone Duo halb gefaltet, iPad oder großes iPhone im Querformat — zwei Seiten nebeneinander, die Sie mit dem Finger umblättern.
+• Diagramme, Bilder, Tabellen und Zeitleisten öffnen sich mit einem Tippen im Vollbild.
 • Auf grossen Bildschirmen — iPad und iPhone Pro Max im Querformat, Mac, iPhone Duo aufgeklappt — öffnen sich Präsentation, Zusammenfassung, Chat und Inhaltsverzeichnis neben dem Dokument.
 • Die Lageberichte von fornews.ai: Fussnoten mit Vorschau und echte Endnoten im Word-Export.
 
@@ -215,6 +221,8 @@ NOVEDADES
 • Cinco temas de lectura: OK-ia, Administrativo, Editorial, Lectura larga y Alto contraste, en claro y en oscuro.
 • Seis transiciones más en el pase de diapositivas, conservadas al exportar a PowerPoint.
 • Una barra de lectura en Liquid Glass, y la página hasta los bordes de la pantalla.
+• Modo libro: iPhone Duo medio plegado, iPad o iPhone grande en horizontal — dos páginas enfrentadas que se pasan con el dedo.
+• Diagramas, imágenes, tablas y cronologías se abren a pantalla completa con un toque.
 • En pantallas grandes —iPad y iPhone Pro Max en horizontal, Mac, iPhone Duo desplegado— la presentación, el resumen, la conversación y el índice se abren junto al documento.
 • Los informes de vigilancia de fornews.ai: notas al pie con vista previa y notas finales reales al exportar a Word.
 
@@ -268,6 +276,8 @@ NOVITÀ
 • Cinque temi di lettura: OK-ia, Amministrativo, Editoriale, Lettura lunga e Contrasto elevato, chiari e scuri.
 • Sei transizioni in più per la presentazione, riprese dall'esportazione PowerPoint.
 • Una barra di lettura in Liquid Glass, e la pagina fino ai bordi dello schermo.
+• Modalità libro: iPhone Duo piegato a metà, iPad o iPhone grande in orizzontale — due pagine affiancate da sfogliare con il dito.
+• Diagrammi, immagini, tabelle e cronologie si aprono a schermo intero con un tocco.
 • Su schermi grandi — iPad e iPhone Pro Max in orizzontale, Mac, iPhone Duo aperto — la presentazione, il riassunto, la conversazione e l'indice si aprono accanto al documento.
 • I rapporti di monitoraggio di fornews.ai: note a piè di pagina con anteprima e vere note di chiusura nell'esportazione Word.
 
