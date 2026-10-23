@@ -1719,6 +1719,10 @@ struct PresentationWebView: UIViewRepresentable {
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
+        // Les marges de sécurité vont toutes à la page (env(safe-area-inset-*)), qui place ses
+        // boutons en dehors : sans cela, sur le Duo, la croix du haut à droite tombait sous la
+        // caméra et sa pastille système, et ne fermait plus le diaporama (Patrick).
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.onKey = { [weak coordinator = context.coordinator] key in
             coordinator?.handleNativeKey(key)
         }
