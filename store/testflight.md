@@ -95,7 +95,6 @@ DEUX PARTIES EN PAYSAGE ET SUR LE DUO
 TOUJOURS À ESSAYER — DIAPORAMA, EXPORT POWERPOINT, THÈMES
 • Onze transitions au diaporama, dont le Damier ; l'export PowerPoint reprend la
   transition choisie : dites-nous ce qu'en garde Keynote.
-• Bouton « Aa » : cinq thèmes de lecture, en clair et en sombre.
 • Nécessite un appareil compatible Apple Intelligence pour la conversion, le
   résumé et la discussion ; tout se calcule sur l'appareil.
 ```
