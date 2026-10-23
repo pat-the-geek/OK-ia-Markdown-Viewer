@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (68)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (69)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (68)
+## What to Test — 1.3 (69)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -40,6 +40,7 @@ DIAGNOSTIC IPHONE DUO (build de test seulement)
   charnière. Déplié, à moitié replié, plié : touchez-le, « Copier », envoyez.
 • Duo à moitié replié : la séparation des pages doit tomber sur la charnière.
 • Tirez une page, même en diagonale : elle doit attendre que vous la lâchiez.
+• En plein écran, après un zoom, Ajuster et Fermer doivent répondre.
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
@@ -80,8 +81,7 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
   (fenêtre large), la conversion s'ouvre à droite du rapport, qui ne doit pas
   bouger : continuez de lire.
 • À la fin, « Lancer le diaporama » ; en le quittant, les vignettes sont toujours là.
-• Choisissez 5, 10, 15, 20 ou 25 diapositives : la présentation doit compter
-  exactement ce nombre. Signalez tout chiffre ou nom absent du rapport.
+• Choisissez de 5 à 25 diapositives : la présentation doit en compter autant.
 
 LA BARRE EN LIQUID GLASS
 • La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
