@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (74)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (75)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (74)
+## What to Test — 1.3 (75)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -44,6 +44,8 @@ DIAGNOSTIC IPHONE DUO (build de test seulement)
 • Tirez une page, même en diagonale : elle doit attendre que vous la lâchiez.
 • En plein écran (image ou diagramme), après un zoom, Ajuster et Fermer
   doivent répondre. Dans le livre, un tableau tient dans sa page.
+• Les cartes « Dans cette édition » d'un rapport fornews ne se coupent plus
+  entre deux pages.
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
@@ -60,7 +62,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
   tableau, signale qu'il s'ouvre en plein écran (à gauche sur la page de droite
   du livre), comme la frise, le déroulé et l'agenda des rapports fornews.
-  Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
+  Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour agrandir.
   Dans le livre, le bouton plein écran d'une carte l'ouvre aussi. Le plein
   écran suit le mode jour/nuit et le thème de lecture.
 • iPhone Duo déplié ou plié : les commandes sont rangées dans la colonne de
