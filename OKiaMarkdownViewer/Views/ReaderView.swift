@@ -49,12 +49,19 @@ struct ReaderView: View {
     @State private var montrerDiagnostic = false
     /// La pliure du Duo dans le repère du lecteur (région de division du système), s'il y en a une.
     @State private var regionPli: CGRect?
+    /// Le livre dans l'écran : son bord gauche et la largeur de l'écran, en points globaux.
+    @State private var origineLivre: CGFloat = 0
+    @State private var largeurEcranLivre: CGFloat = 0
 
     /// Largeur de la page de gauche et de la pliure, pour le livre du Duo : la page s'arrête où
     /// la pliure commence. Sans région connue, la moitié de l'écran et 40 points.
     private var pagesDuLivre: (gauche: CGFloat, pli: CGFloat) {
-        if let r = regionPli, r.width > 0, r.minX > 100 { return (r.minX, r.width) }
-        return (max(0, tailleEcran.width / 2 - 20), 40)
+        // La pliure du Duo est au MILIEU PHYSIQUE de l'écran : l'écart entre les pages s'y centre.
+        // La région du système ne fournit que sa largeur — sa position, lue dans un autre repère,
+        // décalait encore la page de droite vers la gauche sur l'appareil réel (Patrick).
+        let pli = (regionPli?.width ?? 0) > 0 ? regionPli!.width : 40
+        let ecran = largeurEcranLivre > 0 ? largeurEcranLivre : tailleEcran.width
+        return (max(0, ecran / 2 - pli / 2 - origineLivre), pli)
     }
     @StateObject private var livre = LivreController()
     /// En mode livre, la barre s'efface pour rendre toute la place aux deux pages ; un toucher
@@ -138,6 +145,15 @@ struct ReaderView: View {
                     let regions = proxy.reservedRegions(kind: .division, options: .includeInactive)
                     return (regions.first(where: \.isActive) ?? regions.first)?.frame
                 } action: { regionPli = $0 }
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { origineLivre = $0 }
+                .background {
+                    GeometryReader { p in
+                        Color.clear
+                            .onAppear { largeurEcranLivre = p.size.width + p.safeAreaInsets.leading + p.safeAreaInsets.trailing }
+                            .onChange(of: p.size) { _, _ in largeurEcranLivre = p.size.width + p.safeAreaInsets.leading + p.safeAreaInsets.trailing }
+                    }
+                    .ignoresSafeArea()
+                }
                 // Seul, le lecteur prend tout : sans cela, la seconde partie vide gardait sa moitié.
                 .splitArrangementLayoutRatio(deuxParties ? nil : 1)
             } secondary: {
@@ -976,7 +992,7 @@ struct ReaderView: View {
             "taille mesurée : \(Int(tailleEcran.width))×\(Int(tailleEcran.height)) pt · écran \(Int(ecran.width))×\(Int(ecran.height)) pt @\(UIScreen.main.scale)x",
             "deux parties possibles : \(deuxPartiesPossibles) · mode livre : \(modeLivre)",
             "pliure : " + (regionPli.map { "x \(Int($0.minX)), largeur \(Int($0.width)), hauteur \(Int($0.height))" } ?? "aucune région"),
-            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt",
+            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre)) · écran \(Int(largeurEcranLivre)) pt",
             "largeur : \(tailleHorizontale == .compact ? "compacte" : "normale")",
         ].joined(separator: "\n")
     }

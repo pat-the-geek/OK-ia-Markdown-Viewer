@@ -111,6 +111,11 @@ html.okia-livre-droite body { padding-left: 0; padding-right: 0; }
    de gauche. Une hauteur d'écran de blanc sous le texte ; les coupes, elles, se calculent sur
    la page de gauche. */
 html.okia-livre-droite body { padding-bottom: 100vh; }
+/* Dans le livre, un tableau tient dans sa page : plus large, il passait sous la colonne de l'heure
+   et sortait coupé (Patrick, Duo réel). Texte un peu plus petit, cellules serrées, mots coupés au
+   besoin ; la pastille l'ouvre en entier en plein écran. */
+html.okia-livre table { width: 100%; max-width: 100%; table-layout: auto; font-size: 0.82em; }
+html.okia-livre th, html.okia-livre td { padding: 6px 7px; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
 /* Séparateurs de bas de page du livre : centrés dans le blanc et sur la colonne de texte. */
 .okia-separateur { position: absolute; display: flex; align-items: center; justify-content: center;
                    color: var(--fg); pointer-events: none; }

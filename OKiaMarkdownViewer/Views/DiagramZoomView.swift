@@ -5,9 +5,13 @@ import WebKit
 final class ZoomController: ObservableObject {
     weak var scrollView: UIScrollView?
 
+    /// L'échelle d'ouverture : la page de zoom est mise en page pour tenir à l'échelle 1 (le zoom
+    /// lui-même est celui de WebKit, dont le minimum, 0,5, rapetisserait l'objet dans un coin).
     func fitToScreen(animated: Bool = true) {
         guard let sv = scrollView else { return }
-        sv.setZoomScale(sv.minimumZoomScale, animated: animated)
+        sv.setZoomScale(1, animated: animated)
+        sv.setContentOffset(CGPoint(x: -sv.adjustedContentInset.left, y: -sv.adjustedContentInset.top),
+                            animated: animated)
     }
 
     func zoomIn()  { zoomBy(1.4) }
@@ -21,10 +25,10 @@ final class ZoomController: ObservableObject {
 
     func toggleZoom(at point: CGPoint) {
         guard let sv = scrollView else { return }
-        if sv.zoomScale > sv.minimumZoomScale * 1.05 {
-            sv.setZoomScale(sv.minimumZoomScale, animated: true)
+        if sv.zoomScale > 1.05 {
+            fitToScreen()
         } else {
-            let target = min(sv.maximumZoomScale, sv.minimumZoomScale * 3)
+            let target = min(sv.maximumZoomScale, 3)
             let size = sv.bounds.size
             let w = size.width / target, h = size.height / target
             let rect = CGRect(x: point.x - w / 2, y: point.y - h / 2, width: w, height: h)
@@ -145,11 +149,17 @@ private struct ZoomWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
+        // Rien à sélectionner dans une vue de zoom : l'interaction de texte de WebKit (et son
+        // analyse d'image) ne doit pas disputer les touchers aux boutons.
+        config.preferences.isTextInteractionEnabled = false
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
-        webView.scrollView.delegate = context.coordinator
+        // Le zoom reste celui de WebKit (viewport) : remplacer le délégué de son défilement pour
+        // choisir la vue zoomée déréglait WebKit, et sur l'appareil réel, après un pincement, les
+        // boutons de la vue ne recevaient plus rien (Patrick, Duo). Les boutons agissent sur le
+        // même défilement, par setZoomScale.
         webView.scrollView.maximumZoomScale = 6
         webView.scrollView.minimumZoomScale = 0.5
         webView.scrollView.bouncesZoom = true
@@ -198,6 +208,10 @@ private struct ZoomWebView: UIViewRepresentable {
              dessinée pour un fond clair. */
           .wrap > svg{background:var(--diagram-frame);border-radius:12px;padding:16px;box-sizing:border-box;}
           .wrap img{max-width:100%;max-height:100%;height:auto;display:block;border-radius:8px;}
+          /* L'image agrandie n'est qu'à regarder : ni Live Text, ni menu d'image, qui prenaient
+             les touchers sur l'appareil réel. Le pincement reste au défilement. */
+          img{pointer-events:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+          body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
           /* Un bloc de texte agrandi — chronologie, tableau : en entier, sans retour à la ligne. */
           .okia-zoom-bloc{max-width:none;margin:0;padding:0;font-size:17px;}
           .okia-zoom-bloc pre{white-space:pre;overflow:visible;margin:0;cursor:auto;}
@@ -271,10 +285,6 @@ private struct ZoomWebView: UIViewRepresentable {
     final class Coordinator: NSObject, UIScrollViewDelegate {
         let controller: ZoomController
         init(_ controller: ZoomController) { self.controller = controller }
-
-        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-            scrollView.subviews.first
-        }
 
         @objc func handleDoubleTap(_ gr: UITapGestureRecognizer) {
             let point = gr.location(in: gr.view)
