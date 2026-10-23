@@ -51,7 +51,7 @@ IPHONE DUO
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
   thème Éditorial, à colonne étroite — mais pas dans le livre, où chaque page
-  est pleine). Signalez toute ligne trop longue à lire.
+  est pleine). Signalez toute ligne trop longue.
 • Le mode livre : iPhone Duo partiellement replié, iPad ou grand iPhone en
   paysage. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
