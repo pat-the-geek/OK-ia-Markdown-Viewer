@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (65)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (66)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,10 +30,14 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (65)
+## What to Test — 1.3 (66)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
+
+DIAGNOSTIC IPHONE DUO (build de test seulement)
+• Le bouton stéthoscope, à côté de la maison, montre ce que l'app reçoit de la
+  charnière. Déplié, à moitié replié, plié : touchez-le, « Copier », envoyez.
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
@@ -53,7 +57,6 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   Touchez-la, ou l'objet : il s'ouvre en entier ; pincez pour agrandir. Sur iPhone en portrait, une longue chronologie passe à la ligne.
   Dans le livre, le bouton plein écran d'une carte l'ouvre aussi. Le plein
   écran suit le mode jour/nuit et le thème de lecture.
-• Touchez une page pour faire revenir la barre, encore pour la renvoyer.
 • iPhone Duo déplié ou plié : les commandes sont rangées dans la colonne de
   droite, et la page va jusqu'à elle.
 
@@ -66,8 +69,6 @@ NOUVEAU — L'ALLURE D'UNE APP
 • Sur Mac, une vraie barre de fenêtre, sur une seule rangée. L'app est désormais
   « optimisée pour le Mac » : dites-nous tout ce qui paraît trop grand, trop
   petit ou mal placé — réglages, feuilles, menus, diaporama.
-• L'écran d'accueil devient une liste : récents et coffre par date ; balayez une
-  ligne pour la retirer. Ouvrir et « Voir un exemple » sont dans la barre.
 
 NOUVEAU — LA PRÉSENTATION SE CONSTRUIT SOUS VOS YEUX
 Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
@@ -79,8 +80,6 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
 • À la fin, « Lancer le diaporama » ; en le quittant, les vignettes sont toujours là.
 • Choisissez 5, 10, 15, 20 ou 25 diapositives : la présentation doit compter
   exactement ce nombre. Signalez tout chiffre ou nom absent du rapport.
-• La dernière diapositive, « À retenir », doit toujours porter des puces, même
-  pour un rapport court.
 
 LA BARRE EN LIQUID GLASS
 • La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
