@@ -39,8 +39,8 @@ IPHONE DUO
 • Duo à moitié replié : la séparation des pages doit tomber sur la charnière.
   Tourné en « mini-ordinateur », une page en haut, une en bas : tirez vers le haut.
 • Tirez une page, même en diagonale : elle doit attendre que vous la lâchiez.
-• En plein écran (image, diagramme ou carte), même après un zoom, Fermer
-  et Ajuster doivent répondre du premier coup. Dans le livre, un tableau tient dans sa page.
+• En plein écran (image, diagramme, carte), même après un zoom, Fermer
+  et Ajuster répondent du premier coup. Dans le livre, un tableau tient dans sa page.
 • Les cartes « Dans cette édition » d'un rapport fornews ne se coupent plus
   entre deux pages. La dernière page du livre montre bien la fin du texte ;
   en revenant en arrière, la page de droite garde son texte.
