@@ -133,17 +133,14 @@ struct ReaderView: View {
                 // milieu de la zone utile — colonne de l'heure exclue — : juste sur le simulateur,
                 // décalé vers la gauche sur le Duo réel (Patrick, 23/10/2026). Le lecteur reste le
                 // premier enfant de la pile : passer en livre ne recrée pas sa vue web.
+                // Sur le Duo réel mi-replié, le système donne à cette partie la moitié gauche ET la
+                // pliure (495 points sur 951, diagnostic de Patrick) : la page de gauche s'arrête au
+                // début de la pliure, le reste demeure vide. La page de droite est la seconde partie,
+                // que le système pose de l'autre côté. Sur le simulateur, la partie s'arrête au pli.
                 HStack(spacing: 0) {
                     lecteur
                         .frame(width: modeLivre ? pagesDuLivre.gauche : nil)
-                    if modeLivre {
-                        Color.clear.frame(width: pagesDuLivre.pli)
-                        PageLivre(livre: livre, surPret: { demarrerLivre() },
-                                  surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
-                                  surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
-                                  surCarte: { tappedCarte = $0 })
-                            .ignoresSafeArea(edges: [.bottom, .horizontal])
-                    }
+                    if modeLivre { Spacer(minLength: 0) }
                 }
                 .onGeometryChange(for: CGRect?.self) { proxy in
                     let regions = proxy.reservedRegions(kind: .division, options: .includeInactive)
@@ -176,10 +173,16 @@ struct ReaderView: View {
                     .ignoresSafeArea()
                 }
                 // Seul, le lecteur prend tout : sans cela, la seconde partie vide gardait sa moitié.
-                .splitArrangementLayoutRatio(deuxParties ? nil : 1)
+                .splitArrangementLayoutRatio(deuxParties || modeLivre ? nil : 1)
             } secondary: {
                 if let panneau = panneauDuo, deuxParties {
                     secondePartie(panneau)
+                } else if modeLivre {
+                    PageLivre(livre: livre, surPret: { demarrerLivre() },
+                              surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
+                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
+                              surCarte: { tappedCarte = $0 })
+                        .ignoresSafeArea(edges: [.bottom, .horizontal])
                 }
             }
             .arrangementViewStyle(.split)
