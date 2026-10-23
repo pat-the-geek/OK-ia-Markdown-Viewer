@@ -56,6 +56,7 @@ struct DiagramZoomView: View {
         }
         .overlay(alignment: .bottom) { zoomBar }
         .statusBarHidden(true)
+        .defersSystemGestures(on: .vertical)
     }
 
     private var zoomBar: some View {
@@ -88,7 +89,7 @@ struct DiagramZoomView: View {
             Button(action: { controller.fitToScreen() }) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
                     .font(.system(size: 18, weight: .semibold))
-                    .padding(10)
+                    .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
             .accessibilityLabel(tr("Ajuster à l’écran"))
@@ -108,17 +109,20 @@ struct DiagramZoomView: View {
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .bold))
-                    .padding(10)
+                    .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
             .accessibilityLabel(tr("Fermer (accessibilité)"))
         }
         .tint(orange)
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        // Assez bas pour sortir du bord haut, où le geste du Centre de notifications prend les
+        // touchers sur un vrai écran — les boutons ne répondaient plus sur le Duo replié en paysage.
+        .padding(.top, 16)
         // Swipe-down on the top chrome dismisses, without fighting the pan gesture below.
+        // En parallèle : le glisser ne doit jamais avaler le toucher d'un bouton.
         .contentShape(Rectangle())
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height > 0 { dragOffset = value.translation.height }
@@ -310,6 +314,7 @@ struct ImageZoomView: View {
         }
         .overlay(alignment: .bottom) { zoomBar }
         .statusBarHidden(true)
+        .defersSystemGestures(on: .vertical)
     }
 
     private static func imgTag(_ src: String) -> String {
@@ -349,7 +354,7 @@ struct ImageZoomView: View {
             Button(action: { controller.fitToScreen() }) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
                     .font(.system(size: 18, weight: .semibold))
-                    .padding(10)
+                    .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
             .accessibilityLabel(tr("Ajuster à l’écran"))
@@ -359,16 +364,16 @@ struct ImageZoomView: View {
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .bold))
-                    .padding(10)
+                    .frame(width: 44, height: 44)
                     .background(.ultraThinMaterial, in: Circle())
             }
             .accessibilityLabel(tr("Fermer (accessibilité)"))
         }
         .tint(orange)
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, 16)
         .contentShape(Rectangle())
-        .gesture(
+        .simultaneousGesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height > 0 { dragOffset = value.translation.height }
@@ -409,9 +414,11 @@ struct CarteZoomView: View {
                 }
                 .tint(orange)
                 .padding(16)
+                .padding(.top, 8)
                 .accessibilityLabel(tr("Fermer (accessibilité)"))
             }
             .statusBarHidden(true)
+            .defersSystemGestures(on: .vertical)
     }
 }
 
