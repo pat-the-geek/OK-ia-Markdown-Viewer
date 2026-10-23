@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (77)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (78)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (77)
+## What to Test — 1.3 (78)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -42,7 +42,8 @@ IPHONE DUO
 • En plein écran (image ou diagramme), après un zoom, Ajuster et Fermer
   doivent répondre. Dans le livre, un tableau tient dans sa page.
 • Les cartes « Dans cette édition » d'un rapport fornews ne se coupent plus
-  entre deux pages. La dernière page du livre montre bien la fin du texte.
+  entre deux pages. La dernière page du livre montre bien la fin du texte ;
+  en revenant en arrière, la page de droite garde son texte.
 • Tourné dans un sens ou dans l'autre, le texte s'arrête juste avant les
   boutons de la colonne ; la barre du titre est en verre, sans bande opaque.
 
