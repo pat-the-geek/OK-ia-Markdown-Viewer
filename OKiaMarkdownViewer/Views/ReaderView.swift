@@ -47,6 +47,15 @@ struct ReaderView: View {
     @State private var diagCharniere = "aucune mise à jour reçue"
     @State private var majCharniere = 0
     @State private var montrerDiagnostic = false
+    /// La pliure du Duo dans le repère du lecteur (région de division du système), s'il y en a une.
+    @State private var regionPli: CGRect?
+
+    /// Largeur de la page de gauche et de la pliure, pour le livre du Duo : la page s'arrête où
+    /// la pliure commence. Sans région connue, la moitié de l'écran et 40 points.
+    private var pagesDuLivre: (gauche: CGFloat, pli: CGFloat) {
+        if let r = regionPli, r.width > 0, r.minX > 100 { return (r.minX, r.width) }
+        return (max(0, tailleEcran.width / 2 - 20), 40)
+    }
     @StateObject private var livre = LivreController()
     /// En mode livre, la barre s'efface pour rendre toute la place aux deux pages ; un toucher
     /// sur une page la fait revenir, un second la renvoie — comme dans Livres.
@@ -108,18 +117,32 @@ struct ReaderView: View {
             // structure au moment d'ouvrir la seconde partie recréerait la vue web, et le
             // document repartirait de zéro.
             ArrangementView {
+                // Le livre se pose de part et d'autre de la PLIURE RÉELLE, lue dans les régions de
+                // division du système. Confié au partage automatique des parties, il se coupait au
+                // milieu de la zone utile — colonne de l'heure exclue — : juste sur le simulateur,
+                // décalé vers la gauche sur le Duo réel (Patrick, 23/10/2026). Le lecteur reste le
+                // premier enfant de la pile : passer en livre ne recrée pas sa vue web.
+                HStack(spacing: 0) {
+                    lecteur
+                        .frame(width: modeLivre ? pagesDuLivre.gauche : nil)
+                    if modeLivre {
+                        Color.clear.frame(width: pagesDuLivre.pli)
+                        PageLivre(livre: livre, surPret: { demarrerLivre() },
+                                  surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
+                                  surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
+                                  surCarte: { tappedCarte = $0 })
+                            .ignoresSafeArea(edges: [.bottom, .horizontal])
+                    }
+                }
+                .onGeometryChange(for: CGRect?.self) { proxy in
+                    let regions = proxy.reservedRegions(kind: .division, options: .includeInactive)
+                    return (regions.first(where: \.isActive) ?? regions.first)?.frame
+                } action: { regionPli = $0 }
                 // Seul, le lecteur prend tout : sans cela, la seconde partie vide gardait sa moitié.
-                lecteur
-                    .splitArrangementLayoutRatio(deuxParties || modeLivre ? nil : 1)
+                .splitArrangementLayoutRatio(deuxParties ? nil : 1)
             } secondary: {
                 if let panneau = panneauDuo, deuxParties {
                     secondePartie(panneau)
-                } else if modeLivre {
-                    PageLivre(livre: livre, surPret: { demarrerLivre() },
-                              surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
-                              surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
-                              surCarte: { tappedCarte = $0 })
-                        .ignoresSafeArea(edges: [.bottom, .horizontal])
                 }
             }
             .arrangementViewStyle(.split)
@@ -952,6 +975,8 @@ struct ReaderView: View {
             "pliable : \(appareilPliable) · ouverte : \(charniereOuverte) · partielle : \(charnierePartielle)",
             "taille mesurée : \(Int(tailleEcran.width))×\(Int(tailleEcran.height)) pt · écran \(Int(ecran.width))×\(Int(ecran.height)) pt @\(UIScreen.main.scale)x",
             "deux parties possibles : \(deuxPartiesPossibles) · mode livre : \(modeLivre)",
+            "pliure : " + (regionPli.map { "x \(Int($0.minX)), largeur \(Int($0.width)), hauteur \(Int($0.height))" } ?? "aucune région"),
+            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt",
             "largeur : \(tailleHorizontale == .compact ? "compacte" : "normale")",
         ].joined(separator: "\n")
     }
