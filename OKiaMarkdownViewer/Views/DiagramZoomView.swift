@@ -152,7 +152,12 @@ private struct ZoomWebView: UIViewRepresentable {
         // Rien à sélectionner dans une vue de zoom : l'interaction de texte de WebKit (et son
         // analyse d'image) ne doit pas disputer les touchers aux boutons.
         config.preferences.isTextInteractionEnabled = false
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = VueSousBoutons(frame: .zero, configuration: config)
+        // Le bandeau du haut (Ajuster, titre, Fermer) et la barre de zoom du bas.
+        webView.zonesDesBoutons = { b, m in [
+            CGRect(x: 0, y: 0, width: b.width, height: m.top + 16 + 44 + 12),
+            CGRect(x: b.midX - 80, y: b.height - m.bottom - 28 - 44 - 10, width: 160, height: m.bottom + 28 + 44 + 10),
+        ] }
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
@@ -444,7 +449,11 @@ private struct CarteWebView: UIViewRepresentable {
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
         let config = WKWebViewConfiguration()
         config.userContentController = controller
-        let vue = WKWebView(frame: .zero, configuration: config)
+        let vue = VueSousBoutons(frame: .zero, configuration: config)
+        // Le bouton Fermer, en haut à droite.
+        vue.zonesDesBoutons = { b, m in [
+            CGRect(x: b.width - m.right - 90, y: 0, width: m.right + 90, height: m.top + 90),
+        ] }
         vue.navigationDelegate = context.coordinator
         vue.scrollView.isScrollEnabled = false
         vue.scrollView.contentInsetAdjustmentBehavior = .never
@@ -464,5 +473,19 @@ private struct CarteWebView: UIViewRepresentable {
             let sur = cfg.filter { $0.isLetter || $0.isNumber || "+/=".contains($0) }
             webView.evaluateJavaScript("window.OKIA && window.OKIA.carteSeule('\(sur)')")
         }
+    }
+}
+
+
+/// Une vue web plein écran, sous des boutons SwiftUI. Là où sont les boutons, elle ne prend aucun
+/// toucher : sur l'appareil réel, les gestes de WebKit (pincement, défilement, carte Leaflet)
+/// attrapaient souvent le doigt avant le bouton, et Fermer restait sans effet (Patrick, Duo).
+/// Les zones se calculent à chaque toucher, depuis la taille et les marges de sécurité du moment.
+final class VueSousBoutons: WKWebView {
+    var zonesDesBoutons: (CGRect, UIEdgeInsets) -> [CGRect] = { _, _ in [] }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if zonesDesBoutons(bounds, safeAreaInsets).contains(where: { $0.contains(point) }) { return nil }
+        return super.hitTest(point, with: event)
     }
 }
