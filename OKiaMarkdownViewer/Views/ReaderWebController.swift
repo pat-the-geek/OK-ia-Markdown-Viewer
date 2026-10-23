@@ -44,6 +44,19 @@ final class ReaderWebController: ObservableObject {
     func setTheme(_ key: String) {
         theme = ReaderTheme(rawValue: key)?.rawValue ?? ReaderTheme.okia.rawValue
         eval("window.OKIA && window.OKIA.setTheme(\(jsString(theme)))")
+        teindreFond()
+    }
+
+    /// Le fond de la vue, celui de la page (thème, jour ou nuit). Au-dessus du début du document,
+    /// dans la marge du haut que le Duo ajoute, la vue transparente laissait voir le blanc de la
+    /// fenêtre : une bande opaque sous le titre, là où la barre doit être de verre (Patrick).
+    func teindreFond() {
+        webView?.evaluateJavaScript("getComputedStyle(document.body).backgroundColor") { [weak self] r, _ in
+            guard let css = r as? String, let vue = self?.webView else { return }
+            let n = css.split(whereSeparator: { !"0123456789.".contains($0) }).compactMap { Double($0) }
+            guard n.count >= 3, (n.count >= 4 ? n[3] : 1) > 0.5 else { return }
+            vue.scrollView.backgroundColor = UIColor(red: n[0] / 255, green: n[1] / 255, blue: n[2] / 255, alpha: 1)
+        }
     }
 
     // MARK: Duo — la colonne de droite rendue au texte
@@ -79,11 +92,16 @@ final class ReaderWebController: ObservableObject {
     }
 
     private(set) var margeOutils = 0
+    /// La colonne du système est à gauche : le Duo tourné dans l'autre sens.
+    private(set) var outilsAGauche = false
 
-    func setMargeOutils(_ px: CGFloat) {
+    func setMargeOutils(_ px: CGFloat, aGauche: Bool = false) {
         margeOutils = Int(px.rounded())
-        eval("window.OKIA && window.OKIA.setMargeOutils(\(margeOutils))")
+        outilsAGauche = aGauche
+        eval("window.OKIA && window.OKIA.setMargeOutils(\(margeOutilsArguments))")
     }
+
+    private var margeOutilsArguments: String { "\(margeOutils), '\(outilsAGauche ? "gauche" : "droite")'" }
 
     func setLargeurLivre(_ largeur: CGFloat) {
         eval("window.OKIA && window.OKIA.setLargeurLivre(\(Int(largeur.rounded())), 'gauche')")
@@ -96,7 +114,7 @@ final class ReaderWebController: ObservableObject {
     /// L'expression JavaScript qui pose le thème — et la largeur libérée sur le Duo — à placer
     /// devant l'appel de rendu, séparée par une virgule : c'est une expression, pas une instruction.
     var themeScript: String {
-        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibreArguments)), window.OKIA.setMargeOutils(\(margeOutils))"
+        "window.OKIA.setTheme(\(jsString(theme))), window.OKIA.setBordsLibres(\(coinLibreArguments)), window.OKIA.setMargeOutils(\(margeOutilsArguments))"
     }
 
     // MARK: TOC

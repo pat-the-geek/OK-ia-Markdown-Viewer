@@ -89,8 +89,8 @@ struct ReaderView: View {
     /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
     @State private var panneauDuo: PanneauDuo?
     @State private var tailleEcran: CGSize = .zero
-    @State private var margeDroite: CGFloat = 0
-    @State private var margeGauche: CGFloat = 0
+    /// La colonne du système (Duo) est à gauche : l'appareil tourné dans l'autre sens.
+    @State private var colonneAGauche = false
     @State private var barHeight: CGFloat = 0
     @AppStorage("okia.fontScale") private var fontScale: Double = 1.0
     /// Thème de lecture (1.3), retenu comme la taille du texte. Clé d'un `ReaderTheme`.
@@ -269,6 +269,10 @@ struct ReaderView: View {
                             .onChange(of: proxy.frame(in: .global).minY) { _, h in barHeight = h }
                     }
                 )
+                // Ce calque reste dans la zone sûre : décalé vers la droite, il a la colonne du
+                // système à sa gauche (Patrick : les boutons couvraient le texte, la marge restait
+                // vide à droite).
+                .onGeometryChange(for: Bool.self) { $0.frame(in: .global).minX > 20 } action: { colonneAGauche = $0 }
                 .allowsHitTesting(false)
             #if DUO_SDK && !targetEnvironment(macCatalyst)
             .background {
@@ -285,8 +289,8 @@ struct ReaderView: View {
             }
             #endif
             .onChange(of: appareilPliable) { _, _ in poserCoinLibre() }
-            .onChange(of: margeDroite) { _, _ in poserCoinLibre() }
-            .onChange(of: margeGauche) { _, _ in poserCoinLibre() }
+            .onChange(of: colonneAGauche) { _, _ in poserCoinLibre() }
+            .onChange(of: tailleEcran) { _, _ in poserCoinLibre() }
             .onChange(of: barHeight) { _, _ in poserCoinLibre() }
 
             TranslationHostView(translator: translator)
@@ -454,6 +458,10 @@ struct ReaderView: View {
         }
         .onChange(of: fontScale) { _, v in web.setFontScale(v) }
         .onChange(of: readerTheme) { _, v in web.setTheme(v) }
+        // Jour ou nuit : la page change de fond d'elle-même, la vue suit, le temps que WebKit l'ait repeinte.
+        .onChange(of: colorScheme) { _, _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { web.teindreFond() }
+        }
         // `[web]` est explicite : la tâche tient le contrôleur le temps de s'exécuter — il le
         // faut bien pour former les captures `[weak web]` ci-dessous —, et Swift 27 demande
         // qu'on le dise. Les fermetures confiées au traducteur, elles, restent faibles.
@@ -714,9 +722,21 @@ struct ReaderView: View {
     /// système lui donne. Le coin, lui, rognait le titre et les images : de la place perdue.
     private func poserCoinLibre() {
         web.setCoinLibre(largeur: 0, hauteur: 0)
-        // Sur le Duo, barre visible, la page passe sous la colonne du système et n'en garde que
-        // la place des boutons de verre (44 points et leur respiration) ; le livre gère la sienne.
-        web.setMargeOutils(appareilPliable && !modeLivre ? 52 : 0)
+        // Sur le Duo, barre visible, la page passe sous la colonne du système, où sont rangés les
+        // boutons de verre : le texte s'arrête juste avant eux, du côté où est la colonne. 52 points
+        // fixes ne suffisaient pas — le texte passait sous les boutons — et, l'appareil tourné, la
+        // marge restait à droite pendant que les boutons couvraient la gauche (Patrick). Le livre
+        // gère la sienne.
+        web.setMargeOutils(appareilPliable && !modeLivre ? largeurSousColonne() : 0, aGauche: colonneAGauche)
+    }
+
+    /// Ce que la vue web a sous la colonne du système, moins 16 points : les boutons de verre
+    /// commencent environ 24 points après le bord de la colonne, le texte s'arrête 8 points avant eux.
+    private func largeurSousColonne() -> CGFloat {
+        guard let vue = web.webView, let fenetre = vue.window else { return 52 }
+        let cadre = vue.convert(vue.bounds, to: fenetre), marges = fenetre.safeAreaInsets
+        let dessous = colonneAGauche ? marges.left - cadre.minX : cadre.maxX - (fenetre.bounds.width - marges.right)
+        return dessous > 20 ? dessous - 16 : 0
     }
 
     /// L'écran a-t-il la place de deux parties ? Le Duo déplié, de part et d'autre de sa pliure ;
@@ -782,6 +802,7 @@ struct ReaderView: View {
 
     private func arreterLivre() {
         paginationLivre.delier()
+        web.teindreFond()
         web.onTapPage = nil
         barreLivreVisible = false
         web.suivreMiroir(false)

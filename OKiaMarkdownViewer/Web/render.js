@@ -1638,8 +1638,10 @@
   // Le blanc que laisse la page la plus large part vers le bord, pas au milieu du livre.
   // Duo, barre visible : la page passe sous la colonne que le système réserve et n'en garde que
   // la place des boutons de verre — px, du côté de la colonne. 0 rend la marge ordinaire.
-  function setMargeOutils(px) {
+  // cote : 'gauche' quand le Duo, tourné dans l'autre sens, range sa colonne à gauche.
+  function setMargeOutils(px, cote) {
     var racine = document.documentElement;
+    racine.classList.toggle('okia-marge-outils-gauche', px > 0 && cote === 'gauche');
     if (px > 0) {
       racine.classList.add('okia-marge-outils');
       racine.style.setProperty('--okia-marge-outils', px + 'px');

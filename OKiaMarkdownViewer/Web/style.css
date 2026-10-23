@@ -99,6 +99,8 @@ html.okia-carte-seule .okia-fs-control { display: none; }
 html.okia-carte-seule .leaflet-top.leaflet-right { top: 72px; }
 /* Duo, barre visible : la colonne du système ne garde que la place des boutons de verre. */
 html.okia-marge-outils body { padding-left: 0; padding-right: var(--okia-marge-outils); }
+/* Le Duo tourné dans l'autre sens : la colonne, et donc les boutons, passent à gauche. */
+html.okia-marge-outils.okia-marge-outils-gauche body { padding-left: var(--okia-marge-outils); padding-right: 0; }
 html.okia-livre-gauche .markdown-body { margin: 0 0 0 auto; }
 /* La page de gauche va jusqu'à la pliure : la colonne que le système garde à droite n'y porte
    plus que le bouton de recherche, qui flotte en verre sur le texte. */

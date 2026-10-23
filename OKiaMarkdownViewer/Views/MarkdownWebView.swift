@@ -54,6 +54,11 @@ struct MarkdownWebView: UIViewRepresentable {
         // tour pendant que WebKit remettait la page en forme — la page changeait de largeur dix
         // fois par seconde et tremblait (Duo, conversion ouverte à côté du rapport).
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        #if !targetEnvironment(macCatalyst)
+        // Sous la barre, le flou progressif du Liquid Glass. Sur le Duo, grand écran, le système
+        // choisissait le bord dur — une barre opaque coupée d'un filet, comme sur iPad (Patrick).
+        webView.scrollView.topEdgeEffect.style = .soft
+        #endif
 
         context.coordinator.webView = webView
         webController.webView = webView
@@ -203,6 +208,7 @@ struct MarkdownWebView: UIViewRepresentable {
                 }
             case "rendered":
                 parent.webController.reapplyFontScale()
+                parent.webController.teindreFond()
                 parent.webController.onRendered?()
                 // Un document qui s'ouvre presque en haut s'ouvre tout en haut. La hauteur de la
                 // barre de verre se mesure en deux temps, et le Duo change la largeur de la page
