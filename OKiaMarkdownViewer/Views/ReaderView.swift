@@ -290,7 +290,12 @@ struct ReaderView: View {
             #endif
             .onChange(of: appareilPliable) { _, _ in poserCoinLibre() }
             .onChange(of: colonneAGauche) { _, _ in poserCoinLibre() }
-            .onChange(of: tailleEcran) { _, _ in poserCoinLibre() }
+            // Tout de suite, puis une fois la rotation posée : la vue web n'a pas encore sa
+            // nouvelle taille quand l'écran change.
+            .onChange(of: tailleEcran) { _, _ in
+                poserCoinLibre()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { poserCoinLibre() }
+            }
             .onChange(of: barHeight) { _, _ in poserCoinLibre() }
 
             TranslationHostView(translator: translator)
@@ -735,7 +740,13 @@ struct ReaderView: View {
     private func largeurSousColonne() -> CGFloat {
         guard let vue = web.webView, let fenetre = vue.window else { return 52 }
         let cadre = vue.convert(vue.bounds, to: fenetre), marges = fenetre.safeAreaInsets
-        let dessous = colonneAGauche ? marges.left - cadre.minX : cadre.maxX - (fenetre.bounds.width - marges.right)
+        // Jamais plus que la colonne elle-même : pendant une rotation, la vue web garde un instant
+        // son ancienne largeur, et la marge prenait toute la différence — tourné en portrait, le
+        // texte restait serré dans les trois cinquièmes de l'écran (Patrick, Duo). En portrait,
+        // la colonne passe en haut : plus de marge sur les côtés.
+        let fin = min(cadre.maxX, fenetre.bounds.width), debut = max(cadre.minX, 0)
+        let dessous = colonneAGauche ? min(marges.left - debut, marges.left)
+                                     : min(fin - (fenetre.bounds.width - marges.right), marges.right)
         return dessous > 20 ? dessous - 16 : 0
     }
 
