@@ -113,7 +113,12 @@ html.okia-livre-droite body { padding-left: 0; padding-right: 0; }
    dernière page descendait, et le cache du haut couvrait tout sauf ses dernières lignes — une
    page presque vide (Patrick, Duo réel). Une hauteur d'écran de blanc sous le texte ; les
    coupes s'arrêtent, elles, au dernier mot. */
-html.okia-livre-droite body, html.okia-livre-gauche body { padding-bottom: 100vh; }
+html.okia-livre-gauche body { padding-bottom: 100vh; }
+/* À droite, deux : de la dernière double page, la page de droite est celle d'après la fin, une
+   pleine page plus bas que le dernier début de page. Avec une seule, la vue y était placée hors de
+   ce qu'elle pouvait défiler ; WebKit la ramenait ensuite au bas du document, et en revenant en
+   arrière la page de droite restait vide (Patrick, vidéo sur le Duo). */
+html.okia-livre-droite body { padding-bottom: 200vh; }
 /* Dans le livre, un tableau tient dans sa page : plus large, il passait sous la colonne de l'heure
    et sortait coupé (Patrick, Duo réel). Texte un peu plus petit, cellules serrées, mots coupés au
    besoin ; la pastille l'ouvre en entier en plein écran. */
