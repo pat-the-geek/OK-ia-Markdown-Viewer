@@ -52,6 +52,8 @@ struct ReaderView: View {
     /// Le livre dans l'écran : son bord gauche et la largeur de l'écran, en points globaux.
     @State private var origineLivre: CGFloat = 0
     @State private var largeurEcranLivre: CGFloat = 0
+    /// Largeur de la fenêtre de l'app, lue sur la scène : la référence du milieu de l'écran.
+    @State private var largeurFenetre: CGFloat = 0
 
     /// Largeur de la page de gauche et de la pliure, pour le livre du Duo : la page s'arrête où
     /// la pliure commence. Sans région connue, la moitié de l'écran et 40 points.
@@ -60,7 +62,9 @@ struct ReaderView: View {
         // La région du système ne fournit que sa largeur — sa position, lue dans un autre repère,
         // décalait encore la page de droite vers la gauche sur l'appareil réel (Patrick).
         let pli = (regionPli?.width ?? 0) > 0 ? regionPli!.width : 40
-        let ecran = largeurEcranLivre > 0 ? largeurEcranLivre : tailleEcran.width
+        // La largeur de la FENÊTRE, pas celle du lecteur : sur le Duo réel mi-replié, le système
+        // réduit le lecteur à la moitié gauche, et le livre s'y tassait tout entier (Patrick).
+        let ecran = largeurFenetre > 0 ? largeurFenetre : tailleEcran.width
         return (max(0, ecran / 2 - pli / 2 - origineLivre), pli)
     }
     @StateObject private var livre = LivreController()
@@ -146,6 +150,23 @@ struct ReaderView: View {
                     return (regions.first(where: \.isActive) ?? regions.first)?.frame
                 } action: { regionPli = $0 }
                 .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { origineLivre = $0 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { _ in
+                    largeurFenetre = UIApplication.shared.connectedScenes
+                        .compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.width }.first ?? 0
+                }
+                .overlay(alignment: .bottomLeading) {
+                    // Builds de test : les mesures du livre à l'écran, sans passer par la barre (masquée
+                    // dans le livre). Un toucher les copie.
+                    if modeLivre && Self.versionDeTest {
+                        Text(texteDiagnostic)
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .padding(6)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+                            .padding(.leading, 8).padding(.bottom, 40)
+                            .onTapGesture { UIPasteboard.general.string = texteDiagnostic }
+                    }
+                }
                 .background {
                     GeometryReader { p in
                         Color.clear
@@ -992,7 +1013,8 @@ struct ReaderView: View {
             "taille mesurée : \(Int(tailleEcran.width))×\(Int(tailleEcran.height)) pt · écran \(Int(ecran.width))×\(Int(ecran.height)) pt @\(UIScreen.main.scale)x",
             "deux parties possibles : \(deuxPartiesPossibles) · mode livre : \(modeLivre)",
             "pliure : " + (regionPli.map { "x \(Int($0.minX)), largeur \(Int($0.width)), hauteur \(Int($0.height))" } ?? "aucune région"),
-            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre)) · écran \(Int(largeurEcranLivre)) pt",
+            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre))",
+            "lecteur (partie principale) : \(Int(largeurEcranLivre)) pt · fenêtre : \(Int(largeurFenetre)) pt",
             "largeur : \(tailleHorizontale == .compact ? "compacte" : "normale")",
         ].joined(separator: "\n")
     }
