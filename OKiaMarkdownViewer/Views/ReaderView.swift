@@ -173,19 +173,6 @@ struct ReaderView: View {
                 }
                 // La pliure qui passe de verticale à horizontale (l'appareil tourné) : le livre se refait.
                 .onChange(of: livreVertical) { _, _ in if modeLivre { demarrerLivre() } }
-                .overlay(alignment: .bottomLeading) {
-                    // Builds de test : les mesures du livre à l'écran, sans passer par la barre (masquée
-                    // dans le livre). Un toucher les copie.
-                    if modeLivre && Self.versionDeTest {
-                        Text(texteDiagnostic)
-                            .font(.system(size: 9, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .padding(6)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
-                            .padding(.leading, 8).padding(.bottom, 40)
-                            .onTapGesture { UIPasteboard.general.string = texteDiagnostic }
-                    }
-                }
                 .background {
                     GeometryReader { p in
                         Color.clear
