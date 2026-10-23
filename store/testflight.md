@@ -35,9 +35,7 @@ iPad et Mac.
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
 
-DIAGNOSTIC IPHONE DUO (build de test seulement)
-• Le bouton stéthoscope, à côté de la maison, montre ce que l'app reçoit de la
-  charnière. Déplié, à moitié replié, plié : touchez-le, « Copier », envoyez.
+IPHONE DUO
 • Duo à moitié replié : la séparation des pages doit tomber sur la charnière.
   Tourné en « mini-ordinateur », une page en haut, une en bas : tirez vers le haut.
 • Tirez une page, même en diagonale : elle doit attendre que vous la lâchiez.

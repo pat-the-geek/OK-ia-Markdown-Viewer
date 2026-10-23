@@ -43,10 +43,6 @@ struct ReaderView: View {
     /// Partiellement repliée : le système coupe l'écran à la pliure. Sans panneau ouvert, la
     /// partie droite devient la page suivante — le mode livre.
     @State private var charnierePartielle = false
-    /// Diagnostic du Duo (builds TestFlight) : ce que la charnière a réellement transmis.
-    @State private var diagCharniere = "aucune mise à jour reçue"
-    @State private var majCharniere = 0
-    @State private var montrerDiagnostic = false
     /// La pliure du Duo dans le repère du lecteur (région de division du système), s'il y en a une.
     @State private var regionPli: CGRect?
     /// Le livre dans l'écran : son bord gauche et la largeur de l'écran, en points globaux.
@@ -279,12 +275,10 @@ struct ReaderView: View {
                 if #available(iOS 27.1, *) {
                     // Sur toute la surface du lecteur, et non plus en un point : sur l'appareil réel,
                     // la charnière n'est peut-être signalée qu'aux vues qui la traversent.
-                    DetecteurCharniere { pliable, ouverte, partielle, detail in
+                    DetecteurCharniere { pliable, ouverte, partielle in
                         appareilPliable = pliable
                         charniereOuverte = ouverte
                         charnierePartielle = partielle
-                        majCharniere += 1
-                        diagCharniere = detail
                     }
                         .allowsHitTesting(false)
                 }
@@ -318,12 +312,6 @@ struct ReaderView: View {
         }
         .fullScreenCover(item: $tappedImage) { image in
             ImageZoomView(image: image)
-        }
-        .alert("Diagnostic iPhone Duo", isPresented: $montrerDiagnostic) {
-            Button("Copier") { UIPasteboard.general.string = texteDiagnostic }
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(texteDiagnostic)
         }
         .fullScreenCover(item: $tappedCarte) { carte in
             CarteZoomView(carte: carte)
@@ -854,15 +842,6 @@ struct ReaderView: View {
     /// pas dans la barre.
     @ToolbarContentBuilder private var barreOutils: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) { boutonAccueil.teinteBarre() }
-        #if !targetEnvironment(macCatalyst)
-        if Self.versionDeTest {
-            ToolbarItem(placement: .topBarLeading) {
-                Button { montrerDiagnostic = true } label: { Image(systemName: "stethoscope") }
-                    .teinteBarre()
-                    .accessibilityLabel("Diagnostic iPhone Duo")
-            }
-        }
-        #endif
         if isSearching {
             // Pendant une recherche : le compte et les flèches, rien d'autre.
             ToolbarItemGroup(placement: .primaryAction) {
@@ -1004,36 +983,6 @@ struct ReaderView: View {
                       systemImage: afficheTraduction ? "arrow.uturn.backward" : "character.book.closed")
             }
         }
-    }
-
-    /// Build de test (TestFlight, ou Debug) : le diagnostic du Duo y est offert, jamais sur l'App Store.
-    static let versionDeTest: Bool = {
-        #if DEBUG
-        return true
-        #else
-        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
-        #endif
-    }()
-
-    /// Ce que l'app sait du Duo à cet instant, à copier pour le développeur.
-    private var texteDiagnostic: String {
-        var u = utsname(); uname(&u)
-        let modele = withUnsafeBytes(of: &u.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
-        let ecran = UIScreen.main.bounds.size
-        return [
-            "iOS \(UIDevice.current.systemVersion) · \(modele)",
-            diagCharniere,
-            "mises à jour reçues : \(majCharniere)",
-            "pliable : \(appareilPliable) · ouverte : \(charniereOuverte) · partielle : \(charnierePartielle)",
-            "taille mesurée : \(Int(tailleEcran.width))×\(Int(tailleEcran.height)) pt · écran \(Int(ecran.width))×\(Int(ecran.height)) pt @\(UIScreen.main.scale)x",
-            "deux parties possibles : \(deuxPartiesPossibles) · mode livre : \(modeLivre)",
-            "pliure : " + (regionPli.map { "x \(Int($0.minX)), y \(Int($0.minY)), largeur \(Int($0.width)), hauteur \(Int($0.height))" } ?? "aucune région"),
-            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre)), y \(Int(origineLivreY))",
-            "livre vertical : \(livreVertical) · page du haut : \(Int(hauteurPageHaute)) pt · fenêtre \(Int(largeurFenetre))×\(Int(hauteurFenetre))",
-            "lecteur (partie principale) : \(Int(largeurEcranLivre)) pt · fenêtre : \(Int(largeurFenetre)) pt",
-            paginationLivre.mesures,
-            "largeur : \(tailleHorizontale == .compact ? "compacte" : "normale")",
-        ].joined(separator: "\n")
     }
 
     /// iPhone tenu droit : ce qui ne tient pas dans la barre.
@@ -2014,30 +1963,16 @@ struct PresentationWebView: UIViewRepresentable {
 /// nil. Plus sûr que de deviner l'appareil à ses marges : un iPhone en paysage en a aussi.
 @available(iOS 27.1, *)
 private struct DetecteurCharniere: UIViewRepresentable {
-    /// (appareil pliable, charnière ouverte, partiellement repliée, détail pour le diagnostic)
-    var surChangement: (Bool, Bool, Bool, String) -> Void
+    /// (appareil pliable, charnière ouverte, partiellement repliée)
+    var surChangement: (Bool, Bool, Bool) -> Void
 
     func makeUIView(context: Context) -> UIView {
         let vue = UIView()
         vue.isUserInteractionEnabled = false
         let suivi = surChangement
         vue.addInteraction(UIHingeInteraction { _, maj in
-            let detail: String
-            if let h = maj.hinge {
-                let etat: String
-                switch h.status {
-                case .unknown: etat = "inconnu"
-                case .closed: etat = "fermée"
-                case .partiallyOpen: etat = "partiellement ouverte"
-                case .fullyOpen: etat = "ouverte à fond"
-                @unknown default: etat = "valeur \(h.status.rawValue)"
-                }
-                detail = "charnière : \(etat), angle \(String(format: "%.1f", h.angle))"
-            } else {
-                detail = "charnière : absente (hinge = nil)"
-            }
             suivi(maj.hinge != nil, maj.hinge.map { $0.status != .closed } ?? false,
-                  maj.hinge.map { $0.status == .partiallyOpen } ?? false, detail)
+                  maj.hinge.map { $0.status == .partiallyOpen } ?? false)
         })
         return vue
     }
