@@ -1758,6 +1758,20 @@
     // de ce graphique, s'il y en a un juste après le titre.
     var GRAPHIQUE = '.okia-map, pre, table, img, .okia-agrandissable, .fornews-frise, .fornews-deroule, ' +
       '.fornews-agenda, .fornews-chiffres, .fornews-controle';
+    // Ce qui a l'allure d'une carte reste entier (Patrick : les cartes « Dans cette édition » de
+    // fornews, en styles en ligne et sans classe, se coupaient entre deux pages) : les éléments
+    // d'une grille ou d'une rangée, et tout encadré qui a un fond ou un bord. Trop haut pour une
+    // page, il se coupe quand même entre deux lignes (règle 2, plus bas).
+    Array.prototype.forEach.call(contenu.querySelectorAll('div, section, figure, aside, li'), function (e) {
+      if (e.closest('.okia-map')) return;
+      var parent = e.parentElement, cp = parent ? getComputedStyle(parent) : null;
+      var dansGrille = cp && /grid|flex/.test(cp.display);
+      var cs = getComputedStyle(e);
+      var fond = cs.backgroundColor && !/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor);
+      var bord = parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0;
+      if (!dansGrille && !fond && !bord) return;
+      var b = boite(e); if (b[1] - b[0] > 0) blocs.push(b);
+    });
     Array.prototype.forEach.call(contenu.querySelectorAll('h1, h2, h3, h4'), function (e) {
       var b = boite(e); if (!(b[1] - b[0] > 0)) return;
       var suivant = e.nextElementSibling;
