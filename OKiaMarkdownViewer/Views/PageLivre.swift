@@ -120,6 +120,8 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
     /// une page en bas ; la page du bas se soulève autour de la charnière et se pose en haut, et le
     /// geste est vertical (Patrick). À fixer avant `relier`.
     var vertical = false
+    /// Pour le diagnostic des builds de test : la hauteur de page retenue et les marges de chaque vue.
+    private(set) var mesures = "pages : pas encore calculées"
 
     func relier(gauche: WKWebView?, droite: WKWebView?) {
         delier()
@@ -223,7 +225,11 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
 
     private func visible(_ v: WKWebView) -> CGFloat {
         let s = v.scrollView
-        return s.bounds.height - s.adjustedContentInset.top - s.adjustedContentInset.bottom
+        // En bas, la seule marge qui compte est celle de la barre d'accueil (34 points au plus) :
+        // sur le Duo réel mi-replié en « mini-ordinateur », le système ajoutait à la page du haut une
+        // marge de sécurité autour de la pliure (≈ 82 points), et la page était coupée bien avant la
+        // charnière (Patrick). La vue s'arrête déjà au début de la pliure.
+        return s.bounds.height - s.adjustedContentInset.top - min(s.adjustedContentInset.bottom, 34)
     }
 
     func recalculer() {
@@ -233,6 +239,11 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         if tour != nil || enPreparation { recalculerPlusTard(); return }
         // La page commence un peu sous le haut de l'écran : sa hauteur utile en est d'autant réduite.
         let h = floor(min(visible(g), visible(d))) - Self.margeHaut
+        func marges(_ v: WKWebView) -> String {
+            let i = v.scrollView.adjustedContentInset
+            return "\(Int(v.scrollView.bounds.height)) h, marges \(Int(i.top))/\(Int(i.bottom))"
+        }
+        mesures = "page retenue : \(Int(h)) pt · haut/gauche \(marges(g)) · bas/droite \(marges(d))"
         guard h > 100 else { return }
         let lu = debut(2 * planche)
         teindreFond(g, d)

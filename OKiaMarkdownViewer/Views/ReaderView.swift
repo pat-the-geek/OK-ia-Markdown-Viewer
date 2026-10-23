@@ -1044,6 +1044,7 @@ struct ReaderView: View {
             "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre)), y \(Int(origineLivreY))",
             "livre vertical : \(livreVertical) · page du haut : \(Int(hauteurPageHaute)) pt · fenêtre \(Int(largeurFenetre))×\(Int(hauteurFenetre))",
             "lecteur (partie principale) : \(Int(largeurEcranLivre)) pt · fenêtre : \(Int(largeurFenetre)) pt",
+            paginationLivre.mesures,
             "largeur : \(tailleHorizontale == .compact ? "compacte" : "normale")",
         ].joined(separator: "\n")
     }
