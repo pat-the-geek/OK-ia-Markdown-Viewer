@@ -54,6 +54,23 @@ struct ReaderView: View {
     @State private var largeurEcranLivre: CGFloat = 0
     /// Largeur de la fenêtre de l'app, lue sur la scène : la référence du milieu de l'écran.
     @State private var largeurFenetre: CGFloat = 0
+    @State private var hauteurFenetre: CGFloat = 0
+    @State private var origineLivreY: CGFloat = 0
+
+    /// Duo mi-replié tourné, en « mini-ordinateur » : la pliure est horizontale (plus large que
+    /// haute) — une page en haut, une page en bas (Patrick).
+    private var livreVertical: Bool {
+        guard let r = regionPli else { return false }
+        return r.width > r.height
+    }
+
+    /// Hauteur de la page du haut, quand la pliure est horizontale : elle s'arrête au début de la
+    /// pliure, centrée sur le milieu de la fenêtre comme la pliure verticale.
+    private var hauteurPageHaute: CGFloat {
+        let pli = (regionPli?.height ?? 0) > 0 ? regionPli!.height : 40
+        let ecran = hauteurFenetre > 0 ? hauteurFenetre : tailleEcran.height
+        return max(0, ecran / 2 - pli / 2 - origineLivreY)
+    }
 
     /// Largeur de la page de gauche et de la pliure, pour le livre du Duo : la page s'arrête où
     /// la pliure commence. Sans région connue, la moitié de l'écran et 40 points.
@@ -61,7 +78,7 @@ struct ReaderView: View {
         // La pliure du Duo est au MILIEU PHYSIQUE de l'écran : l'écart entre les pages s'y centre.
         // La région du système ne fournit que sa largeur — sa position, lue dans un autre repère,
         // décalait encore la page de droite vers la gauche sur l'appareil réel (Patrick).
-        let pli = (regionPli?.width ?? 0) > 0 ? regionPli!.width : 40
+        let pli = (regionPli?.width ?? 0) > 0 && !livreVertical ? regionPli!.width : 40
         // La largeur de la FENÊTRE, pas celle du lecteur : sur le Duo réel mi-replié, le système
         // réduit le lecteur à la moitié gauche, et le livre s'y tassait tout entier (Patrick).
         let ecran = largeurFenetre > 0 ? largeurFenetre : tailleEcran.width
@@ -137,20 +154,25 @@ struct ReaderView: View {
                 // pliure (495 points sur 951, diagnostic de Patrick) : la page de gauche s'arrête au
                 // début de la pliure, le reste demeure vide. La page de droite est la seconde partie,
                 // que le système pose de l'autre côté. Sur le simulateur, la partie s'arrête au pli.
-                HStack(spacing: 0) {
-                    lecteur
-                        .frame(width: modeLivre ? pagesDuLivre.gauche : nil)
-                    if modeLivre { Spacer(minLength: 0) }
-                }
+                // Pliure horizontale : la page du haut s'arrête au début de la pliure, de même.
+                lecteur
+                    .frame(width: modeLivre && !livreVertical ? pagesDuLivre.gauche : nil,
+                           height: modeLivre && livreVertical ? hauteurPageHaute : nil)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .onGeometryChange(for: CGRect?.self) { proxy in
                     let regions = proxy.reservedRegions(kind: .division, options: .includeInactive)
                     return (regions.first(where: \.isActive) ?? regions.first)?.frame
                 } action: { regionPli = $0 }
                 .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minX } action: { origineLivre = $0 }
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { _ in
-                    largeurFenetre = UIApplication.shared.connectedScenes
-                        .compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.width }.first ?? 0
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { origineLivreY = $0 }
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { _ in
+                    let fenetre = UIApplication.shared.connectedScenes
+                        .compactMap { ($0 as? UIWindowScene)?.keyWindow?.bounds.size }.first ?? .zero
+                    largeurFenetre = fenetre.width
+                    hauteurFenetre = fenetre.height
                 }
+                // La pliure qui passe de verticale à horizontale (l'appareil tourné) : le livre se refait.
+                .onChange(of: livreVertical) { _, _ in if modeLivre { demarrerLivre() } }
                 .overlay(alignment: .bottomLeading) {
                     // Builds de test : les mesures du livre à l'écran, sans passer par la barre (masquée
                     // dans le livre). Un toucher les copie.
@@ -760,6 +782,9 @@ struct ReaderView: View {
     private func demarrerLivre() {
         guard modeLivre else { return }
         let livre = self.livre, web = self.web, pagination = paginationLivre
+        #if DUO_SDK && !targetEnvironment(macCatalyst)
+        pagination.vertical = livreVertical
+        #endif
         web.onMiroir = { livre.poser($0); pagination.recalculerPlusTard() }
         web.onRecouper = { pagination.recalculerPlusTard() }
         web.onTapPage = { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } }
@@ -1015,8 +1040,9 @@ struct ReaderView: View {
             "pliable : \(appareilPliable) · ouverte : \(charniereOuverte) · partielle : \(charnierePartielle)",
             "taille mesurée : \(Int(tailleEcran.width))×\(Int(tailleEcran.height)) pt · écran \(Int(ecran.width))×\(Int(ecran.height)) pt @\(UIScreen.main.scale)x",
             "deux parties possibles : \(deuxPartiesPossibles) · mode livre : \(modeLivre)",
-            "pliure : " + (regionPli.map { "x \(Int($0.minX)), largeur \(Int($0.width)), hauteur \(Int($0.height))" } ?? "aucune région"),
-            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre))",
+            "pliure : " + (regionPli.map { "x \(Int($0.minX)), y \(Int($0.minY)), largeur \(Int($0.width)), hauteur \(Int($0.height))" } ?? "aucune région"),
+            "page de gauche : \(Int(pagesDuLivre.gauche)) pt · pli : \(Int(pagesDuLivre.pli)) pt · livre à x \(Int(origineLivre)), y \(Int(origineLivreY))",
+            "livre vertical : \(livreVertical) · page du haut : \(Int(hauteurPageHaute)) pt · fenêtre \(Int(largeurFenetre))×\(Int(hauteurFenetre))",
             "lecteur (partie principale) : \(Int(largeurEcranLivre)) pt · fenêtre : \(Int(largeurFenetre)) pt",
             "largeur : \(tailleHorizontale == .compact ? "compacte" : "normale")",
         ].joined(separator: "\n")

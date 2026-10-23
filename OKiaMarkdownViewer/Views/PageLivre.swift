@@ -116,6 +116,10 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
     private var planche = 0
     private var gestes: [(UIView, UIGestureRecognizer)] = []
     private var attente: DispatchWorkItem?
+    /// Duo mi-replié tourné, en « mini-ordinateur » : la pliure est horizontale, une page en haut,
+    /// une page en bas ; la page du bas se soulève autour de la charnière et se pose en haut, et le
+    /// geste est vertical (Patrick). À fixer avant `relier`.
+    var vertical = false
 
     func relier(gauche: WKWebView?, droite: WKWebView?) {
         delier()
@@ -129,7 +133,9 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
             doigt.delegate = self
             vue.addGestureRecognizer(doigt)
             gestes.append((vue, doigt))
-            // Balayer vers le haut ou le bas tourne la page d'un seul coup.
+            // Balayer vers le haut ou le bas tourne la page d'un seul coup. À la verticale, ce geste
+            // est celui du doigt lui-même : un coup rapide, en le lâchant, tourne la page.
+            if vertical { continue }
             for (direction, sens) in [(UISwipeGestureRecognizer.Direction.up, 1), (.down, -1)] {
                 let g = UISwipeGestureRecognizer(target: self, action: sens > 0 ? #selector(suivante) : #selector(precedente))
                 g.direction = direction
@@ -338,7 +344,8 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         // l'horizontale) : un vrai doigt ne glisse jamais à plat. Seul un geste franchement vertical
         // est laissé aux balayages.
         let v = pan.velocity(in: pan.view)
-        return abs(v.x) * 1.7 > abs(v.y) && tour == nil && !enPreparation
+        let principal = vertical ? abs(v.y) : abs(v.x), travers = vertical ? abs(v.x) : abs(v.y)
+        return principal * 1.7 > travers && tour == nil && !enPreparation
     }
 
     @objc private func suivante() { tournerDUnCoup(1) }
@@ -360,8 +367,10 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
     }
 
     @objc private func suivreDoigt(_ pan: UIPanGestureRecognizer) {
-        let dx = pan.translation(in: pan.view).x
-        let largeur = max(pan.view?.bounds.width ?? 400, 1)
+        // À la verticale, tout se lit sur y : vers le haut (dy < 0), la page suivante.
+        let t = pan.translation(in: pan.view)
+        let dx = vertical ? t.y : t.x
+        let largeur = max((vertical ? pan.view?.bounds.height : pan.view?.bounds.width) ?? 400, 1)
         switch pan.state {
         case .changed:
             if tour == nil && !enPreparation {
@@ -377,7 +386,12 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
             // se pose de l'autre côté ; en deçà, elle revient là où on était.
             let sens = tour?.sens ?? (dx < 0 ? 1 : -1)
             let p = tour?.avancement ?? avancement(dx: dx, sens: sens, largeur: largeur)
-            let valider = pan.state == .ended && p > 0.5
+            var valider = pan.state == .ended && p > 0.5
+            // À la verticale, un coup rapide dans le sens du tour suffit, même lâché tôt.
+            if vertical && pan.state == .ended && !valider {
+                let v = pan.velocity(in: pan.view).y
+                valider = sens > 0 ? v < -500 : v > 500
+            }
             if let t = tour { finir(t, valider: valider) } else if enPreparation { decisionEnAttente = valider }
         default:
             break
@@ -444,40 +458,51 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
 
         let page = CATransformLayer()
         page.bounds = CGRect(origin: .zero, size: cadre.size)
-        // La charnière de la page est la pliure : son bord gauche en avant, son bord droit en arrière.
-        page.anchorPoint = CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
-        page.position = CGPoint(x: sens > 0 ? cadre.minX : cadre.maxX, y: cadre.midY)
+        // La charnière de la page est la pliure : son bord gauche en avant, son bord droit en arrière
+        // — à la verticale, son bord haut en avant (la page du bas), son bord bas en arrière.
+        let v = vertical
+        page.anchorPoint = v ? CGPoint(x: 0.5, y: sens > 0 ? 0 : 1) : CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
+        page.position = v ? CGPoint(x: cadre.midX, y: sens > 0 ? cadre.minY : cadre.maxY)
+                          : CGPoint(x: sens > 0 ? cadre.minX : cadre.maxX, y: cadre.midY)
 
         // Les bandes, de la charnière vers le bord libre. Chacune porte sa part du recto et, au dos,
         // sa part du verso — retournée, puisque la page se posera de l'autre côté de la pliure.
-        let n = Self.nombreDeBandes, largeur = cadre.width / CGFloat(n), h = cadre.height
+        let n = Self.nombreDeBandes
+        let largeur = v ? cadre.width : cadre.width / CGFloat(n)
+        let h = v ? cadre.height / CGFloat(n) : cadre.height
+        let long = v ? cadre.height : cadre.width
+        let pasBande = long / CGFloat(n)
         var bandes: [Bande] = []
         var parent: CALayer = page
         for i in 0..<n {
             let b = CATransformLayer()
             b.bounds = CGRect(x: 0, y: 0, width: largeur, height: h)
-            b.anchorPoint = CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
-            if i == 0 {
-                b.position = CGPoint(x: sens > 0 ? 0 : cadre.width, y: h / 2)
+            if v {
+                b.anchorPoint = CGPoint(x: 0.5, y: sens > 0 ? 0 : 1)
+                b.position = i == 0 ? CGPoint(x: largeur / 2, y: sens > 0 ? 0 : long)
+                                    : CGPoint(x: largeur / 2, y: sens > 0 ? pasBande : 0)
             } else {
-                b.position = CGPoint(x: sens > 0 ? largeur : 0, y: h / 2)
+                b.anchorPoint = CGPoint(x: sens > 0 ? 0 : 1, y: 0.5)
+                b.position = i == 0 ? CGPoint(x: sens > 0 ? 0 : long, y: h / 2)
+                                    : CGPoint(x: sens > 0 ? pasBande : 0, y: h / 2)
             }
-            // La part de l'image : en avant, la i-ième bande depuis la gauche du recto ; en
-            // arrière, depuis sa droite. Le verso, lui, se lit dans l'autre sens.
+            // La part de l'image : en avant, la i-ième bande depuis le bord de la charnière du recto ;
+            // en arrière, depuis l'autre bord. Le verso, lui, se lit dans l'autre sens.
             let x0 = CGFloat(i) / CGFloat(n), x1 = CGFloat(i + 1) / CGFloat(n)
-            let partRecto = sens > 0 ? CGRect(x: x0, y: 0, width: x1 - x0, height: 1)
-                                     : CGRect(x: 1 - x1, y: 0, width: x1 - x0, height: 1)
-            let partVerso = sens > 0 ? CGRect(x: 1 - x1, y: 0, width: x1 - x0, height: 1)
-                                     : CGRect(x: x0, y: 0, width: x1 - x0, height: 1)
+            func part(_ debut: CGFloat) -> CGRect {
+                v ? CGRect(x: 0, y: debut, width: 1, height: x1 - x0) : CGRect(x: debut, y: 0, width: x1 - x0, height: 1)
+            }
+            let partRecto = sens > 0 ? part(x0) : part(1 - x1)
+            let partVerso = sens > 0 ? part(1 - x1) : part(x0)
             func face(_ image: UIImage, _ part: CGRect, retournee: Bool) -> CALayer {
                 let f = CALayer()
                 // Un demi-point de recouvrement : sans lui, un fil de jour passait entre deux bandes.
-                f.frame = b.bounds.insetBy(dx: -0.5, dy: 0)
+                f.frame = v ? b.bounds.insetBy(dx: 0, dy: -0.5) : b.bounds.insetBy(dx: -0.5, dy: 0)
                 f.contents = image.cgImage
                 f.contentsRect = part
                 f.contentsGravity = .resize
                 f.isDoubleSided = false
-                if retournee { f.transform = CATransform3DMakeRotation(.pi, 0, 1, 0) }
+                if retournee { f.transform = v ? CATransform3DMakeRotation(.pi, 1, 0, 0) : CATransform3DMakeRotation(.pi, 0, 1, 0) }
                 let o = CALayer()
                 o.frame = f.bounds
                 o.backgroundColor = UIColor.black.cgColor
@@ -494,8 +519,8 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         }
         // L'ombre portée : une bande dégradée au pied du bord libre de la page, sous elle.
         let ombrePortee = CAGradientLayer()
-        ombrePortee.startPoint = CGPoint(x: 0, y: 0.5)
-        ombrePortee.endPoint = CGPoint(x: 1, y: 0.5)
+        ombrePortee.startPoint = v ? CGPoint(x: 0.5, y: 0) : CGPoint(x: 0, y: 0.5)
+        ombrePortee.endPoint = v ? CGPoint(x: 0.5, y: 1) : CGPoint(x: 1, y: 0.5)
         ombrePortee.opacity = 0
         scene.addSublayer(ombrePortee)
         scene.addSublayer(page)
@@ -514,14 +539,18 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         // angles des bandes vont de θ − c/2 à θ + c/2, bornés à [0, π].
         let n = t.bandes.count, theta = CGFloat.pi * p
         let c = 1.25 * sin(.pi * p)
-        let signe: CGFloat = t.sens > 0 ? -1 : 1
+        // Le bord libre vient vers soi : autour de l'axe vertical, une rotation négative pour la page
+        // de droite ; autour de l'axe horizontal, positive pour la page du bas.
+        let v = vertical
+        let signe: CGFloat = v ? (t.sens > 0 ? 1 : -1) : (t.sens > 0 ? -1 : 1)
         var precedent: CGFloat = 0
         var bordX: CGFloat = 0
-        let pas = t.cadre.width / CGFloat(n)
+        let pas = (v ? t.cadre.height : t.cadre.width) / CGFloat(n)
         for (i, b) in t.bandes.enumerated() {
             let f = (CGFloat(i) + 0.5) / CGFloat(n) - 0.5
             let phi = min(.pi, max(0, theta + c * f))
-            b.couche.transform = CATransform3DMakeRotation(signe * (phi - precedent), 0, 1, 0)
+            b.couche.transform = v ? CATransform3DMakeRotation(signe * (phi - precedent), 1, 0, 0)
+                                   : CATransform3DMakeRotation(signe * (phi - precedent), 0, 1, 0)
             precedent = phi
             // La lumière suit la pente de chaque bande : le recto s'assombrit en se détournant, le
             // verso s'éclaire en se posant.
@@ -533,13 +562,14 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
         // découvre (avant la moitié) ou qu'il recouvre (après). Plus la page est levée, plus
         // l'ombre est large et soutenue.
         let levee = sin(.pi * p)
-        let charniere = t.sens > 0 ? t.cadre.minX : t.cadre.maxX
+        let charniere = v ? (t.sens > 0 ? t.cadre.minY : t.cadre.maxY) : (t.sens > 0 ? t.cadre.minX : t.cadre.maxX)
         let bord = charniere + (t.sens > 0 ? 1 : -1) * bordX
         let largeur = 24 + 90 * levee
         // Vers où l'ombre s'étend depuis le bord : loin de la charnière avant la moitié, vers elle après.
         let versLaDroite = (t.sens > 0) == (p < 0.5)
-        t.ombrePortee.frame = CGRect(x: versLaDroite ? bord : bord - largeur, y: t.cadre.minY,
-                                     width: largeur, height: t.cadre.height)
+        t.ombrePortee.frame = v
+            ? CGRect(x: t.cadre.minX, y: versLaDroite ? bord : bord - largeur, width: t.cadre.width, height: largeur)
+            : CGRect(x: versLaDroite ? bord : bord - largeur, y: t.cadre.minY, width: largeur, height: t.cadre.height)
         let fonce = UIColor.black.withAlphaComponent(0.45).cgColor, clair = UIColor.clear.cgColor
         t.ombrePortee.colors = versLaDroite ? [fonce, clair] : [clair, fonce]
         t.ombrePortee.opacity = Float(levee)
