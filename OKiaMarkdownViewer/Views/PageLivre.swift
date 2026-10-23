@@ -133,6 +133,10 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
             for (direction, sens) in [(UISwipeGestureRecognizer.Direction.up, 1), (.down, -1)] {
                 let g = UISwipeGestureRecognizer(target: self, action: sens > 0 ? #selector(suivante) : #selector(precedente))
                 g.direction = direction
+                // Le balayage ne compte que si le doigt n'a pas pris la page : un vrai doigt ne glisse
+                // jamais tout à fait à l'horizontale, et le balayage vers le haut, reconnu en route,
+                // tournait la page d'un coup sans attendre qu'on la lâche (Patrick, Duo réel).
+                g.require(toFail: doigt)
                 vue.addGestureRecognizer(g)
                 gestes.append((vue, g))
             }
@@ -330,8 +334,11 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
 
     func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
         guard let pan = g as? UIPanGestureRecognizer else { return true }
+        // Le doigt va de côté, même en partant un peu vers le haut ou le bas (jusqu'à ~60° de
+        // l'horizontale) : un vrai doigt ne glisse jamais à plat. Seul un geste franchement vertical
+        // est laissé aux balayages.
         let v = pan.velocity(in: pan.view)
-        return abs(v.x) > abs(v.y) && tour == nil && !enPreparation
+        return abs(v.x) * 1.7 > abs(v.y) && tour == nil && !enPreparation
     }
 
     @objc private func suivante() { tournerDUnCoup(1) }
