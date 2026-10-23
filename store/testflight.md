@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (70)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (71)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (70)
+## What to Test — 1.3 (71)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -38,6 +38,7 @@ Merci de tester la 1.3 de md Viewer, en cours de développement. Points à véri
 DIAGNOSTIC IPHONE DUO (build de test seulement)
 • Le bouton stéthoscope, à côté de la maison, montre ce que l'app reçoit de la
   charnière. Déplié, à moitié replié, plié : touchez-le, « Copier », envoyez.
+  Dans le livre, le même texte s'affiche en bas à gauche : touchez-le pour le copier.
 • Duo à moitié replié : la séparation des pages doit tomber sur la charnière.
 • Tirez une page, même en diagonale : elle doit attendre que vous la lâchiez.
 • En plein écran (image ou diagramme), après un zoom, Ajuster et Fermer
