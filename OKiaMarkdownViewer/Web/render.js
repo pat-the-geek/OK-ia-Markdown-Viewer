@@ -1786,7 +1786,9 @@
     var cs = getComputedStyle(contenu);
     var ligne = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 17) * 1.6;
     var boites = lignes.concat(visuels, blocs);
-    var total = Math.max(document.documentElement.scrollHeight, contenu.getBoundingClientRect().bottom + sy);
+    // Jusqu'au dernier mot, pas jusqu'au bas du document : le blanc ajouté sous le texte pour
+    // laisser défiler la dernière page aurait fait des pages vides.
+    var total = contenu.getBoundingClientRect().bottom + sy;
     var coupes = [0], debut = 0;
     while (debut + H < total && coupes.length < 5000) {
       var cible = debut + H, coupe = cible;

@@ -108,11 +108,12 @@ html.okia-livre-gauche body { padding-left: 0; padding-right: 0; }
 /* La page de droite passe sous la colonne de l'heure, comme la page du Duo déplié : le texte
    prend toute la largeur, l'heure et le réseau flottent dessus. */
 html.okia-livre-droite body { padding-left: 0; padding-right: 0; }
-/* La page de droite montre la page suivante : à la fin du document, il faut pouvoir la faire
-   défiler au-delà du dernier mot, sinon elle s'arrêtait plus tôt et répétait la fin de la page
-   de gauche. Une hauteur d'écran de blanc sous le texte ; les coupes, elles, se calculent sur
-   la page de gauche. */
-html.okia-livre-droite body { padding-bottom: 100vh; }
+/* À la fin du document, chaque page doit pouvoir défiler au-delà du dernier mot : sinon la vue
+   s'arrêtait plus tôt. À droite, la page répétait la fin de celle de gauche ; à gauche, la
+   dernière page descendait, et le cache du haut couvrait tout sauf ses dernières lignes — une
+   page presque vide (Patrick, Duo réel). Une hauteur d'écran de blanc sous le texte ; les
+   coupes s'arrêtent, elles, au dernier mot. */
+html.okia-livre-droite body, html.okia-livre-gauche body { padding-bottom: 100vh; }
 /* Dans le livre, un tableau tient dans sa page : plus large, il passait sous la colonne de l'heure
    et sortait coupé (Patrick, Duo réel). Texte un peu plus petit, cellules serrées, mots coupés au
    besoin ; la pastille l'ouvre en entier en plein écran. */
