@@ -7,11 +7,13 @@ Sortie : store/captures-legendees-1.3/<emplacement App Store Connect>/<langue>/<
 à la taille exacte de l'emplacement. Légendes : store/legendes.json.
 
 Usage : scripts/legender.py [langue …]      toutes les langues si aucune n'est donnée
+        OKIA_APPAREILS=iphone-duo scripts/legender.py   un seul appareil (liste séparée par des virgules)
 
 La police vient de l'app (Web/fonts/Nunito-Black.woff2), convertie en TTF à la volée —
 fontTools et brotli sont nécessaires (python3 -m pip install --user fonttools brotli pillow).
 """
 import json
+import os
 import pathlib
 import sys
 import tempfile
@@ -30,6 +32,18 @@ ORANGE = (232, 151, 46)
 APPAREILS = {
     "iphone-6.9": dict(emplacement="APP_IPHONE_67", marge=96, corps=98, interligne=110,
                        trait=(118, 10, 40), haut=540, bas=110, rayon=34),
+    # L'emplacement « écran moyen » (6,1 et 6,3"), que la fiche met désormais en avant.
+    "iphone-6.3": dict(emplacement="APP_IPHONE_61", marge=88, corps=90, interligne=100,
+                       trait=(108, 9, 36), haut=494, bas=100, rayon=31),
+    # L'iPhone Duo plié : son écran extérieur est moins haut que celui d'un iPhone, la légende
+    # prend un peu moins de place.
+    "iphone-duo": dict(emplacement="APP_IPHONE_DUO", marge=96, corps=92, interligne=104,
+                       trait=(118, 10, 34), haut=470, bas=90, rayon=34,
+                       prefixe="b-", scenes={"1-lecteur", "4-themes", "6-carte"}),
+    # Le Duo déplié, écran intérieur 2007 × 2853 : le même emplacement, en tête. Dix captures au
+    # plus par emplacement : les sept scènes dépliées, puis trois pliées.
+    "iphone-duo-deplie": dict(emplacement="APP_IPHONE_DUO", marge=138, corps=132, interligne=150,
+                              trait=(170, 13, 50), haut=660, bas=130, rayon=40, prefixe="a-"),
     "ipad-13": dict(emplacement="APP_IPAD_PRO_3GEN_129", marge=146, corps=152, interligne=172,
                     trait=(184, 9, 48), haut=630, bas=110, rayon=26),
     # L'iPad couché (conversion, discussion à côté du document) : la légende tient sur une ligne,
@@ -115,8 +129,10 @@ def main():
     legendes = json.loads((RACINE / "store" / "legendes.json").read_text(encoding="utf-8"))
     langues = sys.argv[1:] or list(legendes)
     ttf = police()
+    choisis = [a for a in os.environ.get("OKIA_APPAREILS", "").split(",") if a]
+    videes = set()
     for appareil, p in APPAREILS.items():
-        if appareil.endswith("-paysage"):
+        if appareil.endswith("-paysage") or (choisis and appareil not in choisis):
             continue
         for langue in langues:
             dossier = RACINE / "store" / "screenshots" / appareil / langue
@@ -125,10 +141,15 @@ def main():
             cible = SORTIE / p["emplacement"] / langue
             cible.mkdir(parents=True, exist_ok=True)
             # Le jeu d'une langue se remplace en entier : une scène renommée ne doit pas laisser
-            # son ancienne image dans l'emplacement.
-            for vieux in cible.glob("*.png"):
-                vieux.unlink()
+            # son ancienne image dans l'emplacement. Une fois par emplacement : le Duo plié et
+            # le Duo déplié s'y retrouvent ensemble.
+            if cible not in videes:
+                for vieux in cible.glob("*.png"):
+                    vieux.unlink()
+                videes.add(cible)
             for capture in sorted(dossier.glob("*.png")):
+                if p.get("scenes") and capture.stem not in p["scenes"]:
+                    continue
                 legende = legendes[langue].get(capture.stem)
                 if not legende:
                     print(f"  … {appareil}/{langue}/{capture.name} : pas de légende, ignorée")
@@ -137,8 +158,9 @@ def main():
                 with Image.open(capture) as brute:
                     if appareil == "ipad-13" and brute.width > brute.height:
                         q = APPAREILS["ipad-13-paysage"]
-                habiller(capture, legende, q, ttf).save(cible / capture.name)
-                print(f"  ✓ {p['emplacement']}/{langue}/{capture.name}")
+                nom = p.get("prefixe", "") + capture.name
+                habiller(capture, legende, q, ttf).save(cible / nom)
+                print(f"  ✓ {p['emplacement']}/{langue}/{nom}")
 
 
 if __name__ == "__main__":

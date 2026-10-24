@@ -11,6 +11,10 @@
 #   scripts/screenshots.sh en            idem en anglais
 #   scripts/screenshots.sh fr iphone     une seule famille d'appareils
 #   scripts/screenshots.sh fr mac        le Mac (Catalyst), sur cette machine
+#   scripts/screenshots.sh fr duo        l'iPhone Duo plié (écran extérieur)
+#   scripts/screenshots.sh fr moyen      l'iPhone 6,3" (iPhone 17 Pro)
+#   scripts/screenshots.sh fr deplie     l'iPhone Duo déplié (écran intérieur) — le déplier
+#                                        d'abord dans Device Hub, qui ne se pilote pas
 #
 # Les scènes sont les fichiers de store/scenes/<langue>/<n>-<nom>.md ; la capture prend le
 # même nom. Sortie dans store/screenshots/<appareil>/<langue>/.
@@ -23,6 +27,8 @@ TEAM_ID="PU9BSXN2V5"
 BUNDLE="ch.ok-ia.markdownviewer"
 IPHONE="iPhone 17 Pro Max"     # 1320 × 2868, le slot 6,9" demandé par App Store Connect
 IPAD="iPad Pro 13-inch (M5)"   # 2064 × 2752, le slot 13"
+IPHONE_MOYEN="iPhone 17 Pro" # 1206 × 2622, l'emplacement « écran moyen » (6,1 et 6,3") mis en avant
+DUO="iPhone Duo"               # plié : écran extérieur 1398 × 2034, l'emplacement « iPhone Duo »
 ATTENTE=9                      # secondes : les tuiles vectorielles et Mermaid doivent être là
 
 LANGUE="${1:-fr}"
@@ -150,7 +156,10 @@ capture_appareil() {
   # la date, écrite par SpringBoard dans la langue du système — un simulateur laissé en
   # espagnol donnait « Viernes 4 de septiembre » sur une capture anglaise. Le changement ne
   # prend qu'au redémarrage de SpringBoard.
-  if [ "$(xcrun simctl spawn "$dev" defaults read -g AppleLanguages 2>/dev/null | tr -d ' \n(),"' )" != "$LANGUE" ]; then
+  # Le Duo déplié n'y passe pas : le redémarrage le replie (Device Hub seul le déplie), et sa
+  # barre d'état ne montre que l'heure — la langue de l'app passe par OKIA_UI_LANG.
+  if [ "$dossier" != "iphone-duo-deplie" ] && \
+     [ "$(xcrun simctl spawn "$dev" defaults read -g AppleLanguages 2>/dev/null | tr -d ' \n(),"' )" != "$LANGUE" ]; then
     xcrun simctl spawn "$dev" defaults write -g AppleLanguages -array "$LANGUE" >/dev/null 2>&1 || true
     xcrun simctl spawn "$dev" defaults write -g AppleLocale -string "$(locale_systeme)" >/dev/null 2>&1 || true
     # Le redémarrage remet l'iPad en portrait, et le paysage ne se rétablit qu'à la main, dans
@@ -208,7 +217,19 @@ capture_appareil() {
       SIMCTL_CHILD_OKIA_RENDER_NAME="$titre.md" \
       xcrun simctl launch "$dev" "$BUNDLE" >/dev/null
     sleep "$(attente_de "$base")"
-    xcrun simctl io "$dev" screenshot "store/screenshots/$dossier/$LANGUE/$base.png" >/dev/null 2>&1
+    # Le Duo plié n'allume que son écran extérieur ; la capture par défaut prend l'intérieur,
+    # noir. « --display=1 » vise l'extérieur, borné : un écran éteint fait attendre sans fin.
+    local ecran=()
+    [ "$dossier" = "iphone-duo" ] && ecran=(--display=1)
+    # Déplié, l'écran intérieur (2007 × 2853) : son identifiant change d'un démarrage à
+    # l'autre, on le cherche à sa taille.
+    if [ "$dossier" = "iphone-duo-deplie" ]; then
+      local interieur
+      interieur="$(xcrun simctl io "$dev" enumerate 2>/dev/null | awk '/UUID/{u=$2} /Default width: 2007/{print u; exit}')"
+      [ -n "$interieur" ] && ecran=(--display="$interieur")
+    fi
+    perl -e 'alarm 25; exec @ARGV' xcrun simctl io "$dev" screenshot ${ecran[@]+"${ecran[@]}"} \
+      "store/screenshots/$dossier/$LANGUE/$base.png" >/dev/null 2>&1
     # Le framebuffer du simulateur est opaque mais garde un canal alpha, qu'Apple ne veut pas.
     aplatir "store/screenshots/$dossier/$LANGUE/$base.png"
     ok "$base.png"
@@ -389,6 +410,9 @@ capture_mac() {
 
 case "$CIBLE" in
   iphone) capture_appareil "$IPHONE" "iphone-6.9" ;;
+  duo)    capture_appareil "$DUO"    "iphone-duo" ;;
+  moyen)  capture_appareil "$IPHONE_MOYEN" "iphone-6.3" ;;
+  deplie) capture_appareil "$DUO"    "iphone-duo-deplie" ;;
   ipad)   capture_appareil "$IPAD"   "ipad-13" ;;
   mac)    capture_mac ;;
   *)      capture_appareil "$IPHONE" "iphone-6.9"; capture_appareil "$IPAD" "ipad-13"; capture_mac ;;
