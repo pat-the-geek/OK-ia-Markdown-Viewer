@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (83)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (84)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (83)
+## What to Test — 1.3 (84)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -73,7 +73,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 
 NOUVEAU — L'ALLURE D'UNE APP
 • Le lecteur prend la barre d'outils du système : titre, maison, commandes en
-  groupes de verre (Liquid Glass), icônes monochromes. Sur iPhone tenu droit,
+  groupes de verre (Liquid Glass), icônes monochromes, titre en verre sur iPad. Sur iPhone tenu droit,
   trois commandes et un menu « … » pour le reste.
 • La recherche est celle du système : touchez la loupe, tapez, ↑ ↓ pour passer
   d'un résultat à l'autre.
