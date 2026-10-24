@@ -1779,12 +1779,21 @@
       var suivant = e.nextElementSibling;
       while (suivant && !suivant.textContent.trim() && !suivant.querySelector('img, svg, canvas') &&
              !suivant.matches(GRAPHIQUE)) suivant = suivant.nextElementSibling;
-      var g = suivant && (suivant.matches(GRAPHIQUE) || suivant.querySelector(GRAPHIQUE)) ? boite(suivant)[0] : null;
-      b.push(g);
+      var bg = suivant && (suivant.matches(GRAPHIQUE) || suivant.querySelector(GRAPHIQUE)) ? boite(suivant) : null;
+      b.push(bg ? bg[0] : null, bg ? bg[1] : null);
       titres.push(b);
     });
     var cs = getComputedStyle(contenu);
     var ligne = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 17) * 1.6;
+    // Un bloc qui suit de près un titre partira avec lui : il ne tiendra sur la page suivante que
+    // si titre et bloc y tiennent ensemble. Sinon, inutile de le pousser — la page suivante ne
+    // garderait qu'un titre, et celle-ci un grand blanc (Patrick) : il se coupe entre ses lignes.
+    blocs.forEach(function (bl) {
+      bl.ancre = bl[0];
+      for (var t = 0; t < titres.length; t++) {
+        if (titres[t][1] <= bl[0] + 1 && bl[0] - titres[t][1] < ligne * 2) bl.ancre = Math.min(bl.ancre, titres[t][0]);
+      }
+    });
     var boites = lignes.concat(visuels, blocs);
     // Jusqu'au dernier mot, pas jusqu'au bas du document : le blanc ajouté sous le texte pour
     // laisser défiler la dernière page aurait fait des pages vides. Ni jusqu'au bas du contenu :
@@ -1792,6 +1801,20 @@
     var total = 0;
     for (var f = 0; f < boites.length; f++) if (boites[f][1] > total) total = boites[f][1];
     if (!(total > 0)) total = finDuTexte(contenu);
+    // La page [a, b] ne contient-elle que des lignes de titre ?
+    function titreSeul(a, b) {
+      var vu = false;
+      for (var i = 0; i < lignes.length; i++) {
+        var l = lignes[i];
+        if (l[0] < a - 0.5 || l[0] >= b - 0.5) continue;
+        var dansTitre = false;
+        for (var t = 0; t < titres.length; t++) if (l[0] >= titres[t][0] - 1 && l[1] <= titres[t][1] + 1) { dansTitre = true; break; }
+        if (!dansTitre) return false;
+        vu = true;
+      }
+      for (var v = 0; v < visuels.length; v++) if (visuels[v][0] >= a - 0.5 && visuels[v][0] < b - 0.5) return false;
+      return vu;
+    }
     var coupes = [0], debut = 0;
     while (debut + H < total && coupes.length < 5000) {
       var cible = debut + H, coupe = cible;
@@ -1809,8 +1832,8 @@
       while (bouge) {
         bouge = false;
         for (var j = 0; j < boites.length; j++) {
-          var bt = boites[j][0], bb = boites[j][1];
-          if (bt < coupe - 0.5 && bb > coupe + 0.5 && (bb - bt) < H * 0.9) { coupe = bt; bouge = true; }
+          var bt = boites[j][0], bb = boites[j][1], ancre = boites[j].ancre != null ? boites[j].ancre : bt;
+          if (bt < coupe - 0.5 && bb > coupe + 0.5 && (bb - bt) < H * 0.9 && (bb - ancre) < H * 0.9) { coupe = bt; bouge = true; }
         }
       }
       // 3. Un titre suivi de moins de deux lignes passe à la page suivante.
@@ -1818,15 +1841,29 @@
       while (bouge) {
         bouge = false;
         for (var k = 0; k < titres.length; k++) {
-          var tt = titres[k][0], tb = titres[k][1], g = titres[k][3];
+          var tt = titres[k][0], tb = titres[k][1], g = titres[k][3], gb = titres[k][4];
           if (tt > debut + H * 0.3 && tt < coupe - 0.5 && tb + ligne * 2 > coupe) { coupe = tt; bouge = true; }
-          // Son graphique passe à la page suivante : le titre le suit.
-          else if (g != null && tt > debut + ligne && tt < coupe - 0.5 && g >= coupe - 0.5) { coupe = tt; bouge = true; }
+          // Son graphique passe à la page suivante : le titre le suit — s'ils y tiennent ensemble.
+          else if (g != null && tt > debut + ligne && tt < coupe - 0.5 && g >= coupe - 0.5 &&
+                   (gb == null || gb - tt <= H)) { coupe = tt; bouge = true; }
         }
       }
       // Repli : seule une page qui resterait vide coupe ce qui la chevauche. Avant, une coupe remontée
       // dans le premier tiers de la page retombait sur la cible — et tranchait un graphique.
       if (coupe <= debut + ligne) coupe = cible;
+      // 4. Jamais une page qui ne garderait qu'un titre (Patrick) : la coupe redescend vers la
+      // cible, en ne respectant plus que les lignes et les visuels — un bloc s'y coupe.
+      if (titreSeul(debut, coupe)) {
+        coupe = cible;
+        var simples = lignes.concat(visuels);
+        bouge = true;
+        while (bouge) {
+          bouge = false;
+          for (var q = 0; q < simples.length; q++) {
+            if (simples[q][0] < coupe - 0.5 && simples[q][1] > coupe + 0.5 && simples[q][0] > debut + ligne) { coupe = simples[q][0]; bouge = true; }
+          }
+        }
+      }
       coupes.push(Math.floor(coupe));
       debut = coupe;
     }
