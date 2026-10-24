@@ -99,7 +99,7 @@ md Viewer 1.3 just shipped 📖 — iPhone Duo support, the hard way.
 
 https://ok-ia.ch/mdviewer/?lang=en
 
-#iOSDev #SwiftUI #iPhoneDuo #WebKit
+#Apple #iOSDev #SwiftUI #iPhoneDuo #WebKit
 ```
 
 ### Texte alt — illustration dev (`mastodon-dev.jpg`)
