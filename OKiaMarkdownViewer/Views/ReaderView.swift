@@ -933,10 +933,10 @@ struct ReaderView: View {
     /// sont en colonne et le titre garde sa rangée.
     private var titreEnVerre: Bool { tailleHorizontale != .compact && !appareilPliable && largeurTitre >= 120 }
 
-    /// Ce que la barre peut laisser au titre : les commandes en prennent environ 600 points. Sur
-    /// un iPad plus étroit tenu droit, un titre trop large faisait tomber le bouton Aa — et avec
+    /// Ce que la barre peut laisser au titre : maison et commandes en prennent environ 820 points.
+    /// Sur iPad tenu droit, un titre trop large faisait tomber le groupe du bouton Aa — et avec
     /// lui la taille du texte et le livre (Patrick).
-    private var largeurTitre: CGFloat { min(360, max(0, tailleEcran.width - 620)) }
+    private var largeurTitre: CGFloat { min(360, max(0, tailleEcran.width - 820)) }
 
     // MARK: Les commandes
 
