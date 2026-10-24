@@ -24,6 +24,17 @@ h1{font-weight:900;font-size:128px;line-height:1.02;letter-spacing:-.02em;margin
 .droite{right:0;border-radius:6px 52px 52px 6px;padding-left:4px;transform-origin:left center;transform:rotateY(-19deg)}
 .droite .ecran{border-radius:0 32px 32px 0;background-position:right top}
 .ombre{position:absolute;left:1080px;width:1400px;top:1150px;height:110px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(40,30,20,.22),transparent 70%)}
+/* Résultats de recherche (3840 × 2560, ?f=recherche) : l'image y est vue en petit — le titre
+   grandit, le sous-titre s'efface, le livre prend la moitié droite. */
+html.recherche,html.recherche body{width:1920px;height:1280px}
+.recherche .texte{left:100px;width:600px}
+.recherche .app{font-size:64px}
+.recherche h1{font-size:112px}
+.recherche .sous{display:none}
+.recherche .trait{margin:50px 0 0}
+.recherche .scene{left:720px;top:100px;width:1180px;height:1080px}
+.recherche .livre{transform:translate(-50%,-50%) rotateX(14deg) scale(.8)}
+.recherche .ombre{left:820px;width:980px;top:990px}
 </style></head><body>
 <div class="texte">
   <div class="app">md Viewer</div>
@@ -44,7 +55,9 @@ const T = {
   es: ["Léelo como un libro.", "En el iPhone Duo medio plegado, tus archivos Markdown se convierten en dos páginas que pasas con el dedo."],
   it: ["Leggilo come un libro.", "Sull'iPhone Duo piegato a metà, i tuoi file Markdown diventano due pagine da sfogliare con il dito."]
 };
-const l = new URLSearchParams(location.search).get('l') || 'fr';
+const q = new URLSearchParams(location.search);
+const l = q.get('l') || 'fr';
+if (q.get('f') === 'recherche') document.documentElement.classList.add('recherche');
 document.documentElement.lang = l;
 document.getElementById('titre').textContent = T[l][0];
 document.getElementById('sous').textContent = T[l][1];
