@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (82)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (83)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (82)
+## What to Test — 1.3 (83)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -54,8 +54,8 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
   thème Éditorial, à colonne étroite — mais pas dans le livre, où chaque page
   est pleine). Signalez toute ligne trop longue.
-• Le mode livre : iPhone Duo partiellement replié, iPad ou grand iPhone en
-  paysage. Tournez la page avec le doigt : elle se courbe comme une feuille,
+• Le mode livre : d'office sur l'iPhone Duo mi-replié ; sur iPad, grand
+  iPhone en paysage et Mac, l'option « Deux pages » du panneau Aa. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
   léger rebond. Sur iPad, rien ne doit se lire sous la barre de l'heure.
   Un grand blanc en bas de page reçoit un séparateur (astérisques, feuille,

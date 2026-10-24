@@ -16,7 +16,7 @@ NEW IN 1.3 — HOW TO TEST
 • On a large screen (iPad or iPhone Pro Max in landscape, a wide Mac window, iPhone Duo unfolded), the conversion, the summary, the chat and the table of contents open next to the document instead of in a sheet.
 • Reading themes: the "Aa" button offers five themes, in light and dark.
 • iPhone Duo: the app uses the full inner screen and splits into two parts across the fold.
-• Book mode: with the iPhone Duo half-folded, or an iPad / iPhone Pro Max in landscape, the reader shows two facing pages; swipe or drag a page to turn it. Tap a page to show or hide the toolbar. Portrait reading is unchanged (scrolling).
+• Book mode: automatic with the iPhone Duo half-folded; on iPad, iPhone Pro Max in landscape and Mac, turn on “Two pages, like a book” in the Aa panel. Drag a page to turn it; tap it to show or hide the toolbar.
 • Full screen: diagrams, images, tables and timelines carry a small round button; tapping it (or the object) opens it full screen, with pinch to zoom.
 • Built with the iOS 27.1 SDK; the minimum system stays iOS/iPadOS/macOS 26.4.
 
