@@ -733,7 +733,12 @@ struct ReaderView: View {
         // fixes ne suffisaient pas — le texte passait sous les boutons — et, l'appareil tourné, la
         // marge restait à droite pendant que les boutons couvraient la gauche (Patrick). Le livre
         // gère la sienne.
-        web.setMargeOutils(appareilPliable && !modeLivre ? largeurSousColonne() : 0, aGauche: colonneAGauche)
+        // Duo mi-replié : la barre, toujours visible depuis le build 85, range sa colonne au bord
+        // droit de la page de gauche — sur le texte. La page lui laisse sa place ; la page de
+        // droite, de même largeur, s'arrête d'autant avant l'heure.
+        let colonneDansLeLivre = appareilPliable && modeLivre && !livreVertical
+        web.setMargeOutils(appareilPliable && !modeLivre ? largeurSousColonne() : (colonneDansLeLivre ? 76 : 0),
+                           aGauche: colonneAGauche)
     }
 
     /// Ce que la vue web a sous la colonne du système, moins 16 points : les boutons de verre
@@ -793,6 +798,9 @@ struct ReaderView: View {
         web.onRecouper = { pagination.recalculerPlusTard() }
         web.onCarte = { tappedCarte = $0 }
         web.suivreMiroir(true)
+        // La marge de la colonne avant la mesure : posée quand la page n'était pas encore prête,
+        // elle s'était perdue, et la page de gauche passait sous les commandes.
+        web.setMargeOutils(CGFloat(web.margeOutils), aGauche: web.outilsAGauche)
         web.largeurNaturelle { a in
             livre.largeurNaturelle { b in
                 let largeur = min(a, b)
