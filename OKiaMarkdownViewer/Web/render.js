@@ -1787,8 +1787,11 @@
     var ligne = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 17) * 1.6;
     var boites = lignes.concat(visuels, blocs);
     // Jusqu'au dernier mot, pas jusqu'au bas du document : le blanc ajouté sous le texte pour
-    // laisser défiler la dernière page aurait fait des pages vides.
-    var total = contenu.getBoundingClientRect().bottom + sy;
+    // laisser défiler la dernière page aurait fait des pages vides. Ni jusqu'au bas du contenu :
+    // sa marge du bas faisait parfois une dernière page de gauche toute blanche (Patrick).
+    var total = 0;
+    for (var f = 0; f < boites.length; f++) if (boites[f][1] > total) total = boites[f][1];
+    if (!(total > 0)) total = finDuTexte(contenu);
     var coupes = [0], debut = 0;
     while (debut + H < total && coupes.length < 5000) {
       var cible = debut + H, coupe = cible;
@@ -1835,6 +1838,15 @@
   // d'air en haut de page). Tout ce qui est au-dessus est caché, et pas seulement la bande : sur
   // iPad, la barre de l'heure reste affichée, et la fin de la page précédente se lisait dessous.
   // sansSeparateur : la page d'à côté en porte déjà un — jamais deux à la suite (Patrick).
+  // Le bas du dernier contenu visible, en coordonnées du document : sans la marge du bas du
+  // conteneur, ni le blanc qu'on ajoute dessous pour laisser défiler la dernière page.
+  function finDuTexte(contenu) {
+    var r = document.createRange();
+    r.selectNodeContents(contenu);
+    var b = r.getBoundingClientRect();
+    return (b.height > 0 ? b.bottom : contenu.getBoundingClientRect().bottom) + (window.scrollY || 0);
+  }
+
   function cacheLivre(depuis, H, haut, marge, sansSeparateur) {
     var c = document.getElementById('okia-cache-livre'), t = document.getElementById('okia-cache-haut');
     if (depuis == null) {
@@ -1860,9 +1872,13 @@
     var contenu = document.getElementById('content');
     // Dernière page : pas de page suivante à cacher, mais le blanc après le texte peut recevoir
     // un séparateur comme les autres.
+    var blanc = null;
     if (depuis < 0) {
       if (!contenu || !(haut >= 0)) { if (c) c.remove(); return; }
-      depuis = Math.ceil(contenu.getBoundingClientRect().bottom + (window.scrollY || 0));
+      depuis = Math.ceil(finDuTexte(contenu));
+      // Une page toute blanche, après la fin du texte : son séparateur va au milieu de la page,
+      // et non au milieu du blanc compté depuis le dernier mot, qui le faisait monter en haut.
+      if (depuis <= haut) { depuis = haut; blanc = H; }
     }
     if (!c) { c = document.createElement('div'); c.id = 'okia-cache-livre'; document.body.appendChild(c); }
     // Au-dessus de tout, et opaque au toucher : une carte de la page suivante, cachée dessous,
@@ -1870,7 +1886,7 @@
     // page ne tournait plus.
     c.style.cssText = 'position:absolute;left:0;right:0;top:' + depuis + 'px;height:' + (H + 60) +
       'px;background:var(--bg);z-index:2147483000;';
-    poserSeparateur(c, contenu, depuis, haut >= 0 && !sansSeparateur ? haut + H - depuis : 0, haut);
+    poserSeparateur(c, contenu, depuis, haut >= 0 && !sansSeparateur ? (blanc != null ? blanc : haut + H - depuis) : 0, haut);
   }
 
   /* Un blanc en bas de page — avant un titre ou un grand visuel qui passe à la page suivante —
