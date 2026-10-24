@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (85)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (86)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (85)
+## What to Test — 1.3 (86)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -61,8 +61,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
   léger rebond.
   Un grand blanc en bas de page reçoit un séparateur (astérisques, feuille,
   filet). Une carte, une image ou un diagramme n'est jamais coupé entre deux
-  pages et reste avec son titre. Signalez tout blanc vide sans raison, tout objet
-  coupé entre deux pages, toute page de droite qui répète celle de gauche.
+  pages et reste avec son titre. Signalez tout blanc vide ou objet coupé.
 • Une pastille de verre, au coin de chaque diagramme, image, chronologie ou
   tableau, signale qu'il s'ouvre en plein écran (à gauche sur la page de droite
   du livre), comme la frise, le déroulé et l'agenda des rapports fornews.
