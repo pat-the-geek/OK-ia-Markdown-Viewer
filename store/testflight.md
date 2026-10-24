@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (81)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (82)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (81)
+## What to Test — 1.3 (82)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -47,6 +47,8 @@ IPHONE DUO
   en revenant en arrière, la page de droite garde son texte.
 • Tourné dans tous les sens, le texte prend toute la largeur, sans passer
   sous les boutons ; la barre du titre est en verre, sans bande opaque.
+• Toutes les commandes sont dans la colonne, sans menu « … ».
+• Plus de titre seul sur une page, ni de page blanche avant un séparateur.
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le texte prend toute la largeur de l'écran, avec une petite marge (sauf le
@@ -88,14 +90,9 @@ Bouton Apple Intelligence du lecteur → « Convertir en présentation ».
   bouger : continuez de lire.
 • Choisissez de 5 à 25 diapositives : la présentation doit en compter autant.
 
-LA BARRE EN LIQUID GLASS
-• La barre du lecteur flotte sur la page. Pliez ou tournez l'appareil en haut
-  d'un document : le titre doit rester visible sous la barre.
-
 DEUX PARTIES EN PAYSAGE ET SUR LE DUO
 • En paysage (Pro Max, iPad) ou Duo déplié, le sommaire, le résumé et la
   discussion s'ouvrent à côté du document. En portrait, ce sont des feuilles.
-• Sur le Duo, la page va jusqu'au bord ; seul le coin de l'heure est évité.
 
 TOUJOURS À ESSAYER — DIAPORAMA, EXPORT POWERPOINT, THÈMES
 • Onze transitions au diaporama, dont le Damier ; l'export PowerPoint reprend la
