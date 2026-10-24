@@ -85,8 +85,8 @@ Screen recording on iPhone Duo, no sound. Half-folded, a report opens as a book 
 
 ## Site perso (@patcedar) — anglais, ton dev
 
-Publié par Patrick lui-même (pas de jeton pour ce compte). Image : `store/entete-1.3/mastodon-en.jpg`,
-texte alt : celui de l'illustration sombre anglaise ci-dessus.
+Publié par Patrick lui-même (pas de jeton pour ce compte). Image : `store/entete-1.3/mastodon-dev.jpg`
+(source `mastodon-dev.html`), texte alt plus bas.
 
 ```
 md Viewer 1.3 just shipped 📖 — iPhone Duo support, the hard way.
@@ -100,4 +100,10 @@ md Viewer 1.3 just shipped 📖 — iPhone Duo support, the hard way.
 https://ok-ia.ch/mdviewer/?lang=en
 
 #iOSDev #SwiftUI #iPhoneDuo #WebKit
+```
+
+### Texte alt — illustration dev (`mastodon-dev.jpg`)
+
+```
+Dark illustration with amber accents. Top left, a terminal prompt "patrick@fribourg:~$ git log --oneline v1.2.2..v1.3 | wc -l" and the title "md Viewer 1.3". Below, a Swift code panel with three commented snippets: the fold read from proxy.reservedRegions(kind: .division, options: .includeInactive) "not at width / 2"; a UIHingeInteraction that switches to book mode when the hinge status is .partiallyOpen; and the page curl, a CATransform3DMakeRotation around the Y axis, or the X axis in laptop posture. Three stat tiles: "22 TestFlight builds · 2 days", "2 WKWebViews · 1 paginator", "0 maps split across pages". On the right, an iPhone Duo half-folded like an open book showing "Annual Report 2026", with an amber marker on the hinge labelled "x 455 · 40 pt". Footer: "SwiftUI · UIKit · WebKit · Apple Intelligence on-device · ok-ia.ch/mdviewer".
 ```
