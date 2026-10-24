@@ -26,7 +26,7 @@ Also new: turn a report into a presentation with Apple Intelligence, on-device. 
 Free, iPhone · iPad · iPhone Duo · Mac.
 https://ok-ia.ch/mdviewer/?lang=en
 
-#iOS #iPhoneDuo #Markdown #AppleIntelligence
+#Apple #iOS #iPhoneDuo #Markdown #AppleIntelligence
 ```
 
 ## Message 2 — français, en réponse (deux images)
@@ -41,7 +41,7 @@ Aussi : un rapport devient une présentation grâce à Apple Intelligence, sur l
 Gratuit, iPhone · iPad · iPhone Duo · Mac.
 https://ok-ia.ch/mdviewer/
 
-#iOS #iPhoneDuo #Markdown
+#Apple #iOS #iPhoneDuo #Markdown
 ```
 
 ## Texte alt — en-tête App Store, anglais (`entete-en-mastodon.jpg`)
