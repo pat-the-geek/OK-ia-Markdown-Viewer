@@ -22,7 +22,6 @@ struct ReaderView: View {
     @State private var showTOC = false
     @State private var isSearching = false
     @State private var searchText = ""
-    @State private var showShareOptions = false
     @State private var sharePayload: SharePayload?
     @State private var externalLink: ExternalLink?
     @State private var showTextSize = false
@@ -81,9 +80,6 @@ struct ReaderView: View {
         return (max(0, ecran / 2 - pli / 2 - origineLivre), pli)
     }
     @StateObject private var livre = LivreController()
-    /// En mode livre, la barre s'efface pour rendre toute la place aux deux pages ; un toucher
-    /// sur une page la fait revenir, un second la renvoie — comme dans Livres.
-    @State private var barreLivreVisible = false
     /// Le livre est un choix du lecteur (panneau Apparence) sur iPad, grand iPhone en paysage et
     /// Mac ; seul le Duo mi-replié l'ouvre de lui-même (Patrick). Un écran large ne veut pas dire
     /// qu'on veut tourner des pages.
@@ -196,7 +192,6 @@ struct ReaderView: View {
                     secondePartie(panneau)
                 } else if modeLivre {
                     PageLivre(livre: livre, surPret: { demarrerLivre() },
-                              surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
                               surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
                               surCarte: { tappedCarte = $0 })
                         .ignoresSafeArea(edges: [.bottom, .horizontal])
@@ -206,10 +201,6 @@ struct ReaderView: View {
             .onChange(of: modeLivre) { _, actif in
                 poserCoinLibre()
                 if actif { demarrerLivre() } else { arreterLivre() }
-            }
-            // La barre qui part ou revient change la largeur de la page de gauche : on réaligne.
-            .onChange(of: barreLivreVisible) { _, _ in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { demarrerLivre() }
             }
             // La taille de tout l'écran, mesurée hors des parties : mesurer le lecteur ferait
             // osciller la décision — deux parties le réduisent de moitié, il ne serait plus large.
@@ -237,7 +228,6 @@ struct ReaderView: View {
                 // sous la barre de l'heure comme celle de gauche : les deux pages commencent à la
                 // même hauteur, et l'iPad n'y montre plus une bande noire.
                 PageLivre(livre: livre, surPret: { demarrerLivre() },
-                          surToucher: { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } },
                               surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
                               surCarte: { tappedCarte = $0 })
                     .frame(width: tailleEcran.width / 2)
@@ -250,9 +240,6 @@ struct ReaderView: View {
                 poserCoinLibre()
                 if actif { demarrerLivre() } else { arreterLivre() }
             }
-        .onChange(of: barreLivreVisible) { _, _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { demarrerLivre() }
-        }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { tailleEcran = $0 }
     }
 
@@ -325,8 +312,8 @@ struct ReaderView: View {
         .toolbar(removing: titreEnVerre ? .title : nil)
         #endif
         .toolbar { barreOutils }
-        // Sur Mac, la barre reste : un clic sur la page ne doit pas faire disparaître les commandes.
-        .toolbar(modeLivre && !barreLivreVisible && !Self.surMac ? .hidden : .automatic, for: .navigationBar, .bottomBar)
+        // La barre de verre reste aussi dans le livre : effacée, on ne savait plus où étaient la
+        // maison et les commandes (Patrick).
         // La recherche du système, réduite à un bouton tant qu'on ne cherche pas.
         .searchable(text: $searchText, isPresented: $isSearching, prompt: tr("Rechercher dans le document"))
         .searchToolbarBehavior(.minimize)
@@ -460,12 +447,6 @@ struct ReaderView: View {
             SafariView(url: link.url).ignoresSafeArea()
         }
 #endif
-        .confirmationDialog(tr("Partager"), isPresented: $showShareOptions, titleVisibility: .visible) {
-            Button(tr("Exporter en PDF")) { exportPDF() }
-            Button(tr("Exporter en Word (.docx)")) { exportWord() }
-            Button(tr("Partager le Markdown (.md)")) { shareMarkdown() }
-            Button(tr("Annuler"), role: .cancel) {}
-        }
         // Reset transient UI when the document changes.
         .onChange(of: document.id) { _, _ in
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
@@ -810,7 +791,6 @@ struct ReaderView: View {
         #endif
         web.onMiroir = { livre.poser($0); pagination.recalculerPlusTard() }
         web.onRecouper = { pagination.recalculerPlusTard() }
-        web.onTapPage = { withAnimation(.easeInOut(duration: 0.2)) { barreLivreVisible.toggle() } }
         web.onCarte = { tappedCarte = $0 }
         web.suivreMiroir(true)
         web.largeurNaturelle { a in
@@ -832,7 +812,6 @@ struct ReaderView: View {
         paginationLivre.delier()
         web.teindreFond()
         web.onTapPage = nil
-        barreLivreVisible = false
         web.suivreMiroir(false)
         web.onMiroir = nil
         web.onRecouper = nil
@@ -1003,10 +982,18 @@ struct ReaderView: View {
             .accessibilityLabel(tr("Sommaire (accessibilité)"))
     }
 
+    /// Partager — un menu, d'un seul toucher. Le dialogue d'avant ne s'affichait pas sur iPad ni
+    /// sur le Duo (Patrick) : sans ancre, sa bulle n'avait nulle part où se poser.
     private var boutonPartage: some View {
-        Button { showShareOptions = true } label: { Image(systemName: "square.and.arrow.up") }
+        Menu { elementsPartage } label: { Image(systemName: "square.and.arrow.up") }
             .teinteBarre()
             .accessibilityLabel(tr("Partager"))
+    }
+
+    @ViewBuilder private var elementsPartage: some View {
+        Button { exportPDF() } label: { Label(tr("Exporter en PDF"), systemImage: "doc.richtext") }
+        Button { exportWord() } label: { Label(tr("Exporter en Word (.docx)"), systemImage: "doc.text") }
+        Button { shareMarkdown() } label: { Label(tr("Partager le Markdown (.md)"), systemImage: "number") }
     }
 
     private var boutonOuvrir: some View {
@@ -1074,7 +1061,7 @@ struct ReaderView: View {
                 }
             }
             Divider()
-            Button { showShareOptions = true } label: { Label(tr("Partager"), systemImage: "square.and.arrow.up") }
+            Menu { elementsPartage } label: { Label(tr("Partager"), systemImage: "square.and.arrow.up") }
             Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
         } label: {
             Image(systemName: "ellipsis")
