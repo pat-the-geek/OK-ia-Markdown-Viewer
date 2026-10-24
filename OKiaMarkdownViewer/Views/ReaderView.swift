@@ -84,6 +84,18 @@ struct ReaderView: View {
     /// En mode livre, la barre s'efface pour rendre toute la place aux deux pages ; un toucher
     /// sur une page la fait revenir, un second la renvoie — comme dans Livres.
     @State private var barreLivreVisible = false
+    /// Le livre est un choix du lecteur (panneau Apparence) sur iPad, grand iPhone en paysage et
+    /// Mac ; seul le Duo mi-replié l'ouvre de lui-même (Patrick). Un écran large ne veut pas dire
+    /// qu'on veut tourner des pages.
+    @AppStorage("okia.modeLivre") private var livreChoisi = false
+    /// Sur Mac, la barre de la fenêtre reste visible dans le livre.
+    private static let surMac: Bool = {
+        #if targetEnvironment(macCatalyst)
+        return true
+        #else
+        return ProcessInfo.processInfo.isiOSAppOnMac
+        #endif
+    }()
     @State private var paginationLivre = PaginationLivre()
     @State private var tappedCarte: TappedCarte?
     /// Ce que la seconde partie montre, à côté du document ; nil : une seule partie.
@@ -229,7 +241,9 @@ struct ReaderView: View {
                               surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
                               surCarte: { tappedCarte = $0 })
                     .frame(width: tailleEcran.width / 2)
-                    .ignoresSafeArea(edges: [.top, .bottom, .horizontal])
+                    // Sur Mac, la page de droite commence sous la barre de la fenêtre, comme celle
+                    // de gauche : passée dessous, son haut se lisait derrière les commandes.
+                    .ignoresSafeArea(edges: Self.surMac ? [.bottom, .horizontal] : [.top, .bottom, .horizontal])
             }
         }
         .onChange(of: modeLivre) { _, actif in
@@ -306,7 +320,8 @@ struct ReaderView: View {
         // Sur Mac, une barre « éditeur » se range dans la barre de la fenêtre.
         .toolbarRole(.editor)
         .toolbar { barreOutils }
-        .toolbar(modeLivre && !barreLivreVisible ? .hidden : .automatic, for: .navigationBar, .bottomBar)
+        // Sur Mac, la barre reste : un clic sur la page ne doit pas faire disparaître les commandes.
+        .toolbar(modeLivre && !barreLivreVisible && !Self.surMac ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         // La recherche du système, réduite à un bouton tant qu'on ne cherche pas.
         .searchable(text: $searchText, isPresented: $isSearching, prompt: tr("Rechercher dans le document"))
         .searchToolbarBehavior(.minimize)
@@ -775,12 +790,9 @@ struct ReaderView: View {
     private var modeLivre: Bool {
         guard panneauDuo == nil else { return false }
         if appareilPliable { return charnierePartielle }
-        // iPad et grand iPhone tenus en paysage : deux pages côte à côte, comme un livre ouvert.
-        #if targetEnvironment(macCatalyst)
-        return false
-        #else
-        return deuxPartiesPossibles
-        #endif
+        // iPad et grand iPhone tenus en paysage, Mac à fenêtre large : deux pages côte à côte,
+        // comme un livre ouvert — si le lecteur l'a choisi.
+        return livreChoisi && deuxPartiesPossibles
     }
 
     /// Ouvre le livre : la page de gauche envoie sa copie à celle de droite, les deux prennent la
@@ -1063,6 +1075,16 @@ struct ReaderView: View {
                 .foregroundStyle(.secondary)
             textSizeControls
                 .frame(maxWidth: .infinity)
+            // Le Duo n'en a pas besoin : mi-replié, il est toujours un livre.
+            if !appareilPliable {
+                Divider()
+                Toggle(tr("Deux pages, comme un livre"), isOn: $livreChoisi)
+                    .tint(orange)
+                Text(tr("En paysage sur iPad et grand iPhone, et dans une fenêtre large sur Mac."))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(16)
         .frame(width: 290)

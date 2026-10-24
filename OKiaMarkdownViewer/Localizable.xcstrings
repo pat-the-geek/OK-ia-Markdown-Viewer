@@ -5661,6 +5661,76 @@
           }
         }
       }
+    },
+    "Deux pages, comme un livre": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deux pages, comme un livre"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two pages, like a book"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwei Seiten, wie ein Buch"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dos páginas, como un libro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due pagine, come un libro"
+          }
+        }
+      }
+    },
+    "En paysage sur iPad et grand iPhone, et dans une fenêtre large sur Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En paysage sur iPad et grand iPhone, et dans une fenêtre large sur Mac."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In landscape on iPad and large iPhone, and in a wide window on Mac."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Querformat auf iPad und großem iPhone sowie in einem breiten Fenster auf dem Mac."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En horizontal en iPad y iPhone grande, y en una ventana ancha en Mac."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In orizzontale su iPad e iPhone grande, e in una finestra ampia su Mac."
+          }
+        }
+      }
     }
   }
 }
