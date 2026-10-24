@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (86)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (87)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (86)
+## What to Test — 1.3 (87)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -48,7 +48,8 @@ IPHONE DUO
 • Tourné dans tous les sens, le texte prend toute la largeur, sans passer
   sous les boutons ; la barre du titre est en verre, sans bande opaque.
 • Toutes les commandes sont dans la colonne, sans menu « … ». Partager ouvre
-  un menu (PDF, Word, Markdown) ; la barre reste visible dans le livre.
+  un menu (PDF, Word, Markdown) ; la barre reste visible dans le livre,
+  sans couvrir la page de gauche.
 • Plus de titre seul sur une page, ni de page blanche avant un séparateur.
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
