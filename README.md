@@ -1401,16 +1401,29 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    les diapositives (`ppt/slides/slideN.xml`) dans l'ordre de `presentation.xml`, leurs images dans
    `ppt/media/`, leurs notes dans `ppt/notesSlides/`. Pendant l'import, **un compte à rebours inspiré de celui de fornews**
    (`CompteReboursDemandeView`), qui montre les éléments au fur et à mesure qu'ils sont détectés.
-4. **Des modèles plus poussés** (Private Cloud Compute) — idée, voir les décisions ci-dessous.
-5. **Le lien avec fornews** (base d'entités, ouverture par QID).
+4. **Annoter un document à l'Apple Pencil** (ajouté par Patrick le 2026-10-25). PencilKit sur le
+   lecteur, au crayon sur iPad, au doigt sur iPhone une fois le mode « Annoter » ouvert. ⚠️ Le
+   texte d'un document se recompose (taille du texte, thème, rotation, livre, Duo) : un trait posé
+   sur l'écran ne retomberait plus au bon endroit. Proposition : **ancrer chaque annotation au
+   texte, jamais à l'écran** — un surlignage ou un soulignement devient une plage de texte (qui
+   survit à la recomposition), une note manuscrite s'accroche à un paragraphe et se dessine dans
+   sa marge. **Le fichier `.md` n'est jamais modifié** : les annotations vivent à côté, liées au
+   document, et passent d'un appareil à l'autre par l'iCloud privé, comme le cache d'entités. Elles
+   s'affichent sur Mac et partent dans l'export PDF. Pendant l'annotation, les gestes du livre
+   (tour de page) sont suspendus. À voir aussi : annoter une diapositive pendant le diaporama.
+5. **Des modèles plus poussés** (Private Cloud Compute) — idée, voir les décisions ci-dessous.
+6. **Le lien avec fornews** (base d'entités, ouverture par QID).
 
 #### Prix
 
-**2 francs sur Mac, 2 francs sur les autres appareils.** ⚠️ md Viewer est un achat universel (une
-seule fiche pour iOS et Mac) : un achat intégré fait sur iPhone est rendu sur Mac. Facturer deux
-fois suppose **deux produits distincts** — « Analytic » (iPhone, iPad) et « Analytic pour Mac »
-(avec l'import) —, le Mac ne regardant que le sien. Le palier de 2 francs est à vérifier dans App
-Store Connect. Le paywall de fornews (`FornewsAchat`) sert de base.
+**5 francs sur Mac, 3 francs sur iPhone et iPad** (décidé le 2026-10-25 ; annoncé d'abord à 2 + 2,
+l'option a gagné l'annotation). ⚠️ md Viewer est un achat universel (une seule fiche pour iOS et
+Mac) : un achat intégré fait sur iPhone est rendu sur Mac. Facturer deux fois suppose **deux
+produits distincts** — « Analytic » (`ch.ok-ia.markdownviewer.analytic`, iPhone et iPad) et
+« Analytic pour Mac » (`….analytic.mac`, avec l'import) —, le Mac ne regardant que le sien. Paliers
+vérifiés dans App Store Connect (CHF 3.00 → 1.94 net, 5.00 → 3.24 au taux standard). Le paywall de
+fornews (`FornewsAchat`) sert de base — ⚠️ il distingue le Mac par `os(macOS)`, faux sous Catalyst :
+ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; partage familial.
 
 #### Réponses aux questions de Patrick
 
@@ -1430,20 +1443,17 @@ Store Connect. Le paywall de fornews (`FornewsAchat`) sert de base.
   Writer) ferait mieux : md Viewer apprendrait à l'ouvrir. Proposition : `data:` pour quelques
   petites images, TextPack au-delà.
 
-#### ⛔ Décisions à prendre avant d'écrire du code
+#### Décisions de Patrick (2026-10-25)
 
-- **Private Cloud Compute contredit un engagement publié.** La feuille de route du site dit, sous
-  « Ce que nous ne ferons pas » : *pas d'IA distante — pas même sur les serveurs d'Apple*, et la
-  politique de confidentialité : *le contenu de vos documents n'est envoyé à aucun serveur*. PCC
-  est exécuté sur les serveurs d'Apple. Si on le fait : choix explicite, document par document,
-  et les deux pages réécrites avant la sortie.
-- **Wikidata est une requête réseau** : les noms d'entités d'un document partiraient vers
-  Wikimedia. À dire dans la politique de confidentialité, et sans doute à proposer plutôt qu'à
-  imposer.
-- **Deux achats de 2 francs pour une même personne** (iPhone et Mac) : à confirmer, et à dire
-  clairement dans la fiche.
-- **Lire un `.docx` dans une app Catalyst** : AppKit sait le faire, UIKit pas d'office — l'import
-  Word sur Mac passera peut-être par une extraction maison (le `.docx` est un zip de XML). À
-  éprouver d'abord.
+- **Pas de Private Cloud Compute.** Il contredirait deux engagements publiés (*pas d'IA distante —
+  pas même sur les serveurs d'Apple* ; *le contenu de vos documents n'est envoyé à aucun serveur*).
+  Uniquement `SystemLanguageModel.default` ; l'import Mac demande donc Apple Intelligence.
+- **Wikidata proposée, jamais imposée** : coupée tant que l'utilisateur ne l'a pas acceptée, une
+  requête par nom, sans contexte. Paragraphe à ajouter à la politique de confidentialité.
+- **Prix** : ci-dessus. **Slogan** : « vos documents prennent vie » / « your documents come alive ».
+- **Code de fornews copié mot pour mot** (`OKiaMarkdownViewer/Fornews/`, source en tête), comme
+  `BoiteAuxLettres.swift`, plutôt qu'une dépendance au dépôt fornews.
+- Reste à éprouver : **lire un `.docx` dans une app Catalyst** (AppKit sait le faire, UIKit pas
+  d'office — sinon extraction du zip XML).
 
 Liste des tâches : `TACHES-1.4.md`.

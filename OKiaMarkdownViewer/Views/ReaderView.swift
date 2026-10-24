@@ -34,6 +34,10 @@ struct ReaderView: View {
     @State private var presentationConvertie: MarkdownDocument?
     /// La conversion en cours, partagée par la feuille et la seconde partie.
     @StateObject private var conversion = ConversionEnCours()
+    /// Option Analytic (1.4) : les entités du document, partagées par la feuille et la seconde
+    /// partie, et gardées tant que le document reste ouvert.
+    @StateObject private var analyseEntites = AnalyseEntites()
+    @State private var showEntites = false
     /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
     /// texte, au lieu de rester une marge vide sur toute la hauteur.
     @State private var appareilPliable = false
@@ -387,7 +391,23 @@ struct ReaderView: View {
             case "resume":     panneauDuo = .resume
             case "discussion": panneauDuo = .discussion
             case "conversion": panneauDuo = .conversion
+            case "entites":    panneauDuo = .entites
             default: break
+            }
+            // OKIA_WIKIDATA pose le choix sur Wikidata sans passer par la question (oui, non,
+            // « demander » pour la revoir, « vider » pour accepter et oublier le cache) ;
+            // OKIA_ANALYTIC=entites ouvre les entités au lancement.
+            switch ProcessInfo.processInfo.environment["OKIA_WIKIDATA"] {
+            case "oui":      UserDefaults.standard.set(ConsentementWikidata.accepte.rawValue, forKey: ConsentementWikidata.cle)
+            case "non":      UserDefaults.standard.set(ConsentementWikidata.refuse.rawValue, forKey: ConsentementWikidata.cle)
+            case "demander": UserDefaults.standard.removeObject(forKey: ConsentementWikidata.cle)
+            case "vider":    // accepté, cache oublié : la résolution repart de zéro
+                UserDefaults.standard.set(ConsentementWikidata.accepte.rawValue, forKey: ConsentementWikidata.cle)
+                CacheEntites.partage.vider()
+            default: break
+            }
+            if ProcessInfo.processInfo.environment["OKIA_ANALYTIC"] == "entites" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { ouvrir(.entites) }
             }
         }
         // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_OPEN_SLIDES
@@ -417,6 +437,9 @@ struct ReaderView: View {
         #endif
         .sheet(isPresented: $showTOC) {
             TableOfContentsView(items: web.toc) { item in web.scrollToHeading(item.id) }
+        }
+        .sheet(isPresented: $showEntites) {
+            EntitesView(document: document, analyse: analyseEntites, surChoix: chercherEntite)
         }
         .sheet(item: $sharePayload) { payload in
             ShareSheet(items: [payload.url])
@@ -452,6 +475,7 @@ struct ReaderView: View {
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
             conversion.annuler()
             if panneauDuo == .conversion { panneauDuo = nil }
+            analyseEntites.annuler()
         }
         .onChange(of: translator.state) { _, etat in
             // La barre du lecteur montre le titre du document : quand le document passe
@@ -841,6 +865,7 @@ struct ReaderView: View {
         case .resume:     showSummary = true
         case .discussion: showChat = true
         case .conversion: showConverter = true
+        case .entites:    showEntites = true
         }
     }
 
@@ -862,6 +887,8 @@ struct ReaderView: View {
                                           titreAffiche: title.isEmpty ? document.filename : title,
                                           onPresenter: { d in presentationConvertie = d },
                                           conversion: conversion)
+            case .entites:
+                EntitesView(document: document, analyse: analyseEntites, surChoix: chercherEntite)
             }
         }
         .environment(\.fermerPanneau, { panneauDuo = nil })
@@ -926,6 +953,7 @@ struct ReaderView: View {
             ToolbarItemGroup(placement: .primaryAction) {
                 boutonApparence
                 boutonSommaire
+                boutonEntites
                 if langueDetectee != nil { menuTraduction }
             }
             ToolbarSpacer(.fixed, placement: .primaryAction)
@@ -993,6 +1021,33 @@ struct ReaderView: View {
             .teinteBarre()
             .disabled(web.toc.isEmpty)
             .accessibilityLabel(tr("Sommaire (accessibilité)"))
+    }
+
+    /// Option Analytic (1.4) : les entités du document. Le même glyphe que l'onglet de fornews.
+    private var boutonEntites: some View {
+        Button { ouvrir(.entites) } label: { Image(systemName: "person.2") }
+            .teinteBarre()
+            .accessibilityLabel(tr("Entités"))
+    }
+
+    /// Toucher une entité la cherche dans le document : la recherche du lecteur la surligne et y va.
+    /// La recherche part une fois la feuille fermée. Le clavier, qui s'ouvre avec elle, est
+    /// aussitôt replié : on veut lire le passage surligné, pas taper — les flèches mènent aux
+    /// suivants. ⚠️ Replier le clavier change les marges de la vue web, ce qui interrompt le
+    /// défilement doux vers la première mention (essai du 25/10/2026 : 15 mentions trouvées, la
+    /// page restée en haut) : on cherche donc une seconde fois, le clavier parti.
+    private func chercherEntite(_ e: EntiteDocument) {
+        let delai = panneauDuo == .entites ? 0 : 0.5
+        DispatchQueue.main.asyncAfter(deadline: .now() + delai) {
+            isSearching = true
+            if searchText == e.nom { web.search(e.nom) } else { searchText = e.nom }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if searchText == e.nom { web.search(e.nom) }
+                }
+            }
+        }
     }
 
     /// Partager — un menu, d'un seul toucher. Le dialogue d'avant ne s'affichait pas sur iPad ni
@@ -1066,6 +1121,7 @@ struct ReaderView: View {
             }
             Button { ouvrir(.sommaire) } label: { Label(tr("Sommaire"), systemImage: "list.bullet") }
                 .disabled(web.toc.isEmpty)
+            Button { ouvrir(.entites) } label: { Label(tr("Entités"), systemImage: "person.2") }
             if let source = langueDetectee {
                 Menu {
                     elementsTraduction(source)
@@ -2070,7 +2126,7 @@ private struct DetecteurCharniere: UIViewRepresentable {
 
 /// Ce que la seconde partie du Duo peut montrer à côté du document.
 enum PanneauDuo: Hashable {
-    case sommaire, resume, discussion, conversion
+    case sommaire, resume, discussion, conversion, entites
 }
 
 extension View {

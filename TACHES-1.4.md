@@ -4,24 +4,37 @@ Ouverte le **08/10/2026**, à la demande de Patrick. La 1.3 n'est pas encore sor
 Duo) : rien de la 1.4 n'entre dans la 1.3. Le détail et les raisons sont dans le README, section
 « 1.4 — l'option Analytic ».
 
-**Slogan proposé** : « md Viewer — vos documents prennent vie. » / « md Viewer — your documents
-come alive. »
+**Slogan** : « md Viewer — vos documents prennent vie. » / « md Viewer — your documents come
+alive. »
 
 **Principe** : on valorise au maximum le document. Un rapport fornews donne déjà presque tout ;
 Wikidata ne comble que ce qui manque.
 
-## ⓪ Décisions de Patrick — avant toute ligne de code
+## ⓪ Décisions de Patrick — prises le 25/10/2026 (« Ok commence »)
 
-- [ ] **Private Cloud Compute** : il contredit deux engagements publiés (« pas d'IA distante — pas
-      même sur les serveurs d'Apple », roadmap ; « le contenu de vos documents n'est envoyé à aucun
-      serveur », confidentialité). Le faire ou non ; si oui, choix explicite par document, et les
-      deux pages réécrites avant la sortie.
-- [ ] **Wikidata** : requête réseau qui envoie des noms d'entités à Wikimedia. Imposée ou proposée ?
-      Texte de la politique de confidentialité.
-- [ ] **Prix** : deux produits de 2 francs (« Analytic » sur iPhone et iPad, « Analytic pour Mac »
-      avec l'import) — achat universel oblige, un seul produit serait rendu sur toutes les
-      plateformes. Confirmer, et vérifier le palier CHF 2.00 dans App Store Connect.
-- [ ] **Slogan** : retenir une formule, FR et EN.
+- [x] **Private Cloud Compute : non.** Uniquement `SystemLanguageModel.default`. Les deux engagements
+      publiés restent vrais, sans réécriture. La section ⑤ sort de la 1.4. Conséquence : « Analytic
+      pour Mac » demande Apple Intelligence (l'import rédige avec le modèle embarqué) ; entités,
+      galerie, carte et annotations n'en ont pas besoin.
+- [x] **Wikidata : proposée, jamais imposée.** Coupée tant que l'utilisateur ne l'a pas acceptée à la
+      première analyse ; réglage pour revenir sur le choix. Une requête par nom, sans contexte.
+      Texte de la politique de confidentialité : dans la réponse du 25/10, à reprendre en ⑥.
+- [x] **Prix : deux produits non consommables, 5 francs sur Mac, 3 francs sur iPhone et iPad**
+      (recommandation retenue après la question de Patrick sur 5 francs ; l'option gagne
+      l'annotation). Paliers vérifiés le 25/10 (produit net au taux standard) : 2.00 → 1.30,
+      3.00 → 1.94, 4.00 → 2.59, 5.00 → 3.24. Pays de référence : Suisse. Identifiants :
+      `ch.ok-ia.markdownviewer.analytic` et `ch.ok-ia.markdownviewer.analytic.mac`. Pas d'essai de
+      7 jours, un aperçu ; partage familial activé. La feuille de route publiée (2 + 2) est à
+      corriger, FR et EN. ⚠️ Mac Catalyst : `targetEnvironment(macCatalyst)`, pas `os(macOS)`.
+- [x] **Slogan** : « md Viewer — vos documents prennent vie. » / « md Viewer — your documents come
+      alive. » ; DE « Ihre Dokumente werden lebendig. », ES « Tus documentos cobran vida. », IT « I
+      tuoi documenti prendono vita. » Variante « Lisez plus loin que le texte » / « Read beyond the
+      text » pour le titre de l'écran de l'option.
+- [x] **Code de fornews : copie mot pour mot** dans `OKiaMarkdownViewer/Fornews/`, source et commit
+      en tête de chaque fichier (comme `BoiteAuxLettres.swift`), plutôt qu'une dépendance au dépôt.
+
+**Lots TestFlight, dans l'ordre** : ① entités → ② galerie et carte → ③ achat → ④ bis annotations →
+④ import Mac.
 
 ## ① Achat de l'option
 
@@ -31,17 +44,53 @@ Wikidata ne comble que ce qui manque.
 - [ ] Le Mac ne regarde que son produit ; iPhone et iPad le leur.
 - [ ] Écran de présentation de l'option : ce qu'elle apporte, le prix, la confidentialité.
 
-## ② Détection d'entités
+## ② Détection d'entités — premier lot, commencé le 25/10/2026
 
-- [ ] Reprendre l'algorithme de fornews (`FornewsCore` : `NLTagger`, `FiltreEntitesNER`,
-      vérificateurs) — paquet partagé plutôt que copie, à décider.
-- [ ] **Rapport fornews d'abord** : section `## Entités`, balises de dates et de montants, cartes
-      `leaflet`, sources — ne rien redemander à Wikidata de ce que le document donne.
-- [ ] **fornews d'abord, Wikidata ensuite** quand fornews est installé : rejoindre le groupe
-      `group.ai.fornews.native`, lire le cache d'entités que fornews y publie (⚠️ fornews doit
-      l'y publier — tâche côté fornews).
-- [ ] Résolution Wikidata (QID, genre, coordonnées, image) pour le reste.
-- [ ] **Cache local** des entités résolues, **partagé par iCloud** entre les appareils.
+- [x] Reprendre l'algorithme de fornews — **copie mot pour mot** dans `OKiaMarkdownViewer/Fornews/`
+      (19 fichiers, commit fornews 1eb3b3d8) par `scripts/copier-fornews.sh`, qui la refait à
+      l'identique. Trois extraits seulement (`TypeEntite`, `EntiteDetectee`, `WikimediaService` sans
+      SwiftData, `QualiteEntites.motifFicheSansContenu`). La détection : `DetecteurEntites`
+      (`NLTagger` par morceaux de 20 000 caractères, puis `FiltreEntitesNER.filtrer`).
+- [x] **Rapport fornews d'abord** (`LecteurRapportFornews`) : section `## Entités` et ses genres
+      dans les cinq langues de fornews, marqueurs des cartes `leaflet` pour les coordonnées. Un nom
+      du rapport n'est contrôlé que par `estValide` — `filtrer` coupait « Union européenne » en
+      « Union ». Les dates et montants balisés ne sont pas des fiches : pas montrés.
+- [x] Les formes courtes détectées (« Poutine ») sont absorbées par le nom complet du document.
+- [ ] **fornews d'abord, Wikidata ensuite** quand fornews est installé — ⚠️ attend fornews (voir
+      « Demandes à fornews » plus bas).
+- [x] Résolution Wikidata (`ResolveurWikidata`), **proposée** : question à la première ouverture,
+      réglage dans le menu « … » des entités. Les règles de choix de fornews, plus deux du 25/10 :
+      un article en minuscules retiré pour chercher (« la CIA » → « CIA », jamais « Le Monde ») ;
+      un genre de rapport fiable écarte un candidat de nature contraire (« CIA » → aéroport de
+      Ciampino). Trois noms à la fois, arrêt net si Wikidata reste muet.
+- [ ] **Cache** : fait **sur l'appareil** (`CacheEntites`, Application Support, 30 jours, réponses
+      négatives comprises). Reste **le partage par iCloud** : il faut une capacité iCloud que l'app
+      n'a pas (clé-valeur, 1 Mo, ou CloudKit) — à décider avec Patrick.
+- [x] Liste des entités par genre (`EntitesView`) : seconde partie quand l'écran le permet
+      (`PanneauDuo.entites`), feuille ailleurs ; bouton `person.2` dans la barre, entrée dans le menu
+      « … » de l'iPhone. Toucher une entité la cherche dans le document.
+- [x] Hooks Debug : `OKIA_ANALYTIC=entites` (ouvre), `OKIA_WIKIDATA=oui|non|demander|vider`,
+      ajoutés aux canaris de `deploy-testflight.sh`.
+
+**Vérifié au simulateur le 25/10** (rapport de veille réel « Ukraine · Kiev », 56 entités) : iPhone
+17 Pro Max en feuille, iPad 13″ en paysage dans la partie de droite, interface en anglais, Wikidata
+accepté puis refusé, toucher → mention surlignée. **Pas vérifié** : le Mac (écran verrouillé, le
+build Catalyst compile), le Duo, un vrai appareil.
+
+**Limites connues de la résolution par le nom seul** (même algorithme que fornews) : « Elysée »
+rattaché à une salle des fêtes d'Ostende ou à un aérodrome australien selon les jours, « Andrei
+Vorobyov » à un footballeur homonyme. Le remède est le cache de fornews, qui connaît le bon QID.
+
+**Constaté en passant** : fornews exporte `[[7]]` parmi ses organisations ; md Viewer l'écarte de la
+liste, mais `render.js` surligne encore chaque « 7 » de la prose.
+
+### Demandes à fornews (à faire dans fornews.ai, pas d'ici)
+
+1. **Publier un cache d'entités** dans `group.ai.fornews.native` — proposition de format : un JSON
+   `Entites/cache.json`, liste de `{ nom, alias[], type, qid, description, image, latitude,
+   longitude, langue }` des entités résolues, réécrit après chaque enrichissement.
+2. **Route `fornews://entite?qid=Q…`** pour ouvrir une entité par son QID.
+3. Ne plus exporter d'entité réduite à un nombre (`[[7]]`) dans la section `## Entités`.
 
 ## ③ Galerie et carte
 
@@ -70,6 +119,22 @@ Wikidata ne comble que ce qui manque.
       au-delà, le format **TextBundle / TextPack** (`.md` + `assets/`, zippé en `.textpack`) —
       md Viewer apprend à l'ouvrir.
 
+## ④ bis Annotations à l'Apple Pencil (ajouté par Patrick le 25/10)
+
+- [ ] Banc d'essai d'abord : PencilKit (`PKCanvasView`) par-dessus le `WKWebView` du lecteur, et
+      comment rattacher un trait au texte qu'il recouvre (plage DOM, paragraphe).
+- [ ] Mode « Annoter » : crayon sur iPad, doigt sur iPhone ; gestes du livre et du Duo suspendus
+      pendant l'annotation.
+- [ ] **Ancrage au texte, jamais à l'écran** : surlignage et soulignement → plages de texte ;
+      note manuscrite → accrochée à un paragraphe, dessinée dans sa marge. Doit survivre au
+      changement de taille du texte, de thème, d'orientation, au livre et au Duo.
+- [ ] Le `.md` n'est jamais modifié : annotations à côté du document, synchronisées par l'iCloud
+      privé (même mécanisme que le cache d'entités). Document modifié entre-temps : ancrage par
+      texte cité, annotations orphelines signalées plutôt que perdues.
+- [ ] Affichage sur Mac (lecture seule ?) et dans l'export PDF.
+- [ ] À décider : annoter une diapositive pendant le diaporama.
+- [ ] Vérification sur le vrai Duo (crayon ou doigt, postures, livre) et sur un iPad avec Pencil.
+
 ## ⑤ Modèles plus poussés (si ⓪ dit oui)
 
 - [ ] Private Cloud Compute, au choix explicite de l'utilisateur, document par document, jamais par
@@ -78,5 +143,14 @@ Wikidata ne comble que ce qui manque.
 ## ⑥ Publication
 
 - [ ] Feuille de route publique (FR et EN) — après les décisions de ⓪.
-- [ ] Politique de confidentialité mise à jour (Wikidata, iCloud, PCC le cas échéant).
+- [ ] Politique de confidentialité mise à jour (Wikidata, iCloud ; pas de PCC). Texte proposé le
+      25/10, section « Accès à Internet » — FR : « **Wikidata (option Analytic).** Pour compléter
+      une entité que le document ne décrit pas (sa nature, sa position, sa photo), md Viewer peut
+      interroger Wikidata, la base de connaissances libre de la Fondation Wikimedia. Seul le **nom
+      de l'entité** est envoyé, jamais le document ni son titre, et seulement si vous l'avez
+      autorisé ; vous pouvez couper cette recherche à tout moment dans les réglages. Les réponses
+      sont gardées dans un petit cache, sur l'appareil et dans votre iCloud privé. Les photos
+      viennent de Wikimedia Commons. Comme pour toute requête web, Wikimedia peut recevoir votre
+      adresse IP. » — à compléter : la description vient aussi de **Wikipédia** (résumé de
+      l'article), et « dans votre iCloud privé » n'est vrai qu'une fois le partage fait.
 - [ ] Fiche App Store, captures, notes de version, post Mastodon.
