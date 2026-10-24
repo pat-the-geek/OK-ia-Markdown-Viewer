@@ -5,7 +5,7 @@
 - **What to Test** (par build) — ce que les testeurs doivent essayer.
 - **Beta App Review Information** — requis seulement pour les **testeurs externes** (revue légère).
 
-> ⚠️ **Build à utiliser : `1.3 (84)`** — version de développement de la 1.3 : conversion d'un rapport
+> ⚠️ **Build à utiliser : `1.3 (85)`** — version de développement de la 1.3 : conversion d'un rapport
 > en présentation, thèmes de lecture, nouvelles transitions du diaporama et leur export PowerPoint. Envoyé par
 > `scripts/deploy-testflight.sh --bump --both`, compilé avec **Xcode 27.1 RC** (seul à compiler le Duo ;
 > Apple en accepte les binaires) : le script refuse d'envoyer depuis une bêta.
@@ -30,7 +30,7 @@ iPad et Mac.
 
 ---
 
-## What to Test — 1.3 (84)
+## What to Test — 1.3 (85)
 
 ```
 Merci de tester la 1.3 de md Viewer, en cours de développement. Points à vérifier :
@@ -47,7 +47,8 @@ IPHONE DUO
   en revenant en arrière, la page de droite garde son texte.
 • Tourné dans tous les sens, le texte prend toute la largeur, sans passer
   sous les boutons ; la barre du titre est en verre, sans bande opaque.
-• Toutes les commandes sont dans la colonne, sans menu « … ».
+• Toutes les commandes sont dans la colonne, sans menu « … ». Partager ouvre
+  un menu (PDF, Word, Markdown) ; la barre reste visible dans le livre.
 • Plus de titre seul sur une page, ni de page blanche avant un séparateur.
 
 NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
@@ -57,7 +58,7 @@ NOUVEAU — LA PLUS GRANDE SURFACE D'AFFICHAGE
 • Le mode livre : d'office sur l'iPhone Duo mi-replié ; sur iPad, grand
   iPhone en paysage et Mac, l'option « Deux pages » du panneau Aa. Tournez la page avec le doigt : elle se courbe comme une feuille,
   suit le doigt, et retombe sous son poids du côté où elle penche, avec un
-  léger rebond. Sur iPad, rien ne doit se lire sous la barre de l'heure.
+  léger rebond.
   Un grand blanc en bas de page reçoit un séparateur (astérisques, feuille,
   filet). Une carte, une image ou un diagramme n'est jamais coupé entre deux
   pages et reste avec son titre. Signalez tout blanc vide sans raison, tout objet
