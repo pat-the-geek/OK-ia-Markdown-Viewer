@@ -881,7 +881,7 @@ struct ReaderView: View {
                 .font(.headline)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(width: min(naturelle, 360), alignment: .leading)
+                .frame(width: min(naturelle, largeurTitre), alignment: .leading)
                 .padding(.horizontal, 6)
                 .accessibilityAddTraits(.isHeader)
         }
@@ -931,7 +931,12 @@ struct ReaderView: View {
     /// Le titre en verre, à côté de la maison, là où la barre a la place : iPad, grand iPhone en
     /// paysage. Sur iPhone tenu droit, il ferait tomber une commande ; sur le Duo, les commandes
     /// sont en colonne et le titre garde sa rangée.
-    private var titreEnVerre: Bool { tailleHorizontale != .compact && !appareilPliable }
+    private var titreEnVerre: Bool { tailleHorizontale != .compact && !appareilPliable && largeurTitre >= 120 }
+
+    /// Ce que la barre peut laisser au titre : les commandes en prennent environ 600 points. Sur
+    /// un iPad plus étroit tenu droit, un titre trop large faisait tomber le bouton Aa — et avec
+    /// lui la taille du texte et le livre (Patrick).
+    private var largeurTitre: CGFloat { min(360, max(0, tailleEcran.width - 620)) }
 
     // MARK: Les commandes
 
