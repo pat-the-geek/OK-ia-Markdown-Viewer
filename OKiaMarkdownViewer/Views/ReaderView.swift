@@ -319,6 +319,11 @@ struct ReaderView: View {
         .navigationBarTitleDisplayMode(.inline)
         // Sur Mac, une barre « éditeur » se range dans la barre de la fenêtre.
         .toolbarRole(.editor)
+        #if !targetEnvironment(macCatalyst)
+        // Le titre passe dans la barre, en verre comme les commandes : nu, il se lisait par-dessus
+        // le grand titre du document qui défilait dessous (Patrick). Sur Mac, la fenêtre garde le sien.
+        .toolbar(removing: titreEnVerre ? .title : nil)
+        #endif
         .toolbar { barreOutils }
         // Sur Mac, la barre reste : un clic sur la page ne doit pas faire disparaître les commandes.
         .toolbar(modeLivre && !barreLivreVisible && !Self.surMac ? .hidden : .automatic, for: .navigationBar, .bottomBar)
@@ -886,6 +891,23 @@ struct ReaderView: View {
     /// pas dans la barre.
     @ToolbarContentBuilder private var barreOutils: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) { boutonAccueil.teinteBarre() }
+        #if !targetEnvironment(macCatalyst)
+        if titreEnVerre {
+        ToolbarItem(placement: .topBarLeading) {
+            let texte = title.isEmpty ? document.filename : title
+            // Sa largeur naturelle, plafonnée : laissée à la barre, elle le réduisait à « f… » ;
+            // imposée entière, elle faisait tomber une commande sur iPhone.
+            let naturelle = ceil((texte as NSString).size(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .headline)]).width) + 2
+            Text(texte)
+                .font(.headline)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(width: min(naturelle, 360), alignment: .leading)
+                .padding(.horizontal, 6)
+                .accessibilityAddTraits(.isHeader)
+        }
+        }
+        #endif
         if isSearching {
             // Pendant une recherche : le compte et les flèches, rien d'autre.
             ToolbarItemGroup(placement: .primaryAction) {
@@ -926,6 +948,11 @@ struct ReaderView: View {
             }
         }
     }
+
+    /// Le titre en verre, à côté de la maison, là où la barre a la place : iPad, grand iPhone en
+    /// paysage. Sur iPhone tenu droit, il ferait tomber une commande ; sur le Duo, les commandes
+    /// sont en colonne et le titre garde sa rangée.
+    private var titreEnVerre: Bool { tailleHorizontale != .compact && !appareilPliable }
 
     // MARK: Les commandes
 
