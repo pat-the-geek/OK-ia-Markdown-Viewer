@@ -888,7 +888,9 @@ struct ReaderView: View {
                     .disabled(web.searchResult.count == 0)
                     .accessibilityLabel(tr("Suivant"))
             }
-        } else if tailleHorizontale == .compact {
+        } else if tailleHorizontale == .compact && !appareilPliable {
+            // Sur le Duo, jamais de menu « … » : sa colonne a la hauteur de toutes les commandes,
+            // à portée d'un seul toucher (Patrick — pas de sous-sous-menu pour traduire).
             ToolbarItemGroup(placement: .primaryAction) {
                 boutonIntelligence
                 boutonApparence
