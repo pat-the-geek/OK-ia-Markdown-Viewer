@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<!-- En-tête de la page produit App Store (5244 × 2950) : l'iPhone Duo à moitié replié, en livre.
+     Rendu : Chrome sans fenêtre, 2622 × 1475 à l'échelle 2, ?l=<langue>.
+     Fond blanc (Patrick) : la bande de la charnière s'y fond. -->
+<style>
+@font-face { font-family: 'Nunito'; font-weight: 900; src: url('../../OKiaMarkdownViewer/Web/fonts/Nunito-Black.woff2') format('woff2'); }
+@font-face { font-family: 'Nunito'; font-weight: 400; src: url('../../OKiaMarkdownViewer/Web/fonts/Nunito-Regular.woff2') format('woff2'); }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:2622px;height:1475px;overflow:hidden;background:#fff;color:#1C1917;font-family:'Nunito',-apple-system,sans-serif}
+.texte{position:absolute;left:150px;top:0;bottom:0;width:820px;display:flex;flex-direction:column;justify-content:center}
+.app{font-weight:900;font-size:58px;letter-spacing:-.01em;color:#E8972E}
+h1{font-weight:900;font-size:128px;line-height:1.02;letter-spacing:-.02em;margin-top:22px}
+.trait{width:150px;height:12px;background:#E8972E;margin:44px 0 40px}
+.sous{font-weight:400;font-size:46px;line-height:1.35;color:#57534E}
+.scene{position:absolute;left:1030px;top:120px;width:1500px;height:1235px;perspective:4200px}
+.livre{position:absolute;left:50%;top:50%;width:1322px;height:978px;transform:translate(-50%,-50%) rotateX(14deg);transform-style:preserve-3d}
+.moitie{position:absolute;top:0;width:50%;height:100%;background:#0D0D0B;padding:22px;transform-style:preserve-3d;
+}
+/* Chaque moitié montre sa page, sans la bande de la pliure : hauteur pleine, calée sur son bord. */
+.moitie .ecran{width:100%;height:100%;overflow:hidden;background-repeat:no-repeat;background-size:auto 100%}
+.gauche{left:0;border-radius:52px 6px 6px 52px;padding-right:4px;transform-origin:right center;transform:rotateY(19deg)}
+.gauche .ecran{border-radius:32px 0 0 32px;background-position:left top}
+.droite{right:0;border-radius:6px 52px 52px 6px;padding-left:4px;transform-origin:left center;transform:rotateY(-19deg)}
+.droite .ecran{border-radius:0 32px 32px 0;background-position:right top}
+.ombre{position:absolute;left:1080px;width:1400px;top:1150px;height:110px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(40,30,20,.22),transparent 70%)}
+</style></head><body>
+<div class="texte">
+  <div class="app">md Viewer</div>
+  <h1 id="titre"></h1>
+  <div class="trait"></div>
+  <div class="sous" id="sous"></div>
+</div>
+<div class="ombre"></div>
+<div class="scene"><div class="livre">
+  <div class="moitie gauche"><div class="ecran" id="g"></div></div>
+  <div class="moitie droite"><div class="ecran" id="d"></div></div>
+</div></div>
+<script>
+const T = {
+  fr: ["Lisez comme dans un livre.", "Sur l'iPhone Duo à moitié replié, vos fichiers Markdown deviennent deux pages qui se tournent du doigt."],
+  en: ["Read it like a book.", "On iPhone Duo half-folded, your Markdown files become two pages you turn with your finger."],
+  de: ["Lesen wie in einem Buch.", "Auf dem halb gefalteten iPhone Duo werden Ihre Markdown-Dateien zu zwei Seiten, die Sie mit dem Finger umblättern."],
+  es: ["Léelo como un libro.", "En el iPhone Duo medio plegado, tus archivos Markdown se convierten en dos páginas que pasas con el dedo."],
+  it: ["Leggilo come un libro.", "Sull'iPhone Duo piegato a metà, i tuoi file Markdown diventano due pagine da sfogliare con il dito."]
+};
+const l = new URLSearchParams(location.search).get('l') || 'fr';
+document.documentElement.lang = l;
+document.getElementById('titre').textContent = T[l][0];
+document.getElementById('sous').textContent = T[l][1];
+for (const id of ['g', 'd']) document.getElementById(id).style.backgroundImage = `url(livre-${l}.png)`;
+</script>
+</body></html>
