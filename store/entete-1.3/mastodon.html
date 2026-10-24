@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<!-- Illustration du post Mastodon de la 1.3 (1600 × 900), ?l=en|fr. Style des visuels Mastodon de
+     Patrick : fond sombre, accent ambre, invite de terminal. Le livre est la capture du simulateur
+     Duo à moitié replié (livre-<langue>.png), posée en deux moitiés inclinées.
+     Rendu : Chrome sans fenêtre, 1600 × 900. -->
+<style>
+@font-face { font-family: 'Nunito'; font-weight: 900; src: url('../../OKiaMarkdownViewer/Web/fonts/Nunito-Black.woff2') format('woff2'); }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1600px;height:900px;overflow:hidden;background:#131310;color:#EDEBE4;font-family:-apple-system,'Helvetica Neue',sans-serif}
+.trame{position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 4px);z-index:5;pointer-events:none}
+.halo{position:absolute;width:1200px;height:1200px;right:-260px;top:-300px;background:radial-gradient(circle,rgba(232,151,46,.20),rgba(232,151,46,.05) 40%,transparent 65%)}
+.mono{font-family:'SF Mono',Menlo,monospace}
+.texte{position:absolute;left:64px;top:70px;width:560px}
+.invite{font-size:20px;color:#A3A197}
+.invite b{color:#FBC168;font-weight:400}
+h1{font-family:'Nunito',sans-serif;font-weight:900;font-size:84px;line-height:1;letter-spacing:-.02em;margin-top:22px}
+h1 .c{display:inline-block;width:34px;height:66px;background:#E8972E;margin-left:10px;vertical-align:-6px}
+.version{margin-top:16px;font-size:30px;font-weight:700}
+.version span{color:#E8972E}
+.titre{margin-top:46px;font-family:'Nunito',sans-serif;font-weight:900;font-size:52px;line-height:1.08}
+.sous{margin-top:18px;font-size:22px;line-height:1.45;color:#A3A197}
+ul{list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:10px}
+li{font-size:20px;color:#EDEBE4}
+li::before{content:"▸ ";color:#E8972E}
+.pied{position:absolute;left:64px;bottom:44px;font-size:18px;color:#A3A197}
+.pied b{color:#E8972E;font-weight:400}
+.scene{position:absolute;left:640px;top:110px;width:920px;height:700px;perspective:2800px}
+.livre{position:absolute;left:50%;top:50%;width:820px;height:607px;transform:translate(-50%,-50%) rotateX(14deg);transform-style:preserve-3d}
+.moitie{position:absolute;top:0;width:50%;height:100%;background:#050504;padding:14px;border:1px solid #3A3933;transform-style:preserve-3d}
+.moitie .ecran{width:100%;height:100%;overflow:hidden;background-repeat:no-repeat;background-size:auto 100%}
+.gauche{left:0;border-radius:34px 4px 4px 34px;padding-right:3px;transform-origin:right center;transform:rotateY(19deg)}
+.gauche .ecran{border-radius:22px 0 0 22px;background-position:left top}
+.droite{right:0;border-radius:4px 34px 34px 4px;padding-left:3px;transform-origin:left center;transform:rotateY(-19deg)}
+.droite .ecran{border-radius:0 22px 22px 0;background-position:right top}
+.ombre{position:absolute;left:720px;width:780px;top:770px;height:70px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.7),transparent 70%)}
+</style></head><body>
+<div class="halo"></div><div class="trame"></div>
+<div class="texte">
+  <p class="invite mono"><b>patrick@fribourg</b>:~$ open report.md --book</p>
+  <h1>md Viewer<span class="c"></span></h1>
+  <p class="version">1.3 · <span id="dispo"></span></p>
+  <p class="titre" id="titre"></p>
+  <p class="sous" id="sous"></p>
+  <ul id="liste"></ul>
+</div>
+<div class="ombre"></div>
+<div class="scene"><div class="livre">
+  <div class="moitie gauche"><div class="ecran" id="g"></div></div>
+  <div class="moitie droite"><div class="ecran" id="d"></div></div>
+</div></div>
+<p class="pied mono" id="pied"></p>
+<script>
+const T = {
+  en: { dispo: "out now", titre: "Read it like a book.",
+        sous: "iPhone Duo half-folded: two pages, either side of the hinge, turned with your finger.",
+        liste: ["Report → presentation, on-device", "Five reading themes", "Free · iPhone · iPad · Duo · Mac"],
+        pied: "App Store · <b>ok-ia.ch/mdviewer</b>" },
+  fr: { dispo: "disponible", titre: "Lisez comme dans un livre.",
+        sous: "iPhone Duo à moitié replié : deux pages, de part et d'autre de la charnière, tournées du doigt.",
+        liste: ["Rapport → présentation, sur l'appareil", "Cinq thèmes de lecture", "Gratuit · iPhone · iPad · Duo · Mac"],
+        pied: "App Store · <b>ok-ia.ch/mdviewer</b>" }
+};
+const l = new URLSearchParams(location.search).get('l') || 'en', t = T[l];
+document.documentElement.lang = l;
+document.getElementById('dispo').textContent = t.dispo;
+document.getElementById('titre').textContent = t.titre;
+document.getElementById('sous').textContent = t.sous;
+document.getElementById('liste').innerHTML = t.liste.map(x => `<li>${x}</li>`).join('');
+document.getElementById('pied').innerHTML = t.pied;
+for (const id of ['g', 'd']) document.getElementById(id).style.backgroundImage = `url(livre-${l}.png)`;
+</script>
+</body></html>
