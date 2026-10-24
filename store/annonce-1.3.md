@@ -80,3 +80,24 @@ Fond blanc. À gauche, « md Viewer » en orange, puis la phrase « Lisez comme 
 ```
 Screen recording on iPhone Duo, no sound. Half-folded, a report opens as a book and pages are turned with a finger; then the report is converted into a presentation and played as a slideshow. — Enregistrement d'écran sur l'iPhone Duo, sans son : à moitié replié, un rapport s'ouvre comme un livre et l'on tourne les pages du doigt ; puis le rapport devient une présentation, jouée en diaporama.
 ```
+
+---
+
+## Site perso (@patcedar) — anglais, ton dev
+
+Publié par Patrick lui-même (pas de jeton pour ce compte). Image : `store/entete-1.3/mastodon-en.jpg`,
+texte alt : celui de l'illustration sombre anglaise ci-dessus.
+
+```
+md Viewer 1.3 just shipped 📖 — iPhone Duo support, the hard way.
+
+• Fold position from reservedRegions(kind: .division), never screen ÷ 2
+• Hinge posture via UIHingeInteraction → half-fold = book mode
+• Page curl: CATransformLayer strips + gravity, around X when the Duo goes laptop
+• Two WKWebViews, one paginator that never splits a map or a table
+• 22 TestFlight builds in 2 days (66 → 87)
+
+https://ok-ia.ch/mdviewer/?lang=en
+
+#iOSDev #SwiftUI #iPhoneDuo #WebKit
+```
