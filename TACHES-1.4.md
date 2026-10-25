@@ -12,7 +12,8 @@ Wikidata ne comble que ce qui manque.
 
 **Calendrier (Patrick, 25/10/2026)** : la 1.4 sortira **après fornews 1.7.4**, celle
 qui doit lui donner le cache d'entités partagé et l'ouverture par QID (« Demandes à fornews »).
-B89 envoyé le 25/10 (iOS + Mac) ; les commits depuis B88 ne sont pas poussés.
+B89 envoyé le 25/10 (iOS + Mac) ; les commits depuis B88 ne sont pas poussés. **D'ici là, md Viewer 1.4
+reste en bêta (TestFlight)** : aucune soumission à Apple.
 
 ## ⓪ Décisions de Patrick — prises le 25/10/2026 (« Ok commence »)
 
