@@ -23,6 +23,7 @@ enum ImportPowerPoint {
         var titre: String?
         let reservoir = ReservoirImages()
         var transitions: [String: Int] = [:]
+        var consignes: [ConsigneImport] = []
         for (i, partie) in ordre.enumerated() {
             guard let xml = try zip.donnees(partie), let diapo = NoeudXML.lire(xml) else { continue }
             let relsDiapo = MarkdownImport.relations(de: partie, dans: zip)
@@ -32,12 +33,22 @@ enum ImportPowerPoint {
             if let t = Self.transition(diapo) { transitions[t, default: 0] += 1 }
 
             var bloc = lu.lignes.joined(separator: "\n\n")
+            let comms = Self.commentaires(partie: partie, rels: relsDiapo, zip: zip, auteurs: auteurs)
+            // Chaque commentaire, une consigne possible : sa marque suit le contenu de la diapositive.
+            for c in comms {
+                let n = consignes.count + 1
+                consignes.append(ConsigneImport(numero: n, auteur: c.auteur, commentaire: c.texte,
+                                                passage: lu.lignes.joined(separator: "\n"), section: lu.titre))
+                bloc += (bloc.isEmpty ? "" : "\n\n") + ConsigneImport.marque(n)
+            }
             var cache: [String] = []
             if let notes = Self.notes(relsDiapo, zip: zip), !notes.isEmpty {
                 cache.append(tr("Notes de l’orateur :") + "\n" + notes)
             }
-            let comms = Self.commentaires(partie: partie, rels: relsDiapo, zip: zip, auteurs: auteurs)
-            if !comms.isEmpty { cache.append(tr("Commentaires :") + "\n" + comms.joined(separator: "\n")) }
+            if !comms.isEmpty {
+                cache.append(tr("Commentaires :") + "\n"
+                             + comms.map { "- " + ($0.auteur.isEmpty ? "" : $0.auteur + " : ") + $0.texte }.joined(separator: "\n"))
+            }
             if !cache.isEmpty {
                 // `--` est interdit dans un commentaire HTML : il le fermerait trop tôt.
                 let propre = cache.joined(separator: "\n\n").replacingOccurrences(of: "--", with: "—")
@@ -55,7 +66,8 @@ enum ImportPowerPoint {
             + "\n\n" + diapositives.joined(separator: "\n\n---\n\n") + "\n"
             + (reservoir.definitions.isEmpty ? "" : "\n" + reservoir.definitions.joined(separator: "\n") + "\n")
         let resume = tr("%d diapositives, %d images", diapositives.count, reservoir.nombre)
-        return DocumentImporte(genre: .presentation, titre: titreFinal, markdown: markdown, resume: resume)
+        return DocumentImporte(genre: .presentation, titre: titreFinal, markdown: markdown, resume: resume,
+                               consignes: consignes)
     }
 
     // MARK: Une diapositive
@@ -185,17 +197,17 @@ enum ImportPowerPoint {
     }
 
     private static func commentaires(partie: String, rels: [String: (cible: String, type: String)], zip: LecteurZip,
-                                     auteurs: [String: String]) -> [String] {
-        var r: [String] = []
+                                     auteurs: [String: String]) -> [(auteur: String, texte: String)] {
+        var r: [(auteur: String, texte: String)] = []
         for rel in rels.values where rel.type.hasSuffix("/comments") || rel.type.contains("modernComment") {
             guard let xml = try? zip.donnees(rel.cible), let racine = NoeudXML.lire(xml) else { continue }
             for c in racine.descendants("p:cm") {
                 let t = c.enfant("p:text")?.texte.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                if !t.isEmpty { r.append("- " + (auteurs[c["authorId"] ?? ""].map { "\($0) : " } ?? "") + t) }
+                if !t.isEmpty { r.append((auteurs[c["authorId"] ?? ""] ?? "", t)) }
             }
             for c in racine.descendants("p188:cm") {
                 let t = c.descendants("a:p").map(Lecture.texte).joined(separator: " ")
-                if !t.isEmpty { r.append("- " + (auteurs[c["authorId"] ?? ""].map { "\($0) : " } ?? "") + t) }
+                if !t.isEmpty { r.append((auteurs[c["authorId"] ?? ""] ?? "", t)) }
             }
         }
         return r

@@ -12,6 +12,24 @@ struct DocumentImporte {
     var markdown: String
     /// Ce qui a été lu : « 12 diapositives, 8 images ».
     var resume: String
+    /// Les commentaires de relecture, chacun marqué dans le Markdown (`ConsigneImport.marque`) :
+    /// l'utilisateur peut, à l'import, demander qu'Apple Intelligence rédige ce qu'ils demandent.
+    var consignes: [ConsigneImport] = []
+}
+
+/// Un commentaire de relecture et ce qu'il commente.
+struct ConsigneImport: Sendable {
+    var numero: Int
+    var auteur: String
+    var commentaire: String
+    /// Le texte commenté : le paragraphe, la cellule, la diapositive.
+    var passage: String
+    /// Le titre de la partie où il se trouve.
+    var section: String?
+
+    /// La marque posée dans le Markdown après le passage, remplacée à la fin de l'import par le
+    /// texte rédigé, ou retirée.
+    static func marque(_ n: Int) -> String { "<!--consigne:\(n)-->" }
 }
 
 /// Ce que l'import a fait jusqu'ici, pour le compte à rebours : l'étape, sa part du tout, et les

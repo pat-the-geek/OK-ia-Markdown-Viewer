@@ -11,7 +11,18 @@ final class ImportEnCours: ObservableObject, Identifiable {
     let nomSource: String
     @Published private(set) var avancement: AvancementImport?
     @Published private(set) var debut = Date()
+    /// Le document converti, en attente de la réponse de l'utilisateur : rédiger ou non, avec
+    /// Apple Intelligence, ce que demandent ses commentaires, et un rapport d'analyse.
+    @Published private(set) var enAttente: DocumentImporte?
     private var tache: Task<Void, Never>?
+    private var nom = ""
+    private var fini: (@MainActor (Result<Resultat, Error>) -> Void)?
+
+    /// Ce que l'import a écrit : le document, et le rapport d'analyse s'il a été demandé.
+    struct Resultat {
+        var document: URL
+        var rapport: URL?
+    }
 
     init(nomSource: String) { self.nomSource = nomSource }
 
@@ -33,9 +44,12 @@ final class ImportEnCours: ObservableObject, Identifiable {
         return ecoule / Double(a.fait) * Double(a.total - a.fait)
     }
 
-    /// Lit, convertit et écrit le document ; rend l'adresse du Markdown écrit.
-    func lancer(_ url: URL, fini: @escaping @MainActor (Result<URL, Error>) -> Void) {
+    /// Lit et convertit le document. Si Apple Intelligence est là, l'import s'arrête sur la question
+    /// (`enAttente`, puis `poursuivre`) ; sinon il écrit tout de suite.
+    func lancer(_ url: URL, fini: @escaping @MainActor (Result<Resultat, Error>) -> Void) {
         debut = Date()
+        self.fini = fini
+        self.nom = url.lastPathComponent
         tache = Task { [weak self] in
             do {
                 let scoped = url.startAccessingSecurityScopedResource()
@@ -51,10 +65,57 @@ final class ImportEnCours: ObservableObject, Identifiable {
                 default:     throw ErreurImport.formatInconnu(nom)
                 }
                 try Task.checkCancellation()
-                let cible = try Self.ecrire(doc.markdown, nomSource: nom)
-                fini(.success(cible))
+                #if DEBUG
+                // OKIA_IMPORT_IA=consignes,rapport répond à la question tout seul (le Mac de test ne
+                // se pilote pas) ; « aucun » importe sans rien rédiger.
+                if let r = ProcessInfo.processInfo.environment["OKIA_IMPORT_IA"] {
+                    self?.poursuivre(consignes: r.contains("consignes"), rapport: r.contains("rapport"), doc: doc)
+                    return
+                }
+                #endif
+                if MoteurRedaction.disponible {
+                    self?.enAttente = doc
+                } else {
+                    self?.poursuivre(consignes: false, rapport: false, doc: doc)
+                }
             } catch is CancellationError {
                 return
+            } catch {
+                fini(.failure(error))
+            }
+        }
+    }
+
+    /// La réponse à la question : rédiger les consignes, le rapport, ou ni l'un ni l'autre.
+    func poursuivre(consignes: Bool, rapport: Bool, doc: DocumentImporte? = nil) {
+        guard let doc = doc ?? enAttente, let fini else { return }
+        enAttente = nil
+        debut = Date()
+        avancement = nil
+        let nom = self.nom
+        tache = Task { [weak self] in
+            let suivi: SuiviImport = { [weak self] a in self?.avancement = a }
+            var markdown = doc.markdown
+            if consignes, !doc.consignes.isEmpty {
+                let langue = MoteurRedaction.langue(markdown)
+                let textes = await RedactionConsignes.rediger(doc.consignes, langue: langue, suivi: suivi)
+                markdown = RedactionConsignes.appliquer(markdown, consignes: doc.consignes, redactions: textes)
+            } else {
+                markdown = RedactionConsignes.retirer(markdown, consignes: doc.consignes)
+            }
+            if Task.isCancelled { return }
+            var rapportMD: String?
+            if rapport {
+                self?.debut = Date()
+                rapportMD = await RapportAnalyseImport.produire(markdown: markdown, titreDocument: doc.titre,
+                                                                nomSource: nom, suivi: suivi)
+            }
+            if Task.isCancelled { return }
+            do {
+                let cible = try Self.ecrire(markdown, nomSource: nom)
+                let base = (nom as NSString).deletingPathExtension
+                let analyse = try rapportMD.map { try Self.ecrire($0, nomSource: base + " — " + tr("analyse") + ".md") }
+                fini(.success(Resultat(document: cible, rapport: analyse)))
             } catch {
                 fini(.failure(error))
             }

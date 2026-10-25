@@ -247,12 +247,26 @@ zip est lu par `LecteurZip` (répertoire central + `COMPRESSION_ZLIB`), le XML p
       en 0,7 s. TextPack pas nécessaire à ce stade.
 - [x] **Commentaires** repris par défaut : Word en notes `[^c1]` « 💬 Auteur : texte » à l'endroit
       commenté ; PowerPoint avec les notes de l'orateur.
-- [ ] **Option « Utiliser les commentaires comme consignes »** (idée de Patrick, 25/10), demandée à
-      l'import : Apple Intelligence, sur l'appareil, rédige ce que chaque commentaire demande ; le
-      texte rédigé est marqué comme tel, avec le commentaire d'origine, et le texte de l'auteur n'est
-      jamais remplacé.
-- [ ] **Rapport au format md Viewer** à la manière de fornews (`GenerateurRapportAnalyste`) : pas
-      fait — l'import rend le document fidèlement ; un rapport d'analyse en serait une étape de plus.
+- [x] **Option « Utiliser les commentaires comme consignes »** (idée de Patrick, 25/10) : après la
+      lecture, la fenêtre d'import pose la question (rien de coché d'avance ; seulement si Apple
+      Intelligence est là). Pour chaque commentaire, le modèle de l'appareil rédige ce qu'il
+      demande, à partir du passage commenté et du titre de sa partie ; le texte s'insère sous le
+      passage dans un encadré « Rédigé par Apple Intelligence, d'après le commentaire de X », qui
+      cite le commentaire. Le texte de l'auteur n'est jamais remplacé ; un commentaire qui ne
+      demande rien (« RIEN ») n'ajoute rien. Word et PowerPoint.
+- [x] **Rapport d'analyse à la manière de fornews**, proposé à la même question : un second document
+      « <nom> — analyse.md », ouvert à la fin (le document importé entre dans les récents). Les
+      consignes de fornews copiées mot pour mot par `scripts/copier-fornews.sh`
+      (`ConsignesAnalyste`, `ConsignesLocales`) et un extrait de `GenerateurRapportAnalyste`
+      (`NettoyageRapport` : tics, marques, redites, nombres et années inventés). Une section par
+      appel, session jetable : résumé exécutif, titre (une énumération est refusée), un point clé
+      par grande partie du document (cinq au plus), dimension humaine, perspective, voix
+      critiques ; une section qui échoue ou répond « RIEN » est absente. ⛔ Une phrase qui avance
+      un nombre ou une année absents de la matière est retirée (essai : « entre 2005 et 2020 »
+      inventé). Briefing fornews en PDF : 8 000 caractères en 53 s sur le Mac. Ce qui n'est pas
+      repris de fornews : la vérification phrase à phrase et la relecture critique (un corpus
+      d'articles numérotés, pas un document).
+      `OKIA_IMPORT_IA=consignes,rapport|aucun` (Debug) répond à la question, ajouté aux canaris.
 
 **Vérifié sur le Mac le 25/10** (build Debug, `open -a` avec `OKIA_ACHAT=achete`) : le PowerPoint
 réel (« Anatomie d'un SI »), un Word d'essai complet (styles, listes, tableau, lien en champ, note,

@@ -149,7 +149,15 @@ final class DocumentStore: ObservableObject {
             guard let self, self.importEnCours === i else { return }
             self.importEnCours = nil
             switch issue {
-            case .success(let md): self.open(url: md)
+            case .success(let r):
+                // Le rapport d'analyse s'ouvre s'il y en a un ; le document importé entre dans les
+                // récents, à un geste.
+                if let rapport = r.rapport {
+                    self.recents.add(url: r.document)
+                    self.open(url: rapport)
+                } else {
+                    self.open(url: r.document)
+                }
             case .failure(let e):  self.errorMessage = e.localizedDescription
             }
         }

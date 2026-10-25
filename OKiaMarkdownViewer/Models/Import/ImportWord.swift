@@ -44,9 +44,13 @@ enum ImportWord {
         md += "\n\n" + lu.lignes.joined(separator: "\n\n") + "\n"
         if !lu.definitionsDeNotes.isEmpty { md += "\n" + lu.definitionsDeNotes.joined(separator: "\n") + "\n" }
         if !lu.reservoir.definitions.isEmpty { md += "\n" + lu.reservoir.definitions.joined(separator: "\n") + "\n" }
-        var parts = [tr("%d paragraphes", lu.paragraphes), tr("%d images", lu.reservoir.nombre)]
-        if lu.nombreDeCommentaires > 0 { parts.append(tr("%d commentaires", lu.nombreDeCommentaires)) }
-        return DocumentImporte(genre: .rapport, titre: titre, markdown: md, resume: parts.joined(separator: ", "))
+        var parts = [tr("%d paragraphes", lu.paragraphes)]
+        if lu.reservoir.nombre > 0 { parts.append(lu.reservoir.nombre == 1 ? tr("1 image") : tr("%d images", lu.reservoir.nombre)) }
+        if lu.nombreDeCommentaires > 0 {
+            parts.append(lu.nombreDeCommentaires == 1 ? tr("1 commentaire") : tr("%d commentaires", lu.nombreDeCommentaires))
+        }
+        return DocumentImporte(genre: .rapport, titre: titre, markdown: md, resume: parts.joined(separator: ", "),
+                               consignes: lu.consignes)
     }
 
     // MARK: Le corps
@@ -68,6 +72,10 @@ enum ImportWord {
         var paragraphes = 0
         var definitionsDeNotes: [String] = []
         var nombreDeCommentaires = 0
+        /// Les commentaires, avec le passage qu'ils commentent : des consignes possibles.
+        var consignes: [ConsigneImport] = []
+        private var marquesEnAttente: [String] = []
+        private var passageCourant = ""
         /// Les lignes d'une liste en cours : une liste est un seul bloc, ses lignes sans blanc.
         private var liste: [String] = []
         /// Le numéro Word de la liste en cours : une autre liste qui suit en commence une nouvelle.
@@ -93,12 +101,16 @@ enum ImportWord {
         }
 
         mutating func bloc(_ n: NoeudXML) {
+            if n.nom == "w:p" || n.nom == "w:tbl" { passageCourant = texteBrut(n) }
             switch n.nom {
             case "w:p":   paragraphe(n)
             case "w:tbl": fermerListe(); tableau(n)
             case "w:sdt": n.enfant("w:sdtContent")?.enfants.forEach { bloc($0) }
             default:      break
             }
+            // Les marques des commentaires suivent leur bloc ; dans une liste, elles attendent sa fin
+            // pour ne pas la couper.
+            if liste.isEmpty { poserMarques() }
         }
 
         mutating func fermerListe() {
@@ -106,6 +118,12 @@ enum ImportWord {
             lignes.append(liste.joined(separator: "\n"))
             liste = []
             listeEnCours = nil
+            poserMarques()
+        }
+
+        private mutating func poserMarques() {
+            lignes += marquesEnAttente
+            marquesEnAttente = []
         }
 
         private mutating func paragraphe(_ p: NoeudXML) {
@@ -195,7 +213,7 @@ enum ImportWord {
         }
 
         private func texteBrut(_ p: NoeudXML) -> String {
-            p.descendants("w:t").map(\.texte).joined().trimmingCharacters(in: .whitespaces)
+            p.descendants("w:t").map(\.texte).joined(separator: p.nom == "w:tbl" ? " " : "").trimmingCharacters(in: .whitespaces)
         }
 
         // MARK: Le texte d'un paragraphe
@@ -350,6 +368,10 @@ enum ImportWord {
             let auteur = c.auteur.isEmpty ? "" : c.auteur + " : "
             definitionsDeNotes.append("[^\(etiquette)]: 💬 " + auteur + MarkdownImport.echapper(c.texte))
             passages.append(Passage(texte: "[^\(etiquette)]", brut: true))
+            // De quoi le rédiger plus tard, si l'utilisateur le demande à l'import.
+            consignes.append(ConsigneImport(numero: nombreDeCommentaires, auteur: c.auteur, commentaire: c.texte,
+                                            passage: passageCourant, section: dernierTitre))
+            marquesEnAttente.append(ConsigneImport.marque(nombreDeCommentaires))
         }
 
         // MARK: Tableaux

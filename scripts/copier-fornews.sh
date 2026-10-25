@@ -47,6 +47,9 @@ ENTIERS = [
     "FornewsAI/Apple/GardeFousIA.swift",
     "FornewsAI/Apple/DisponibiliteAppleIntelligence.swift",
     "FornewsAI/BudgetContexteLLM.swift",
+    # Le rapport d'analyse d'un document importé (1.4) : les consignes de fornews, section par section.
+    "FornewsPipeline/ConsignesAnalyste.swift",
+    "FornewsPipeline/ConsignesLocales.swift",
 ]
 
 def entete(chemin, note):
@@ -111,5 +114,21 @@ open(f"{dest}/WikimediaService.swift", "w").write(
     entete("FornewsServices/Wikimedia/WikimediaService.swift",
            "EXTRAIT : sans les fonctions qui écrivent dans le modèle SwiftData (enrichir, appliquerCandidat,\n"
            "// geolocaliser, fusionnerSiDoublon) ; restent le protocole du client et les règles de choix.") + t)
+
+t = open(f"{src}/FornewsPipeline/GenerateurRapportAnalyste.swift").read()
+a = t.index("    // MARK: - Les tics de langage")
+b = t.index("    /// **Part d'un texte qui est en fait une RECOPIE d'un extrait.**")
+# Les contrôles de nombres et d'années inventés, sans ce qui dépend de la chronologie d'articles.
+c = t.index("    /// **Les nombres en lettres**")
+d = t.index("    public static func estRecopie(")
+e = t.index("    /// **Les années que le texte cite et que la matière ne contient pas.**")
+f = t.index("    /// **Retire d'une section ce que les sections PRÉCÉDENTES ont déjà dit.**")
+open(f"{dest}/NettoyageRapport.swift", "w").write(
+    entete("FornewsPipeline/GenerateurRapportAnalyste.swift",
+           "EXTRAIT : le nettoyage de la prose (tics d'ouverture, marques recopiées, redites) et les contrôles\n"
+           "// des nombres et des années inventés, pour ce qu'md Viewer rédige à l'import ; le reste du\n"
+           "// générateur tient au pipeline d'articles.")
+    + "import Foundation\n\nenum NettoyageRapport {\n" + t[a:b].rstrip() + "\n\n" + t[c:d].rstrip()
+    + "\n\n" + t[e:f].rstrip() + "\n}\n")
 EOF
 ls "$DEST"
