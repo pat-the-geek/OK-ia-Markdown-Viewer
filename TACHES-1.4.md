@@ -158,21 +158,38 @@ Limite relevée : « Washington » d'un rapport épinglé sur l'État de Washing
       au-delà, le format **TextBundle / TextPack** (`.md` + `assets/`, zippé en `.textpack`) —
       md Viewer apprend à l'ouvrir.
 
-## ④ bis Annotations à l'Apple Pencil (ajouté par Patrick le 25/10)
+## ④ bis Annotations à l'Apple Pencil — quatrième lot, 25/10/2026
 
-- [ ] Banc d'essai d'abord : PencilKit (`PKCanvasView`) par-dessus le `WKWebView` du lecteur, et
-      comment rattacher un trait au texte qu'il recouvre (plage DOM, paragraphe).
-- [ ] Mode « Annoter » : crayon sur iPad, doigt sur iPhone ; gestes du livre et du Duo suspendus
-      pendant l'annotation.
-- [ ] **Ancrage au texte, jamais à l'écran** : surlignage et soulignement → plages de texte ;
-      note manuscrite → accrochée à un paragraphe, dessinée dans sa marge. Doit survivre au
-      changement de taille du texte, de thème, d'orientation, au livre et au Duo.
-- [ ] Le `.md` n'est jamais modifié : annotations à côté du document, synchronisées par l'iCloud
-      privé (même mécanisme que le cache d'entités). Document modifié entre-temps : ancrage par
-      texte cité, annotations orphelines signalées plutôt que perdues.
-- [ ] Affichage sur Mac (lecture seule ?) et dans l'export PDF.
+- [x] Banc d'essai fait dans le navigateur, puis dans l'app : PencilKit (`PKCanvasView`) posé dans
+      la vue de défilement de WebKit, à la taille de la partie visible (`CalqueAnnotation`).
+- [x] Mode « Annoter » (bouton `pencil.tip.crop.circle`, entrée du menu « … » sur iPhone) et sa
+      palette : Surligner, Souligner, Écrire, Gomme, quatre couleurs, Terminé. Le calque suit le
+      réglage du système « Dessiner uniquement avec l'Apple Pencil » : crayon seul → le doigt fait
+      défiler ; sinon (iPhone, Mac, simulateur) on dessine d'un doigt et l'on défile à deux.
+      Avant l'achat, le bouton présente l'option. Indisponible dans le livre.
+- [x] **Ancrage au texte** (`Web/annotations.js`, à part de render.js que fornews copie) :
+      surligner et souligner → plage de texte retrouvée par citation + contexte, dessinée par les
+      surlignages natifs de WebKit (`CSS.highlights`), rien d'inséré dans le texte ; écrire → l'image
+      du tracé, accrochée au bloc, en largeurs de bloc. Éprouvé : taille du texte, largeur, recherche
+      par-dessus, nouveau rendu — tout se repose (observateur de la page).
+- [x] Le `.md` n'est jamais modifié : `AnnotationsStore`, un fichier par document (chemin, sinon
+      nom) dans Application Support. Gomme : ce que le trait touche disparaît.
+- [ ] **Partage par iCloud** : attend la capacité iCloud (même question que le cache d'entités).
+- [ ] **Le livre** : les deux pages ne portent pas encore les annotations ; le mode Annoter y est
+      fermé.
+- [ ] Export PDF avec les annotations : à vérifier (les surlignages natifs et les images sont dans
+      la page, l'export devrait les prendre).
+- [ ] Document traduit : les annotations, ancrées dans la langue d'origine, disparaissent le temps
+      de la traduction (signalées « orphelines ») — à dire à l'écran.
+- [ ] **iPhone Duo** : le crayon y fonctionnera **dès iOS 27.2** (Patrick, 25/10) — rien à changer,
+      le calque suit le réglage du système ; d'ici là, au doigt. À vérifier sur l'appareil, postures
+      comprises.
 - [ ] À décider : annoter une diapositive pendant le diaporama.
-- [ ] Vérification sur le vrai Duo (crayon ou doigt, postures, livre) et sur un iPad avec Pencil.
+
+**Vérifié au simulateur le 25/10** : iPad 13″ (surligner, souligner en couleur, écrire, gomme,
+relance → annotations retrouvées), iPhone 17 Pro Max (défilement à deux doigts, palette au-dessus de
+la recherche). Hook `OKIA_ANNOTER=surligner|souligner|ecrire|gomme`. **Pas vu** : un vrai crayon,
+le Mac (souris), le Duo.
 
 ## ⑤ Modèles plus poussés (si ⓪ dit oui)
 

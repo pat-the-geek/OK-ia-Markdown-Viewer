@@ -28,7 +28,7 @@ struct MarkdownWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "imageTapped", "toc", "miroir", "recouper", "tapPage", "carteTapped"] {
+        for name in ["ready", "docMeta", "rendered", "renderError", "diagramTapped", "imageTapped", "toc", "miroir", "recouper", "tapPage", "carteTapped", "annotationsPosees"] {
             controller.add(context.coordinator, name: name)
         }
 
@@ -193,6 +193,9 @@ struct MarkdownWebView: UIViewRepresentable {
                 }
             case "tapPage":
                 parent.webController.onTapPage?()
+            case "annotationsPosees":
+                let orphelines = (message.body as? [String: Any])?["orphelines"] as? [String] ?? []
+                parent.webController.onAnnotationsOrphelines?(orphelines)
             case "miroir":
                 if let copie = message.body as? [String: Any] { parent.webController.onMiroir?(copie) }
             case "recouper":
@@ -207,6 +210,8 @@ struct MarkdownWebView: UIViewRepresentable {
                     parent.webController.toc = items
                 }
             case "rendered":
+                // Un nouveau rendu efface les annotations : la page les reprend aussitôt.
+                parent.webController.reposerAnnotations()
                 parent.webController.reapplyFontScale()
                 parent.webController.teindreFond()
                 parent.webController.onRendered?()

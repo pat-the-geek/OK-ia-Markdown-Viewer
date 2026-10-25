@@ -1,0 +1,31 @@
+/* md Viewer 1.4 — option Analytic : l'aspect des annotations (voir annotations.js). Les noms
+   « okia-<type>-<couleur> » sont ceux des surlignages natifs posés par CSS.highlights.
+   Le soulignement en propriétés détaillées : avec le raccourci « text-decoration », WebKit
+   traçait le trait dans la couleur du texte, sans celle choisie (simulateur, 25/10/2026). */
+
+::highlight(okia-surligne-jaune) { background-color: rgba(255, 214, 10, 0.45); }
+::highlight(okia-surligne-vert)  { background-color: rgba(52, 199, 89, 0.35); }
+::highlight(okia-surligne-rose)  { background-color: rgba(255, 55, 135, 0.30); }
+::highlight(okia-surligne-bleu)  { background-color: rgba(10, 132, 255, 0.30); }
+
+::highlight(okia-souligne-jaune) { text-decoration-line: underline; text-decoration-color: rgb(232, 151, 46); text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+::highlight(okia-souligne-vert) { text-decoration-line: underline; text-decoration-color: rgb(36, 160, 72); text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+::highlight(okia-souligne-rose) { text-decoration-line: underline; text-decoration-color: rgb(230, 40, 120); text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+::highlight(okia-souligne-bleu) { text-decoration-line: underline; text-decoration-color: rgb(10, 110, 230); text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+
+/* Une note manuscrite : l'image du tracé, posée sur son bloc, sans prendre le doigt ni la sélection. */
+.okia-encre {
+  position: absolute;
+  z-index: 2;
+  max-width: none !important;
+  height: auto;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* L'impression et le PDF gardent les annotations : c'est le document annoté qu'on exporte. */

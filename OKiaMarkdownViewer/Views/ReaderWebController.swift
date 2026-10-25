@@ -430,6 +430,66 @@ final class ReaderWebController: ObservableObject {
     }
 
     // MARK: helpers
+    // MARK: Annotations (option Analytic, 1.4)
+
+    /// Les annotations du document, telles que la page les attend : gardées pour être reposées
+    /// après chaque rendu (un nouveau rendu efface tout).
+    private(set) var annotationsJSON = "[]"
+    /// La page n'a pas retrouvé ces annotations (document changé, traduction affichée).
+    var onAnnotationsOrphelines: (([String]) -> Void)?
+
+    func poserAnnotations(_ json: String) {
+        annotationsJSON = json
+        reposerAnnotations()
+    }
+
+    func reposerAnnotations() {
+        eval("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(annotationsJSON))")
+    }
+
+    /// Un point de la vue web (ses coordonnées) en point de la page : le défilement compris, le
+    /// zoom retiré. C'est ce que `annotations.js` attend.
+    func pointPage(_ p: CGPoint) -> CGPoint? {
+        guard let vue = webView else { return nil }
+        let s = vue.scrollView
+        let contenu = vue.convert(p, to: s)
+        let z = max(s.zoomScale, 0.01)
+        return CGPoint(x: contenu.x / z, y: contenu.y / z)
+    }
+
+    private func objet<T: Decodable>(_ js: String, _ type: T.Type) async -> T? {
+        guard let vue = webView else { return nil }
+        return await withCheckedContinuation { suite in
+            vue.evaluateJavaScript(js) { valeur, _ in
+                guard let s = valeur as? String, let data = s.data(using: .utf8) else { suite.resume(returning: nil); return }
+                suite.resume(returning: try? JSONDecoder().decode(T.self, from: data))
+            }
+        }
+    }
+
+    /// La plage de texte qu'un trait couvre, de `debut` à `fin` (points de la vue web).
+    func ancrerTexte(de debut: CGPoint, a fin: CGPoint) async -> AncreAnnotation? {
+        guard let a = pointPage(debut), let b = pointPage(fin) else { return nil }
+        return await objet("JSON.stringify(window.OKIA_ANNOT ? window.OKIA_ANNOT.ancrerTexte(\(a.x), \(a.y), \(b.x), \(b.y)) : null)",
+                           AncreAnnotation.self)
+    }
+
+    /// Le bloc sous un tracé (rectangle de la vue web) et sa place dans ce bloc.
+    func ancrerEncre(_ r: CGRect) async -> AncreAnnotation? {
+        guard let o = pointPage(r.origin), let c = pointPage(CGPoint(x: r.maxX, y: r.maxY)) else { return nil }
+        return await objet("JSON.stringify(window.OKIA_ANNOT ? window.OKIA_ANNOT.ancrerEncre(\(o.x), \(o.y), \(c.x - o.x), \(c.y - o.y)) : null)",
+                           AncreAnnotation.self)
+    }
+
+    /// L'annotation sous un point de la vue web (la gomme).
+    func annotationSous(_ p: CGPoint) async -> String? {
+        guard let q = pointPage(p) else { return nil }
+        // Enveloppé dans un objet : une chaîne seule n'est pas un document JSON que le décodeur rende.
+        struct Reponse: Decodable { let id: String? }
+        return await objet("JSON.stringify({ id: window.OKIA_ANNOT ? window.OKIA_ANNOT.sousLePoint(\(q.x), \(q.y)) : null })",
+                           Reponse.self)?.id
+    }
+
     private func eval(_ js: String) { webView?.evaluateJavaScript(js, completionHandler: nil) }
 
     private func evalResult(_ js: String, _ handler: @escaping ([String: Any]?) -> Void) {

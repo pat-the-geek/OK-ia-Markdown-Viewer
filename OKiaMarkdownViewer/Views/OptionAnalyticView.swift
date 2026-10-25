@@ -12,12 +12,13 @@ struct OptionAnalyticView: View {
     @State private var message: String?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
-    /// Ce que l'option apporte aujourd'hui. Les annotations au crayon et, sur Mac, l'import de
-    /// Word, PDF et PowerPoint s'ajouteront ici avec leurs lots (TACHES-1.4.md).
+    /// Ce que l'option apporte aujourd'hui. Sur Mac, l'import de Word, PDF et PowerPoint
+    /// s'ajoutera ici avec son lot (TACHES-1.4.md).
     private var apports: [(String, String)] {
         [("person.2", tr("Les personnes, organisations, lieux et produits du document, rassemblés par genre.")),
          ("square.grid.2x2", tr("Une galerie, et une carte des lieux en plein écran.")),
          ("text.magnifyingglass", tr("De chaque fiche, un geste vous ramène à ses mentions dans le texte.")),
+         ("pencil.tip.crop.circle", tr("Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte.")),
          ("newspaper", tr("Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé."))]
     }
 

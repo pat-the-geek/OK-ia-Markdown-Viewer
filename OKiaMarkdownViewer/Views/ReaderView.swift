@@ -38,6 +38,10 @@ struct ReaderView: View {
     /// partie, et gardées tant que le document reste ouvert.
     @StateObject private var analyseEntites = AnalyseEntites()
     @State private var showEntites = false
+    /// Option Analytic (1.4) : les annotations du document, et le calque du mode « Annoter ».
+    @StateObject private var annotationsDoc = AnnotationsDocument()
+    @State private var calque: CalqueAnnotation?
+    @ObservedObject private var achat = AchatAnalytic.partage
     /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
     /// texte, au lieu de rester une marge vide sur toute la hauteur.
     @State private var appareilPliable = false
@@ -279,6 +283,7 @@ struct ReaderView: View {
                 // vide à droite).
                 .onGeometryChange(for: Bool.self) { $0.frame(in: .global).minX > 20 } action: { colonneAGauche = $0 }
                 .allowsHitTesting(false)
+            paletteAnnotations
             #if DUO_SDK && !targetEnvironment(macCatalyst)
             .background {
                 if #available(iOS 27.1, *) {
@@ -407,6 +412,10 @@ struct ReaderView: View {
             }
             // OKIA_ANALYTIC=entites|galerie|carte ouvre les entités dans cet affichage (« entites » :
             // celui qui était retenu).
+            // OKIA_ANNOTER=surligner|souligner|ecrire|gomme ouvre le mode « Annoter » avec cet outil.
+            if let o = ProcessInfo.processInfo.environment["OKIA_ANNOTER"], let outil = AnnotationsDocument.Outil(rawValue: o) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { annotationsDoc.outil = outil; annotationsDoc.actif = true }
+            }
             if let vue = ProcessInfo.processInfo.environment["OKIA_ANALYTIC"] {
                 if let v = EntitesView.Vue(rawValue: vue) { UserDefaults.standard.set(v.rawValue, forKey: "okia.analytic.vue") }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) { ouvrir(.entites) }
@@ -478,7 +487,18 @@ struct ReaderView: View {
             conversion.annuler()
             if panneauDuo == .conversion { panneauDuo = nil }
             analyseEntites.annuler()
+            annotationsDoc.actif = false
         }
+        // Les annotations du document, à l'ouverture et à chaque changement de document.
+        .task(id: document.id) {
+            annotationsDoc.web = web
+            web.onAnnotationsOrphelines = { [weak annotationsDoc] in annotationsDoc?.signalerOrphelines($0) }
+            annotationsDoc.charger(document)
+        }
+        .onChange(of: annotationsDoc.actif) { _, actif in basculerAnnotation(actif) }
+        .onChange(of: annotationsDoc.outil) { _, _ in calque?.outilChange() }
+        .onChange(of: annotationsDoc.couleur) { _, _ in calque?.outilChange() }
+        .onChange(of: modeLivre) { _, livre in if livre { annotationsDoc.actif = false } }
         .onChange(of: translator.state) { _, etat in
             // La barre du lecteur montre le titre du document : quand le document passe
             // en allemand, elle le suit. Le coffre et les Récents, eux, indexent des
@@ -956,6 +976,7 @@ struct ReaderView: View {
                 boutonApparence
                 boutonSommaire
                 boutonEntites
+                boutonAnnoter
                 if langueDetectee != nil { menuTraduction }
             }
             ToolbarSpacer(.fixed, placement: .primaryAction)
@@ -1030,6 +1051,46 @@ struct ReaderView: View {
         Button { ouvrir(.entites) } label: { Image(systemName: "person.2") }
             .teinteBarre()
             .accessibilityLabel(tr("Entités"))
+    }
+
+    /// La palette du mode « Annoter », en bas du lecteur. À part du corps du lecteur, que le
+    /// compilateur ne savait plus vérifier avec elle.
+    @ViewBuilder private var paletteAnnotations: some View {
+        if annotationsDoc.actif {
+            PaletteAnnotation(annotations: annotationsDoc)
+                // Sur iPhone, la recherche du système est en bas : la palette passe au-dessus.
+                .padding(.bottom, tailleHorizontale == .compact ? 78 : 20)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+    }
+
+    /// Option Analytic (1.4) : le mode « Annoter ». Hors du livre, dont les deux pages ne portent
+    /// pas encore les annotations.
+    private var boutonAnnoter: some View {
+        Button { annoter() } label: {
+            Image(systemName: annotationsDoc.actif ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
+        }
+        .teinteBarre()
+        .disabled(modeLivre)
+        .accessibilityLabel(tr("Annoter"))
+    }
+
+    /// Avant l'achat, l'option se présente (l'aperçu des entités) au lieu d'ouvrir la palette.
+    private func annoter() {
+        guard achat.acces else { ouvrir(.entites); return }
+        annotationsDoc.actif.toggle()
+    }
+
+    private func basculerAnnotation(_ actif: Bool) {
+        if actif, let vue = web.webView, calque == nil {
+            isSearching = false
+            let c = CalqueAnnotation(annotations: annotationsDoc, web: web)
+            c.installer(sur: vue)
+            calque = c
+        } else if !actif {
+            calque?.retirer()
+            calque = nil
+        }
     }
 
     /// Toucher une entité la cherche dans le document : la recherche du lecteur la surligne et y va.
@@ -1124,6 +1185,8 @@ struct ReaderView: View {
             Button { ouvrir(.sommaire) } label: { Label(tr("Sommaire"), systemImage: "list.bullet") }
                 .disabled(web.toc.isEmpty)
             Button { ouvrir(.entites) } label: { Label(tr("Entités"), systemImage: "person.2") }
+            Button { annoter() } label: { Label(tr("Annoter"), systemImage: "pencil.tip.crop.circle") }
+                .disabled(modeLivre)
             if let source = langueDetectee {
                 Menu {
                     elementsTraduction(source)
