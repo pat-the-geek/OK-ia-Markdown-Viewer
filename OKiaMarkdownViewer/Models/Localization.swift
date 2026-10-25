@@ -126,6 +126,7 @@ struct SettingsView: View {
     /// Éteinte par défaut : un document arrive dans sa langue, et la traduire est un
     /// choix du lecteur, pas une surprise à l'ouverture.
     @AppStorage("okia.autoTranslate") private var autoTranslate = false
+    @ObservedObject private var achat = AchatAnalytic.partage
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -145,6 +146,23 @@ struct SettingsView: View {
                     Text(tr("Langue de l’app"))
                 } footer: {
                     Text(tr("« Système » : la langue de l’appareil si elle est prise en charge, anglais sinon."))
+                }
+
+                // Option Analytic (1.4) : l'acheter ou la restaurer hors d'un document.
+                Section {
+                    NavigationLink {
+                        ScrollView { OptionAnalyticView().padding(20) }
+                            .navigationTitle("Analytic")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        LabeledContent {
+                            Text(achat.acces ? tr("Active") : achat.prix)
+                        } label: {
+                            Label("Analytic", systemImage: "sparkle.magnifyingglass")
+                        }
+                    }
+                } footer: {
+                    Text(tr("Lisez plus loin que le texte."))
                 }
 
                 Section {

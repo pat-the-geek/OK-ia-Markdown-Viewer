@@ -36,13 +36,32 @@ Wikidata ne comble que ce qui manque.
 **Lots TestFlight, dans l'ordre** : ① entités → ② galerie et carte → ③ achat → ④ bis annotations →
 ④ import Mac.
 
-## ① Achat de l'option
+## ① Achat de l'option — troisième lot, 25/10/2026
 
-- [ ] Deux produits non consommables dans App Store Connect, textes en cinq langues.
-- [ ] StoreKit 2 : achat, restauration, vérification au lancement — partir de `FornewsAchat`
-      (`AchatModele`, `PaywallView`) dans fornews.
-- [ ] Le Mac ne regarde que son produit ; iPhone et iPad le leur.
-- [ ] Écran de présentation de l'option : ce qu'elle apporte, le prix, la confidentialité.
+- [ ] **Deux produits non consommables dans App Store Connect**, textes en cinq langues — ⚠️ pas
+      encore créés : ils attendent la confirmation des prix par Patrick (3 et 5 francs). Tant qu'ils
+      n'existent pas, l'achat est « indisponible » et **un build TestFlight avec ce lot fermerait
+      les entités aux testeurs** : ne pas livrer ce lot avant les produits.
+- [x] StoreKit 2 (`AchatAnalytic`) : droits relus au lancement, achat, « Demander à acheter »,
+      restauration avec un message pour chaque issue, et **écoute de `Transaction.updates`** (achat
+      approuvé plus tard ou fait sur un autre appareil, remboursement) — fornews ne l'écoutait pas.
+      Repris de `AchatModele` sans l'essai ni l'accès libre en bêta : en TestFlight, l'achat passe
+      par le bac à sable, gratuit pour les testeurs.
+- [x] Le Mac ne regarde que son produit, par `targetEnvironment(macCatalyst)` (`os(macOS)` est faux
+      sous Catalyst) ; iPhone et iPad le leur.
+- [x] Écran de l'option (`OptionAnalyticView`) : ce qu'elle apporte, le prix de l'App Store, achat
+      distinct sur l'autre plateforme, confidentialité ; jamais d'impasse (« indisponible » +
+      « Réessayer »). Dans les Réglages et, à la place des entités, l'**aperçu** (`ApercuAnalyticView`)
+      : ce que l'analyse locale trouve, compté par genre. Avant l'achat, Wikidata n'est jamais
+      consulté, quel que soit le choix déjà fait. Les annotations et l'import Mac s'ajouteront à la
+      liste des apports avec leurs lots.
+- [x] `Analytic.storekit` (deux produits, CHF, partage familial) branché à l'action Run du schéma :
+      l'achat s'essaie dans Xcode sans App Store Connect. ⚠️ `simctl launch` ne le lit pas.
+- [x] Hook Debug `OKIA_ACHAT=achete|bloque`, ajouté aux canaris.
+
+**Vérifié au simulateur le 25/10** : aperçu (option fermée, produits introuvables → bouton grisé et
+« Réessayer »), option ouverte (liste complète). **Pas vérifié** : un achat réel (ni Xcode, Mac
+verrouillé, ni bac à sable, produits absents), la restauration, le Mac, le partage familial.
 
 ## ② Détection d'entités — premier lot, commencé le 25/10/2026
 

@@ -7236,6 +7236,706 @@
           }
         }
       }
+    },
+    "Achat en attente d’approbation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achat en attente d’approbation."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase awaiting approval."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauf wartet auf Genehmigung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra pendiente de aprobación."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisto in attesa di approvazione."
+          }
+        }
+      }
+    },
+    "Achat impossible : %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achat impossible : %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase failed: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauf nicht möglich: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra imposible: %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisto impossibile: %@"
+          }
+        }
+      }
+    },
+    "Achat restauré — merci !": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achat restauré — merci !"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase restored — thank you!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauf wiederhergestellt – danke!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra restaurada — ¡gracias!"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisto ripristinato — grazie!"
+          }
+        }
+      }
+    },
+    "Aucun achat de l’option à restaurer avec ce compte.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun achat de l’option à restaurer avec ce compte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No purchase of the option to restore with this account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Kauf der Option mit diesem Account wiederherzustellen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna compra de la opción que restaurar con esta cuenta."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun acquisto dell’opzione da ripristinare con questo account."
+          }
+        }
+      }
+    },
+    "Restauration annulée.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restauration annulée."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore cancelled."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellung abgebrochen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restauración cancelada."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristino annullato."
+          }
+        }
+      }
+    },
+    "Restauration impossible : %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restauration impossible : %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore failed: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiederherstellung nicht möglich: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restauración imposible: %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristino impossibile: %@"
+          }
+        }
+      }
+    },
+    "Les personnes, organisations, lieux et produits du document, rassemblés par genre.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les personnes, organisations, lieux et produits du document, rassemblés par genre."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The people, organizations, places and products in the document, gathered by kind."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Personen, Organisationen, Orte und Produkte des Dokuments, nach Art geordnet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las personas, organizaciones, lugares y productos del documento, reunidos por tipo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le persone, le organizzazioni, i luoghi e i prodotti del documento, raccolti per tipo."
+          }
+        }
+      }
+    },
+    "Une galerie, et une carte des lieux en plein écran.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une galerie, et une carte des lieux en plein écran."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gallery, and a full-screen map of the places."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine Galerie und eine Vollbildkarte der Orte."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una galería y un mapa de los lugares a pantalla completa."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una galleria e una mappa dei luoghi a schermo intero."
+          }
+        }
+      }
+    },
+    "De chaque fiche, un geste vous ramène à ses mentions dans le texte.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De chaque fiche, un geste vous ramène à ses mentions dans le texte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From each entry, one tap takes you back to its mentions in the text."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Von jedem Eintrag führt eine Geste zurück zu seinen Erwähnungen im Text."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desde cada ficha, un gesto le lleva a sus menciones en el texto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da ogni scheda, un gesto vi riporta alle sue menzioni nel testo."
+          }
+        }
+      }
+    },
+    "Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A fornews report is used first: what it already gives is never looked up again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein fornews-Bericht wird zuerst ausgewertet: Was er liefert, wird nie erneut abgefragt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un informe de fornews se aprovecha primero: lo que ya da nunca se vuelve a pedir."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un rapporto fornews viene sfruttato per primo: ciò che fornisce non viene mai richiesto di nuovo."
+          }
+        }
+      }
+    },
+    "Lisez plus loin que le texte.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lisez plus loin que le texte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read beyond the text."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lesen Sie über den Text hinaus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lea más allá del texto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leggete oltre il testo."
+          }
+        }
+      }
+    },
+    "L’option est active sur cet appareil. Merci !": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’option est active sur cet appareil. Merci !"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The option is active on this device. Thank you!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Option ist auf diesem Gerät aktiv. Danke!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La opción está activa en este dispositivo. ¡Gracias!"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’opzione è attiva su questo dispositivo. Grazie!"
+          }
+        }
+      }
+    },
+    "Restaurer mes achats": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurer mes achats"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore purchases"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käufe wiederherstellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar mis compras"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina acquisti"
+          }
+        }
+      }
+    },
+    "L’achat est indisponible pour le moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’achat est indisponible pour le moment."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchase is unavailable for now."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Kauf ist im Moment nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La compra no está disponible por ahora."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’acquisto non è disponibile al momento."
+          }
+        }
+      }
+    },
+    "Achat unique, valable sur vos Mac. Sur iPhone et iPad, Analytic est un achat distinct.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achat unique, valable sur vos Mac. Sur iPhone et iPad, Analytic est un achat distinct."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One-time purchase, valid on your Macs. On iPhone and iPad, Analytic is a separate purchase."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einmaliger Kauf, gültig auf Ihren Macs. Auf iPhone und iPad ist Analytic ein separater Kauf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra única, válida en sus Mac. En iPhone y iPad, Analytic es una compra aparte."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisto unico, valido sui vostri Mac. Su iPhone e iPad, Analytic è un acquisto separato."
+          }
+        }
+      }
+    },
+    "Achat unique, valable sur votre iPhone et votre iPad. Sur Mac, Analytic pour Mac est un achat distinct.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achat unique, valable sur votre iPhone et votre iPad. Sur Mac, Analytic pour Mac est un achat distinct."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One-time purchase, valid on your iPhone and iPad. On Mac, Analytic for Mac is a separate purchase."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einmaliger Kauf, gültig auf Ihrem iPhone und iPad. Auf dem Mac ist Analytic für Mac ein separater Kauf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra única, válida en su iPhone y su iPad. En Mac, Analytic para Mac es una compra aparte."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisto unico, valido su iPhone e iPad. Su Mac, Analytic per Mac è un acquisto separato."
+          }
+        }
+      }
+    },
+    "Tout se calcule sur l’appareil. Wikidata n’est consulté que si vous l’acceptez, et seuls les noms partent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout se calcule sur l’appareil. Wikidata n’est consulté que si vous l’acceptez, et seuls les noms partent."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything is computed on the device. Wikidata is only consulted if you allow it, and only names are sent."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles wird auf dem Gerät berechnet. Wikidata wird nur abgefragt, wenn Sie zustimmen, und nur die Namen werden gesendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo se calcula en el dispositivo. Wikidata solo se consulta si lo acepta, y solo se envían los nombres."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto è calcolato sul dispositivo. Wikidata viene consultato solo se lo accettate, e partono solo i nomi."
+          }
+        }
+      }
+    },
+    "Débloquer Analytic · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Débloquer Analytic · %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock Analytic · %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analytic freischalten · %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desbloquear Analytic · %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca Analytic · %@"
+          }
+        }
+      }
+    },
+    "Dans ce document": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans ce document"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In this document"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In diesem Dokument"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En este documento"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In questo documento"
+          }
+        }
+      }
+    },
+    "Active": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktiv"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva"
+          }
+        }
+      }
     }
   }
 }

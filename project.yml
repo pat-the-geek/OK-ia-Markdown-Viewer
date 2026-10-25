@@ -93,6 +93,8 @@ schemes:
         OKiaMarkdownViewer: all
     run:
       config: Debug
+      # Option Analytic (1.4) : les deux achats, essayés dans Xcode sans App Store Connect.
+      storeKitConfiguration: Analytic.storekit
     profile:
       config: Release
     analyze:

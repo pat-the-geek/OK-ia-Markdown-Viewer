@@ -215,6 +215,8 @@ struct OKiaMarkdownViewerApp: App {
         _store = StateObject(wrappedValue: store)
         // Share the running store with App Intents (Siri / Spotlight / Shortcuts).
         AppDependencyManager.shared.add(dependency: store)
+        // Option Analytic (1.4) : ce qui est acheté, et les achats qui arrivent d'ailleurs.
+        AchatAnalytic.partage.demarrer()
         #if DEBUG
         // Screenshot harness (Debug/simulator only): render a document handed in via
         // environment so App Store captures can be scripted headlessly.

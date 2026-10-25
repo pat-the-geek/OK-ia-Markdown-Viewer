@@ -27,6 +27,7 @@ struct EntitesView: View {
     @AppStorage("okia.analytic.vue") private var vueBrute = Vue.liste.rawValue
     @State private var fiche: EntiteDocument?
     @State private var cartePleinEcran: TappedCarte?
+    @ObservedObject private var achat = AchatAnalytic.partage
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fermerPanneau) private var fermerPanneau
     @ObservedObject private var loc = Localization.shared
@@ -37,18 +38,22 @@ struct EntitesView: View {
         ConsentementWikidata(rawValue: consentementBrut) ?? .jamaisDemande
     }
 
+    /// Avant l'achat, l'aperçu ne consulte jamais Wikidata : rien ne part tant que l'option n'est
+    /// pas ouverte, quel que soit le choix déjà fait.
+    private var consentementEffectif: ConsentementWikidata { achat.acces ? consentement : .refuse }
+
     private var vue: Vue { Vue(rawValue: vueBrute) ?? .liste }
 
     var body: some View {
         NavigationStack {
             contenu
-                .navigationTitle(tr("Entités"))
+                .navigationTitle(achat.acces ? tr("Entités") : "Analytic")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(tr("Fermer")) { (fermerPanneau ?? { dismiss() })() }.tint(orange)
                     }
-                    ToolbarItem(placement: .topBarLeading) { menuWikidata }
+                    ToolbarItem(placement: .topBarLeading) { if achat.acces { menuWikidata } }
                 }
                 .navigationDestination(item: $fiche) { e in
                     // La fiche suit l'analyse : une photo qui arrive de Wikidata s'y affiche.
@@ -56,8 +61,9 @@ struct EntitesView: View {
                                     voirDansLeDocument: { voirDansLeDocument($0) })
                 }
         }
-        .task(id: document.id) { analyse.analyser(document, wikidata: consentement) }
-        .onChange(of: consentementBrut) { _, _ in analyse.analyser(document, wikidata: consentement) }
+        .task(id: document.id) { analyse.analyser(document, wikidata: consentementEffectif) }
+        .onChange(of: consentementBrut) { _, _ in analyse.analyser(document, wikidata: consentementEffectif) }
+        .onChange(of: achat.acces) { _, _ in analyse.analyser(document, wikidata: consentementEffectif) }
         .fullScreenCover(item: $cartePleinEcran) { carte in CarteZoomView(carte: carte) }
     }
 
@@ -68,7 +74,9 @@ struct EntitesView: View {
     }
 
     @ViewBuilder private var contenu: some View {
-        if analyse.etat == .lecture || analyse.etat == .inactif {
+        if !achat.acces {
+            ApercuAnalyticView(analyse: analyse)
+        } else if analyse.etat == .lecture || analyse.etat == .inactif {
             VStack(spacing: 12) {
                 ProgressView()
                 Text(tr("Lecture du document…")).foregroundStyle(.secondary)

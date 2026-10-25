@@ -1,0 +1,60 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "fr_CH",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "Analytic-StoreKit",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "3.00",
+      "familyShareable" : true,
+      "internalID" : "MdViewerAnalytic01",
+      "localizations" : [
+        {
+          "description" : "Les entités du document, leur galerie et leur carte, sur iPhone et iPad.",
+          "displayName" : "Analytic",
+          "locale" : "fr_CH"
+        }
+      ],
+      "productID" : "ch.ok-ia.markdownviewer.analytic",
+      "referenceName" : "Analytic iOS",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "5.00",
+      "familyShareable" : true,
+      "internalID" : "MdViewerAnalytic02",
+      "localizations" : [
+        {
+          "description" : "Les entités du document, leur galerie et leur carte, et l'import Word, PDF et PowerPoint, sur Mac.",
+          "displayName" : "Analytic pour Mac",
+          "locale" : "fr_CH"
+        }
+      ],
+      "productID" : "ch.ok-ia.markdownviewer.analytic.mac",
+      "referenceName" : "Analytic macOS",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "MdViewer",
+    "_developerTeamID" : "PU9BSXN2V5",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "fr_CH",
+    "_storefront" : "CHE",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
