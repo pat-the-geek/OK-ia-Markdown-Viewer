@@ -83,8 +83,15 @@ struct EntitesView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if analyse.entites.isEmpty {
-            ContentUnavailableView(tr("Aucune entité"), systemImage: "person.2",
-                                   description: Text(tr("Ce document ne nomme ni personne, ni organisation, ni lieu.")))
+            ContentUnavailableView {
+                Label(tr("Aucune entité"), systemImage: "person.2")
+            } description: {
+                Text(tr("Ce document ne nomme ni personne, ni organisation, ni lieu."))
+            } actions: {
+                if AnalyseEntites.diagnosticVisible {
+                    Text(analyse.diagnostic).font(.caption2.monospaced()).foregroundStyle(.tertiary).textSelection(.enabled)
+                }
+            }
         } else {
             VStack(spacing: 0) {
                 Picker(tr("Affichage"), selection: $vueBrute) {
@@ -261,9 +268,18 @@ struct EntitesView: View {
                   systemImage: "exclamationmark.triangle")
                 .font(.footnote).foregroundStyle(.secondary)
         default:
-            Text(analyse.depuisRapport ? tr("%d entités, d’après le rapport fornews et le texte", n)
-                                       : tr("%d entités trouvées dans le texte", n))
-                .font(.footnote).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(analyse.depuisRapport ? tr("%d entités, d’après le rapport fornews et le texte", n)
+                                           : tr("%d entités trouvées dans le texte", n))
+                    .font(.footnote).foregroundStyle(.secondary)
+                // Builds de test seulement : le moyen de détection, à recopier d'un appui long.
+                if AnalyseEntites.diagnosticVisible {
+                    Text(analyse.diagnostic)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.tertiary)
+                        .textSelection(.enabled)
+                }
+            }
         }
     }
 

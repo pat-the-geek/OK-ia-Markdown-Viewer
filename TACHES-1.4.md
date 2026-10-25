@@ -99,6 +99,20 @@ verrouillé, ni bac à sable, produits absents), la restauration, le Mac, le par
 - [x] Hooks Debug : `OKIA_ANALYTIC=entites` (ouvre), `OKIA_WIKIDATA=oui|non|demander|vider`,
       ajoutés aux canaris de `deploy-testflight.sh`.
 
+- [x] **Corrigé le 25/10 — « Donald Trump, Elon Musk ne sont pas détectés » (Patrick, sur B88).**
+      Trois causes, toutes dans le code de md Viewer : (1) **sur iOS, `NLTagger` peut n'avoir pas son
+      modèle de noms** — il ne trouve alors rien, sans rien dire (simulateur : `availableTagSchemes`
+      sans `NameType` ; le Mac l'a toujours, d'où un banc trompeur) ; (2) l'absorption des formes
+      courtes fondait une personne dans un nom plus long d'un autre genre (« Maison Blanche de Donald
+      Trump ») ; (3) des doublons au même identifiant (« Iran » / « l'Iran », « United States » lieu
+      et organisation) que SwiftUI affichait mal. La détection a maintenant **trois étages** :
+      `NLTagger` après avoir demandé son modèle (8 s au plus, une fois par langue, vraie course — la
+      demande ne revient jamais au simulateur) ; Apple Intelligence (`NERFoundationModels` de fornews,
+      copié) ; enfin un repli par majuscules fondé sur la fréquence. **Ligne de diagnostic** dans les
+      builds de test (Xcode, TestFlight iPhone/iPad) : l'étage utilisé, la langue, le nombre.
+      Banc gardé : `tools/BancEntites/banc.sh` (FORCE=majuscules, CHERCHE=…, TOUT=1).
+      À voir sur l'appareil : quel étage sert (le diagnostic le dit).
+
 **Vérifié au simulateur le 25/10** (rapport de veille réel « Ukraine · Kiev », 56 entités) : iPhone
 17 Pro Max en feuille, iPad 13″ en paysage dans la partie de droite, interface en anglais, Wikidata
 accepté puis refusé, toucher → mention surlignée. **Pas vérifié** : le Mac (écran verrouillé, le

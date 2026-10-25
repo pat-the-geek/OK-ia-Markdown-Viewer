@@ -1,5 +1,8 @@
 import Foundation
 import NaturalLanguage
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 // Option Analytic (1.4) — les entités d'un document. Ce fichier ne touche ni au réseau ni à
 // l'interface : il lit ce que le document donne (un rapport fornews en donne presque tout), puis
@@ -189,10 +192,81 @@ enum DetecteurEntites {
     /// s'interrompt pas. Un document plus long est lu par morceaux de cette taille.
     static let tailleMorceau = 20_000
 
-    static func detecter(_ markdown: String, langue: String?) async -> [EntiteDocument] {
+    /// Le moyen qui a servi, pour le diagnostic des builds de test.
+    enum Methode: String, Sendable {
+        case nlTagger = "NLTagger"
+        case appleIntelligence = "Apple Intelligence"
+        case majuscules = "repli majuscules"
+    }
+
+    /// Trois étages, du meilleur au plus sûr.
+    /// ⚠️ **Sur iOS, le modèle de noms de `NLTagger` peut manquer** : il ne propose alors que la
+    /// langue, l'écriture et le découpage, ne trouve AUCUN nom, et ne le dit pas. Signalé par
+    /// Patrick le 25/10/2026 (« Donald Trump, Elon Musk ne sont pas détectés ») ; le simulateur le
+    /// montre (`availableTagSchemes` sans `NameType`), alors que le Mac l'a toujours.
+    /// 1. `NLTagger`, après avoir demandé son modèle au système — huit secondes au plus : au
+    ///    simulateur, la demande ne revient jamais.
+    /// 2. À défaut, Apple Intelligence, avec l'extraction de fornews (`NERFoundationModels`).
+    /// 3. En dernier recours, les suites de mots à majuscule, passées au même filtre ; Wikidata,
+    ///    s'il est accepté, leur donne ensuite leur genre.
+    static func detecter(_ markdown: String, langue: String?) async -> (entites: [EntiteDocument], methode: Methode) {
         let texte = TexteAnalysable.depuis(markdown)
-        guard !texte.isEmpty else { return [] }
-        let brutes: [EntiteDetectee] = await Task.detached(priority: .utility) {
+        guard !texte.isEmpty else { return ([], .nlTagger) }
+        let brutes: [EntiteDetectee]
+        let methode: Methode
+        if await modeleDeNomsPret(langue) {
+            brutes = await parNLTagger(texte, langue: langue)
+            methode = .nlTagger
+        } else if let parIA = await parAppleIntelligence(texte, langue: langue) {
+            brutes = parIA
+            methode = .appleIntelligence
+        } else {
+            brutes = parMajuscules(texte)
+            methode = .majuscules
+        }
+        let filtrees = FiltreEntitesNER.filtrer(brutes, texteSource: texte)
+        return (filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }, methode)
+    }
+
+    /// Le modèle de noms de `NLTagger` est-il là, pour cette langue ? Sinon, on le demande.
+    static func modeleDeNomsPret(_ langue: String?) async -> Bool {
+        let l = NLLanguage(langue ?? "en")
+        func present() -> Bool { NLTagger.availableTagSchemes(for: .word, language: l).contains(.nameType) }
+        if present() { return true }
+        // Une demande par langue et par lancement : sans réponse, la suivante attendrait encore huit
+        // secondes pour rien.
+        guard await DemandesDeModele.partage.premiere(l) else { return false }
+        // Une vraie course : la demande ignore l'annulation (au simulateur, elle ne revient jamais),
+        // attendre sa fin bloquait l'analyse — « Lecture du document… » sans fin. Le premier qui
+        // répond, du téléchargement ou du délai, reprend ; l'autre est abandonné.
+        await withCheckedContinuation { (suite: CheckedContinuation<Void, Never>) in
+            let reprise = UneSeuleFois(suite)
+            Task.detached { _ = try? await NLTagger.requestAssets(for: l, tagScheme: .nameType); reprise.reprendre() }
+            Task.detached { try? await Task.sleep(for: .seconds(8)); reprise.reprendre() }
+        }
+        return present()
+    }
+
+    /// Reprend une attente une seule fois, quel que soit le nombre de concurrents qui finissent.
+    final class UneSeuleFois: @unchecked Sendable {
+        private var suite: CheckedContinuation<Void, Never>?
+        private let verrou = NSLock()
+        init(_ suite: CheckedContinuation<Void, Never>) { self.suite = suite }
+        func reprendre() {
+            verrou.lock(); let s = suite; suite = nil; verrou.unlock()
+            s?.resume()
+        }
+    }
+
+    /// Les langues dont le modèle de noms a déjà été demandé depuis le lancement.
+    actor DemandesDeModele {
+        static let partage = DemandesDeModele()
+        private var faites = Set<String>()
+        func premiere(_ l: NLLanguage) -> Bool { faites.insert(l.rawValue).inserted }
+    }
+
+    static func parNLTagger(_ texte: String, langue: String?) async -> [EntiteDetectee] {
+        await Task.detached(priority: .utility) {
             var vues = Set<String>()
             var resultat: [EntiteDetectee] = []
             for morceau in morceaux(texte) {
@@ -212,8 +286,83 @@ enum DetecteurEntites {
             }
             return resultat
         }.value
-        let filtrees = FiltreEntitesNER.filtrer(brutes, texteSource: texte)
-        return filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }
+    }
+
+    /// Apple Intelligence lit le document par morceaux (sa fenêtre est petite) : six au plus, soit
+    /// les ~36 000 premiers caractères — au-delà, l'attente ne vaut plus ce qu'elle rapporte. nil
+    /// quand le modèle de l'appareil n'est pas disponible.
+    static func parAppleIntelligence(_ texte: String, langue: String?) async -> [EntiteDetectee]? {
+        #if canImport(FoundationModels)
+        guard case .available = SystemLanguageModel.default.availability else { return nil }
+        let ner = NERFoundationModels()
+        var resultat: [EntiteDetectee] = []
+        for morceau in morceaux(texte, taille: 6_000).prefix(6) {
+            if let trouvees = try? await ner.detecter(morceau, langue: langue) { resultat += trouvees }
+        }
+        // Rien de rendu (refus, délai, fenêtre dépassée) : l'étage suivant prend la main, plutôt
+        // qu'une liste vide — c'est ce qu'on voyait au simulateur, qui emprunte le modèle du Mac.
+        return resultat.isEmpty ? nil : resultat
+        #else
+        return nil
+        #endif
+    }
+
+    /// Le dernier recours : les noms qui REVIENNENT. Dans chaque ligne, les suites de mots à
+    /// majuscule (« Donald Trump », « Banque centrale européenne ») ; on en compte les groupes de
+    /// un à trois mots. Restent les groupes de deux ou trois mots vus au moins deux fois, et les mots
+    /// seuls vus trois fois hors du début d'une phrase, où tout mot prend la majuscule ; une forme
+    /// qui n'apparaît que dans une forme plus longue est retirée. Les titres anglais, où chaque mot
+    /// a sa majuscule (« Musk Says SpaceXAI Will Rebrand »), ne reviennent pas : ils tombent.
+    /// Genre inconnu (`autre`) : Wikidata, s'il est accepté, le donne ensuite.
+    static func parMajuscules(_ texte: String) -> [EntiteDetectee] {
+        let liens: Set<String> = ["de", "du", "des", "la", "le", "d’", "d'", "von", "van", "der", "di", "da", "del", "of", "the"]
+        func majuscule(_ m: Substring) -> Bool { m.first.map { $0.isUppercase } ?? false }
+        var comptes: [String: Int] = [:], ordre: [String] = []
+        func compter(_ g: String) { if comptes[g] == nil { ordre.append(g) }; comptes[g, default: 0] += 1 }
+        for ligne in texte.split(whereSeparator: \.isNewline) {
+            // Des mots, sans la ponctuation qui les colle ; une fin de phrase coupe la suite.
+            let mots = ligne.split(whereSeparator: { $0 == " " || $0 == "\t" || $0 == "\u{00A0}" })
+            var suite: [Substring] = [], debutPhrase = true
+            func fermer() {
+                // Les mots de liaison ne commencent ni ne terminent un groupe.
+                while let d = suite.last, liens.contains(d.lowercased()) { suite.removeLast() }
+                let n = suite.count
+                for i in 0..<n {
+                    for l in 1...3 where i + l <= n {
+                        let groupe = suite[i..<i + l]
+                        guard majuscule(groupe.first!), majuscule(groupe.last!) else { continue }
+                        if l == 1 && i == 0 && debutPhraseSuite { continue }
+                        compter(groupe.joined(separator: " "))
+                    }
+                }
+                suite = []
+            }
+            var debutPhraseSuite = false
+            for brut in mots {
+                let fin = brut.last.map { ".!?:;".contains($0) } ?? false
+                var mot = brut.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?()[]«»\"“”*_"))[...]
+                // Le possessif anglais : « Elon Musk's » est Elon Musk.
+                if mot.hasSuffix("'s") || mot.hasSuffix("’s") { mot = mot.dropLast(2) }
+                if !mot.isEmpty, majuscule(mot) || (!suite.isEmpty && liens.contains(mot.lowercased())) {
+                    if suite.isEmpty { debutPhraseSuite = debutPhrase }
+                    suite.append(mot)
+                } else {
+                    fermer()
+                }
+                if fin || brut.hasSuffix(",") { fermer() }
+                debutPhrase = fin
+            }
+            fermer()
+        }
+        let gardes = ordre.filter { g in
+            let n = comptes[g] ?? 0
+            return g.contains(" ") ? n >= 2 : n >= 3
+        }
+        // Une forme qui n'apparaît que dans une plus longue (« Donald » dans « Donald Trump ») part.
+        let utiles = gardes.filter { g in
+            !gardes.contains { l in l != g && l.count > g.count && " \(l) ".contains(" \(g) ") && comptes[l] == comptes[g] }
+        }
+        return utiles.map { EntiteDetectee(valeur: $0, type: .autre) }
     }
 
     /// La correspondance de `NERNaturalLanguage.map` dans fornews : `NLTagger` ne distingue pas un
@@ -227,8 +376,8 @@ enum DetecteurEntites {
         }
     }
 
-    /// Des morceaux d'au plus `tailleMorceau` caractères, coupés entre deux paragraphes.
-    static func morceaux(_ texte: String) -> [String] {
+    /// Des morceaux d'au plus `taille` caractères, coupés entre deux paragraphes.
+    static func morceaux(_ texte: String, taille tailleMorceau: Int = tailleMorceau) -> [String] {
         guard texte.count > tailleMorceau else { return [texte] }
         var resultat: [String] = [], courant = ""
         for paragraphe in texte.components(separatedBy: "\n\n") {
@@ -241,24 +390,47 @@ enum DetecteurEntites {
         return resultat
     }
 
-    /// Une entité détectée qui n'est qu'une partie, en mots entiers, d'un nom plus long du document
-    /// (« Poutine » de « Vladimir Poutine », « Union » d'« Union européenne ») n'est pas une entité
-    /// de plus : le nom complet la reprend, avec ses mentions. Sans cela, Wikidata cherchait
-    /// « Union » seul et rendait une ville de Caroline du Sud.
+    /// Une entité détectée qui n'est qu'une partie, en mots entiers, d'un nom plus long du même genre
+    /// (« Union » d'« Union européenne »), ou la fin du nom complet d'une personne (« Poutine » de
+    /// « Vladimir Poutine », même typé organisation par `NLTagger`, comme « Musk »), n'est pas une
+    /// entité de plus : le nom complet la reprend, avec ses mentions.
+    /// ⛔ Jamais une personne dans un nom d'un autre genre : `NLTagger` repère parfois « Maison
+    /// Blanche de Donald Trump » comme organisation, et Donald Trump disparaissait de la liste
+    /// (signalé par Patrick, 25/10/2026, avec Elon Musk).
     static func absorberFormesCourtes(_ entites: [EntiteDocument]) -> [EntiteDocument] {
         var resultat = entites
         var retirees = Set<String>()
-        for courte in entites where courte.origine == .detection {
+        // Un genre inconnu (le repli par majuscules) ne dit pas qui contient qui : « Trump » se
+        // fondait dans « After Trump Pushes », titre répété d'un briefing anglais.
+        for courte in entites where courte.origine == .detection && courte.type != .autre {
             let mots = courte.id.split(separator: " ")
             let longue = entites.firstIndex { l in
-                l.id != courte.id && l.id.count > courte.id.count && !retirees.contains(l.id)
-                    && contientMots(l.id.split(separator: " "), mots)
+                guard l.id != courte.id, l.id.count > courte.id.count, !retirees.contains(l.id), l.type != .autre else { return false }
+                let motsLongs = l.id.split(separator: " ")
+                if l.type == courte.type, contientMots(motsLongs, mots) { return true }
+                // La fin du nom d'une personne : son patronyme, quel que soit le genre donné à la forme courte.
+                return l.type == .person && motsLongs.count > mots.count && Array(motsLongs.suffix(mots.count)) == mots
             }
             guard let i = longue else { continue }
             retirees.insert(courte.id)
             if let j = resultat.firstIndex(where: { $0.id == entites[i].id }) {
                 resultat[j].mentions = max(resultat[j].mentions, courte.mentions)
             }
+        }
+        // Genre inconnu : un mot seul (« Trump », « Donald ») rejoint le nom de deux ou trois mots
+        // qui finit ou commence par lui et revient le plus souvent (« Donald Trump », pas
+        // « President Donald Trump »).
+        for courte in entites where courte.origine == .detection && courte.type == .autre && !courte.id.contains(" ") {
+            let candidats = resultat.filter { l in
+                l.type == .autre && !retirees.contains(l.id) && l.id != courte.id
+                    && (2...3).contains(l.id.split(separator: " ").count)
+                    && [l.id.split(separator: " ").last, l.id.split(separator: " ").first]
+                        .contains { $0.map(String.init) == courte.id }
+            }
+            guard let meilleur = candidats.max(by: { $0.mentions < $1.mentions }),
+                  let j = resultat.firstIndex(where: { $0.id == meilleur.id }) else { continue }
+            retirees.insert(courte.id)
+            resultat[j].mentions = max(resultat[j].mentions, courte.mentions)
         }
         return resultat.filter { !retirees.contains($0.id) }
     }

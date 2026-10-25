@@ -183,6 +183,24 @@ final class AnalyseEntites: ObservableObject {
     /// Le document est un rapport fornews : sa section `## Entités` a été lue.
     @Published private(set) var depuisRapport = false
     @Published private(set) var langue = "fr"
+    /// Le moyen de détection qui a servi (NLTagger, Apple Intelligence, majuscules).
+    @Published private(set) var methode: DetecteurEntites.Methode?
+
+    /// Le diagnostic n'est montré que dans les builds de test (Xcode, TestFlight sur iPhone et
+    /// iPad), pour que Patrick puisse le lire et le recopier : jamais dans l'App Store.
+    static var diagnosticVisible: Bool {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        #endif
+    }
+
+    /// Une ligne à recopier : moyen de détection, langue, nombre d'entités.
+    var diagnostic: String {
+        "Détection : \(methode?.rawValue ?? "—") · langue \(langue) · \(entites.count) entités"
+            + (depuisRapport ? " · rapport fornews" : "")
+    }
 
     private var documentAnalyse: UUID?
     private var tache: Task<Void, Never>?
@@ -256,18 +274,20 @@ final class AnalyseEntites: ObservableObject {
         tache = Task { [weak self] in
             let langue = TexteAnalysable.langue(texte) ?? Localization.shared.code
             let duRapport = LecteurRapportFornews.lire(texte)
-            let detectees = await DetecteurEntites.detecter(texte, langue: langue)
+            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue)
             guard let self, !Task.isCancelled else { return }
             // Le document d'abord : une entité du rapport garde son genre et ses coordonnées ; la
             // détection n'ajoute que ce qu'il ne nommait pas.
-            var toutes = duRapport
-            let connues = Set(duRapport.map(\.id))
-            toutes += detectees.filter { !connues.contains($0.id) }
+            // Une entité par nom : la détection rend parfois le même nom sous deux genres (« United
+            // States » lieu et organisation) ou avec son article (« l'Iran », « Iran »). Deux lignes
+            // au même identifiant, SwiftUI en perdait à l'affichage. Le premier lu l'emporte.
+            var toutes = LecteurRapportFornews.dedoublonner(duRapport + detectees)
             DetecteurEntites.compterMentions(&toutes, dans: texte)
             toutes = DetecteurEntites.absorberFormesCourtes(toutes)
             toutes = toutes.filter { $0.mentions > 0 || $0.origine == .rapport }
             toutes.sort { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) }
             self.langue = langue
+            self.methode = methode
             self.depuisRapport = !duRapport.isEmpty
             self.entites = toutes.map { self.appliquerCache($0) }
             if wikidata == .accepte { self.completerParWikidata() } else { self.etat = .fini }

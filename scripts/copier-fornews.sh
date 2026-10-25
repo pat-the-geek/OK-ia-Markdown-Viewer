@@ -8,7 +8,9 @@
 #  - les `import Fornews…` et `import SwiftData` retirés (tout vit dans le même module) ;
 #  - trois fichiers EXTRAITS au lieu d'être copiés entiers, parce que le reste du fichier tient au
 #    modèle SwiftData de fornews (`EntiteNER`, `ModelContext`) : `TypeEntite` (Enums.swift),
-#    `EntiteDetectee` (AIProtocols.swift) et `WikimediaService` sans ses fonctions d'écriture.
+#    `QualiteEntites.motifFicheSansContenu` et `WikimediaService` sans ses fonctions d'écriture.
+#  - `GardeFousIA` appelle `RelanceGarantie` (fornews quitte pour être relancé par launchd, en mode
+#    serveur) : md Viewer en a son propre `RelanceGarantie`, qui ne relance jamais (Models/Analytic).
 #
 # Usage : scripts/copier-fornews.sh [chemin de fornews.ai]   (défaut : ~/Developer/fornews.ai)
 set -euo pipefail
@@ -40,6 +42,11 @@ ENTIERS = [
     "FornewsServices/Carte/CoordonneeTerrestre.swift",
     "FornewsServices/Flux/KeywordMatcher.swift",
     "FornewsModels/ExpressionMotsCles.swift",
+    "FornewsAI/Protocols/AIProtocols.swift",
+    "FornewsAI/Apple/NERFoundationModels.swift",
+    "FornewsAI/Apple/GardeFousIA.swift",
+    "FornewsAI/Apple/DisponibiliteAppleIntelligence.swift",
+    "FornewsAI/BudgetContexteLLM.swift",
 ]
 
 def entete(chemin, note):
@@ -85,11 +92,6 @@ t = open(f"{src}/FornewsModels/Enums.swift").read()
 open(f"{dest}/TypeEntite.swift", "w").write(
     entete("FornewsModels/Enums.swift", "EXTRAIT : `TypeEntite` seul (le reste du fichier tient au modèle SwiftData).")
     + extrait(t, "public enum TypeEntite", "public extension Sequence where Element == EntiteNER"))
-
-t = open(f"{src}/FornewsAI/Protocols/AIProtocols.swift").read()
-open(f"{dest}/EntiteDetectee.swift", "w").write(
-    entete("FornewsAI/Protocols/AIProtocols.swift", "EXTRAIT : `EntiteDetectee` seule.")
-    + extrait(t, "public struct EntiteDetectee", "// MARK: - Protocoles"))
 
 t = open(f"{src}/FornewsServices/Purge/QualiteEntites.swift").read()
 a = t.index("    /// Motifs de description trahissant une fiche sans contenu")
