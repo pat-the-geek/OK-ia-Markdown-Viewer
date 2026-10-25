@@ -56,7 +56,7 @@ struct OptionAnalyticView: View {
             .font(.callout)
             .tint(orange)
             .disabled(achat.restauration)
-            if !achat.acces && achat.produit == nil && !achat.chargement {
+            if !achat.acces && achat.produit == nil && !achat.chargement && !AchatAnalytic.vitrine {
                 // Jamais d'impasse (leçon de fornews) : dire pourquoi, et pouvoir réessayer.
                 HStack(spacing: 8) {
                     Text(tr("L’achat est indisponible pour le moment."))
@@ -95,7 +95,7 @@ struct OptionAnalyticView: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
         .tint(orange)
-        .disabled(achat.enAchat || achat.produit == nil)
+        .disabled(achat.enAchat || (achat.produit == nil && !AchatAnalytic.vitrine))
     }
 }
 

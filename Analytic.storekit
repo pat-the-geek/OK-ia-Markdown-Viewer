@@ -23,7 +23,7 @@
           "locale" : "fr_CH"
         }
       ],
-      "productID" : "ch.ok-ia.markdownviewer.analytic",
+      "productID" : "ch.okia.markdownviewer.analytic",
       "referenceName" : "Analytic iOS",
       "type" : "NonConsumable"
     },
@@ -38,7 +38,7 @@
           "locale" : "fr_CH"
         }
       ],
-      "productID" : "ch.ok-ia.markdownviewer.analytic.mac",
+      "productID" : "ch.okia.markdownviewer.analytic.mac",
       "referenceName" : "Analytic macOS",
       "type" : "NonConsumable"
     }

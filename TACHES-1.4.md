@@ -23,7 +23,7 @@ Wikidata ne comble que ce qui manque.
       (recommandation retenue après la question de Patrick sur 5 francs ; l'option gagne
       l'annotation). Paliers vérifiés le 25/10 (produit net au taux standard) : 2.00 → 1.30,
       3.00 → 1.94, 4.00 → 2.59, 5.00 → 3.24. Pays de référence : Suisse. Identifiants :
-      `ch.ok-ia.markdownviewer.analytic` et `ch.ok-ia.markdownviewer.analytic.mac`. Pas d'essai de
+      `ch.okia.markdownviewer.analytic` et `ch.okia.markdownviewer.analytic.mac`. Pas d'essai de
       7 jours, un aperçu ; partage familial activé. La feuille de route publiée (2 + 2) est à
       corriger, FR et EN. ⚠️ Mac Catalyst : `targetEnvironment(macCatalyst)`, pas `os(macOS)`.
 - [x] **Slogan** : « md Viewer — vos documents prennent vie. » / « md Viewer — your documents come
@@ -38,10 +38,18 @@ Wikidata ne comble que ce qui manque.
 
 ## ① Achat de l'option — troisième lot, 25/10/2026
 
-- [ ] **Deux produits non consommables dans App Store Connect**, textes en cinq langues — ⚠️ pas
-      encore créés : ils attendent la confirmation des prix par Patrick (3 et 5 francs). Tant qu'ils
-      n'existent pas, l'achat est « indisponible » et **un build TestFlight avec ce lot fermerait
-      les entités aux testeurs** : ne pas livrer ce lot avant les produits.
+- [x] **Deux produits non consommables créés dans App Store Connect** par l'API le 25/10/2026
+      (feu vert de Patrick : 3 et 5 francs), partage familial, 175 pays, Suisse en référence :
+      « Analytic » `ch.okia.markdownviewer.analytic` (6826757296, CHF 3.00 → 1.94 net,
+      **READY_TO_SUBMIT**) et « Analytic pour Mac » `ch.okia.markdownviewer.analytic.mac`
+      (6826757297, CHF 5.00 → 3.24 net). ⚠️ **Sans tiret** : App Store Connect refuse `ok-ia` dans
+      un identifiant de produit. Noms et descriptions en cinq langues, note d'examen en anglais.
+- [ ] **Capture d'examen du produit Mac** : à prendre sur le Mac (`OKIA_ACHAT=vitrine`) — il reste
+      MISSING_METADATA d'ici là, donc **introuvable dans le bac à sable** : un build Mac avec ce lot
+      fermerait les entités aux testeurs Mac. Celle de l'iPhone est envoyée
+      (`store/analytic/revue-achat-iphone.png`, hook `OKIA_ACHAT=vitrine` : bouton actif au prix
+      suisse, sans « indisponible »).
+- [ ] Les deux achats intégrés partent en revue **avec la version 1.4** (premiers achats de l'app).
 - [x] StoreKit 2 (`AchatAnalytic`) : droits relus au lancement, achat, « Demander à acheter »,
       restauration avec un message pour chaque issue, et **écoute de `Transaction.updates`** (achat
       approuvé plus tard ou fait sur un autre appareil, remboursement) — fornews ne l'écoutait pas.

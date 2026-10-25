@@ -12,8 +12,10 @@ import StoreKit
 final class AchatAnalytic: ObservableObject {
     static let partage = AchatAnalytic()
 
-    static let produitIDiOS = "ch.ok-ia.markdownviewer.analytic"
-    static let produitIDMac = "ch.ok-ia.markdownviewer.analytic.mac"
+    /// « okia » sans tiret, contrairement au bundle (`ch.ok-ia.markdownviewer`) : un identifiant de
+    /// produit n'admet que lettres, chiffres, points et soulignés (App Store Connect, 25/10/2026).
+    static let produitIDiOS = "ch.okia.markdownviewer.analytic"
+    static let produitIDMac = "ch.okia.markdownviewer.analytic.mac"
 
     /// ⚠️ `targetEnvironment(macCatalyst)`, pas `os(macOS)` comme dans fornews : sous Catalyst,
     /// `os(macOS)` est FAUX, et le Mac aurait vendu — et reconnu — le produit de l'iPhone.
@@ -59,14 +61,25 @@ final class AchatAnalytic: ObservableObject {
     #if DEBUG
     /// Harnais : OKIA_ACHAT=achete ouvre l'option, OKIA_ACHAT=bloque la ferme, sans StoreKit (le
     /// simulateur lancé par `simctl` ne lit pas le fichier `Analytic.storekit` du schéma).
+    /// OKIA_ACHAT=vitrine la ferme aussi, mais montre le bouton d'achat tel qu'en vente, actif et au
+    /// prix de la Suisse : c'est la capture qu'Apple demande pour examiner l'achat intégré.
     static let forcage: Bool? = {
         switch ProcessInfo.processInfo.environment["OKIA_ACHAT"] {
         case "achete": return true
-        case "bloque": return false
+        case "bloque", "vitrine": return false
         default: return nil
         }
     }()
     #endif
+
+    /// Vrai seulement pour la capture d'examen (voir `forcage`) ; faux dans tout build livré.
+    static var vitrine: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["OKIA_ACHAT"] == "vitrine"
+        #else
+        return false
+        #endif
+    }
 
     /// Au lancement : lit ce qui est déjà acheté, puis écoute les transactions qui arrivent d'ailleurs
     /// — un « Demander à acheter » approuvé plus tard, un achat fait sur un autre appareil du même

@@ -1419,7 +1419,7 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
 **5 francs sur Mac, 3 francs sur iPhone et iPad** (décidé le 2026-10-25 ; annoncé d'abord à 2 + 2,
 l'option a gagné l'annotation). ⚠️ md Viewer est un achat universel (une seule fiche pour iOS et
 Mac) : un achat intégré fait sur iPhone est rendu sur Mac. Facturer deux fois suppose **deux
-produits distincts** — « Analytic » (`ch.ok-ia.markdownviewer.analytic`, iPhone et iPad) et
+produits distincts** — « Analytic » (`ch.okia.markdownviewer.analytic`, iPhone et iPad) et
 « Analytic pour Mac » (`….analytic.mac`, avec l'import) —, le Mac ne regardant que le sien. Paliers
 vérifiés dans App Store Connect (CHF 3.00 → 1.94 net, 5.00 → 3.24 au taux standard). Le paywall de
 fornews (`FornewsAchat`) sert de base — ⚠️ il distingue le Mac par `os(macOS)`, faux sous Catalyst :
