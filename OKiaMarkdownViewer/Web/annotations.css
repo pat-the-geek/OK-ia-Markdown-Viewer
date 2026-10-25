@@ -29,3 +29,18 @@
 }
 
 /* L'impression et le PDF gardent les annotations : c'est le document annoté qu'on exporte. */
+
+/* Une image posée en absolu dans son cadre — l'en-tête des fiches d'article fornews (photo en
+   `position:absolute`, 100 % × 100 %, sous les pastilles source et temps de lecture). Le plein
+   écran l'enveloppe dans un `span.okia-agrandissable` positionné (render.js) : elle se mesurait
+   alors sur cette enveloppe vide et s'affichait en 0 × 0, visible seulement au zoom (Patrick,
+   B91, 25/10/2026). L'enveloppe prend la place du cadre. Ici et non dans style.css, que fornews
+   copie : à reporter dans fornews s'il pose la même enveloppe. */
+.okia-agrandissable-image:has(> img[style*="position:absolute"]),
+.okia-agrandissable-image:has(> img[style*="position: absolute"]) {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  max-width: none;
+  margin: 0;
+}

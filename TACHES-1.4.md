@@ -158,6 +158,14 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
       (Q138483458) par la fiche puis par la liste ; Hacker News → source ; corrections relues après
       relance. **À faire** : partager les corrections par iCloud avec le cache (même capacité).
 
+- [x] **Image d'en-tête des fiches d'article fornews vide (Patrick, sur B91, 25/10)**, visible
+      seulement au zoom. La photo de l'en-tête est en `position:absolute` (100 % × 100 %) dans un
+      cadre 16/9 ; la pastille « plein écran » (render.js, depuis le 09/10, donc déjà dans la 1.3)
+      l'enveloppe dans un `span.okia-agrandissable` positionné, sur lequel elle se mesurait :
+      0 × 0. Corrigé dans `annotations.css` (pas dans style.css, que fornews copie) : l'enveloppe
+      prend la place du cadre. Vérifié au simulateur (image 684 × 385 = le cadre, pastilles
+      par-dessus). **À signaler à fornews** : même règle à reporter s'il pose la même enveloppe.
+
 ### Demandes à fornews (à faire dans fornews.ai, pas d'ici) — prévues pour **fornews 1.7.4** (Patrick, 25/10)
 
 Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,
