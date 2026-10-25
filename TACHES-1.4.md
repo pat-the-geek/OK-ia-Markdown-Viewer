@@ -130,6 +130,34 @@ Vorobyov » à un footballeur homonyme. Le remède est le cache de fornews, qui 
 **Constaté en passant** : fornews exporte `[[7]]` parmi ses organisations ; md Viewer l'écarte de la
 liste, mais `render.js` surligne encore chaque « 7 » de la prose.
 
+- [x] **Retours sur B90 (Patrick, 25/10)** : « La Liberté est un journal, il doit être dans les
+      sources » → `SourcesDocument` lit les sources du document (domaines des liens, attributions
+      « — Nom, 6 octobre », « · Nom » soutenu par un domaine) ; elles forment une section « Sources »
+      à part, ne vont ni sur la carte ni à Wikidata. « Mercedes est une marque » → une organisation
+      ou un produit n'est jamais un lieu (classe ou description), et un nom composé est admis
+      (Mercedes → Mercedes-Benz, Q36008). « Ryad toujours en doublon » → une variante sans fiche
+      rejoint, après Wikidata, le nom à une ou deux lettres près qui en a une, du même genre. Logos
+      transparents sur fond blanc dans la galerie. Régression trouvée en vérifiant et corrigée : la
+      règle des lieux touchait aussi le genre « autre » (« États-Unis » → un pays de Star Trek).
+      Reste faux par le nom seul : « Maison Blanche » → Casablanca (alias) — à corriger par
+      l'utilisateur, ou par le cache de fornews.
+
+- [x] **« Signaler une erreur » (Patrick, 25/10 : « on doit pouvoir signaler une erreur et en tenir
+      compte dans les traitements suivants » ; « 5 ou 6 types d'erreur dans un menu »).** Un menu
+      sur la fiche (bouton en haut à droite) et dans le menu contextuel de la liste et de la galerie,
+      avec six types : **ce n'est pas la bonne fiche** (toutes les fiches Wikidata du nom, les plus
+      anciennes d'abord, recherche d'un autre nom possible, « aucune ne convient ») ; **mauvais
+      genre** ; **c'est une source / ce n'en est pas une** ; **c'est la même que…** ; **mauvaise
+      photo** ; **ce n'est pas une entité**. Plus « annuler mes corrections » sur l'entité, et
+      « oublier mes N corrections » dans le menu « … ».
+      Les corrections (`CorrectionsEntites`, `Analytic/corrections.json`) portent sur le NOM plié
+      et valent pour tous les documents ; elles priment sur la détection, le cache et Wikidata. Une
+      correction se rejoue sans relire le texte (les entités brutes sont gardées). Une fiche refusée
+      n'est plus jamais reprise ; une fiche choisie est gardée complète, hors du cache qui vieillit.
+      Vérifié au simulateur (iPhone 17 Pro Max, briefing-fr) : Asha Sharma → la bonne fiche
+      (Q138483458) par la fiche puis par la liste ; Hacker News → source ; corrections relues après
+      relance. **À faire** : partager les corrections par iCloud avec le cache (même capacité).
+
 ### Demandes à fornews (à faire dans fornews.ai, pas d'ici) — prévues pour **fornews 1.7.4** (Patrick, 25/10)
 
 Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,
@@ -200,6 +228,13 @@ Limite relevée : « Washington » d'un rapport épinglé sur l'État de Washing
       de XML, le chemin inverse d'`OOXMLExport`) — diapositives dans l'ordre de `presentation.xml`,
       titre en `##`, puces, tableaux, images de `ppt/media/`, notes de l'orateur ; une diapositive
       par bloc séparé par `---`. Les transitions connues reviennent en transition du diaporama.
+- [ ] **Commentaires des documents** (idée de Patrick, 25/10) : par défaut, les commentaires de
+      relecture sont repris — Word : une note `[^c…]` à l'endroit commenté, avec l'auteur (md Viewer
+      les montre dans sa section Notes) ; PowerPoint : avec les notes de l'orateur de la
+      diapositive. **En option, demandée à l'import** (« Utiliser les commentaires comme
+      consignes ») : Apple Intelligence, sur l'appareil, rédige ce que chaque commentaire demande ;
+      le texte rédigé est marqué comme tel, avec le commentaire d'origine, et le texte de l'auteur
+      n'est jamais remplacé.
 - [ ] **Images** : `data:image/…;base64` pour quelques petites images (déjà lu par md Viewer) ;
       au-delà, le format **TextBundle / TextPack** (`.md` + `assets/`, zippé en `.textpack`) —
       md Viewer apprend à l'ouvrir.

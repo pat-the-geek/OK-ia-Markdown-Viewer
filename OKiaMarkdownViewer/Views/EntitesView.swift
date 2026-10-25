@@ -26,6 +26,9 @@ struct EntitesView: View {
     @AppStorage(ConsentementWikidata.cle) private var consentementBrut = ConsentementWikidata.jamaisDemande.rawValue
     @AppStorage("okia.analytic.vue") private var vueBrute = Vue.liste.rawValue
     @State private var fiche: EntiteDocument?
+    /// Les deux corrections qui demandent une liste, ouvertes depuis le menu contextuel.
+    @State private var autreFiche: EntiteDocument?
+    @State private var memeQue: EntiteDocument?
     @State private var cartePleinEcran: TappedCarte?
     @ObservedObject private var achat = AchatAnalytic.partage
     @Environment(\.dismiss) private var dismiss
@@ -49,7 +52,7 @@ struct EntitesView: View {
             racine
                 .navigationDestination(item: $fiche) { e in
                     // La fiche suit l'analyse : une photo qui arrive de Wikidata s'y affiche.
-                    FicheEntiteView(entite: analyse.entite(nommee: e.nom) ?? e,
+                    FicheEntiteView(entite: analyse.entite(nommee: e.nom) ?? e, analyse: analyse,
                                     voirDansLeDocument: { voirDansLeDocument($0) })
                 }
         }
@@ -57,6 +60,8 @@ struct EntitesView: View {
         .onChange(of: consentementBrut) { _, _ in analyse.analyser(document, wikidata: consentementEffectif) }
         .onChange(of: achat.acces) { _, _ in analyse.analyser(document, wikidata: consentementEffectif) }
         .fullScreenCover(item: $cartePleinEcran) { carte in CarteZoomView(carte: carte) }
+        .sheet(item: $autreFiche) { e in ChoixFicheView(entite: e, analyse: analyse) }
+        .sheet(item: $memeQue) { e in ChoixMemeEntiteView(entite: e, analyse: analyse) }
     }
 
     private var titre: String { achat.acces ? tr("Entités") : "Analytic" }
@@ -154,9 +159,23 @@ struct EntitesView: View {
                         .foregroundStyle(groupe.type.couleur)
                 }
             }
+            if !analyse.sources.isEmpty {
+                Section {
+                    ForEach(analyse.sources) { e in
+                        Button { voirDansLeDocument(e) } label: { ligne(e) }.buttonStyle(.plain)
+                            .contextMenu { menuEntite(e) }
+                    }
+                } header: {
+                    Label(titreSources, systemImage: "newspaper").foregroundStyle(.secondary)
+                } footer: {
+                    Text(tr("Les journaux et les sites que le document cite. Ils ne sont pas envoyés à Wikidata."))
+                }
+            }
         }
         .listStyle(.insetGrouped)
     }
+
+    private var titreSources: String { "\(tr("Sources")) · \(analyse.sources.count)" }
 
     /// Le titre d'une section : le genre du rapport fornews quand il le donne, sinon celui de fornews.
     private func titre(_ groupe: (type: TypeEntite, entites: [EntiteDocument])) -> String {
@@ -168,6 +187,8 @@ struct EntitesView: View {
             Label(tr("Voir dans le document"), systemImage: "text.magnifyingglass")
         }
         Button { fiche = e } label: { Label(tr("Fiche"), systemImage: "info.circle") }
+        Divider()
+        MenuSignalerErreur(entite: e, analyse: analyse, autreFiche: { autreFiche = e }, memeQue: { memeQue = e })
     }
 
     private func ligne(_ e: EntiteDocument) -> some View {
@@ -211,6 +232,13 @@ struct EntitesView: View {
                                     .contextMenu { menuEntite(e) }
                             }
                         }
+                    }
+                }
+                if !analyse.sources.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(titreSources, systemImage: "newspaper").font(.headline).foregroundStyle(.secondary)
+                        Text(analyse.sources.map(\.nom).joined(separator: " · "))
+                            .font(.subheadline).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -322,6 +350,11 @@ struct EntitesView: View {
             } label: {
                 Label(tr("Oublier les fiches gardées"), systemImage: "trash")
             }
+            if analyse.nombreDeCorrections > 0 {
+                Button(role: .destructive) { analyse.oublierToutesLesCorrections() } label: {
+                    Label(tr("Oublier mes %d corrections", analyse.nombreDeCorrections), systemImage: "arrow.uturn.backward")
+                }
+            }
         } label: {
             Image(systemName: "ellipsis.circle")
         }
@@ -346,12 +379,18 @@ struct VignetteEntite: View {
         Color.clear
             .frame(width: rond ? taille : nil, height: taille)
             .frame(maxWidth: rond ? nil : .infinity)
-            .overlay { symbole }
             .overlay {
                 if let s = entite.image, let url = URL(string: s) {
+                    // L'image OU le symbole : sous un logo transparent, le symbole transparaissait.
                     AsyncImage(url: url) { phase in
-                        if let image = phase.image { image.resizable().scaledToFill() }
+                        if let image = phase.image {
+                            image.resizable().scaledToFill().background(Color.white)
+                        } else {
+                            symbole
+                        }
                     }
+                } else {
+                    symbole
                 }
             }
             .clipShape(forme)

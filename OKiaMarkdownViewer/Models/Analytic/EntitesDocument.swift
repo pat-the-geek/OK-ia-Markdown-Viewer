@@ -34,6 +34,10 @@ struct EntiteDocument: Identifiable, Hashable, Codable, Sendable {
         case detection
     }
 
+    /// Un journal, un site, une agence que le document CITE comme source (« — La Liberté,
+    /// 6 octobre 2026 », un lien vers laliberte.ch) : montré à part, jamais envoyé à Wikidata.
+    var source = false
+
     var aDesCoordonnees: Bool { latitude != nil && longitude != nil }
 
     /// Un article devant le nom (« la CIA », « l'ONU ») fait échouer la recherche Wikidata, qui
@@ -453,6 +457,21 @@ enum DetecteurEntites {
         return resultat.filter { !retirees.contains($0.id) }
     }
 
+    /// La distance d'édition entre deux noms pliés (« ryad », « riyad » : 1).
+    static func distance(_ a: String, _ b: String) -> Int {
+        let x = Array(a), y = Array(b)
+        if x.isEmpty { return y.count }
+        var prec = Array(0...y.count)
+        for i in 1...x.count {
+            var cour = [i] + Array(repeating: 0, count: y.count)
+            for j in 1...max(1, y.count) where !y.isEmpty {
+                cour[j] = min(prec[j] + 1, cour[j - 1] + 1, prec[j - 1] + (x[i - 1] == y[j - 1] ? 0 : 1))
+            }
+            prec = cour
+        }
+        return prec[y.count]
+    }
+
     private static func contientMots(_ long: [Substring], _ court: [Substring]) -> Bool {
         guard !court.isEmpty, court.count < long.count else { return false }
         return (0...(long.count - court.count)).contains { Array(long[$0..<$0 + court.count]) == court }
@@ -466,6 +485,59 @@ enum DetecteurEntites {
             guard let re = try? NSRegularExpression(pattern: motif) else { continue }
             entites[i].mentions = re.numberOfMatches(in: texte, range: NSRange(texte.startIndex..., in: texte))
         }
+    }
+}
+
+// MARK: - Les sources du document
+
+/// Les sources qu'un document cite, pour les tenir à l'écart des entités de son texte (Patrick,
+/// B90 : « La Liberté est un journal, il doit être dans les sources ») : les sites des liens
+/// (`laliberte.ch` → « laliberte ») et les attributions des légendes (« — La Liberté, 6 octobre »,
+/// « … · France 24 »).
+enum SourcesDocument {
+    struct Sources {
+        var noms = Set<String>()
+        var domaines = Set<String>()
+
+        /// L'entité est-elle une de ces sources ?
+        func contient(_ e: EntiteDocument) -> Bool {
+            if noms.contains(e.id) { return true }
+            let serre = e.id.filter { $0.isLetter || $0.isNumber }
+            return serre.count >= 4 && domaines.contains(serre)
+        }
+    }
+
+    static func lire(_ markdown: String) -> Sources {
+        var r = Sources()
+        let ns = markdown as NSString
+        let tout = NSRange(location: 0, length: ns.length)
+        if let re = try? NSRegularExpression(pattern: #"https?://(?:www\.|m\.|fr\.|de\.|en\.)?([a-z0-9\-]+)\.[a-z]{2,}"#,
+                                             options: [.caseInsensitive]) {
+            for m in re.matches(in: markdown, range: tout) {
+                r.domaines.insert(ns.substring(with: m.range(at: 1)).lowercased().replacingOccurrences(of: "-", with: ""))
+            }
+        }
+        // Les attributions, sur le texte débarrassé de ses balises.
+        let texte = markdown.replacingOccurrences(of: #"<[^>]+>"#, with: " ", options: .regularExpression)
+        let tns = texte as NSString
+        // « — La Liberté, 6 octobre 2026 » : un nom suivi d'une VRAIE date, jour et mois — « — États-
+        // Unis, 2 articles » passait pour une source.
+        let mois = "janv|févr|fevr|mars|avr|mai|juin|juil|août|aout|sept|oct|nov|déc|dec|jan|feb|mar|apr|may|jun|jul|aug|sep"
+            + "|märz|maerz|okt|dez|ene|abr|ago|dic|genn|febb|magg|giug|lugl|sett|ott"
+        let attribution = #"[—–]\s+(\p{Lu}[\p{L}\p{N}’'&.\- ]{1,40}?),\s+\d{1,2}\.?\s+(?:"# + mois + ")"
+        if let re = try? NSRegularExpression(pattern: attribution, options: [.anchorsMatchLines, .caseInsensitive]) {
+            for m in re.matches(in: texte, range: NSRange(location: 0, length: tns.length)) {
+                r.noms.insert(EntiteDocument.cle(tns.substring(with: m.range(at: 1))))
+            }
+        }
+        // « … · France 24 » en fin de ligne : seulement si le nom est aussi le site d'un lien.
+        if let re = try? NSRegularExpression(pattern: #"·\s+(\p{Lu}[\p{L}\p{N}’'&.\- ]{1,40}?)\s*$"#, options: [.anchorsMatchLines]) {
+            for m in re.matches(in: texte, range: NSRange(location: 0, length: tns.length)) {
+                let nom = EntiteDocument.cle(tns.substring(with: m.range(at: 1)))
+                if r.domaines.contains(nom.filter { $0.isLetter || $0.isNumber }) { r.noms.insert(nom) }
+            }
+        }
+        return r
     }
 }
 

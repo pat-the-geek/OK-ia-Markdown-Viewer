@@ -4,9 +4,13 @@ import SwiftUI
 /// disent, sa place sur la carte, et le chemin vers ses mentions dans le document.
 struct FicheEntiteView: View {
     let entite: EntiteDocument
+    @ObservedObject var analyse: AnalyseEntites
     var voirDansLeDocument: (EntiteDocument) -> Void
 
     @State private var cartePleinEcran: TappedCarte?
+    @State private var autreFiche = false
+    @State private var memeQue = false
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject private var loc = Localization.shared
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -46,6 +50,17 @@ struct FicheEntiteView: View {
         .navigationTitle(entite.nom)
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(item: $cartePleinEcran) { carte in CarteZoomView(carte: carte) }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                MenuSignalerErreur(entite: entite, analyse: analyse,
+                                   autreFiche: { autreFiche = true }, memeQue: { memeQue = true },
+                                   retiree: { dismiss() })
+                    .labelStyle(.iconOnly)
+                    .tint(orange)
+            }
+        }
+        .sheet(isPresented: $autreFiche) { ChoixFicheView(entite: entite, analyse: analyse) }
+        .sheet(isPresented: $memeQue) { ChoixMemeEntiteView(entite: entite, analyse: analyse, reunie: { dismiss() }) }
     }
 
     private var miniCarte: some View {
@@ -79,6 +94,7 @@ struct FicheEntiteView: View {
                 .tint(orange)
             }
             if entite.image != nil { Text(tr("Photo : Wikimedia Commons.")) }
+            if analyse.correction(entite) != nil { Text(tr("Corrigée par vous.")) }
         }
         .font(.footnote)
         .foregroundStyle(.secondary)

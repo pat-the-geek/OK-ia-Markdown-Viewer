@@ -111,11 +111,11 @@ struct ResolveurWikidata: Sendable {
     /// `typeFiable` : le type vient du document (le genre d'un rapport fornews) — « la CIA » ne
     /// rend plus l'aéroport de Rome-Ciampino. Pour une détection, le type de Wikidata corrige au
     /// contraire celui de `NLTagger`.
+    /// `refuses` : les fiches que l'utilisateur a écartées pour ce nom (« ce n'est pas la bonne »).
     func resoudre(_ nomDuDocument: String, type: TypeEntite, typeFiable: Bool = false,
-                  langue: String) async throws -> ResolutionEntite {
+                  refuses: Set<String> = [], langue: String) async throws -> ResolutionEntite {
         let nom = EntiteDocument.sansArticle(nomDuDocument)
-        let client = service.client
-        let candidats = try await client.rechercher(nom, langue: langue)
+        let candidats = try await service.client.rechercher(nom, langue: langue).filter { !refuses.contains($0.id) }
         // Le nom seul : la fiche la plus ancienne dont le nom correspond et dont le genre tient
         // (`ChoixWikidata`) ; sinon, on s'abstient. Le choix de fornews, fait pour des articles
         // avec leur contexte, prenait l'homonyme obscur (NASA → une filiale de Saxe-Anhalt).
@@ -123,15 +123,33 @@ struct ResolveurWikidata: Sendable {
             return ResolutionEntite(type: WikimediaService.typeSansRattachement(candidats, valeur: nom, type: type),
                                     date: Date())
         }
-        let estLieu = type == .loc || type == .gpe
+        return try await fiche(choix, type: type, langue: langue)
+    }
+
+    /// Les fiches que Wikidata propose pour un nom, pour que l'utilisateur choisisse lui-même : TOUTES
+    /// celles que la recherche rend, sans les règles de choix — c'est justement qu'elles se sont
+    /// trompées. Les plus anciennes d'abord.
+    func propositions(_ nomDuDocument: String, langue: String) async throws -> [WikidataCandidat] {
+        let nom = EntiteDocument.sansArticle(nomDuDocument)
+        return try await service.client.rechercher(nom, langue: langue)
+            .sorted { ChoixWikidata.numero($0) < ChoixWikidata.numero($1) }
+    }
+
+    /// La fiche complète d'un candidat : description, photo, et position pour un lieu.
+    func fiche(_ choix: WikidataCandidat, type: TypeEntite, langue: String) async throws -> ResolutionEntite {
+        let client = service.client
+        let estLieu = type == .loc || type == .gpe || WikimediaService.typeDepuisP31(choix.instanceOf).map { $0 == .loc || $0 == .gpe } == true
         async let descAsync = client.description(pour: choix.id, langue: langue)
         async let imageAsync = client.vignette(pour: choix.id)
         async let coordsAsync = estLieu ? client.coordonnees(pour: choix.id) : nil
         let longue = try? await descAsync
         let image = try? await imageAsync
         let coords = (try? await coordsAsync) ?? nil
+        // Le genre de la fiche, retenu aussi quand il confirme celui qu'on avait : une fiche choisie
+        // par l'utilisateur doit porter son genre, sinon l'entité retombe sur celui de la détection
+        // (« autre » pour le repli par majuscules).
         let typeRetenu = WikimediaService.typeDepuisP31(choix.instanceOf).flatMap {
-            WikimediaService.doitCorriger(de: type, vers: $0) ? $0 : nil
+            $0 == type || WikimediaService.doitCorriger(de: type, vers: $0) ? $0 : nil
         }
         let courte = Self.descriptionLisible(WikimediaService.descriptionDansLaLangue(choix, langue: langue))
         var r = ResolutionEntite(qid: choix.id, libelle: choix.label,
@@ -186,6 +204,10 @@ final class AnalyseEntites: ObservableObject {
 
     private var documentAnalyse: UUID?
     private var tache: Task<Void, Never>?
+    /// Les entités telles que le document et la détection les donnent, avant les corrections de
+    /// l'utilisateur et le cache : une correction se rejoue à partir d'elles, sans relire le texte.
+    private var brutes: [EntiteDocument] = []
+    private var wikidata: ConsentementWikidata = .refuse
     private let resolveur = ResolveurWikidata()
 
     /// Les types qu'on montre, et qu'on peut résoudre : ni dates ni montants (fornews les balise
@@ -194,13 +216,16 @@ final class AnalyseEntites: ObservableObject {
 
     var parType: [(type: TypeEntite, entites: [EntiteDocument])] {
         Self.typesMontres.compactMap { t in
-            let l = entites.filter { $0.type == t }
+            let l = entites.filter { $0.type == t && !$0.source }
             return l.isEmpty ? nil : (t, l)
         }
     }
 
     /// Les entités situées, pour la carte.
-    var situees: [EntiteDocument] { entites.filter(\.aDesCoordonnees) }
+    var situees: [EntiteDocument] { entites.filter { $0.aDesCoordonnees && !$0.source } }
+
+    /// Les sources que le document cite, à part des entités de son texte.
+    var sources: [EntiteDocument] { entites.filter(\.source) }
 
     /// L'entité qu'un marqueur de la carte désigne (son lien `[[nom]]`).
     func entite(nommee nom: String) -> EntiteDocument? {
@@ -240,6 +265,7 @@ final class AnalyseEntites: ObservableObject {
     /// Lance l'analyse du document, une fois par document. `wikidata` : le choix de l'utilisateur.
     func analyser(_ document: MarkdownDocument, wikidata: ConsentementWikidata, force: Bool = false) {
         guard force || documentAnalyse != document.id else {
+            self.wikidata = wikidata
             // Le même document, mais l'utilisateur vient d'accepter Wikidata : on complète.
             if wikidata == .accepte, etat == .fini || isMuet { completerParWikidata() }
             // …ou de le refuser en pleine résolution : plus un nom ne part.
@@ -251,6 +277,8 @@ final class AnalyseEntites: ObservableObject {
         }
         tache?.cancel()
         documentAnalyse = document.id
+        self.wikidata = wikidata
+        brutes = []
         etat = .lecture
         let texte = document.text
         tache = Task { [weak self] in
@@ -265,15 +293,89 @@ final class AnalyseEntites: ObservableObject {
             // au même identifiant, SwiftUI en perdait à l'affichage. Le premier lu l'emporte.
             var toutes = LecteurRapportFornews.dedoublonner(duRapport + detectees)
             DetecteurEntites.compterMentions(&toutes, dans: texte)
+            let sources = SourcesDocument.lire(texte)
+            for i in toutes.indices where sources.contient(toutes[i]) { toutes[i].source = true }
             toutes = DetecteurEntites.absorberFormesCourtes(toutes)
             toutes = toutes.filter { $0.mentions > 0 || $0.origine == .rapport }
             toutes.sort { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) }
             self.langue = langue
             self.methode = methode
             self.depuisRapport = !duRapport.isEmpty
-            self.entites = toutes.map { self.appliquerCache($0) }
-            self.fusionnerParQID()
+            self.brutes = toutes
+            self.assembler()
             if wikidata == .accepte { self.completerParWikidata() } else { self.etat = .fini }
+        }
+    }
+
+    /// La liste montrée : les entités brutes, corrigées par l'utilisateur, complétées par le cache,
+    /// puis réunies quand elles désignent la même fiche.
+    private func assembler() {
+        entites = CorrectionsEntites.partage.appliquer(brutes)
+            .map { appliquerCache($0) }
+            .sorted { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) }
+        fusionnerParQID()
+        reunirVariantes()
+    }
+
+    // MARK: Corrections de l'utilisateur
+
+    /// L'utilisateur signale une erreur : la correction est retenue pour tous les documents, et la
+    /// liste se refait aussitôt. Un nom à qui l'on a retiré sa fiche, ou changé le genre, repart
+    /// vers Wikidata si l'utilisateur l'a accepté.
+    func corriger(_ e: EntiteDocument, _ changement: (inout CorrectionEntite) -> Void) {
+        CorrectionsEntites.partage.modifier(e.nom, changement)
+        guard etat != .lecture else { return }
+        assembler()
+        if wikidata == .accepte { completerParWikidata() }
+    }
+
+    func correction(_ e: EntiteDocument) -> CorrectionEntite? { CorrectionsEntites.partage.correction(e.nom) }
+
+    var wikidataAccepte: Bool { wikidata == .accepte }
+
+    /// Les corrections d'un nom oubliées : il redevient ce que la détection et Wikidata en disent.
+    func oublierCorrections(_ e: EntiteDocument) {
+        CorrectionsEntites.partage.oublier(e.nom)
+        guard etat != .lecture else { return }
+        assembler()
+        if wikidata == .accepte { completerParWikidata() }
+    }
+
+    func oublierToutesLesCorrections() {
+        CorrectionsEntites.partage.toutOublier()
+        guard etat != .lecture else { return }
+        assembler()
+        if wikidata == .accepte { completerParWikidata() }
+    }
+
+    var nombreDeCorrections: Int { CorrectionsEntites.partage.nombre }
+
+    /// Les fiches entre lesquelles l'utilisateur choisit.
+    func propositions(pour e: EntiteDocument, terme: String? = nil) async throws -> [WikidataCandidat] {
+        try await resolveur.propositions(terme ?? e.nom, langue: langue)
+    }
+
+    /// L'utilisateur a choisi une fiche : elle est complétée (description, photo, position) puis
+    /// retenue ; l'ancienne fiche passe parmi les refusées.
+    func choisirFiche(_ choix: WikidataCandidat, pour e: EntiteDocument) async throws {
+        var r = try await resolveur.fiche(choix, type: e.type, langue: langue)
+        // La description que l'utilisateur a lue pour choisir, même dans une autre langue, plutôt
+        // que rien.
+        if r.description == nil { r.description = ResolveurWikidata.descriptionLisible(choix.description) }
+        corriger(e) { c in
+            if let ancienne = e.qid, ancienne != choix.id, !c.qidsRefuses.contains(ancienne) { c.qidsRefuses.append(ancienne) }
+            c.qidsRefuses.removeAll { $0 == choix.id }
+            c.fiche = r
+            c.sansFiche = false
+        }
+    }
+
+    /// « Aucune fiche ne convient » : le nom reste, sans fiche, et ne repart plus vers Wikidata.
+    func retirerFiche(_ e: EntiteDocument) {
+        corriger(e) { c in
+            if let q = e.qid, !c.qidsRefuses.contains(q) { c.qidsRefuses.append(q) }
+            c.fiche = nil
+            c.sansFiche = true
         }
     }
 
@@ -302,11 +404,57 @@ final class AnalyseEntites: ObservableObject {
         if garde.count != entites.count { entites = garde.sorted { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) } }
     }
 
+    /// Une variante d'orthographe restée sans fiche (« Ryad ») rejoint le nom à une lettre près qui
+    /// en a une (« Riyad »), du même genre. Seulement APRÈS Wikidata : sans fiches, « Iran » et
+    /// « Irak » se ressemblent tout autant (Patrick, B90).
+    private func reunirVariantes() {
+        var retirees = Set<String>()
+        var liste = entites
+        // Un nom que l'utilisateur a corrigé n'est pas réuni à sa place : il a dit ce qu'il voulait.
+        for e in entites where e.qid == nil && !e.source && e.id.count >= 4
+            && CorrectionsEntites.partage.correction(e.nom) == nil {
+            guard let j = liste.firstIndex(where: { f in
+                f.qid != nil && !f.source && f.id != e.id && !retirees.contains(f.id)
+                    && ChoixWikidata.compatibles(e.type, f.type)
+                    && DetecteurEntites.distance(e.id, f.id) <= (max(e.id.count, f.id.count) >= 8 ? 2 : 1)
+            }) else { continue }
+            retirees.insert(e.id)
+            liste[j].mentions += e.mentions
+        }
+        if !retirees.isEmpty { entites = liste.filter { !retirees.contains($0.id) } }
+    }
+
     private var isMuet: Bool { if case .wikidataMuet = etat { return true }; return false }
 
     private func appliquerCache(_ e: EntiteDocument) -> EntiteDocument {
-        guard let r = CacheEntites.partage.resolution(e.nom, type: e.type, langue: langue) else { return e }
+        var e = completer(e)
+        if CorrectionsEntites.partage.correction(e.nom)?.sansImage == true { e.image = nil }
+        return e
+    }
+
+    private func completer(_ e: EntiteDocument) -> EntiteDocument {
+        if let c = CorrectionsEntites.partage.correction(e.nom) {
+            if c.sansFiche { return e }
+            // La fiche choisie par l'utilisateur l'emporte sur ce que le document en disait.
+            if let f = c.fiche {
+                var e = e
+                e.qid = f.qid
+                e.description = f.description ?? e.description
+                e.image = f.image ?? e.image
+                if let lat = f.latitude, let lon = f.longitude { e.latitude = lat; e.longitude = lon }
+                if c.type == nil, let t = f.type { e.type = t }
+                return e
+            }
+        }
+        guard let r = resolutionEnCache(e) else { return e }
         return Self.appliquer(r, a: e)
+    }
+
+    /// La réponse du cache, sauf si elle désigne une fiche que l'utilisateur a refusée.
+    private func resolutionEnCache(_ e: EntiteDocument) -> ResolutionEntite? {
+        guard let r = CacheEntites.partage.resolution(e.nom, type: e.type, langue: langue) else { return nil }
+        if let q = r.qid, CorrectionsEntites.partage.correction(e.nom)?.qidsRefuses.contains(q) == true { return nil }
+        return r
     }
 
     /// Ce que Wikidata apprend s'ajoute à ce que le document donne, sans jamais l'écraser : les
@@ -328,8 +476,9 @@ final class AnalyseEntites: ObservableObject {
     private var aResoudre: [EntiteDocument] {
         entites.filter { e in
             // Deux lettres ou moins : trop ambigu pour le nom seul (« IA » rendait Internet Archive).
-            e.qid == nil && EntiteDocument.sansArticle(e.nom).count > 2
-                && CacheEntites.partage.resolution(e.nom, type: e.type, langue: langue) == nil
+            let c = CorrectionsEntites.partage.correction(e.nom)
+            return e.qid == nil && !e.source && EntiteDocument.sansArticle(e.nom).count > 2
+                && c?.sansFiche != true && c?.fiche == nil && resolutionEnCache(e) == nil
         }
     }
 
@@ -339,6 +488,9 @@ final class AnalyseEntites: ObservableObject {
         tache?.cancel()
         etat = .resolution(fait: 0, total: liste.count)
         let langue = self.langue, resolveur = self.resolveur
+        // Un genre donné par l'utilisateur vaut celui d'un rapport : Wikidata ne le contredit pas.
+        let corrections = Dictionary(liste.map { ($0.id, CorrectionsEntites.partage.correction($0.nom)) },
+                                     uniquingKeysWith: { a, _ in a })
         tache = Task { [weak self] in
             var fait = 0
             // Trois noms à la fois : assez pour ne pas faire attendre, assez peu pour rester poli
@@ -350,8 +502,10 @@ final class AnalyseEntites: ObservableObject {
                     let e = liste[suivant]; suivant += 1
                     groupe.addTask {
                         do {
-                            let r = try await resolveur.resoudre(e.nom, type: e.type, typeFiable: e.origine == .rapport,
-                                                                 langue: langue)
+                            let c = corrections[e.id] ?? nil
+                            let r = try await resolveur.resoudre(e.nom, type: e.type,
+                                                                 typeFiable: e.origine == .rapport || c?.type != nil,
+                                                                 refuses: Set(c?.qidsRefuses ?? []), langue: langue)
                             return (e, .success(r))
                         }
                         catch { return (e, .failure(error)) }
@@ -367,6 +521,7 @@ final class AnalyseEntites: ObservableObject {
                         CacheEntites.partage.retenir(r, nom: e.nom, type: e.type, langue: langue)
                         if let i = self.entites.firstIndex(where: { $0.id == e.id }) {
                             self.entites[i] = Self.appliquer(r, a: self.entites[i])
+                            if corrections[e.id]??.sansImage == true { self.entites[i].image = nil }
                         }
                     case .failure(let erreur):
                         echecs += 1; derniere = erreur
@@ -383,6 +538,7 @@ final class AnalyseEntites: ObservableObject {
                 }
                 guard let self else { return }
                 self.fusionnerParQID()
+                self.reunirVariantes()
                 self.etat = .fini
             }
         }

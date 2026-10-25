@@ -37,6 +37,9 @@ for chemin in CommandLine.arguments.dropFirst() {
                   "| détection", detectees.filter { $0.id.contains(c) }.map { "\($0.nom)/\($0.type.rawValue)" },
                   "| finales", finales.filter { $0.id.contains(c) }.map { "\($0.nom)=\($0.mentions)" })
         }
+        let sources = SourcesDocument.lire(texte)
+        print("   sources :", finales.filter { sources.contient($0) }.map(\.nom).joined(separator: " · "),
+              "| domaines :", sources.domaines.sorted().prefix(12).joined(separator: ","))
         if ProcessInfo.processInfo.environment["TOUT"] != nil {
             print("   finales :", finales.sorted { $0.mentions > $1.mentions }.map { "\($0.nom)/\($0.type.rawValue)=\($0.mentions)" }.joined(separator: " · "))
         }
