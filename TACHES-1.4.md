@@ -10,6 +10,10 @@ alive. »
 **Principe** : on valorise au maximum le document. Un rapport fornews donne déjà presque tout ;
 Wikidata ne comble que ce qui manque.
 
+**Calendrier (Patrick, 25/10/2026)** : la 1.4 sortira **après la prochaine version de fornews**, celle
+qui doit lui donner le cache d'entités partagé et l'ouverture par QID (« Demandes à fornews »).
+Pas de B89 demandé pour l'instant ; les commits 07f8d35 → 2dc7329 attendent, non poussés.
+
 ## ⓪ Décisions de Patrick — prises le 25/10/2026 (« Ok commence »)
 
 - [x] **Private Cloud Compute : non.** Uniquement `SystemLanguageModel.default`. Les deux engagements
