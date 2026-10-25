@@ -52,7 +52,9 @@ final class CacheEntites {
         let dossier = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                      appropriateFor: nil, create: true))
             ?? FileManager.default.temporaryDirectory
-        self.fichier = fichier ?? dossier.appendingPathComponent("Analytic/entites.json")
+        // « v2 » : le choix de fiche a changé le 25/10/2026 (B90) — les réponses de l'ancien choix
+        // (NASA → filiale de Saxe-Anhalt) seraient restées trente jours.
+        self.fichier = fichier ?? dossier.appendingPathComponent("Analytic/entites-v2.json")
         if let data = try? Data(contentsOf: self.fichier),
            let lues = try? JSONDecoder().decode([String: ResolutionEntite].self, from: data) {
             entrees = lues
@@ -104,40 +106,20 @@ struct ResolveurWikidata: Sendable {
         return d
     }
 
-    /// Deux types qui ne se contredisent pas : le même, deux lieux (fornews ne départage pas une
-    /// ville d'une région, cf. `doitCorriger`), ou une organisation et un produit — une enseigne est
-    /// l'un et l'autre, et Wikidata rangeait Leroy Merlin en marque.
-    static func compatibles(_ a: TypeEntite, _ b: TypeEntite) -> Bool {
-        let familles: [Set<TypeEntite>] = [[.loc, .gpe], [.org, .product]]
-        return a == b || familles.contains { $0.contains(a) && $0.contains(b) }
-    }
-
-    /// La même suite que `WikimediaService.enrichirInterne` dans fornews, sans le modèle SwiftData.
-    /// `typeFiable` : le type vient du document (le genre d'un rapport fornews), pas d'une
-    /// détection. Un candidat dont la nature Wikidata le contredit cède alors la place au suivant —
-    /// sans cette règle, « la CIA » rendait l'aéroport de Rome-Ciampino (code IATA CIA), essai du
-    /// 25/10/2026. Pour une détection, le type de Wikidata corrige au contraire celui de `NLTagger`.
+    /// La suite de `WikimediaService.enrichirInterne` dans fornews (description, image, position,
+    /// genre corrigé), sans le modèle SwiftData, et avec un choix fait pour le nom seul.
+    /// `typeFiable` : le type vient du document (le genre d'un rapport fornews) — « la CIA » ne
+    /// rend plus l'aéroport de Rome-Ciampino. Pour une détection, le type de Wikidata corrige au
+    /// contraire celui de `NLTagger`.
     func resoudre(_ nomDuDocument: String, type: TypeEntite, typeFiable: Bool = false,
                   langue: String) async throws -> ResolutionEntite {
         let nom = EntiteDocument.sansArticle(nomDuDocument)
         let client = service.client
         let candidats = try await client.rechercher(nom, langue: langue)
-        var choix: WikidataCandidat?
-        var restants = candidats
-        for _ in 0..<3 {
-            guard let c = WikimediaService.choisir(restants, valeur: nom, type: type) else { break }
-            var natures = c.instanceOf
-            if natures.isEmpty { natures = (try? await client.classes(pour: c.id)) ?? [] }
-            let parents = natures.isEmpty ? ((try? await client.superClasses(pour: c.id)) ?? []) : []
-            let contredit = typeFiable && WikimediaService.typeDepuisP31(natures).map { !Self.compatibles(type, $0) } == true
-            if !contredit, WikimediaService.natureImpossible(type: type, p31: natures, p279: parents,
-                                                             noms: [nom], libelles: [c.label], alias: [c.label]) == nil {
-                choix = c
-                break
-            }
-            restants.removeAll { $0.id == c.id }
-        }
-        guard let choix else {
+        // Le nom seul : la fiche la plus ancienne dont le nom correspond et dont le genre tient
+        // (`ChoixWikidata`) ; sinon, on s'abstient. Le choix de fornews, fait pour des articles
+        // avec leur contexte, prenait l'homonyme obscur (NASA → une filiale de Saxe-Anhalt).
+        guard let choix = ChoixWikidata.candidats(candidats, nom: nom, type: type, typeFiable: typeFiable).first else {
             return ResolutionEntite(type: WikimediaService.typeSansRattachement(candidats, valeur: nom, type: type),
                                     date: Date())
         }
@@ -290,8 +272,34 @@ final class AnalyseEntites: ObservableObject {
             self.methode = methode
             self.depuisRapport = !duRapport.isEmpty
             self.entites = toutes.map { self.appliquerCache($0) }
+            self.fusionnerParQID()
             if wikidata == .accepte { self.completerParWikidata() } else { self.etat = .fini }
         }
+    }
+
+    /// Deux entités rattachées à la même fiche n'en font qu'une : deux graphies (« Riyad »,
+    /// « Riyadh »), une forme courte que rien n'avait réunie. Elle garde le nom le plus cité et
+    /// l'origine du document s'il en vient ; les mentions s'additionnent (Patrick, B89).
+    private func fusionnerParQID() {
+        var vus: [String: Int] = [:]
+        var garde: [EntiteDocument] = []
+        for e in entites {
+            guard let q = e.qid else { garde.append(e); continue }
+            if let i = vus[q] {
+                var a = garde[i]
+                let principale = (e.mentions > a.mentions || (e.origine == .rapport && a.origine != .rapport)) ? e : a
+                let autre = principale == e ? a : e
+                a = principale
+                a.mentions = principale.mentions + autre.mentions
+                a.genre = a.genre ?? autre.genre
+                if !a.aDesCoordonnees { a.latitude = autre.latitude; a.longitude = autre.longitude }
+                garde[i] = a
+            } else {
+                vus[q] = garde.count
+                garde.append(e)
+            }
+        }
+        if garde.count != entites.count { entites = garde.sorted { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) } }
     }
 
     private var isMuet: Bool { if case .wikidataMuet = etat { return true }; return false }
@@ -319,7 +327,9 @@ final class AnalyseEntites: ObservableObject {
     /// Les noms à demander : ceux qui n'ont ni fiche ni réponse en cache, les plus cités d'abord.
     private var aResoudre: [EntiteDocument] {
         entites.filter { e in
-            e.qid == nil && CacheEntites.partage.resolution(e.nom, type: e.type, langue: langue) == nil
+            // Deux lettres ou moins : trop ambigu pour le nom seul (« IA » rendait Internet Archive).
+            e.qid == nil && EntiteDocument.sansArticle(e.nom).count > 2
+                && CacheEntites.partage.resolution(e.nom, type: e.type, langue: langue) == nil
         }
     }
 
@@ -372,6 +382,7 @@ final class AnalyseEntites: ObservableObject {
                     lancer()
                 }
                 guard let self else { return }
+                self.fusionnerParQID()
                 self.etat = .fini
             }
         }

@@ -338,20 +338,24 @@ struct VignetteEntite: View {
     var taille: CGFloat
     var rond = true
 
+    /// Le cadre d'abord, l'image ensuite, en surimpression et rognée : une image en remplissage
+    /// prend sinon sa taille naturelle, élargit sa carte et déborde sur les voisines (un logo de
+    /// 3 000 points sur la galerie du Duo plié, Patrick, B89).
     var body: some View {
         let forme = rond ? AnyShape(Circle()) : AnyShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        Group {
-            if let s = entite.image, let url = URL(string: s) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image { image.resizable().scaledToFill() } else { symbole }
+        Color.clear
+            .frame(width: rond ? taille : nil, height: taille)
+            .frame(maxWidth: rond ? nil : .infinity)
+            .overlay { symbole }
+            .overlay {
+                if let s = entite.image, let url = URL(string: s) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image { image.resizable().scaledToFill() }
+                    }
                 }
-            } else {
-                symbole
             }
-        }
-        .frame(width: rond ? taille : nil, height: taille)
-        .frame(maxWidth: rond ? nil : .infinity)
-        .clipShape(forme)
+            .clipShape(forme)
+            .contentShape(forme)
     }
 
     private var symbole: some View {

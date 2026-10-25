@@ -224,9 +224,14 @@ enum DetecteurEntites {
             brutes = parMajuscules(texte)
             methode = .majuscules
         }
+        // « IA », « AI » : l'intelligence artificielle, un nom commun — que le repli par majuscules
+        // comptait quatorze fois dans un briefing, et que Wikidata prenait pour Internet Archive.
         let filtrees = FiltreEntitesNER.filtrer(brutes, texteSource: texte)
+            .filter { !Self.nomsCommunsEnSigle.contains($0.valeur) }
         return (filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }, methode)
     }
+
+    static let nomsCommunsEnSigle: Set<String> = ["IA", "AI", "KI"]
 
     /// Le modèle de noms de `NLTagger` est-il là, pour cette langue ? Sinon, on le demande.
     static func modeleDeNomsPret(_ langue: String?) async -> Bool {

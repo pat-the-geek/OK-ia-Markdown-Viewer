@@ -18,6 +18,7 @@ for chemin in CommandLine.arguments.dropFirst() {
         if ProcessInfo.processInfo.environment["FORCE"] == "majuscules" {
             let t = TexteAnalysable.depuis(texte)
             detectees = FiltreEntitesNER.filtrer(DetecteurEntites.parMajuscules(t), texteSource: t)
+                .filter { !DetecteurEntites.nomsCommunsEnSigle.contains($0.valeur) }
                 .map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }
             methode = .majuscules
         } else {

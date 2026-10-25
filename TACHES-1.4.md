@@ -169,6 +169,17 @@ demi-journée tests compris. La lecture du cache côté md Viewer (~60 lignes) s
       phrase propre au Mac (souris, trackpad). Corrigé en passant : « Le président ukrainien
       Volodymyr Zelensky » est fondu dans Volodymyr Zelensky (personne précédée d'un titre).
       **Pas essayé** : les annotations à la souris (accès à l'app refusé, à faire à la main).
+- [x] **Retours de Patrick sur B89 (25/10)**, corrigés le jour même :
+      images qui débordaient de leur carte (une image en remplissage prenait sa taille naturelle :
+      cadre fixe, image en surimpression, rognée) ; **choix de fiche refait pour le nom seul**
+      (`ChoixWikidata`) — parmi les correspondances exactes de nature possible, la fiche la plus
+      ancienne (plus petit Q) ; une personne doit être un être humain (Q5), un lieu porter une classe
+      de lieu connue, sinon abstention. Au banc (24 noms) : NASA → l'agence (avant : filiale de
+      Saxe-Anhalt), CIA → l'agence, Andrei Vorobyov → le politicien, Ryad → plus d'école marocaine ;
+      Paris, Kiev, Trump, Musk, Zelensky inchangés et justes. Restent faux : Elysée, Washington,
+      Mercedes, Asha Sharma. **Doublons** : deux entités rattachées à la même fiche n'en font qu'une
+      (mentions additionnées). « IA », « AI » écartés, noms de deux lettres jamais envoyés à Wikidata.
+      Cache renommé `entites-v2.json` pour oublier les réponses de l'ancien choix.
 - [ ] **Ouvrir une entité dans fornews par son QID** — attend la route `fornews://entite?qid=Q…`
       (« Demandes à fornews »).
 
