@@ -36,6 +36,18 @@
         "."
       ],
       "port": 8767
+    },
+    {
+      "name": "okia-site-public",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8767",
+        "--directory",
+        "/Users/patrickostertag/Developer/OK-ia/public"
+      ],
+      "port": 8767
     }
   ]
 }
