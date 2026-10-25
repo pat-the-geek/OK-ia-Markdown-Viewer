@@ -1048,7 +1048,10 @@ struct ReaderView: View {
 
     /// Option Analytic (1.4) : les entités du document. Le même glyphe que l'onglet de fornews.
     private var boutonEntites: some View {
-        Button { ouvrir(.entites) } label: { Image(systemName: "person.2") }
+        // Ouvertes à côté du document, un second toucher les referme.
+        Button { if panneauDuo == .entites { panneauDuo = nil } else { ouvrir(.entites) } } label: {
+            Image(systemName: panneauDuo == .entites ? "person.2.fill" : "person.2")
+        }
             .teinteBarre()
             .accessibilityLabel(tr("Entités"))
     }

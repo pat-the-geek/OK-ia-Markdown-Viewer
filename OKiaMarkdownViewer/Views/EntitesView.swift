@@ -46,15 +46,7 @@ struct EntitesView: View {
 
     var body: some View {
         NavigationStack {
-            contenu
-                .navigationTitle(achat.acces ? tr("Entités") : "Analytic")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(tr("Fermer")) { (fermerPanneau ?? { dismiss() })() }.tint(orange)
-                    }
-                    ToolbarItem(placement: .topBarLeading) { if achat.acces { menuWikidata } }
-                }
+            racine
                 .navigationDestination(item: $fiche) { e in
                     // La fiche suit l'analyse : une photo qui arrive de Wikidata s'y affiche.
                     FicheEntiteView(entite: analyse.entite(nommee: e.nom) ?? e,
@@ -65,6 +57,41 @@ struct EntitesView: View {
         .onChange(of: consentementBrut) { _, _ in analyse.analyser(document, wikidata: consentementEffectif) }
         .onChange(of: achat.acces) { _, _ in analyse.analyser(document, wikidata: consentementEffectif) }
         .fullScreenCover(item: $cartePleinEcran) { carte in CarteZoomView(carte: carte) }
+    }
+
+    private var titre: String { achat.acces ? tr("Entités") : "Analytic" }
+
+    /// Dans une feuille, la barre du système. Dans la seconde partie, une rangée à nous, dans la zone
+    /// sûre : sur le Duo, le système range les commandes de la barre dans sa colonne de droite (le
+    /// « … » y descendait sous l'heure), et « Fermer », collé à cette colonne, ne répondait plus
+    /// (Patrick, B88, 25/10/2026).
+    @ViewBuilder private var racine: some View {
+        if let fermer = fermerPanneau {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    if achat.acces { menuWikidata }
+                    Text(titre).font(.headline)
+                    Spacer(minLength: 8)
+                    Button(tr("Fermer"), action: fermer)
+                        .buttonStyle(.bordered)
+                        .tint(orange)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                contenu
+            }
+            .toolbar(.hidden, for: .navigationBar)
+        } else {
+            contenu
+                .navigationTitle(titre)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(tr("Fermer")) { dismiss() }.tint(orange)
+                    }
+                    ToolbarItem(placement: .topBarLeading) { if achat.acces { menuWikidata } }
+                }
+        }
     }
 
     /// Fermer la feuille (pas la seconde partie, qui reste à côté du document), puis chercher.

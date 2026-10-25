@@ -148,6 +148,11 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
       une feuille.
 - [x] Une entité ne compte plus son article : « l'ONU » (organisations) et « Onu » (lieux, rattaché
       par Wikidata à un village de Sulawesi) ne font qu'une, sous le premier genre lu.
+- [x] **Fermer ne répondait pas sur le Duo** (Patrick, B88, 25/10) : le système range les commandes de
+      la barre dans sa colonne de droite, et « Fermer » y touchait. Dans la seconde partie, le panneau
+      a désormais sa propre rangée (menu, titre, Fermer) dans la zone sûre ; le bouton des entités de
+      la barre referme aussi le panneau ouvert. Vérifié sur iPad en paysage ; **à revoir sur le vrai
+      Duo**, comme Fermer / OK du sommaire, du résumé et de la discussion (même placement).
 - [ ] **Ouvrir une entité dans fornews par son QID** — attend la route `fornews://entite?qid=Q…`
       (« Demandes à fornews »).
 
