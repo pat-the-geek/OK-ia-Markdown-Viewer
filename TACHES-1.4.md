@@ -10,9 +10,9 @@ alive. »
 **Principe** : on valorise au maximum le document. Un rapport fornews donne déjà presque tout ;
 Wikidata ne comble que ce qui manque.
 
-**Calendrier (Patrick, 25/10/2026)** : la 1.4 sortira **après la prochaine version de fornews**, celle
+**Calendrier (Patrick, 25/10/2026)** : la 1.4 sortira **après fornews 1.7.4**, celle
 qui doit lui donner le cache d'entités partagé et l'ouverture par QID (« Demandes à fornews »).
-Pas de B89 demandé pour l'instant ; les commits 07f8d35 → 2dc7329 attendent, non poussés.
+B89 envoyé le 25/10 (iOS + Mac) ; les commits depuis B88 ne sont pas poussés.
 
 ## ⓪ Décisions de Patrick — prises le 25/10/2026 (« Ok commence »)
 
@@ -129,7 +129,12 @@ Vorobyov » à un footballeur homonyme. Le remède est le cache de fornews, qui 
 **Constaté en passant** : fornews exporte `[[7]]` parmi ses organisations ; md Viewer l'écarte de la
 liste, mais `render.js` surligne encore chaque « 7 » de la prose.
 
-### Demandes à fornews (à faire dans fornews.ai, pas d'ici)
+### Demandes à fornews (à faire dans fornews.ai, pas d'ici) — prévues pour **fornews 1.7.4** (Patrick, 25/10)
+
+Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,
+plus l'aiguillage de `FornewsVisionApp`), `[[7]]` quelques lignes (`FiltreEntitesNER.estValide` à la
+composition de `## Entités`), cache ~100 lignes sur le patron de `CacheBulletinMontre` ; une
+demi-journée tests compris. La lecture du cache côté md Viewer (~60 lignes) se fera ensuite.
 
 1. **Publier un cache d'entités** dans `group.ai.fornews.native` — proposition de format : un JSON
    `Entites/cache.json`, liste de `{ nom, alias[], type, qid, description, image, latitude,
