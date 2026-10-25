@@ -437,8 +437,16 @@ struct CarteZoomView: View {
     }
 }
 
-private struct CarteWebView: UIViewRepresentable {
+/// Une carte seule, dessinée par la pile du lecteur (Leaflet + MapLibre, OpenFreeMap) à partir de
+/// sa configuration (base64 du JSON de `parseLeafletBlock`). Le plein écran du lecteur s'en sert,
+/// et l'option Analytic (1.4) pour la carte des entités, qui se redessine quand Wikidata situe un
+/// lieu de plus et rend le marqueur touché.
+struct CarteWebView: UIViewRepresentable {
     let cfg: String
+    /// Le lien `[[cible]]` d'un marqueur touché ; nil : les marqueurs n'ouvrent que leur bulle.
+    var surMarqueur: ((String) -> Void)? = nil
+    /// Laisse la place du bouton Fermer du plein écran, en haut à droite.
+    var sousBoutonFermer = true
 
     func makeCoordinator() -> Coordinator { Coordinator(cfg: cfg) }
 
@@ -447,16 +455,21 @@ private struct CarteWebView: UIViewRepresentable {
         controller.addUserScript(WKUserScript(
             source: "window.OKIA_LANG = '\(Localization.shared.code)';",
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        if surMarqueur != nil { controller.add(context.coordinator, name: "wikiTapped") }
+        context.coordinator.surMarqueur = surMarqueur
         let config = WKWebViewConfiguration()
         config.userContentController = controller
         let vue = VueSousBoutons(frame: .zero, configuration: config)
         // Le bouton Fermer, en haut à droite.
-        vue.zonesDesBoutons = { b, m in [
-            CGRect(x: b.width - m.right - 90, y: 0, width: m.right + 90, height: m.top + 90),
-        ] }
+        if sousBoutonFermer {
+            vue.zonesDesBoutons = { b, m in [
+                CGRect(x: b.width - m.right - 90, y: 0, width: m.right + 90, height: m.top + 90),
+            ] }
+        }
         vue.navigationDelegate = context.coordinator
         vue.scrollView.isScrollEnabled = false
         vue.scrollView.contentInsetAdjustmentBehavior = .never
+        vue.isOpaque = false
         if let page = Bundle.main.url(forResource: "renderer", withExtension: "html", subdirectory: "Web")
             ?? Bundle.main.url(forResource: "renderer", withExtension: "html") {
             vue.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent())
@@ -464,14 +477,36 @@ private struct CarteWebView: UIViewRepresentable {
         return vue
     }
 
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.surMarqueur = surMarqueur
+        guard context.coordinator.cfg != cfg else { return }
+        context.coordinator.cfg = cfg
+        if context.coordinator.chargee { context.coordinator.dessiner(uiView) }
+    }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
-        let cfg: String
+    static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: "wikiTapped")
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var cfg: String
+        var chargee = false
+        var surMarqueur: ((String) -> Void)?
         init(cfg: String) { self.cfg = cfg }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            chargee = true
+            dessiner(webView)
+        }
+
+        func dessiner(_ webView: WKWebView) {
             let sur = cfg.filter { $0.isLetter || $0.isNumber || "+/=".contains($0) }
             webView.evaluateJavaScript("window.OKIA && window.OKIA.carteSeule('\(sur)')")
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard let corps = message.body as? [String: Any], let cible = corps["target"] as? String else { return }
+            surMarqueur?(cible)
         }
     }
 }

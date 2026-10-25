@@ -395,8 +395,7 @@ struct ReaderView: View {
             default: break
             }
             // OKIA_WIKIDATA pose le choix sur Wikidata sans passer par la question (oui, non,
-            // « demander » pour la revoir, « vider » pour accepter et oublier le cache) ;
-            // OKIA_ANALYTIC=entites ouvre les entités au lancement.
+            // « demander » pour la revoir, « vider » pour accepter et oublier le cache).
             switch ProcessInfo.processInfo.environment["OKIA_WIKIDATA"] {
             case "oui":      UserDefaults.standard.set(ConsentementWikidata.accepte.rawValue, forKey: ConsentementWikidata.cle)
             case "non":      UserDefaults.standard.set(ConsentementWikidata.refuse.rawValue, forKey: ConsentementWikidata.cle)
@@ -406,7 +405,10 @@ struct ReaderView: View {
                 CacheEntites.partage.vider()
             default: break
             }
-            if ProcessInfo.processInfo.environment["OKIA_ANALYTIC"] == "entites" {
+            // OKIA_ANALYTIC=entites|galerie|carte ouvre les entités dans cet affichage (« entites » :
+            // celui qui était retenu).
+            if let vue = ProcessInfo.processInfo.environment["OKIA_ANALYTIC"] {
+                if let v = EntitesView.Vue(rawValue: vue) { UserDefaults.standard.set(v.rawValue, forKey: "okia.analytic.vue") }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) { ouvrir(.entites) }
             }
         }

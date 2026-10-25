@@ -97,17 +97,6 @@ final class CacheEntites {
 struct ResolveurWikidata: Sendable {
     let service = WikimediaService(client: URLSessionWikimediaClient())
 
-    /// Un article devant le nom (« la CIA », « l'ONU ») fait échouer la recherche : Wikidata connaît
-    /// « CIA ». On ne le retire que pour chercher ; le nom affiché reste celui du document.
-    static func sansArticle(_ nom: String) -> String {
-        // Un article EN MINUSCULES suivi d'une espace, ou l'élision « l' » : sans l'espace exigée,
-        // « Le » de « Leroy Merlin » passait pour un article (essai du 25/10/2026) ; avec la
-        // majuscule, « Le Monde » serait devenu « Monde ». Un titre porte son article en capitale.
-        let motif = #"^(?:(?:la|le|les|the|der|die|das|el|los|las|il|lo|gli)\s+|l['’]\s*)(?=\p{Lu})"#
-        let r = nom.replacingOccurrences(of: motif, with: "", options: .regularExpression)
-        return r.isEmpty ? nom : r
-    }
-
     /// Une description qui n'en est pas une : le résumé Wikipédia rend parfois une adresse.
     static func descriptionLisible(_ d: String?) -> String? {
         guard let d = d?.trimmingCharacters(in: .whitespacesAndNewlines), !d.isEmpty,
@@ -130,7 +119,7 @@ struct ResolveurWikidata: Sendable {
     /// 25/10/2026. Pour une détection, le type de Wikidata corrige au contraire celui de `NLTagger`.
     func resoudre(_ nomDuDocument: String, type: TypeEntite, typeFiable: Bool = false,
                   langue: String) async throws -> ResolutionEntite {
-        let nom = Self.sansArticle(nomDuDocument)
+        let nom = EntiteDocument.sansArticle(nomDuDocument)
         let client = service.client
         let candidats = try await client.rechercher(nom, langue: langue)
         var choix: WikidataCandidat?
@@ -208,6 +197,29 @@ final class AnalyseEntites: ObservableObject {
             let l = entites.filter { $0.type == t }
             return l.isEmpty ? nil : (t, l)
         }
+    }
+
+    /// Les entités situées, pour la carte.
+    var situees: [EntiteDocument] { entites.filter(\.aDesCoordonnees) }
+
+    /// L'entité qu'un marqueur de la carte désigne (son lien `[[nom]]`).
+    func entite(nommee nom: String) -> EntiteDocument? {
+        let cle = EntiteDocument.cle(nom)
+        return entites.first { $0.id == cle }
+    }
+
+    /// La configuration d'une carte, au format que `render.js` lit (`parseLeafletBlock`), en base64 :
+    /// un marqueur par entité située, son nom en lien pour qu'un toucher ouvre sa fiche. Sans centre
+    /// ni zoom, la carte s'ajuste aux marqueurs.
+    static func configurationCarte(_ entites: [EntiteDocument]) -> String {
+        let marqueurs: [[String: Any]] = entites.compactMap { e in
+            guard let lat = e.latitude, let lon = e.longitude else { return nil }
+            return ["lat": lat, "lng": lon, "label": e.nom, "link": e.nom]
+        }
+        let cfg: [String: Any] = ["markers": marqueurs, "lat": NSNull(), "lng": NSNull(), "zoom": NSNull(),
+                                  "minZoom": 1, "maxZoom": 18, "height": "420px", "defaultTiles": NSNull()]
+        let data = (try? JSONSerialization.data(withJSONObject: cfg)) ?? Data()
+        return data.base64EncodedString()
     }
 
     var enCours: Bool {

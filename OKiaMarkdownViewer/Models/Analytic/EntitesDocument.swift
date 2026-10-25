@@ -7,7 +7,7 @@ import NaturalLanguage
 // `Fornews/`). La résolution Wikidata, proposée et jamais imposée, vit dans `AnalyseEntites`.
 
 /// Une entité du document, telle que l'option la montre.
-struct EntiteDocument: Identifiable, Equatable, Codable, Sendable {
+struct EntiteDocument: Identifiable, Hashable, Codable, Sendable {
     /// Le nom plié (casse et accents ôtés) : deux mentions du même nom ne font qu'une entité.
     var id: String { EntiteDocument.cle(nom) }
     var nom: String
@@ -33,8 +33,20 @@ struct EntiteDocument: Identifiable, Equatable, Codable, Sendable {
 
     var aDesCoordonnees: Bool { latitude != nil && longitude != nil }
 
+    /// Un article devant le nom (« la CIA », « l'ONU ») fait échouer la recherche Wikidata, qui
+    /// connaît « CIA », et sépare deux noms d'une même chose : un rapport fornews rangeait « l'ONU »
+    /// parmi les organisations et « Onu » parmi les lieux. Le nom affiché reste celui du document.
+    static func sansArticle(_ nom: String) -> String {
+        // Un article EN MINUSCULES suivi d'une espace, ou l'élision « l' » : sans l'espace exigée,
+        // « Le » de « Leroy Merlin » passait pour un article (essai du 25/10/2026) ; avec la
+        // majuscule, « Le Monde » serait devenu « Monde ». Un titre porte son article en capitale.
+        let motif = #"^(?:(?:la|le|les|the|der|die|das|el|los|las|il|lo|gli)\s+|l['’]\s*)(?=\p{Lu})"#
+        let r = nom.replacingOccurrences(of: motif, with: "", options: .regularExpression)
+        return r.isEmpty ? nom : r
+    }
+
     static func cle(_ nom: String) -> String {
-        nom.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
+        sansArticle(nom).folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil)
             .replacingOccurrences(of: "’", with: "'")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }

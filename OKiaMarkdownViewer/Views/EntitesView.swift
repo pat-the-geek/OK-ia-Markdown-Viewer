@@ -1,15 +1,32 @@
 import SwiftUI
 
-/// Option Analytic (1.4) — les entités du document, rangées par genre. Dans la seconde partie quand
-/// l'écran en a la place (Duo déplié, grand écran en paysage, Mac), sinon dans une feuille. Toucher
-/// une entité la cherche dans le document. La galerie et la carte viennent au lot ②.
+/// Option Analytic (1.4) — les entités du document, en liste, en galerie par genre ou sur une carte.
+/// Dans la seconde partie quand l'écran en a la place (Duo déplié, grand écran en paysage, Mac),
+/// sinon dans une feuille. Toucher une entité ouvre sa fiche, d'où l'on va à sa mention dans le
+/// document ; un appui long y va directement.
 struct EntitesView: View {
     let document: MarkdownDocument
     @ObservedObject var analyse: AnalyseEntites
     /// Cherche le nom dans le document qu'on lit.
     var surChoix: (EntiteDocument) -> Void
 
+    /// Les trois façons de voir les entités. Le choix est retenu d'un document à l'autre.
+    enum Vue: String, CaseIterable, Identifiable {
+        case liste, galerie, carte
+        var id: String { rawValue }
+        var libelle: String {
+            switch self {
+            case .liste:   return tr("Liste")
+            case .galerie: return tr("Galerie")
+            case .carte:   return tr("Carte")
+            }
+        }
+    }
+
     @AppStorage(ConsentementWikidata.cle) private var consentementBrut = ConsentementWikidata.jamaisDemande.rawValue
+    @AppStorage("okia.analytic.vue") private var vueBrute = Vue.liste.rawValue
+    @State private var fiche: EntiteDocument?
+    @State private var cartePleinEcran: TappedCarte?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fermerPanneau) private var fermerPanneau
     @ObservedObject private var loc = Localization.shared
@@ -19,6 +36,8 @@ struct EntitesView: View {
     private var consentement: ConsentementWikidata {
         ConsentementWikidata(rawValue: consentementBrut) ?? .jamaisDemande
     }
+
+    private var vue: Vue { Vue(rawValue: vueBrute) ?? .liste }
 
     var body: some View {
         NavigationStack {
@@ -31,9 +50,21 @@ struct EntitesView: View {
                     }
                     ToolbarItem(placement: .topBarLeading) { menuWikidata }
                 }
+                .navigationDestination(item: $fiche) { e in
+                    // La fiche suit l'analyse : une photo qui arrive de Wikidata s'y affiche.
+                    FicheEntiteView(entite: analyse.entite(nommee: e.nom) ?? e,
+                                    voirDansLeDocument: { voirDansLeDocument($0) })
+                }
         }
         .task(id: document.id) { analyse.analyser(document, wikidata: consentement) }
         .onChange(of: consentementBrut) { _, _ in analyse.analyser(document, wikidata: consentement) }
+        .fullScreenCover(item: $cartePleinEcran) { carte in CarteZoomView(carte: carte) }
+    }
+
+    /// Fermer la feuille (pas la seconde partie, qui reste à côté du document), puis chercher.
+    private func voirDansLeDocument(_ e: EntiteDocument) {
+        surChoix(e)
+        if fermerPanneau == nil { dismiss() }
     }
 
     @ViewBuilder private var contenu: some View {
@@ -47,26 +78,42 @@ struct EntitesView: View {
             ContentUnavailableView(tr("Aucune entité"), systemImage: "person.2",
                                    description: Text(tr("Ce document ne nomme ni personne, ni organisation, ni lieu.")))
         } else {
-            List {
-                if consentement == .jamaisDemande { Section { carteConsentement } }
-                Section { bandeauEtat }
-                ForEach(analyse.parType, id: \.type) { groupe in
-                    Section {
-                        ForEach(groupe.entites) { e in
-                            Button {
-                                surChoix(e)
-                                if fermerPanneau == nil { dismiss() }
-                            } label: { ligne(e) }
-                            .buttonStyle(.plain)
-                        }
-                    } header: {
-                        Label(titre(groupe), systemImage: groupe.type.symbole)
-                            .foregroundStyle(groupe.type.couleur)
-                    }
+            VStack(spacing: 0) {
+                Picker(tr("Affichage"), selection: $vueBrute) {
+                    ForEach(Vue.allCases) { v in Text(v.libelle).tag(v.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                switch vue {
+                case .liste:   liste
+                case .galerie: galerie
+                case .carte:   carte
                 }
             }
-            .listStyle(.insetGrouped)
         }
+    }
+
+    // MARK: Liste
+
+    private var liste: some View {
+        List {
+            if consentement == .jamaisDemande { Section { carteConsentement } }
+            Section { bandeauEtat }
+            ForEach(analyse.parType, id: \.type) { groupe in
+                Section {
+                    ForEach(groupe.entites) { e in
+                        Button { fiche = e } label: { ligne(e) }
+                            .buttonStyle(.plain)
+                            .contextMenu { menuEntite(e) }
+                    }
+                } header: {
+                    Label(titre(groupe), systemImage: groupe.type.symbole)
+                        .foregroundStyle(groupe.type.couleur)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
     }
 
     /// Le titre d'une section : le genre du rapport fornews quand il le donne, sinon celui de fornews.
@@ -74,9 +121,16 @@ struct EntitesView: View {
         "\(groupe.entites.first(where: { $0.genre != nil })?.genre ?? tr(groupe.type.libelle)) · \(groupe.entites.count)"
     }
 
+    @ViewBuilder private func menuEntite(_ e: EntiteDocument) -> some View {
+        Button { voirDansLeDocument(e) } label: {
+            Label(tr("Voir dans le document"), systemImage: "text.magnifyingglass")
+        }
+        Button { fiche = e } label: { Label(tr("Fiche"), systemImage: "info.circle") }
+    }
+
     private func ligne(_ e: EntiteDocument) -> some View {
         HStack(spacing: 12) {
-            vignette(e)
+            VignetteEntite(entite: e, taille: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text(e.nom).font(.body.weight(.semibold))
                 if let d = e.description, !d.isEmpty {
@@ -88,31 +142,77 @@ struct EntitesView: View {
                 Image(systemName: "mappin").font(.caption).foregroundStyle(.secondary)
                     .accessibilityLabel(tr("Situé sur la carte"))
             }
-            if e.mentions > 1 {
-                Text("\(e.mentions)")
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .padding(.horizontal, 7).padding(.vertical, 2)
-                    .background(Capsule().fill(Color.secondary.opacity(0.15)))
-                    .accessibilityLabel(tr("%d mentions", e.mentions))
-            }
+            if e.mentions > 1 { PastilleMentions(n: e.mentions) }
         }
         .contentShape(Rectangle())
     }
 
-    @ViewBuilder private func vignette(_ e: EntiteDocument) -> some View {
-        let symbole = Image(systemName: e.type.symbole)
-            .font(.system(size: 17))
-            .foregroundStyle(e.type.couleur)
-            .frame(width: 40, height: 40)
-            .background(Circle().fill(e.type.couleur.opacity(0.14)))
-        if let s = e.image, let url = URL(string: s) {
-            AsyncImage(url: url) { phase in
-                if let image = phase.image {
-                    image.resizable().scaledToFill().frame(width: 40, height: 40).clipShape(Circle())
-                } else { symbole }
+    // MARK: Galerie
+
+    /// Alignées en haut : une carte à une ligne de description se centrait à côté d'une carte à deux.
+    private let colonnes = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 14, alignment: .top)]
+
+    private var galerie: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                if consentement == .jamaisDemande { carteConsentement.modifier(Encadre()) }
+                bandeauEtat.padding(.horizontal, 4)
+                ForEach(analyse.parType, id: \.type) { groupe in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label(titre(groupe), systemImage: groupe.type.symbole)
+                            .font(.headline)
+                            .foregroundStyle(groupe.type.couleur)
+                        LazyVGrid(columns: colonnes, alignment: .leading, spacing: 14) {
+                            ForEach(groupe.entites) { e in
+                                Button { fiche = e } label: { CarteGalerie(entite: e) }
+                                    .buttonStyle(.plain)
+                                    .contextMenu { menuEntite(e) }
+                            }
+                        }
+                    }
+                }
             }
+            .padding(16)
+        }
+    }
+
+    // MARK: Carte
+
+    /// La ligne des sources de la carte (Leaflet, OpenFreeMap, OpenStreetMap), en bas : les
+    /// boutons posés dessus la masquaient, et elle doit rester lisible.
+    static let margeSources: CGFloat = 20
+
+    @ViewBuilder private var carte: some View {
+        let situees = analyse.situees
+        if situees.isEmpty {
+            ContentUnavailableView(tr("Aucun lieu situé"), systemImage: "map",
+                                   description: Text(consentement == .accepte
+                                       ? tr("Ni le document ni Wikidata ne donnent de position à ses entités.")
+                                       : tr("Le document ne donne la position d’aucune de ses entités. Wikidata peut en trouver, si vous l’acceptez.")))
         } else {
-            symbole
+            let cfg = AnalyseEntites.configurationCarte(situees)
+            CarteWebView(cfg: cfg, surMarqueur: { nom in fiche = analyse.entite(nommee: nom) },
+                         sousBoutonFermer: false)
+                .overlay(alignment: .bottomLeading) {
+                    Text(tr("%d lieux sur la carte", situees.count))
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .glassEffect(.regular, in: .capsule)
+                        .padding(12)
+                        .padding(.bottom, Self.margeSources)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    Button { cartePleinEcran = TappedCarte(cfg: cfg) } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 17, weight: .semibold))
+                            .padding(12)
+                            .glassEffect(.regular.interactive(), in: .circle)
+                    }
+                    .tint(orange)
+                    .padding(12)
+                    .padding(.bottom, Self.margeSources)
+                    .accessibilityLabel(tr("Carte en plein écran"))
+                }
         }
     }
 
@@ -176,5 +276,81 @@ struct EntitesView: View {
         }
         .tint(orange)
         .accessibilityLabel(tr("Options des entités"))
+    }
+}
+
+// MARK: - Pièces partagées par la liste, la galerie et la fiche
+
+/// La photo d'une entité quand Wikidata en a une, sinon le symbole de son genre, dans sa couleur.
+struct VignetteEntite: View {
+    let entite: EntiteDocument
+    var taille: CGFloat
+    var rond = true
+
+    var body: some View {
+        let forme = rond ? AnyShape(Circle()) : AnyShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        Group {
+            if let s = entite.image, let url = URL(string: s) {
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image { image.resizable().scaledToFill() } else { symbole }
+                }
+            } else {
+                symbole
+            }
+        }
+        .frame(width: rond ? taille : nil, height: taille)
+        .frame(maxWidth: rond ? nil : .infinity)
+        .clipShape(forme)
+    }
+
+    private var symbole: some View {
+        ZStack {
+            entite.type.couleur.opacity(0.14)
+            Image(systemName: entite.type.symbole)
+                .font(.system(size: taille * 0.42))
+                .foregroundStyle(entite.type.couleur)
+        }
+    }
+}
+
+/// Une carte de la galerie : la photo, le nom, une ligne de description.
+private struct CarteGalerie: View {
+    let entite: EntiteDocument
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            VignetteEntite(entite: entite, taille: 120, rond: false)
+                .overlay(alignment: .topTrailing) {
+                    if entite.mentions > 1 { PastilleMentions(n: entite.mentions).padding(6) }
+                }
+            Text(entite.nom)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+            if let d = entite.description, !d.isEmpty {
+                Text(d).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            }
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+struct PastilleMentions: View {
+    let n: Int
+    var body: some View {
+        Text("\(n)")
+            .font(.caption.monospacedDigit().weight(.semibold))
+            .padding(.horizontal, 7).padding(.vertical, 2)
+            .background(Capsule().fill(.regularMaterial))
+            .accessibilityLabel(tr("%d mentions", n))
+    }
+}
+
+/// Le cadre d'une carte posée hors d'une liste (la question Wikidata, dans la galerie).
+private struct Encadre: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(.secondarySystemGroupedBackground)))
     }
 }

@@ -92,16 +92,28 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
 2. **Route `fornews://entite?qid=Q…`** pour ouvrir une entité par son QID.
 3. Ne plus exporter d'entité réduite à un nombre (`[[7]]`) dans la section `## Entités`.
 
-## ③ Galerie et carte
+## ③ Galerie et carte — deuxième lot, 25/10/2026
 
-- [ ] Galerie d'entités par genre (personnes, organisations, lieux, produits…).
-- [ ] Carte des entités localisées, **plein écran sur demande** (reprendre la pile carte du lecteur :
-      Leaflet + MapLibre, OpenFreeMap).
-- [ ] Dans **la partie de droite** quand l'écran le permet (Duo déplié, grand écran en paysage,
-      Mac) : un nouveau `PanneauDuo.entites` ; ailleurs, une feuille.
-- [ ] **Ouvrir une entité dans fornews par son QID** — ⚠️ fornews n'ouvre aujourd'hui qu'un
-      identifiant interne (`fornews://entite/<UUID>`) : route `fornews://entite?qid=Q…` à ajouter
-      côté fornews.
+- [x] Trois affichages dans le panneau des entités, au choix retenu (`okia.analytic.vue`) : **Liste**,
+      **Galerie** par genre (photo, nom, description, mentions), **Carte**.
+- [x] **Fiche d'une entité** (`FicheEntiteView`) : photo, genre, mentions, description, mini-carte,
+      « Voir dans le document », lien vers sa fiche Wikidata, provenance (« Nommée par le rapport
+      fornews » ou « Trouvée dans le texte », « Photo : Wikimedia Commons »). Toucher une entité, une
+      carte de la galerie ou un marqueur ouvre sa fiche ; un appui long mène droit au document.
+- [x] Carte des entités situées, **plein écran sur demande** : la pile du lecteur (Leaflet +
+      MapLibre, OpenFreeMap) par `CarteWebView` — sortie de `DiagramZoomView` pour servir aux deux,
+      redessinée quand Wikidata situe un lieu de plus, marqueur → fiche (`wikiTapped`).
+- [x] Dans **la partie de droite** quand l'écran le permet (`PanneauDuo.entites`, lot ①) ; ailleurs,
+      une feuille.
+- [x] Une entité ne compte plus son article : « l'ONU » (organisations) et « Onu » (lieux, rattaché
+      par Wikidata à un village de Sulawesi) ne font qu'une, sous le premier genre lu.
+- [ ] **Ouvrir une entité dans fornews par son QID** — attend la route `fornews://entite?qid=Q…`
+      (« Demandes à fornews »).
+
+**Vérifié au simulateur le 25/10** : iPhone (feuille, galerie, carte, marqueur → fiche), iPad 13″ en
+paysage (galerie à trois colonnes, carte et fiche dans la partie de droite, plein écran). Hook
+`OKIA_ANALYTIC=liste|galerie|carte`. **Pas vu** : Mac (verrouillé), Duo, appareil réel.
+Limite relevée : « Washington » d'un rapport épinglé sur l'État de Washington, pas sur la capitale.
 
 ## ④ Import Word, PDF et PowerPoint — Mac seulement
 
