@@ -218,26 +218,48 @@ Limite relevée : « Washington » d'un rapport épinglé sur l'État de Washing
 
 ## ④ Import Word, PDF et PowerPoint — Mac seulement
 
-- [ ] Extraction du texte et des images : PDFKit pour le PDF ; pour le `.docx`, éprouver d'abord ce
-      que Catalyst sait lire (AppKit le fait, UIKit pas d'office) — sinon extraction du zip XML.
-- [ ] **Générer un rapport au format md Viewer**, comme fornews génère un rapport d'article :
-      reprendre au maximum son code (`GenerateurRapportAnalyste`).
-- [ ] **Compte à rebours** pendant l'import, inspiré de `CompteReboursDemandeView` de fornews, qui
-      montre les éléments détectés au fur et à mesure.
-- [ ] **PowerPoint → présentation md Viewer** (ajouté par Patrick le 08/10) : lire le `.pptx` (zip
-      de XML, le chemin inverse d'`OOXMLExport`) — diapositives dans l'ordre de `presentation.xml`,
-      titre en `##`, puces, tableaux, images de `ppt/media/`, notes de l'orateur ; une diapositive
-      par bloc séparé par `---`. Les transitions connues reviennent en transition du diaporama.
-- [ ] **Commentaires des documents** (idée de Patrick, 25/10) : par défaut, les commentaires de
-      relecture sont repris — Word : une note `[^c…]` à l'endroit commenté, avec l'auteur (md Viewer
-      les montre dans sa section Notes) ; PowerPoint : avec les notes de l'orateur de la
-      diapositive. **En option, demandée à l'import** (« Utiliser les commentaires comme
-      consignes ») : Apple Intelligence, sur l'appareil, rédige ce que chaque commentaire demande ;
-      le texte rédigé est marqué comme tel, avec le commentaire d'origine, et le texte de l'auteur
-      n'est jamais remplacé.
-- [ ] **Images** : `data:image/…;base64` pour quelques petites images (déjà lu par md Viewer) ;
-      au-delà, le format **TextBundle / TextPack** (`.md` + `assets/`, zippé en `.textpack`) —
-      md Viewer apprend à l'ouvrir.
+Fait le 25/10 (`Models/Import/`, `Views/ImportView.swift`) : **Fichier ▸ Importer Word, PDF ou
+PowerPoint… (⇧⌘I)**, réservé à l'option (sans elle, la vitrine s'ouvre) ; un fichier déposé sur la
+fenêtre ou confié à md Viewer (« Ouvrir avec », `open -a`) s'importe aussi. Le Markdown est écrit dans
+« Importés » (documents de l'app) puis ouvert : il entre dans les récents. Aucune bibliothèque : le
+zip est lu par `LecteurZip` (répertoire central + `COMPRESSION_ZLIB`), le XML par `NoeudXML`.
+
+- [x] **Word** (`ImportWord`) : titres par style ou niveau de plan (« Titre » → `#`, les autres
+      descendent d'un cran), listes à puces et numérotées d'après `numbering.xml`, gras, italique,
+      barré, liens (`w:hyperlink` et champs `HYPERLINK`), tableaux, images, notes de bas de page et
+      de fin, révisions suivies lues acceptées. **Sans styles** (textutil, Pages, modèles faits à la
+      main) : titres reconnus à la taille de police, puces et numéros tapés repris en listes.
+- [x] **PDF** (`ImportPDF`, PDFKit) : titres d'après les signets, sinon la taille de police ;
+      paragraphes recousus d'après l'écart entre les lignes, mots coupés ressoudés ; en-têtes, pieds
+      et numéros de page écartés ; puces. Les images d'un PDF ne sont pas reprises. Un PDF protégé
+      ou numérisé (sans texte) le dit.
+- [x] **PowerPoint → présentation** (`ImportPowerPoint`) : diapositives dans l'ordre de
+      `presentation.xml`, titres, puces avec niveau, tableaux, images, notes de l'orateur et
+      commentaires dans un commentaire HTML sous la diapositive. La transition la plus employée va
+      dans l'en-tête (`transition:`), et **le diaporama la reprend** pour ce document (le choix de
+      l'utilisateur reprend la main s'il en change).
+- [x] **Compte à rebours** (`ImportView`) : l'étape, le compte, le dernier titre repéré, le temps
+      restant estimé, Annuler.
+- [x] **Images** : chacune écrite une fois en référence (`![…][img3]`, définition en fin de
+      document ; le diaporama reporte les définitions sur chaque diapositive), réduite selon la place
+      qu'elle occupe (un logo de coin n'a pas besoin de 1600 px), JPEG à 0,72, PNG gardé seulement
+      s'il a de la vraie transparence. PowerPoint réel de 70 diapositives et 41 images : 11 → 7 Mo,
+      en 0,7 s. TextPack pas nécessaire à ce stade.
+- [x] **Commentaires** repris par défaut : Word en notes `[^c1]` « 💬 Auteur : texte » à l'endroit
+      commenté ; PowerPoint avec les notes de l'orateur.
+- [ ] **Option « Utiliser les commentaires comme consignes »** (idée de Patrick, 25/10), demandée à
+      l'import : Apple Intelligence, sur l'appareil, rédige ce que chaque commentaire demande ; le
+      texte rédigé est marqué comme tel, avec le commentaire d'origine, et le texte de l'auteur n'est
+      jamais remplacé.
+- [ ] **Rapport au format md Viewer** à la manière de fornews (`GenerateurRapportAnalyste`) : pas
+      fait — l'import rend le document fidèlement ; un rapport d'analyse en serait une étape de plus.
+
+**Vérifié sur le Mac le 25/10** (build Debug, `open -a` avec `OKIA_ACHAT=achete`) : le PowerPoint
+réel (« Anatomie d'un SI »), un Word d'essai complet (styles, listes, tableau, lien en champ, note,
+commentaire, révision, image), le PDF public du briefing fornews. Bancs : Word sans styles (textutil).
+**Pas vérifié** : la commande ⇧⌘I et son sélecteur, la feuille d'avancement (l'import est trop rapide
+pour la voir), la vitrine sans achat, le diaporama d'un PowerPoint importé — l'app ne se pilote pas
+d'ici ; à essayer sur B91.
 
 ## ④ bis Annotations à l'Apple Pencil — quatrième lot, 25/10/2026
 

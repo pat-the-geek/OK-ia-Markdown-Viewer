@@ -4,6 +4,8 @@ import AppIntents
 extension Notification.Name {
     /// Posted by the macOS File ▸ Open menu command; observed by RootView.
     static let okiaOpenFile = Notification.Name("okia.openFile")
+    /// Fichier ▸ Importer (Mac, option Analytic) : Word, PDF, PowerPoint.
+    static let okiaImporter = Notification.Name("okia.importer")
 }
 
 /// Holds the currently displayed document and any load error.
@@ -13,6 +15,8 @@ final class DocumentStore: ObservableObject {
     @Published var errorMessage: String?
     /// Set by an App Intent to ask the reader to present the Apple Intelligence summary.
     @Published var summaryRequested = false
+    /// L'import d'un document Word, PDF ou PowerPoint en cours (Mac, option Analytic).
+    @Published var importEnCours: ImportEnCours?
 
     let recents = RecentFilesStore()
     let vault = VaultStore()
@@ -31,6 +35,15 @@ final class DocumentStore: ObservableObject {
     func handleIncoming(_ url: URL) {
         if url.scheme?.lowercased() == "mdviewer" {
             handleScheme(url)
+        } else if url.isFileURL, ImportEnCours.estImportable(url) {
+            // Un Word, un PDF, un PowerPoint confié à md Viewer (« Ouvrir avec », dépôt sur l'icône)
+            // s'importe — sur Mac, avec l'option Analytic.
+            #if targetEnvironment(macCatalyst)
+            if AchatAnalytic.partage.acces { importer(url: url) }
+            else { errorMessage = tr("L’import de Word, PDF et PowerPoint fait partie de l’option Analytic.") }
+            #else
+            errorMessage = tr("L’import de Word, PDF et PowerPoint est réservé à md Viewer sur Mac.")
+            #endif
         } else {
             open(url: url)
         }
@@ -125,6 +138,26 @@ final class DocumentStore: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Option Analytic (Mac) : convertit un document Word, PDF ou PowerPoint en Markdown, l'écrit
+    /// dans le dossier « Importés » et l'ouvre.
+    func importer(url: URL) {
+        let i = ImportEnCours(nomSource: url.lastPathComponent)
+        importEnCours = i
+        i.lancer(url) { [weak self] issue in
+            guard let self, self.importEnCours === i else { return }
+            self.importEnCours = nil
+            switch issue {
+            case .success(let md): self.open(url: md)
+            case .failure(let e):  self.errorMessage = e.localizedDescription
+            }
+        }
+    }
+
+    func annulerImport() {
+        importEnCours?.annuler()
+        importEnCours = nil
     }
 
     /// Reopens a previously stored recent entry (local file or remote report).
@@ -245,6 +278,12 @@ struct OKiaMarkdownViewerApp: App {
                     NotificationCenter.default.post(name: .okiaOpenFile, object: nil)
                 }
                 .keyboardShortcut("o", modifiers: .command)
+                #if targetEnvironment(macCatalyst)
+                Button(tr("Importer Word, PDF ou PowerPoint…")) {
+                    NotificationCenter.default.post(name: .okiaImporter, object: nil)
+                }
+                .keyboardShortcut("i", modifiers: [.command, .shift])
+                #endif
             }
         }
     }

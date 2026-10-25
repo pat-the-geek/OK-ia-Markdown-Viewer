@@ -8,6 +8,11 @@ struct RootView: View {
     /// SwiftUI does not reliably support two `.fileImporter`s on one view, so we
     /// drive both the file-open and the vault-folder pickers through one importer.
     @State private var importFolder = false
+    /// Le même sélecteur, pour un document Word, PDF ou PowerPoint à importer (Mac, Analytic).
+    @State private var importOffice = false
+    /// L'import demandé sans l'option : on la présente.
+    @State private var vitrineImport = false
+    @ObservedObject private var achat = AchatAnalytic.partage
 
     /// UTTypes we accept in the in-app importer.
     static let importedTypes: [UTType] = {
@@ -22,16 +27,16 @@ struct RootView: View {
         Group {
             if let doc = store.document {
                 ReaderView(document: doc,
-                           onOpen: { importFolder = false; showImporter = true },
+                           onOpen: { importFolder = false; importOffice = false; showImporter = true },
                            onHome: { store.document = nil })
             } else {
                 EmptyStateView(
                     recentsStore: store.recents,
                     vault: store.vault,
-                    onOpen: { importFolder = false; showImporter = true },
+                    onOpen: { importFolder = false; importOffice = false; showImporter = true },
                     onSample: { store.openSample() },
                     onRecent: { store.openRecent($0) },
-                    onPickVault: { importFolder = true; showImporter = true },
+                    onPickVault: { importFolder = true; importOffice = false; showImporter = true },
                     onOpenVault: { store.openVaultReport($0) }
                 )
             }
@@ -39,13 +44,15 @@ struct RootView: View {
         // One importer for both modes — `importFolder` selects file vs. vault folder.
         .fileImporter(
             isPresented: $showImporter,
-            allowedContentTypes: importFolder ? [.folder] : RootView.importedTypes,
+            allowedContentTypes: importFolder ? [.folder] : importOffice ? ImportEnCours.types : RootView.importedTypes,
             allowsMultipleSelection: false
         ) { result in
             switch result {
             case .success(let urls):
                 guard let url = urls.first else { return }
-                if importFolder { store.vault.setFolder(url) } else { store.open(url: url) }
+                if importFolder { store.vault.setFolder(url) }
+                else if importOffice { store.importer(url: url) }
+                else { store.open(url: url) }
             case .failure(let error):
                 store.errorMessage = error.localizedDescription
             }
@@ -61,7 +68,23 @@ struct RootView: View {
         // macOS: File ▸ Open (⌘O) menu command.
         .onReceive(NotificationCenter.default.publisher(for: .okiaOpenFile)) { _ in
             importFolder = false
+            importOffice = false
             showImporter = true
+        }
+        // macOS : Fichier ▸ Importer Word, PDF ou PowerPoint (⇧⌘I), réservé à l'option Analytic.
+        .onReceive(NotificationCenter.default.publisher(for: .okiaImporter)) { _ in
+            guard achat.acces else { vitrineImport = true; return }
+            importFolder = false
+            importOffice = true
+            showImporter = true
+        }
+        .sheet(item: $store.importEnCours) { i in
+            ImportView(import_: i, annuler: { store.annulerImport() })
+                .interactiveDismissDisabled()
+        }
+        .sheet(isPresented: $vitrineImport) {
+            ScrollView { OptionAnalyticView().padding(24) }
+                .frame(minWidth: 460, minHeight: 520)
         }
         // macOS: auto-open new reports landing in the vault folder.
         .task { store.startVaultWatch() }
@@ -69,6 +92,15 @@ struct RootView: View {
         // Drag a .md from Finder onto the window to open it.
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
+            // Un Word, un PDF, un PowerPoint déposé s'importe — avec l'option, sur Mac.
+            if ImportEnCours.estImportable(url) {
+                #if targetEnvironment(macCatalyst)
+                if achat.acces { store.importer(url: url) } else { vitrineImport = true }
+                return true
+                #else
+                return false
+                #endif
+            }
             store.open(url: url)
             return true
         }

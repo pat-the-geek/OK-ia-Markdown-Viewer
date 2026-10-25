@@ -81,6 +81,15 @@
     return m ? md.slice(m[0].length) : md;
   }
 
+  // La transition que le document demande dans son en-tête (« transition: push ») : celle d'un
+  // PowerPoint importé (1.4). Elle vaut pour ce document seulement ; le choix de l'utilisateur,
+  // retenu d'un document à l'autre, reprend la main dès qu'il en change.
+  function transitionDuDocument(md) {
+    var m = md.match(/^﻿?---\r?\n([\s\S]*?)\r?\n---/);
+    var t = m && m[1].match(/^transition:[ \t]*["']?([a-z]+)["']?[ \t]*$/m);
+    return t && SPECS[t[1]] ? t[1] : null;
+  }
+
   // Split on lines that are exactly "---" (or more), but never inside a fenced
   // code block (``` or ~~~) — those dashes belong to the content.
   function splitSlides(md) {
@@ -99,7 +108,27 @@
       cur.push(line);
     }
     slides.push(cur.join('\n'));
-    return slides.map(function (s) { return s.trim(); }).filter(function (s) { return s.length; });
+    return partagerReferences(slides.map(function (s) { return s.trim(); }).filter(function (s) { return s.length; }));
+  }
+
+  // Les définitions de référence (« [img3]: data:image/… ») valent pour tout le document : un
+  // PowerPoint importé (1.4) n'écrit qu'une fois une image qui revient sur onze diapositives. Le
+  // découpage les laissait à la dernière diapositive seulement : chacune reçoit celles qu'elle cite.
+  var DEFINITION = /^ {0,3}\[([^\]\n]+)\]:[ \t]*\S.*$/;
+  function partagerReferences(slides) {
+    var defs = {}, nettoyees = slides.map(function (s) {
+      return s.split('\n').filter(function (l) {
+        var m = l.match(DEFINITION);
+        if (m) { defs[m[1].toLowerCase()] = l; return false; }
+        return true;
+      }).join('\n').trim();
+    });
+    var cles = Object.keys(defs);
+    if (!cles.length) return slides;
+    return nettoyees.map(function (s) {
+      var citees = cles.filter(function (k) { return s.toLowerCase().indexOf('][' + k + ']') !== -1; });
+      return citees.length ? s + '\n\n' + citees.map(function (k) { return defs[k]; }).join('\n') : s;
+    }).filter(function (s) { return s.length; });
   }
 
   /* ---- state -------------------------------------------------------------- */
@@ -943,6 +972,8 @@
       var savedTheme = localStorage.getItem('okia.theme');
       if (savedTheme && THEMES.some(function (t) { return t.key === savedTheme; })) theme = savedTheme;
     } catch (e) {}
+    var demandee = transitionDuDocument(md || '');
+    if (demandee) transition = demandee;
     buildMenu();
     setTheme(theme);   // apply the theme class to <body>
 
