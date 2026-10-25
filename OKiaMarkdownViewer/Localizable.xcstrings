@@ -8321,6 +8321,41 @@
           }
         }
       }
+    },
+    "Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highlight, underline and annotate with the mouse or trackpad: your notes stay attached to the text."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markieren, unterstreichen und mit Maus oder Trackpad anmerken: Ihre Notizen bleiben am Text."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resalte, subraye y anote con el ratón o el trackpad: sus notas quedan unidas al texto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evidenziate, sottolineate e annotate con mouse o trackpad: le note restano legate al testo."
+          }
+        }
+      }
     }
   }
 }

@@ -18,7 +18,9 @@ struct OptionAnalyticView: View {
         [("person.2", tr("Les personnes, organisations, lieux et produits du document, rassemblés par genre.")),
          ("square.grid.2x2", tr("Une galerie, et une carte des lieux en plein écran.")),
          ("text.magnifyingglass", tr("De chaque fiche, un geste vous ramène à ses mentions dans le texte.")),
-         ("pencil.tip.crop.circle", tr("Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte.")),
+         ("pencil.tip.crop.circle", AchatAnalytic.surMac
+            ? tr("Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte.")
+            : tr("Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte.")),
          ("newspaper", tr("Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé."))]
     }
 

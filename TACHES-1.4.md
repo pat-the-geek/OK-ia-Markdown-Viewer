@@ -44,9 +44,9 @@ Wikidata ne comble que ce qui manque.
       **READY_TO_SUBMIT**) et « Analytic pour Mac » `ch.okia.markdownviewer.analytic.mac`
       (6826757297, CHF 5.00 → 3.24 net). ⚠️ **Sans tiret** : App Store Connect refuse `ok-ia` dans
       un identifiant de produit. Noms et descriptions en cinq langues, note d'examen en anglais.
-- [ ] **Capture d'examen du produit Mac** : à prendre sur le Mac (`OKIA_ACHAT=vitrine`) — il reste
-      MISSING_METADATA d'ici là, donc **introuvable dans le bac à sable** : un build Mac avec ce lot
-      fermerait les entités aux testeurs Mac. Celle de l'iPhone est envoyée
+- [x] **Capture d'examen du produit Mac** envoyée le 25/10 (`store/analytic/revue-achat-mac.png`,
+      fenêtre 2880×1800, briefing anglais, `OKIA_ACHAT=vitrine`) : **les deux produits sont
+      READY_TO_SUBMIT**, servis dans le bac à sable. Celle de l'iPhone est envoyée
       (`store/analytic/revue-achat-iphone.png`, hook `OKIA_ACHAT=vitrine` : bouton actif au prix
       suisse, sans « indisponible »).
 - [ ] Les deux achats intégrés partent en revue **avec la version 1.4** (premiers achats de l'app).
@@ -153,6 +153,12 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
       a désormais sa propre rangée (menu, titre, Fermer) dans la zone sûre ; le bouton des entités de
       la barre referme aussi le panneau ouvert. Vérifié sur iPad en paysage ; **à revoir sur le vrai
       Duo**, comme Fermer / OK du sommaire, du résumé et de la discussion (même placement).
+- [x] **Mac vérifié le 25/10** (build Debug, écran déverrouillé) : panneau à côté du document,
+      détection NLTagger (82 entités sur le rapport Ukraine, 20 personnes sur le briefing anglais),
+      galerie, photos Wikidata, nouvelle rangée « Fermer », écran de l'option à CHF 5.00 avec sa
+      phrase propre au Mac (souris, trackpad). Corrigé en passant : « Le président ukrainien
+      Volodymyr Zelensky » est fondu dans Volodymyr Zelensky (personne précédée d'un titre).
+      **Pas essayé** : les annotations à la souris (accès à l'app refusé, à faire à la main).
 - [ ] **Ouvrir une entité dans fornews par son QID** — attend la route `fornews://entite?qid=Q…`
       (« Demandes à fornews »).
 

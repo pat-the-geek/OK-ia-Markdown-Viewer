@@ -417,6 +417,19 @@ enum DetecteurEntites {
                 resultat[j].mentions = max(resultat[j].mentions, courte.mentions)
             }
         }
+        // Une personne détectée dont le nom FINIT par celui d'une autre personne n'est que ce nom
+        // précédé d'un titre : « Le président ukrainien Volodymyr Zelensky » est Volodymyr Zelensky.
+        for longue in entites where longue.origine == .detection && longue.type == .person && !retirees.contains(longue.id) {
+            let mots = longue.id.split(separator: " ")
+            guard let j = resultat.firstIndex(where: { p in
+                p.type == .person && p.id != longue.id && !retirees.contains(p.id)
+                    && p.id.split(separator: " ").count >= 2
+                    && mots.count > p.id.split(separator: " ").count
+                    && Array(mots.suffix(p.id.split(separator: " ").count)) == p.id.split(separator: " ")
+            }) else { continue }
+            retirees.insert(longue.id)
+            resultat[j].mentions = max(resultat[j].mentions, longue.mentions)
+        }
         // Genre inconnu : un mot seul (« Trump », « Donald ») rejoint le nom de deux ou trois mots
         // qui finit ou commence par lui et revient le plus souvent (« Donald Trump », pas
         // « President Donald Trump »).
