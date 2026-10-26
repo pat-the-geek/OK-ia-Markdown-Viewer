@@ -51,6 +51,8 @@ struct ImportView: View {
             }
         }
         .padding(24)
+        // La session de traduction d'une page web ne s'ouvre que sur une vue affichée : celle-ci.
+        .background { TraducteurPonctuelHote(traducteur: import_.traducteur) }
         .animation(.default, value: import_.enAttente == nil)
         .frame(minWidth: 380, idealWidth: 440)
     }

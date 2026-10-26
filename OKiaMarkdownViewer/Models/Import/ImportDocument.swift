@@ -15,6 +15,8 @@ final class ImportEnCours: ObservableObject, Identifiable {
     /// Apple Intelligence, ce que demandent ses commentaires, et un rapport d'analyse.
     @Published private(set) var enAttente: DocumentImporte?
     private var tache: Task<Void, Never>?
+    /// La traduction d'une page web : la fenêtre d'avancement porte sa session (`TraducteurPonctuelHote`).
+    let traducteur = TraducteurPonctuel()
     private var nom = ""
     private var fini: (@MainActor (Result<Resultat, Error>) -> Void)?
 
@@ -149,7 +151,8 @@ final class ImportEnCours: ObservableObject, Identifiable {
                 guard page.aUnCorps else { throw LecteurPageWeb.Erreur.lecture }
                 let suivi: SuiviImport = { [weak self] a in self?.avancement = a }
                 let (titre, md) = analyser
-                    ? await FichePageWeb.produire(page, langue: Localization.shared.code, wikidata: wikidata, suivi: suivi)
+                    ? await FichePageWeb.produire(page, langue: Localization.shared.code, wikidata: wikidata,
+                                                  traducteur: self?.traducteur, suivi: suivi)
                     : FichePageWeb.texteSeul(page)
                 try Task.checkCancellation()
                 // Le nom du fichier : le titre de la page, sans ce qu'un nom de fichier n'admet pas.

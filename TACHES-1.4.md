@@ -350,6 +350,15 @@ page s'ouvre, puis l'option se présente.
 - [x] **Profils de l'extension** : il manquait un compte Apple dans Xcode (« No Accounts ») ; Patrick
       l'a ajouté le 26/10, Xcode a créé l'identifiant et les profils au build 95 (iOS et Mac, groupe
       d'apps compris).
+- [x] **Le texte traduit dans la langue de l'interface** (Patrick, 26/10 : « le texte doit être traduit
+      dans la langue choisie ») : titre, chapeau et chaque bloc, par le framework Translation sur
+      l'appareil (`TraducteurPonctuel`) — session sans vue quand les deux langues sont installées,
+      sinon par la fenêtre d'avancement, qui laisse le système proposer leur téléchargement ; deux
+      minutes sans session (simulateur), et la fiche garde l'original. La fiche prend alors les
+      mentions de fornews : « Traduit de l'anglais », le titre original, la note de fidélité. Les
+      entités sont détectées sur le texte d'origine ; le résumé et les chiffres, sur le texte traduit.
+      Banc sur le Mac : en→fr, 3 blocs en 2,1 s. **Pas vu dans l'app** (Mac verrouillé, simulateur sans
+      traduction).
 - [ ] Le schéma écrit par le modèle (fornews : `validerDiagrammeIA`) : pas repris, le schéma déterministe
       suffit pour commencer.
 
