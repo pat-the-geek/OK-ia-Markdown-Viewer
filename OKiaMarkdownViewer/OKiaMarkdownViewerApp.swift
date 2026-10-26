@@ -4,7 +4,8 @@ import AppIntents
 extension Notification.Name {
     /// Posted by the macOS File ▸ Open menu command; observed by RootView.
     static let okiaOpenFile = Notification.Name("okia.openFile")
-    /// Fichier ▸ Importer (Mac, option Analytic) : Word, PDF, PowerPoint.
+    /// Importer Word, PDF ou PowerPoint (option Analytic) : Fichier ▸ Importer sur Mac, menu « … »
+    /// et accueil ailleurs.
     static let okiaImporter = Notification.Name("okia.importer")
 }
 
@@ -15,8 +16,10 @@ final class DocumentStore: ObservableObject {
     @Published var errorMessage: String?
     /// Set by an App Intent to ask the reader to present the Apple Intelligence summary.
     @Published var summaryRequested = false
-    /// L'import d'un document Word, PDF ou PowerPoint en cours (Mac, option Analytic).
+    /// L'import d'un document Word, PDF ou PowerPoint en cours (option Analytic).
     @Published var importEnCours: ImportEnCours?
+    /// Un import demandé sans l'option : la vitrine de l'option s'ouvre.
+    @Published var vitrineImport = false
 
     let recents = RecentFilesStore()
     let vault = VaultStore()
@@ -36,14 +39,10 @@ final class DocumentStore: ObservableObject {
         if url.scheme?.lowercased() == "mdviewer" {
             handleScheme(url)
         } else if url.isFileURL, ImportEnCours.estImportable(url) {
-            // Un Word, un PDF, un PowerPoint confié à md Viewer (« Ouvrir avec », dépôt sur l'icône)
-            // s'importe — sur Mac, avec l'option Analytic.
-            #if targetEnvironment(macCatalyst)
-            if AchatAnalytic.partage.acces { importer(url: url) }
-            else { errorMessage = tr("L’import de Word, PDF et PowerPoint fait partie de l’option Analytic.") }
-            #else
-            errorMessage = tr("L’import de Word, PDF et PowerPoint est réservé à md Viewer sur Mac.")
-            #endif
+            // Un Word, un PDF, un PowerPoint confié à md Viewer (« Ouvrir avec », partage, dépôt sur
+            // l'icône) s'importe avec l'option Analytic — sur Mac, iPhone et iPad depuis le 26/10 ;
+            // sans elle, l'option se présente.
+            if AchatAnalytic.partage.acces { importer(url: url) } else { vitrineImport = true }
         } else {
             open(url: url)
         }
@@ -140,7 +139,7 @@ final class DocumentStore: ObservableObject {
         }
     }
 
-    /// Option Analytic (Mac) : convertit un document Word, PDF ou PowerPoint en Markdown, l'écrit
+    /// Option Analytic : convertit un document Word, PDF ou PowerPoint en Markdown, l'écrit
     /// dans le dossier « Importés » et l'ouvre.
     func importer(url: URL) {
         let i = ImportEnCours(nomSource: url.lastPathComponent)

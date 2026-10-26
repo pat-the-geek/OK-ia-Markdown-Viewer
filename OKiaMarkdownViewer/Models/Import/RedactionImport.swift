@@ -2,12 +2,12 @@ import Foundation
 import FoundationModels
 import NaturalLanguage
 
-// Option Analytic (1.4), Mac — ce qu'Apple Intelligence rédige à l'import, quand l'utilisateur le
+// Option Analytic (1.4) — ce qu'Apple Intelligence rédige à l'import, quand l'utilisateur le
 // demande : le texte que demandent les commentaires de relecture, et un rapport d'analyse du
 // document à la manière de fornews.
 //
 // ⛔ Uniquement `SystemLanguageModel.default`, le modèle de l'appareil — jamais Private Cloud
-// Compute (décision de Patrick du 25/10/2026) : le document ne quitte pas le Mac.
+// Compute (décision de Patrick du 25/10/2026) : le document ne quitte pas l'appareil.
 // ⛔ Le texte de l'auteur n'est jamais remplacé : ce qui est rédigé s'ajoute, marqué comme tel.
 
 /// Le modèle de l'appareil, un appel par section, une session jetable à chaque fois — comme le

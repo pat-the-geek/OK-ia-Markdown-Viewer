@@ -89,6 +89,22 @@
 				<string>public.plain-text</string>
 			</array>
 		</dict>
+		<!-- Option Analytic (1.4) : Word, PDF et PowerPoint s'importent en Markdown. Rang
+		     « Alternate » : md Viewer est proposé (Ouvrir avec, partage), jamais imposé. -->
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Office and PDF Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.openxmlformats.wordprocessingml.document</string>
+				<string>org.openxmlformats.presentationml.presentation</string>
+				<string>com.adobe.pdf</string>
+			</array>
+		</dict>
 	</array>
 
 	<!-- Import the Markdown UTI so md/markdown/mdown/mkd/markdn map to us -->

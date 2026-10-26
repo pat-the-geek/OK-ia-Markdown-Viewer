@@ -10421,6 +10421,41 @@
           }
         }
       }
+    },
+    "Sur cet appareil, avec Apple Intelligence : le document ne le quitte pas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sur cet appareil, avec Apple Intelligence : le document ne le quitte pas."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this device, with Apple Intelligence: the document never leaves it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf diesem Gerät, mit Apple Intelligence: Das Dokument verlässt es nicht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En este dispositivo, con Apple Intelligence: el documento no sale de él."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su questo dispositivo, con Apple Intelligence: il documento non lo lascia."
+          }
+        }
+      }
     }
   }
 }

@@ -1133,10 +1133,27 @@ struct ReaderView: View {
         Button { shareMarkdown() } label: { Label(tr("Partager le Markdown (.md)"), systemImage: "number") }
     }
 
+    /// Un toucher ouvre un fichier, comme toujours ; un appui long propose aussi l'import de Word,
+    /// PDF et PowerPoint. Le Mac a sa commande de menu (⇧⌘I).
     private var boutonOuvrir: some View {
+        #if targetEnvironment(macCatalyst)
         Button(action: onOpen) { Image(systemName: "folder") }
             .teinteBarre()
             .accessibilityLabel(tr("Ouvrir un fichier"))
+        #else
+        Menu {
+            Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
+            Button { ImportEnCours.demander() } label: {
+                Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
+            }
+        } label: {
+            Image(systemName: "folder")
+        } primaryAction: {
+            onOpen()
+        }
+        .teinteBarre()
+        .accessibilityLabel(tr("Ouvrir un fichier"))
+        #endif
     }
 
     /// Traduire — le geste ponctuel, à côté du réglage qui, lui, traduit tout seul. Il n'apparaît
@@ -1203,6 +1220,9 @@ struct ReaderView: View {
             Divider()
             Menu { elementsPartage } label: { Label(tr("Partager"), systemImage: "square.and.arrow.up") }
             Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
+            Button { ImportEnCours.demander() } label: {
+                Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
+            }
         } label: {
             Image(systemName: "ellipsis")
         }

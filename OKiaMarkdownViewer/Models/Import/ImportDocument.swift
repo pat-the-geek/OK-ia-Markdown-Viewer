@@ -1,7 +1,7 @@
 import Foundation
 import UniformTypeIdentifiers
 
-/// Option Analytic (1.4), Mac — l'import d'un document Word, PDF ou PowerPoint : le choix du
+/// Option Analytic (1.4) — l'import d'un document Word, PDF ou PowerPoint : le choix du
 /// convertisseur, l'avancement pour le compte à rebours, et le fichier Markdown écrit dans le
 /// dossier « Importés » de l'app, d'où le lecteur l'ouvre comme n'importe quel document (il entre
 /// dans les récents ; on peut le partager ou l'exporter).
@@ -32,6 +32,11 @@ final class ImportEnCours: ObservableObject, Identifiable {
         UTType("org.openxmlformats.wordprocessingml.document") ?? UTType(filenameExtension: "docx") ?? .data,
         UTType("org.openxmlformats.presentationml.presentation") ?? UTType(filenameExtension: "pptx") ?? .data,
     ]
+
+    /// Demande l'import : le sélecteur de fichiers s'ouvre, ou la vitrine sans l'option (RootView).
+    static func demander() {
+        NotificationCenter.default.post(name: .okiaImporter, object: nil)
+    }
 
     static func estImportable(_ url: URL) -> Bool {
         ["pdf", "docx", "pptx"].contains(url.pathExtension.lowercased())

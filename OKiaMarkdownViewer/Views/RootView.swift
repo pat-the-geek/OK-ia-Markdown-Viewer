@@ -8,10 +8,8 @@ struct RootView: View {
     /// SwiftUI does not reliably support two `.fileImporter`s on one view, so we
     /// drive both the file-open and the vault-folder pickers through one importer.
     @State private var importFolder = false
-    /// Le même sélecteur, pour un document Word, PDF ou PowerPoint à importer (Mac, Analytic).
+    /// Le même sélecteur, pour un document Word, PDF ou PowerPoint à importer (option Analytic).
     @State private var importOffice = false
-    /// L'import demandé sans l'option : on la présente.
-    @State private var vitrineImport = false
     @ObservedObject private var achat = AchatAnalytic.partage
 
     /// UTTypes we accept in the in-app importer.
@@ -71,9 +69,10 @@ struct RootView: View {
             importOffice = false
             showImporter = true
         }
-        // macOS : Fichier ▸ Importer Word, PDF ou PowerPoint (⇧⌘I), réservé à l'option Analytic.
+        // Importer Word, PDF ou PowerPoint, réservé à l'option Analytic : Fichier ▸ Importer (⇧⌘I)
+        // sur Mac, le menu « … » et l'accueil sur iPhone et iPad.
         .onReceive(NotificationCenter.default.publisher(for: .okiaImporter)) { _ in
-            guard achat.acces else { vitrineImport = true; return }
+            guard achat.acces else { store.vitrineImport = true; return }
             importFolder = false
             importOffice = true
             showImporter = true
@@ -82,9 +81,11 @@ struct RootView: View {
             ImportView(import_: i, annuler: { store.annulerImport() })
                 .interactiveDismissDisabled()
         }
-        .sheet(isPresented: $vitrineImport) {
+        .sheet(isPresented: $store.vitrineImport) {
             ScrollView { OptionAnalyticView().padding(24) }
+                #if targetEnvironment(macCatalyst)
                 .frame(minWidth: 460, minHeight: 520)
+                #endif
         }
         // macOS: auto-open new reports landing in the vault folder.
         .task { store.startVaultWatch() }
@@ -92,14 +93,10 @@ struct RootView: View {
         // Drag a .md from Finder onto the window to open it.
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
-            // Un Word, un PDF, un PowerPoint déposé s'importe — avec l'option, sur Mac.
+            // Un Word, un PDF, un PowerPoint déposé s'importe — avec l'option.
             if ImportEnCours.estImportable(url) {
-                #if targetEnvironment(macCatalyst)
-                if achat.acces { store.importer(url: url) } else { vitrineImport = true }
+                if achat.acces { store.importer(url: url) } else { store.vitrineImport = true }
                 return true
-                #else
-                return false
-                #endif
             }
             store.open(url: url)
             return true

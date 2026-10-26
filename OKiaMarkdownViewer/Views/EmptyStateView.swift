@@ -67,7 +67,16 @@ struct EmptyStateView: View {
             Button(action: onSample) { Image(systemName: "doc.text.image") }
                 .teinteBarre()
                 .accessibilityLabel(tr("Voir un exemple"))
-            Button(action: onOpen) { Image(systemName: "folder") }
+            Menu {
+                Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
+                Button { ImportEnCours.demander() } label: {
+                    Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
+                }
+            } label: {
+                Image(systemName: "folder")
+            } primaryAction: {
+                onOpen()
+            }
                 .teinteBarre()
                 .accessibilityLabel(tr("Ouvrir un fichier"))
         }
@@ -84,6 +93,9 @@ struct EmptyStateView: View {
                 Button(tr("Ouvrir un fichier"), action: onOpen)
                     .buttonStyle(.borderedProminent)
                 Button(tr("Voir un exemple"), action: onSample)
+                // Option Analytic : un Word, un PDF, un PowerPoint devient un document md Viewer.
+                Button(tr("Importer Word, PDF ou PowerPoint…")) { ImportEnCours.demander() }
+                    .font(.subheadline)
             }
             .tint(orange)
         }

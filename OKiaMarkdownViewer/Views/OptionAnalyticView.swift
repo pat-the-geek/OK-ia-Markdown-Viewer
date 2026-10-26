@@ -12,7 +12,7 @@ struct OptionAnalyticView: View {
     @State private var message: String?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
-    /// Ce que l'option apporte. Sur Mac, en plus : l'import de Word, PDF et PowerPoint.
+    /// Ce que l'option apporte, sur Mac comme sur iPhone et iPad (l'import aussi, depuis le 26/10).
     private var apports: [(String, String)] {
         [("person.2", tr("Les personnes, organisations, lieux et produits du document, rassemblés par genre.")),
          ("square.grid.2x2", tr("Une galerie, et une carte des lieux en plein écran.")),
@@ -20,10 +20,8 @@ struct OptionAnalyticView: View {
          ("pencil.tip.crop.circle", AchatAnalytic.surMac
             ? tr("Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte.")
             : tr("Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte.")),
-         ("newspaper", tr("Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé."))]
-            + (AchatAnalytic.surMac
-               ? [("square.and.arrow.down.on.square", tr("Importez vos documents Word, PDF et PowerPoint : titres, listes, tableaux, images et commentaires repris en Markdown."))]
-               : [])
+         ("newspaper", tr("Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé.")),
+         ("square.and.arrow.down.on.square", tr("Importez vos documents Word, PDF et PowerPoint : titres, listes, tableaux, images et commentaires repris en Markdown."))]
     }
 
     var body: some View {

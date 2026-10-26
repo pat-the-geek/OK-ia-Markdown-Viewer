@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Option Analytic (1.4), Mac — l'import en cours : l'étape, ce qui est fait sur le tout, le
+/// Option Analytic (1.4) — l'import en cours : l'étape, ce qui est fait sur le tout, le
 /// dernier élément repéré (un titre, une diapositive) et le temps qui reste.
 struct ImportView: View {
     @ObservedObject var import_: ImportEnCours
@@ -80,7 +80,9 @@ struct ImportView: View {
         }
         .toggleStyle(.switch)
         .tint(orange)
-        Label(tr("Sur votre Mac, avec Apple Intelligence : le document ne le quitte pas."), systemImage: "lock")
+        Label(AchatAnalytic.surMac ? tr("Sur votre Mac, avec Apple Intelligence : le document ne le quitte pas.")
+                                   : tr("Sur cet appareil, avec Apple Intelligence : le document ne le quitte pas."),
+              systemImage: "lock")
             .font(.caption).foregroundStyle(.secondary)
     }
 }

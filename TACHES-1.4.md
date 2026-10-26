@@ -233,7 +233,14 @@ paysage (galerie à trois colonnes, carte et fiche dans la partie de droite, ple
 `OKIA_ANALYTIC=liste|galerie|carte`. **Pas vu** : Mac (verrouillé), Duo, appareil réel.
 Limite relevée : « Washington » d'un rapport épinglé sur l'État de Washington, pas sur la capitale.
 
-## ④ Import Word, PDF et PowerPoint — Mac seulement
+## ④ Import Word, PDF et PowerPoint — Mac, puis iPhone et iPad
+
+**Ouvert à l'iPhone et à l'iPad le 26/10** (Patrick : « Oui ouvre ») : même option, même code.
+Entrées : « Importer Word, PDF ou PowerPoint… » dans le menu « … » de l'iPhone, à l'appui long du
+bouton dossier, sur l'écran d'accueil ; « Ouvrir avec » et la feuille de partage (les trois formats
+déclarés dans Info.plist, rang « Alternate ») ; dépôt sur la fenêtre. Sans l'option, la vitrine
+s'ouvre. Vérifié au simulateur iPhone (Word confié à l'app). **À reporter** : la page de l'option
+sur le site et la feuille de route disaient « import sur Mac ».
 
 Fait le 25/10 (`Models/Import/`, `Views/ImportView.swift`) : **Fichier ▸ Importer Word, PDF ou
 PowerPoint… (⇧⌘I)**, réservé à l'option (sans elle, la vitrine s'ouvre) ; un fichier déposé sur la
