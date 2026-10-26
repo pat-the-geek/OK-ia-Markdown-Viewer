@@ -166,6 +166,15 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
       prend la place du cadre. Vérifié au simulateur (image 684 × 385 = le cadre, pastilles
       par-dessus). **À signaler à fornews** : même règle à reporter s'il pose la même enveloppe.
 
+- [x] **Le livre ne s'enclenchait plus sur le Duo (Patrick, sur B91, 26/10)** — régression de la
+      1.4 (B89 à B91). Le détecteur de charnière (`DetecteurCharniere`) était posé en arrière-plan
+      de la palette des annotations, intercalée par le lot 4 bis : cette palette n'existe qu'en mode
+      Annoter, si bien que le détecteur n'existait plus. md Viewer ne se savait plus sur un
+      appareil pliable, le Duo prenait la mise en page d'un iPad (barre en haut), et la posture
+      mi-repliée n'était jamais vue. Le détecteur est revenu sur le calque plein écran. Vérifié au
+      simulateur Duo déplié (commandes de nouveau dans la colonne du système) ; **le livre
+      mi-replié reste à confirmer sur le vrai Duo.**
+
 ### Demandes à fornews (à faire dans fornews.ai, pas d'ici) — prévues pour **fornews 1.7.4** (Patrick, 25/10)
 
 Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,

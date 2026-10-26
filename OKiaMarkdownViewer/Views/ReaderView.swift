@@ -283,12 +283,14 @@ struct ReaderView: View {
                 // vide à droite).
                 .onGeometryChange(for: Bool.self) { $0.frame(in: .global).minX > 20 } action: { colonneAGauche = $0 }
                 .allowsHitTesting(false)
-            paletteAnnotations
             #if DUO_SDK && !targetEnvironment(macCatalyst)
             .background {
                 if #available(iOS 27.1, *) {
                     // Sur toute la surface du lecteur, et non plus en un point : sur l'appareil réel,
                     // la charnière n'est peut-être signalée qu'aux vues qui la traversent.
+                    // ⛔ Attaché au calque plein écran juste au-dessus, jamais à une vue qui peut
+                    // disparaître : posé sous la palette des annotations (B89–B91), il n'existait
+                    // qu'en mode Annoter, et le Duo ne passait plus en livre (Patrick, 26/10/2026).
                     DetecteurCharniere { pliable, ouverte, partielle in
                         appareilPliable = pliable
                         charniereOuverte = ouverte
@@ -298,6 +300,7 @@ struct ReaderView: View {
                 }
             }
             #endif
+            paletteAnnotations
             .onChange(of: appareilPliable) { _, _ in poserCoinLibre() }
             .onChange(of: colonneAGauche) { _, _ in poserCoinLibre() }
             // Tout de suite, puis une fois la rotation posée : la vue web n'a pas encore sa
