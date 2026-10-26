@@ -157,7 +157,12 @@ final class DocumentStore: ObservableObject {
                 } else {
                     self.open(url: r.document)
                 }
-            case .failure(let e):  self.errorMessage = e.localizedDescription
+            case .failure(let e):
+                // L'alerte attend que la fenêtre d'avancement soit refermée : présentée pendant
+                // qu'elle se retire, SwiftUI l'abandonnait, et l'échec passait sans un mot (Patrick,
+                // PDF scanné, 26/10/2026).
+                let message = e.localizedDescription
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { self.errorMessage = message }
             }
         }
     }

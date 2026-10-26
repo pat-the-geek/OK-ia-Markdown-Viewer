@@ -272,6 +272,18 @@ zip est lu par `LecteurZip` (répertoire central + `COMPRESSION_ZLIB`), le XML p
       commentaires dans un commentaire HTML sous la diapositive. La transition la plus employée va
       dans l'en-tête (`transition:`), et **le diaporama la reprend** pour ce document (le choix de
       l'utilisateur reprend la main s'il en change).
+- [x] **PDF scannés** (Patrick, 26/10 : « J'ai eu le cas 1 mais sans message »). Une page sans couche
+      de texte (moins de 20 caractères) est lue par la reconnaissance de texte de l'appareil (Vision,
+      mode précis, correction linguistique fr/en/de/es/it), puis suit le même traitement que les autres
+      (titres par paliers de hauteur, paragraphes, en-têtes écartés) ; elle porte la mention « Page N :
+      texte reconnu sur l'image, à vérifier ». Une page dont on ne tire presque rien (moins de
+      40 caractères : photo, schéma, manuscrit) est gardée en image. Le résumé dit « dont N pages
+      scannées ». Banc (briefing fornews rendu en images) : tout scanné, 10 pages ; mixte, pages 2–3 ;
+      page de dessin gardée en image. Le PDF à texte ne change pas. Limites : tableaux en lignes,
+      colonnes parfois mêlées, « OpenAl » pour « OpenAI ». **Le message perdu** : l'erreur d'import
+      s'affichait pendant que la fenêtre d'avancement se refermait, et SwiftUI l'abandonnait ; elle
+      attend désormais la fermeture. Pas vu dans l'app (Mac verrouillé, le simulateur confie un PDF
+      à Fichiers) : à essayer sur B94.
 - [x] **Compte à rebours** (`ImportView`) : l'étape, le compte, le dernier titre repéré, le temps
       restant estimé, Annuler.
 - [x] **Images** : chacune écrite une fois en référence (`![…][img3]`, définition en fin de
