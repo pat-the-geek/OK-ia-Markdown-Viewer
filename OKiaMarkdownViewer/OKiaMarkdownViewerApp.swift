@@ -61,6 +61,11 @@ final class DocumentStore: ObservableObject {
             return nil
         }
         switch action {
+        // Option Analytic (1.4) : l'extension de partage a déposé une page — ou l'on confie une adresse.
+        case "pages":
+            releverPages()
+        case "page":
+            if let s = value("url", "u") { analyserPage(s) } else { releverPages() }
         case "open", "url":
             if let s = value("url", "u"), let remote = URL(string: s), remote.scheme?.hasPrefix("http") == true {
                 openRemote(remote)
@@ -144,18 +149,21 @@ final class DocumentStore: ObservableObject {
     func importer(url: URL) {
         let i = ImportEnCours(nomSource: url.lastPathComponent)
         importEnCours = i
-        i.lancer(url) { [weak self] issue in
-            guard let self, self.importEnCours === i else { return }
-            self.importEnCours = nil
+        i.lancer(url) { [weak self] issue in self?.finImport(i, issue) }
+    }
+
+    private func finImport(_ i: ImportEnCours, _ issue: Result<ImportEnCours.Resultat, Error>) {
+            guard importEnCours === i else { return }
+            importEnCours = nil
             switch issue {
             case .success(let r):
                 // Le rapport d'analyse s'ouvre s'il y en a un ; le document importé entre dans les
                 // récents, à un geste.
                 if let rapport = r.rapport {
-                    self.recents.add(url: r.document)
-                    self.open(url: rapport)
+                    recents.add(url: r.document)
+                    open(url: rapport)
                 } else {
-                    self.open(url: r.document)
+                    open(url: r.document)
                 }
             case .failure(let e):
                 // L'alerte attend que la fenêtre d'avancement soit refermée : présentée pendant
@@ -164,6 +172,41 @@ final class DocumentStore: ObservableObject {
                 let message = e.localizedDescription
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { self.errorMessage = message }
             }
+    }
+
+    // MARK: Pages web (option Analytic, 1.4)
+
+    /// Les pages partagées depuis Safari, en attente d'être traitées une à une.
+    private var pagesEnAttente: [PageWeb] = []
+
+    /// Relève la boîte de réception des pages partagées (au retour au premier plan, ou par
+    /// `mdviewer://pages`) et les traite l'une après l'autre.
+    func releverPages() {
+        pagesEnAttente += BoitePages.relever()
+        pageSuivante()
+    }
+
+    /// Une adresse confiée directement (`mdviewer://page?url=…`, un raccourci).
+    func analyserPage(_ adresse: String) {
+        pagesEnAttente.append(PageWeb(url: adresse))
+        pageSuivante()
+    }
+
+    private func pageSuivante() {
+        guard importEnCours == nil, !pagesEnAttente.isEmpty else { return }
+        let page = pagesEnAttente.removeFirst()
+        // Avec l'option, la fiche de lecture ; sans elle, le texte de la page, puis l'option se présente.
+        let acces = AchatAnalytic.partage.acces
+        let wikidata = UserDefaults.standard.string(forKey: ConsentementWikidata.cle) == ConsentementWikidata.accepte.rawValue
+        let i = ImportEnCours(nomSource: page.titre ?? page.url)
+        importEnCours = i
+        i.lancerPage(page, analyser: acces, wikidata: wikidata) { [weak self] issue in
+            guard let self else { return }
+            self.finImport(i, issue)
+            if !acces, case .success = issue {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.vitrineImport = true }
+            }
+            self.pageSuivante()
         }
     }
 
@@ -254,6 +297,7 @@ final class DocumentStore: ObservableObject {
 @main
 struct OKiaMarkdownViewerApp: App {
     @StateObject private var store: DocumentStore
+    @Environment(\.scenePhase) private var phase
 
     init() {
         let store = DocumentStore()
@@ -270,6 +314,10 @@ struct OKiaMarkdownViewerApp: App {
             let name = env["OKIA_RENDER_NAME"] ?? "Demo.md"
             store.document = MarkdownDocument(filename: name, text: content)
         }
+        // OKIA_PAGE=<adresse> : analyse une page web au lancement, comme un partage depuis Safari.
+        if let page = env["OKIA_PAGE"], !page.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { store.analyserPage(page) }
+        }
         #endif
     }
 
@@ -282,6 +330,8 @@ struct OKiaMarkdownViewerApp: App {
                 .onOpenURL { url in
                     store.handleIncoming(url)
                 }
+                // Les pages partagées depuis Safari pendant que md Viewer était en arrière-plan.
+                .onChange(of: phase) { _, p in if p == .active { store.releverPages() } }
         }
         .commands {
             // macOS: replace the default "New" with "Ouvrir…" / "Open…" (⌘O).

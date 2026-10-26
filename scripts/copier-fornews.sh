@@ -50,6 +50,17 @@ ENTIERS = [
     # Le rapport d'analyse d'un document importé (1.4) : les consignes de fornews, section par section.
     "FornewsPipeline/ConsignesAnalyste.swift",
     "FornewsPipeline/ConsignesLocales.swift",
+    # La fiche de lecture d'une page web (1.4, Safari → md Viewer) : la fiche d'article de fornews et ses gardes.
+    "FornewsFeatures/Explorer/FicheArticle.swift",
+    "FornewsAI/VerificateurAncrage.swift",
+    "FornewsModels/AncrageLitteral.swift",
+    "FornewsModels/DrapeauPays.swift",
+    "FornewsAI/Apple/MoteurFM.swift",
+    "FornewsFeatures/Components/LangueHelper.swift",
+    "FornewsServices/Flux/CarteLeaflet.swift",
+    "FornewsServices/Flux/ImageMarkdown.swift",
+    "FornewsFeatures/Components/CleImage.swift",
+    "FornewsModels/AvertissementIA.swift",
 ]
 
 def entete(chemin, note):
@@ -62,7 +73,7 @@ def entete(chemin, note):
 
 def nettoyer(texte):
     return "\n".join(l for l in texte.split("\n")
-                     if not re.match(r"^import (Fornews\w*|SwiftData)\s*$", l))
+                     if not re.match(r"^import (Fornews\w*|SwiftData)\s*(//.*)?$", l))
 
 def retirer(texte, motifs):
     """Retire les déclarations dont l'en-tête correspond à un motif, avec leur doc au-dessus."""
@@ -130,5 +141,49 @@ open(f"{dest}/NettoyageRapport.swift", "w").write(
            "// générateur tient au pipeline d'articles.")
     + "import Foundation\n\nenum NettoyageRapport {\n" + t[a:b].rstrip() + "\n\n" + t[c:d].rstrip()
     + "\n\n" + t[e:f].rstrip() + "\n}\n")
+
+def declarations(texte, motifs):
+    """Les déclarations dont la première ligne correspond à un motif, avec leur doc au-dessus.
+    Une déclaration s'arrête quand ses accolades, crochets et parenthèses se referment."""
+    L = texte.split("\n"); out = []; i = 0
+    while i < len(L):
+        if any(re.search(m, L[i]) for m in motifs):
+            j = i
+            while j > 0 and (L[j-1].strip().startswith("///") or L[j-1].strip().startswith("@")): j -= 1
+            prof = 0; k = i
+            while k < len(L):
+                prof += sum(L[k].count(c) for c in "{[(") - sum(L[k].count(c) for c in "}])")
+                k += 1
+                if prof <= 0: break
+            out.append("\n".join(L[j:k])); i = k; continue
+        i += 1
+    return "\n\n".join(out)
+
+t = nettoyer(open(f"{src}/FornewsFeatures/Explorer/RapportObsidian.swift").read())
+open(f"{dest}/RapportObsidian.swift", "w").write(
+    entete("FornewsFeatures/Explorer/RapportObsidian.swift",
+           "EXTRAIT : la composition du rapport d'un article à partir de ses données (`generer(donnees:)`), avec\n"
+           "// ses aides et ses libellés ; le reste du fichier lit le modèle SwiftData de fornews.")
+    + "import Foundation\n\nenum RapportObsidian {\n" + declarations(t, [
+        r"struct EntiteRapport\b", r"struct GeoPoint\b", r"struct DonneesRapport\b",
+        r"static func generer\(donnees", r"static func retirerTitreEnTete\(", r"static func blocLeaflet\(",
+        r"static func nomsUniques\(", r"static func flowchartDeterministe\(", r"static func couleurClasse\(",
+        r"static func nettoyerNoeud\(", r"static func echapYAML\(", r"static func echapMD\(",
+        r"static func slugTag\(", r"struct Labels\b", r"static func labels\("]) + "\n}\n")
+
+t = nettoyer(open(f"{src}/FornewsModels/Article.swift").read())
+open(f"{dest}/Mesure.swift", "w").write(
+    entete("FornewsModels/Article.swift",
+           "EXTRAIT : `Mesure` seule (une grandeur chiffrée), dont `AncrageLitteral` a besoin ; le reste est\n"
+           "// le modèle SwiftData des articles.")
+    + "import Foundation\n\n" + declarations(t, [r"public struct Mesure:"]) + "\n")
+
+t = nettoyer(open(f"{src}/FornewsPipeline/RevuePresse.swift").read())
+open(f"{dest}/RevuePresse.swift", "w").write(
+    entete("FornewsPipeline/RevuePresse.swift",
+           "EXTRAIT : la pastille d'un média et la reconnaissance des signatures, pour la fiche de lecture.")
+    + "import Foundation\n\nenum RevuePresse {\n" + declarations(t, [
+        r"static func estLigneDeSignature\(", r"static func estSignatureDAuteur\(", r"static let palette\b",
+        r"static func teinte\(", r"static func initiales\(", r"static func pastille\(", r"static func html\("]) + "\n}\n")
 EOF
 ls "$DEST"

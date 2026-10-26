@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsAI/FiltreEntitesNER.swift (commit 58fb14e9, 25/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsAI/FiltreEntitesNER.swift (commit b2d8c521, 26/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // Seule retouche : les `import Fornews…` retirés.

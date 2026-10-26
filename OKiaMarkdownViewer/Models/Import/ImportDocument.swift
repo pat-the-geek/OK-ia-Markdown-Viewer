@@ -127,6 +127,43 @@ final class ImportEnCours: ObservableObject, Identifiable {
         }
     }
 
+    /// Une page web partagée (Safari, ou toute app qui partage un lien) : sa fiche de lecture avec
+    /// l'option, son texte seul sans elle. Une page arrivée sans corps est d'abord chargée ici.
+    func lancerPage(_ recue: PageWeb, analyser: Bool, wikidata: Bool,
+                    fini: @escaping @MainActor (Result<Resultat, Error>) -> Void) {
+        debut = Date()
+        self.fini = fini
+        tache = Task { [weak self] in
+            do {
+                var page = recue
+                if !page.aUnCorps {
+                    self?.avancement = AvancementImport(etape: tr("Chargement de la page"), fait: 0, total: 1, dernier: page.url)
+                    let lue = try await LecteurPageWeb.lire(page.url)
+                    // Les métadonnées que Safari avait déjà gardent la main.
+                    page = PageWeb(url: page.url, titre: page.titre ?? lue.titre, media: page.media ?? lue.media,
+                                   auteur: page.auteur ?? lue.auteur, date: page.date ?? lue.date,
+                                   image: page.image ?? lue.image, logo: page.logo ?? lue.logo,
+                                   langue: page.langue ?? lue.langue, description: page.description ?? lue.description,
+                                   blocs: lue.blocs)
+                }
+                guard page.aUnCorps else { throw LecteurPageWeb.Erreur.lecture }
+                let suivi: SuiviImport = { [weak self] a in self?.avancement = a }
+                let (titre, md) = analyser
+                    ? await FichePageWeb.produire(page, langue: Localization.shared.code, wikidata: wikidata, suivi: suivi)
+                    : FichePageWeb.texteSeul(page)
+                try Task.checkCancellation()
+                // Le nom du fichier : le titre de la page, sans ce qu'un nom de fichier n'admet pas.
+                let nom = String(titre.replacingOccurrences(of: "[/\\\\:?*\"<>|]", with: "-", options: .regularExpression)
+                    .prefix(90)) + ".md"
+                fini(.success(Resultat(document: try Self.ecrire(md, nomSource: nom), rapport: nil)))
+            } catch is CancellationError {
+                return
+            } catch {
+                fini(.failure(error))
+            }
+        }
+    }
+
     func annuler() { tache?.cancel() }
 
     /// Écrit le Markdown dans le dossier « Importés » des documents de l'app, sous le nom du

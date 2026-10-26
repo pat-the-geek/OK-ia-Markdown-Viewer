@@ -83,6 +83,36 @@ targets:
         CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]: OKiaMarkdownViewer/iOS.entitlements
         CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: OKiaMarkdownViewer/iOS.entitlements
         GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      # Option Analytic (1.4) : « md Viewer » dans le menu Partager de Safari.
+      - target: Partage
+
+  # L'extension de partage : elle reçoit la page (le script de Safari, ou l'adresse) et la dépose dans
+  # la boîte de réception partagée ; l'app compose la fiche de lecture.
+  Partage:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.4"
+    sources:
+      - path: Partage
+      - path: OKiaMarkdownViewer/PageWeb/PageWeb.swift
+      - path: OKiaMarkdownViewer/PageWeb/ExtrairePage.js
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ch.ok-ia.markdownviewer.partage
+        PRODUCT_NAME: Partage
+        INFOPLIST_FILE: Partage/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2,6"
+        SUPPORTS_MACCATALYST: YES
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
+        MACOSX_DEPLOYMENT_TARGET: "26.4"
+        IPHONEOS_DEPLOYMENT_TARGET[sdk=macosx*]: "26.4"
+        CODE_SIGN_ENTITLEMENTS[sdk=macosx*]: Partage/Partage-macOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]: Partage/Partage-iOS.entitlements
+        CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]: Partage/Partage-iOS.entitlements
 
 # Scheme named "md Viewer" so archives are filed under that name in the Organizer
 # (the archive's Name = scheme name). The target keeps its internal id.

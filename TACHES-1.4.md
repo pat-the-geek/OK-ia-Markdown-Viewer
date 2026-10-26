@@ -321,6 +321,43 @@ commentaire, révision, image), le PDF public du briefing fornews. Bancs : Word 
 pour la voir), la vitrine sans achat, le diaporama d'un PowerPoint importé — l'app ne se pilote pas
 d'ici ; à essayer sur B91.
 
+## ④ ter Une page web, de Safari à md Viewer — demandé par Patrick le 26/10 (option payante)
+
+« Depuis Safari, on peut envoyer la page vers md Viewer qui prépare un rapport analytique de la page
+avec entités et tout ce qui est préparé par fornews. » Réservé à l'option ; sans elle, le texte de la
+page s'ouvre, puis l'option se présente.
+
+- [x] **La fiche de lecture de fornews, copiée mot pour mot** par `scripts/copier-fornews.sh` :
+      `FicheArticle` entière et ses gardes (`VerificateurAncrage`, `AncrageLitteral`, `DrapeauPays`,
+      `MoteurFM`, `LangueHelper`, `CarteLeaflet`, `ImageMarkdown`, `CleImage`, `AvertissementIA`),
+      plus des extraits de `RapportObsidian` (la composition `generer(donnees:)`, son schéma
+      déterministe, sa carte, ses libellés), de `RevuePresse` (pastille, signatures) et d'`Article`
+      (`Mesure`). Le script sait maintenant extraire des déclarations par nom.
+- [x] **L'extraction** (`PageWeb/ExtrairePage.js`) : titre, média, auteur, date, image, logo, langue
+      (métadonnées, données structurées) et le corps de l'article, bloc par bloc ; décor écarté
+      (navigation, partage, rubriques). Un seul script : Safari l'exécute dans la page au partage ;
+      l'app l'exécute dans une vue web hors écran pour une adresse seule (`LecteurPageWeb`). Éprouvé
+      sur The Verge et la RTS.
+- [x] **La fiche** (`PageWeb/FichePageWeb`) : entités de md Viewer et vos corrections, lieux situés
+      par Wikidata si accepté (carte), résumé « En bref » et chiffres par Apple Intelligence sous les
+      gardes de fornews (sinon le chapeau de la page et les chiffres relevés par le code), schéma
+      déterministe, signature md Viewer. Écrite dans « Importés » et ouverte ; même compte à rebours
+      que l'import.
+- [x] **L'extension de partage** (cible `Partage`, `ch.ok-ia.markdownviewer.partage`) : dépose la page
+      dans la boîte `BoitePages` (groupe `group.ai.fornews.native`, déjà enregistré), tente d'ouvrir
+      md Viewer (`mdviewer://pages`, accepté sur Mac), sinon « Ouvrez md Viewer ». L'app relève la
+      boîte à chaque passage au premier plan. `mdviewer://page?url=…` et `OKIA_PAGE` (Debug, canari).
+- [ ] **Profils de l'extension** : xcodebuild ne voit aucun compte Apple sur ce Mac (« No Accounts ») ;
+      il faut connecter le compte dans Xcode ▸ Réglages ▸ Comptes pour que l'identifiant de
+      l'extension et ses profils soient créés. Les builds de simulateur passent ; le Mac et les
+      builds TestFlight attendent.
+- [ ] Le schéma écrit par le modèle (fornews : `validerDiagrammeIA`) : pas repris, le schéma déterministe
+      suffit pour commencer.
+
+Vérifié au simulateur iPhone (`OKIA_PAGE`, article de The Verge) : grande image et pastilles, en-tête,
+en bref, en chiffres, qui est cité, schéma. Pas vu : le partage depuis Safari (extension), le Mac,
+Apple Intelligence (absente du simulateur).
+
 ## ④ bis Annotations à l'Apple Pencil — quatrième lot, 25/10/2026
 
 - [x] Banc d'essai fait dans le navigateur, puis dans l'app : PencilKit (`PKCanvasView`) posé dans
