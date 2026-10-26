@@ -175,6 +175,16 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
       simulateur Duo déplié (commandes de nouveau dans la colonne du système) ; **le livre
       mi-replié reste à confirmer sur le vrai Duo.**
 
+- [x] **Fermer des entités ne répondait pas sur le Duo (Patrick, sur B93, 26/10).** La colonne du
+      système borde la seconde partie à droite et prend les touchers au-delà de ce qu'elle dessine.
+      La correction de B88 (rangée à nous) n'avait jamais été éprouvée sur le vrai Duo : de B89 à
+      B91, il n'était plus reconnu comme pliable. Désormais, dans la seconde partie, les boutons
+      vont À GAUCHE : Fermer, titre et « … » des entités ; Fermer du sommaire ; OK et le bouton
+      voisin du résumé et de la discussion (la conversion l'avait déjà). Les feuilles de l'iPhone
+      ne changent pas. Une marge de 44 points sur toute la partie a été essayée et écartée : elle
+      se cumulait à la zone sûre et prenait un tiers de la largeur. Vérifié au simulateur Duo
+      (entités, sommaire) ; **à confirmer sur le vrai Duo**, résumé et discussion compris.
+
 ### Demandes à fornews (à faire dans fornews.ai, pas d'ici) — prévues pour **fornews 1.7.4** (Patrick, 25/10)
 
 Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,

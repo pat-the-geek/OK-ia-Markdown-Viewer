@@ -1717,8 +1717,13 @@ struct DocumentSummaryView: View {
             content
                 .navigationTitle(tr("Résumé du document"))
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { boutonOK }
-                    ToolbarItem(placement: .cancellationAction) { boutonRegenerer }
+                    // Dans la seconde partie, les deux à gauche : voir `fermerPanneau` (TableOfContentsView).
+                    if fermerPanneau != nil {
+                        ToolbarItemGroup(placement: .topBarLeading) { boutonOK; boutonRegenerer }
+                    } else {
+                        ToolbarItem(placement: .confirmationAction) { boutonOK }
+                        ToolbarItem(placement: .cancellationAction) { boutonRegenerer }
+                    }
                 }
         }
         .task { if case .idle = summarizer.state { summarizer.summarize(sourceMarkdown) } }

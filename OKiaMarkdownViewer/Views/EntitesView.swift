@@ -73,13 +73,15 @@ struct EntitesView: View {
     @ViewBuilder private var racine: some View {
         if let fermer = fermerPanneau {
             VStack(spacing: 0) {
+                // Tout à gauche, loin de la colonne du système qui borde la seconde partie à droite sur
+                // le Duo : voir `fermerPanneau` (TableOfContentsView).
                 HStack(spacing: 12) {
-                    if achat.acces { menuWikidata }
-                    Text(titre).font(.headline)
-                    Spacer(minLength: 8)
                     Button(tr("Fermer"), action: fermer)
                         .buttonStyle(.bordered)
                         .tint(orange)
+                    Text(titre).font(.headline)
+                    if achat.acces { menuWikidata }
+                    Spacer(minLength: 8)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)

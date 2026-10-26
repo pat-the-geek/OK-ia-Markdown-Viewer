@@ -38,7 +38,8 @@ struct TableOfContentsView: View {
             .navigationTitle(tr("Sommaire"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                // Dans la seconde partie, à gauche : voir `fermerPanneau` (TableOfContentsView).
+                ToolbarItem(placement: fermerPanneau != nil ? .topBarLeading : .topBarTrailing) {
                     Button(tr("Fermer")) { (fermerPanneau ?? { dismiss() })() }.tint(orange)
                 }
             }
@@ -48,6 +49,13 @@ struct TableOfContentsView: View {
 
 /// Ferme la seconde partie du Duo, quand une vue y est montrée au lieu d'une feuille : son bouton
 /// « Fermer » ou « OK » appelle cette action plutôt que `dismiss`, qui n'y ferait rien.
+///
+/// ⛔ Dans la seconde partie, les boutons vont À GAUCHE. Sur le vrai Duo, la colonne du système
+/// (heure, batterie) borde la seconde partie à droite : elle y range les commandes de la barre et
+/// prend les touchers bien au-delà de ce qu'elle dessine — « Fermer » et « OK » posés contre elle
+/// ne répondaient pas (Patrick, B88 puis B92 ; de B89 à B91 le Duo n'était plus reconnu, et la
+/// correction de B88 n'avait jamais été éprouvée). Une marge de la partie entière se cumulait à la
+/// zone sûre et lui volait un tiers de sa largeur (essai du 26/10).
 private struct FermerPanneauKey: EnvironmentKey {
     static let defaultValue: (() -> Void)? = nil
 }

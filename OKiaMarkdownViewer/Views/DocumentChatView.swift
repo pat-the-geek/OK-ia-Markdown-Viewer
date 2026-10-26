@@ -426,6 +426,16 @@ struct DocumentChatView: View {
         _chat = StateObject(wrappedValue: DocumentChat(markdown: sourceMarkdown))
     }
 
+    private var boutonOK: some View {
+        Button("OK") { (fermerPanneau ?? { dismiss() })() }
+    }
+
+    private var boutonEffacer: some View {
+        Button { chat.reset() } label: { Image(systemName: "eraser") }
+            .disabled(chat.isEmpty || chat.isResponding)
+            .accessibilityLabel(tr("Nouvelle conversation"))
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -437,11 +447,12 @@ struct DocumentChatView: View {
             .navigationTitle(tr("Discuter avec le document"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("OK") { (fermerPanneau ?? { dismiss() })() } }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { chat.reset() } label: { Image(systemName: "eraser") }
-                        .disabled(chat.isEmpty || chat.isResponding)
-                        .accessibilityLabel(tr("Nouvelle conversation"))
+                // Dans la seconde partie, les deux à gauche : voir `fermerPanneau` (TableOfContentsView).
+                if fermerPanneau != nil {
+                    ToolbarItemGroup(placement: .topBarLeading) { boutonOK; boutonEffacer }
+                } else {
+                    ToolbarItem(placement: .confirmationAction) { boutonOK }
+                    ToolbarItem(placement: .cancellationAction) { boutonEffacer }
                 }
             }
             #if DEBUG
