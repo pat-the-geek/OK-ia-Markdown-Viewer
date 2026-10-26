@@ -347,10 +347,9 @@ page s'ouvre, puis l'option se présente.
       dans la boîte `BoitePages` (groupe `group.ai.fornews.native`, déjà enregistré), tente d'ouvrir
       md Viewer (`mdviewer://pages`, accepté sur Mac), sinon « Ouvrez md Viewer ». L'app relève la
       boîte à chaque passage au premier plan. `mdviewer://page?url=…` et `OKIA_PAGE` (Debug, canari).
-- [ ] **Profils de l'extension** : xcodebuild ne voit aucun compte Apple sur ce Mac (« No Accounts ») ;
-      il faut connecter le compte dans Xcode ▸ Réglages ▸ Comptes pour que l'identifiant de
-      l'extension et ses profils soient créés. Les builds de simulateur passent ; le Mac et les
-      builds TestFlight attendent.
+- [x] **Profils de l'extension** : il manquait un compte Apple dans Xcode (« No Accounts ») ; Patrick
+      l'a ajouté le 26/10, Xcode a créé l'identifiant et les profils au build 95 (iOS et Mac, groupe
+      d'apps compris).
 - [ ] Le schéma écrit par le modèle (fornews : `validerDiagrammeIA`) : pas repris, le schéma déterministe
       suffit pour commencer.
 
