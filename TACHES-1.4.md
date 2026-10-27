@@ -446,6 +446,37 @@ relance → annotations retrouvées), iPhone 17 Pro Max (défilement à deux doi
 la recherche). Hook `OKIA_ANNOTER=surligner|souligner|ecrire|gomme`. **Pas vu** : un vrai crayon,
 le Mac (souris), le Duo.
 
+## ⑦ Donner de la valeur au Mac — décidé par Patrick le 27/10 (« on fera toutes tes idées de 1 à 7 »)
+
+Sept fonctions, dans l'ordre recommandé. **Version à fixer** : la 1.4 attend fornews 1.7.4 ; ce qui
+n'est pas prêt d'ici là passera dans la suivante. Réservées à l'option sur Mac (« Analytic pour
+Mac ») sauf mention contraire — à confirmer fonction par fonction.
+
+- [ ] **1. Mode présentateur sur deux écrans.** La diapositive sur l'écran externe, le projecteur
+      ou AirPlay ; sur le Mac, les notes de l'orateur (reprises à l'import PowerPoint, dans le
+      commentaire HTML sous chaque diapositive), la diapositive suivante, un chronomètre et l'heure.
+      Une seconde scène (`UIWindowScene` sur l'écran externe) pilotée par le même moteur que le
+      diaporama. Utile aussi sur iPad branché à un écran.
+- [ ] **2. L'analyse de tout le coffre.** Les entités croisées entre tous les documents du coffre :
+      qui apparaît où et depuis quand, les documents qui partagent des noms, une carte de tout le
+      coffre. Un index tenu à jour quand le coffre change (`VaultWatcher`), par la même détection et
+      les mêmes corrections que l'analyse d'un document.
+- [ ] **3. Import par lot et dossier surveillé.** Déposer un dossier (ou plusieurs fichiers) de Word,
+      PDF et PowerPoint : tous convertis, à la suite, avec un compte à rebours d'ensemble ; un dossier
+      choisi peut être surveillé, et chaque nouveau fichier y est importé. Les options d'Apple
+      Intelligence (consignes, rapport) choisies une fois pour le lot.
+- [ ] **4. Export Word avec les annotations en commentaires de relecture.** Surlignages et
+      soulignements deviennent des commentaires Word ancrés au passage ; les notes manuscrites, des
+      images en commentaire. À ajouter à l'export existant (`OOXMLExport`).
+- [ ] **5. Recherche dans tout le coffre, et Spotlight.** Une recherche plein texte sur les documents
+      du coffre (et les importés), et l'indexation Core Spotlight pour les trouver depuis macOS.
+- [ ] **6. Raccourcis et Services macOS.** Des actions App Intents : importer un fichier, faire la
+      fiche d'une page, analyser un document, exporter en PDF annoté ; et un Service « Ouvrir dans md
+      Viewer » / « Fiche de cette page » depuis n'importe quelle app.
+- [ ] **7. Plusieurs fenêtres, pour comparer.** Deux documents côte à côte, ou deux versions d'un
+      même document — avec les annotations de chacune (une version modifiée est un autre document,
+      `IdentiteDocument`).
+
 ## ⑤ Modèles plus poussés — sortis de la 1.4 (⓪ a dit non, 25/10)
 
 - [ ] ~~Private Cloud Compute~~, au choix explicite de l'utilisateur, document par document, jamais par
