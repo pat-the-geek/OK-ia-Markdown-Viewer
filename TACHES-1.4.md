@@ -608,6 +608,15 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       rendus sur une diapositive dans le navigateur ; le découpage inchangé, à la langue près, sur les
       rapports sans image embarquée. **Pas vu** : la conversion dans l'app elle-même, au simulateur
       (Apple Intelligence n'y génère pas) ou sur l'iPhone.
+- [x] **La demande de note** (fait le 27/10, `Models/DemandeAvis.swift` ; Patrick, après les
+      chiffres de vente : « ajoute ceci dans la 1.4 : demander une note après quelques documents
+      ouverts aide le classement »). L'app n'en demandait aucune. Pour tous, avec ou sans l'option :
+      `requestReview` après 5 vrais documents (pas l'exemple) ouverts sur 3 jours différents, 3 s
+      après l'ouverture, jamais par-dessus le diaporama, la conversion, les entités ou le mode
+      Annoter — un moment manqué repasse au document suivant ; puis plus rien dans la même version,
+      et les compteurs repartent. Le système en affiche trois par an au plus, et jamais dans
+      TestFlight. Vérifié au banc (règles) et au simulateur iPad (compteurs préparés, lien
+      `mdviewer://open` : « Vous aimez md Viewer ? » s'affiche ; version notée, compteurs à zéro).
 - [x] **7. Plusieurs fenêtres, pour comparer** (fait le 27/10, `Views/FenetreDocument.swift`). Deux
       documents côte à côte, ou deux versions d'un même document, chacune avec ses annotations (une
       version modifiée est un autre document, `IdentiteDocument`). **Chaque fenêtre a son

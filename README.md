@@ -1554,6 +1554,11 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
 - **Les photos des entités gardées sur l'appareil** (27/10 : « est-ce que tu as mis en œuvre un
   cache pour les images d'entité ? ») — `CacheImagesEntites`, 60 Mo au plus ; elles s'affichent
   hors ligne.
+- **La demande de note** (27/10, pour tous, avec ou sans l'option) — `DemandeAvis` : la fenêtre
+  d'Apple (`requestReview`) après cinq documents ouverts sur trois jours différents, trois
+  secondes après l'ouverture, jamais par-dessus une feuille ou le diaporama ; une fois par
+  version. Le classement de l'App Store tient compte des notes ; jusque-là, l'app n'en demandait
+  aucune. TestFlight ne l'affiche jamais.
 - **Politique de confidentialité** : à mettre à jour à la sortie, pas avant — elle décrit ce que
   l'on télécharge sur l'App Store (Wikidata, la page chargée pour une adresse seule, iCloud une
   fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.

@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import StoreKit
 #if canImport(FoundationModels)
 import FoundationModels   // Apple Intelligence on-device model (iOS 26 / macOS 26+)
 #endif
@@ -42,6 +43,8 @@ struct ReaderView: View {
     @StateObject private var annotationsDoc = AnnotationsDocument()
     @State private var calques: [CalqueAnnotation] = []
     @ObservedObject private var achat = AchatAnalytic.partage
+    /// 1.4 : la demande de note, après quelques documents ouverts (`DemandeAvis`).
+    @Environment(\.requestReview) private var demanderNote
     /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
     /// texte, au lieu de rester une marge vide sur toute la hauteur.
     @State private var appareilPliable = false
@@ -528,6 +531,15 @@ struct ReaderView: View {
             annotationsDoc.livre = livre
             web.onAnnotationsOrphelines = { [weak annotationsDoc] in annotationsDoc?.signalerOrphelines($0) }
             annotationsDoc.charger(document)
+        }
+        // Un vrai document (pas l'exemple) compte pour la demande de note ; elle vient une fois le
+        // document affiché, et jamais par-dessus une feuille ou le diaporama.
+        .task(id: document.id) {
+            guard document.sourceURL != nil, DemandeAvis.documentOuvert() else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, !presenting, !showConverter, !showEntites, !annotationsDoc.actif else { return }
+            DemandeAvis.noteDemandee()
+            demanderNote()
         }
         .onChange(of: annotationsDoc.actif) { _, actif in basculerAnnotation(actif) }
         .onChange(of: annotationsDoc.outil) { _, _ in calques.forEach { $0.outilChange() } }
