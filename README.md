@@ -1293,6 +1293,32 @@ Seules les images que le diaporama sait afficher sont reprises : adresse web ou 
 temporaire, loin du rapport. Éprouvé sur `tools/documents-test/Rapport illustré 2026 (fr).md` :
 six images sur huit diapositives, rendues dans le navigateur.
 
+**Tous les visuels, et les images des documents importés — le 2026-10-27**, à la demande de
+Patrick (« attention, vérifie si les images sont bien prises en compte lors de la génération de
+présentation » ; « il faut le plus possible prendre les images, les tableaux et les graphiques » ;
+« et les diagrammes mermaid »). Trois défauts, et une règle nouvelle :
+
+- **Les images d'un document importé (1.4) étaient toutes perdues.** L'import les écrit en
+  référence (`![Figure 2][img3]`, la définition `[img3]: data:image/…` à la fin) ; la conversion
+  ne connaissait que la forme en ligne et jetait les autres avec les métadonnées. Pire : la
+  définition, des centaines de kilo-octets de base64, partait dans la prose envoyée au modèle, et
+  ses chiffres au hasard servaient de caution aux nombres des puces. Les références sont
+  désormais résolues en images en ligne, les définitions écartées de la prose et des nombres.
+- **Les titres que l'app écrit sortaient en anglais** (« Outline », « Key takeaways ») pour des
+  rapports français : la langue se jugeait sur une prose enveloppée de HTML et de CSS. Elle se juge
+  maintenant sur la voix du rapport seule — sans balises, liens, citations d'articles, noms
+  d'entités ni notes. Sur les six rapports du coffre d'essai, les cinq français, l'anglais, et les
+  documents allemands et italiens de `tools/documents-test` : tous justes.
+- **Les graphiques de fornews**, écrits en HTML — la grille des chiffres clés, la frise, le
+  déroulé, l'agenda, l'horizon — passaient pour de la prose. Ce sont des visuels.
+- **La règle** : chaque visuel a sa diapositive — toutes les cartes, tous les diagrammes Mermaid,
+  tous les tableaux (en tranches de dix lignes, l'en-tête repris), tous les graphiques —, avant le
+  texte dans la répartition ; chaque image illustre une diapositive de texte, celles qui restent
+  ont la leur. Une section privée de texte garde ses visuels (« son texte, faute de place ; ses
+  visuels sont repris »). Moins de diapositives, c'est trier le texte, jamais les visuels : s'ils
+  dépassent la demande, la présentation en compte plus — « Veille réelle » donne 13 diapositives
+  pour 10 demandées, avec ses six visuels.
+
 **L'essai dans l'app a trouvé ce que le banc n'avait pas vu**, sur le rapport allemand de test :
 la consigne de langue, écrite en allemand, fuyait en puce (« Schreibe ausschließlich auf
 Deutsch ») puis en conclusion — elle est désormais une consigne marquée hors du texte, et les

@@ -14361,6 +14361,41 @@
           }
         }
       }
+    },
+    "%@ — son texte, faute de place ; ses visuels sont repris": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — son texte, faute de place ; ses visuels sont repris"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — its text, for lack of room; its visuals are kept"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — ihr Text, aus Platzmangel; ihre Bilder und Grafiken bleiben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — su texto, por falta de espacio; sus elementos visuales se conservan"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — il suo testo, per mancanza di spazio; i suoi elementi visivi restano"
+          }
+        }
+      }
     }
   }
 }

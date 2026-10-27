@@ -380,6 +380,7 @@ final class ConversionEnCours: ObservableObject {
     private static func texte(_ o: ConvertisseurPresentation.Omission) -> String {
         switch o {
         case .sectionEntiere(let t):       return tr("%@ — toute la section, faute de place", t)
+        case .texteSeul(let t):            return tr("%@ — son texte, faute de place ; ses visuels sont repris", t)
         case .partielle(let t, let manque): return "\(t) — \(manque)"
         case .nonConvertie(let t):         return tr("%@ — non convertie : le modèle l’a refusée", t)
         }

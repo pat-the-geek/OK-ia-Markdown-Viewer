@@ -593,6 +593,21 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       d'expiration : une nouvelle photo a une nouvelle adresse. « Oublier les fiches gardées » oublie
       aussi les photos. Vérifié au simulateur iPad : galerie d'un rapport, 9 photos gardées (324 Ko) ;
       relancée, relues du disque, aucune retéléchargée. **Pas vu** : hors ligne pour de bon, le Mac.
+- [x] **Présentations : toutes les images, tous les tableaux, graphiques et diagrammes** (fait le
+      27/10, `PresentationConverter` ; Patrick : « vérifie si les images sont bien prises en compte
+      lors de la génération de présentation », « il faut le plus possible prendre les images, les
+      tableaux et les graphiques », « et les diagrammes mermaid »). Détail dans le README (1.3,
+      conversion). Les images en référence d'un import étaient perdues et leur base64 partait au
+      modèle — corrigé ; la langue se juge sur la voix du rapport (titres « Outline » sur des rapports
+      français — corrigé) ; les graphiques HTML de fornews sont des visuels ; chaque visuel a sa
+      diapositive, avant le texte. Le diaporama d'un PowerPoint importé affichait déjà ses images en
+      référence (`partagerReferences`), vérifié dans le navigateur. Vérifié au banc
+      (`tools/ConversionBench`, modèle de l'appareil sur le Mac) : un rapport aux images embarquées
+      (3 illustrations, diagramme, carte repris), « Veille réelle » (13 diapositives pour 10, ses six
+      visuels), « Ebola » (en anglais), le rapport illustré de test (5 images sur 5) ; les graphiques
+      rendus sur une diapositive dans le navigateur ; le découpage inchangé, à la langue près, sur les
+      rapports sans image embarquée. **Pas vu** : la conversion dans l'app elle-même, au simulateur
+      (Apple Intelligence n'y génère pas) ou sur l'iPhone.
 - [x] **7. Plusieurs fenêtres, pour comparer** (fait le 27/10, `Views/FenetreDocument.swift`). Deux
       documents côte à côte, ou deux versions d'un même document, chacune avec ses annotations (une
       version modifiée est un autre document, `IdentiteDocument`). **Chaque fenêtre a son
