@@ -560,7 +560,7 @@ struct ReaderView: View {
             translator.onBloc = { [weak web] bloc in web?.appliquerTraduction(bloc) }
             translator.extras = { [weak web] in await web?.collecterExtras() ?? [] }
             translator.onExtras = { [weak web] table in web?.appliquerExtras(table) }
-            web.onRendered = { analyserPuisTraduire() }
+            web.onRendered = { analyserPuisTraduire(); servirExportDemande() }
         }
         // Changer de langue ou décocher l'option en cours de lecture doit se voir tout de
         // suite : c'est le même document, il n'y aura pas de nouveau rendu pour rattraper.
@@ -586,6 +586,34 @@ struct ReaderView: View {
         }
         .onChange(of: store.rechercheDemandee) { _, q in
             if let q { store.rechercheDemandee = nil; chercher(q, apres: 1.2) }
+        }
+        // Les actions de Raccourcis (1.4) : analyser le document, l'exporter en PDF.
+        .onAppear {
+            if store.entitesDemandees { store.entitesDemandees = false; ouvrir(.entites) }
+        }
+        .onChange(of: store.entitesDemandees) { _, demande in
+            if demande { store.entitesDemandees = false; ouvrir(.entites) }
+        }
+        .onChange(of: store.exportPDFDemande?.id) { _, id in
+            // Le document déjà affiché ne se rend pas de nouveau : passé ce délai, il est prêt.
+            guard id != nil else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { servirExportDemande() }
+        }
+    }
+
+    /// Exporte le PDF qu'une action de Raccourcis attend, si c'est bien le document affiché. Les
+    /// annotations et les cartes se posent juste après le rendu : un instant de plus.
+    private func servirExportDemande() {
+        guard let demande = store.exportPDFDemande, !demande.servie,
+              demande.document == store.document?.id else { return }
+        store.exportPDFDemande = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            web.avecMentionExport(mentionExport) { fini in
+                web.exportPDF { url in
+                    fini()
+                    demande.servir(url)
+                }
+            }
         }
     }
 

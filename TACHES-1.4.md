@@ -557,9 +557,33 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       **Corrigé en route** : la feuille gardait la requête d'avant (`.sheet(isPresented:)` → `item`).
       **Pas vu** : un résultat dans le Spotlight du système (le simulateur ne l'ouvre pas d'ici ; à
       essayer sur le Mac), un grand coffre (temps de la première lecture).
-- [ ] **6. Raccourcis et Services macOS.** Des actions App Intents : importer un fichier, faire la
-      fiche d'une page, analyser un document, exporter en PDF annoté ; et un Service « Ouvrir dans md
-      Viewer » / « Fiche de cette page » depuis n'importe quelle app.
+- [x] **6. Raccourcis et Services macOS** (fait le 27/10, `ActionsRaccourcis`, module `ServicesMac`).
+      **Quatre actions** de Raccourcis (Mac, iPhone, iPad ; aussi dans Spotlight et Siri, avec leurs
+      phrases) : « Importer dans md Viewer » (des Word, PDF, PowerPoint → `importerLot`), « Faire la
+      fiche d'une page web » (une adresse → `analyserPage`), « Analyser un document » (ouvre un
+      Markdown et ses entités), « Exporter en PDF avec les annotations » (rend un PDF à Raccourcis :
+      le lecteur l'exporte une fois le document rendu, `DemandeExportPDF`, une minute au plus).
+      Analyser et exporter prennent, sans document, celui qui est ouvert. Mêmes chemins que
+      l'interface : sans l'option, import et fiche présentent l'option, l'analyse montre l'aperçu, le
+      PDF part sans annotations. Le travail de chaque action est dans une fonction `faire(…, store:)`
+      — `@Dependency` ne se lit que dans un vrai appel de Raccourcis. **Deux Services macOS** :
+      « Ouvrir dans md Viewer » (du texte sélectionné, ouvert comme document ; des fichiers du Finder
+      — Markdown ouvert, Word/PDF/PowerPoint importés) et « Fiche de cette page » (un lien, ou la
+      première adresse d'un texte sélectionné). Catalyst ne sait pas fournir de Services : un module
+      AppKit (`ServicesMac.bundle`, cible macOS embarquée pour Catalyst seulement —
+      `platformFilter: macOS` ; `platformFilters` n'était pas appliqué par xcodegen et le module
+      partait aussi dans l'app iOS) devient le `servicesProvider` et passe la demande à l'app par
+      notification. Déclarés dans l'Info.plist (`NSServices`), libellés traduits dans
+      `ServicesMenu.xcstrings`. Hook `OKIA_RACCOURCI=importer|fiche|analyser|pdf` (Debug, canari).
+      Vérifié au simulateur iPad : le PDF d'un rapport, rendu à l'action, avec un surlignage posé
+      pour l'essai ; l'analyse ouvre les entités ; un Word importé, rangé au dossier du jour, ouvert ;
+      sans l'option, la vitrine et rien d'importé. Sur le Mac (build Debug, `OKIA_ACHAT=bloque` pour
+      ne pas indexer le coffre ; les Services appelés par `NSPerformService`, journal
+      `ch.ok-ia.markdownviewer:services`) : module chargé, texte reçu, adresse tirée d'une phrase,
+      fichier reçu avec son accès du bac à sable ; build Debug désinscrit ensuite. **Pas vu** : les
+      actions dans l'app Raccourcis elle-même, le menu Services à l'écran (l'app ne se pilote pas
+      d'ici), la fiche jusqu'au bout par l'action (même appel que `OKIA_PAGE`, déjà vérifié), l'archive
+      Mac avec le module (bloquée par « No Accounts » le 27/10).
 - [ ] **7. Plusieurs fenêtres, pour comparer.** Deux documents côte à côte, ou deux versions d'un
       même document — avec les annotations de chacune (une version modifiée est un autre document,
       `IdentiteDocument`).

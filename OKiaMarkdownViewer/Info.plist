@@ -57,6 +57,57 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Option Analytic (1.4) : les Services macOS, fournis par le module AppKit ServicesMac
+	     (FournisseurServices). Libellés traduits dans ServicesMenu.xcstrings. iOS les ignore. -->
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Ouvrir dans md Viewer</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>ouvrirDansMdViewer</string>
+			<key>NSPortName</key>
+			<string>md Viewer</string>
+			<key>NSRequiredContext</key>
+			<dict/>
+			<key>NSSendTypes</key>
+			<array>
+				<string>public.utf8-plain-text</string>
+			</array>
+			<key>NSSendFileTypes</key>
+			<array>
+				<string>net.daringfireball.markdown</string>
+				<string>public.plain-text</string>
+				<string>org.openxmlformats.wordprocessingml.document</string>
+				<string>org.openxmlformats.presentationml.presentation</string>
+				<string>com.adobe.pdf</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Fiche de cette page</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>ficheDeCettePage</string>
+			<key>NSPortName</key>
+			<string>md Viewer</string>
+			<key>NSRequiredContext</key>
+			<dict>
+				<key>NSTextContent</key>
+				<string>URL</string>
+			</dict>
+			<key>NSSendTypes</key>
+			<array>
+				<string>public.url</string>
+				<string>public.utf8-plain-text</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

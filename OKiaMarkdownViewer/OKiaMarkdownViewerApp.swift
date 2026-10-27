@@ -34,6 +34,10 @@ final class DocumentStore: ObservableObject {
     @Published var vitrineImport = false
     /// Ce que le document qui s'ouvre doit chercher : un document trouvé par la recherche du coffre.
     @Published var rechercheDemandee: String?
+    /// Une action de Raccourcis (1.4) demande au lecteur d'ouvrir les entités du document.
+    @Published var entitesDemandees = false
+    /// Une action de Raccourcis (1.4) attend le PDF du document : le lecteur l'exporte une fois rendu.
+    @Published var exportPDFDemande: DemandeExportPDF?
 
     let recents = RecentFilesStore()
     let vault = VaultStore()
@@ -454,6 +458,10 @@ struct OKiaMarkdownViewerApp: App {
         AchatAnalytic.partage.demarrer()
         // La recherche dans le coffre et Spotlight lisent le coffre de l'app.
         RechercheCoffre.partage.brancher(store.vault)
+        #if targetEnvironment(macCatalyst)
+        // Les Services macOS (1.4), une fois l'app lancée : `NSApplication` doit exister.
+        DispatchQueue.main.async { store.brancherServices() }
+        #endif
         #if DEBUG
         // Seed du schéma CloudKit (`-OKIASeedSchema YES`) : écrit les types en Développement, puis quitte.
         Task { @MainActor in if await SynchroICloud.amorcerSchemaSiDemande() { exit(0) } }
@@ -495,6 +503,12 @@ struct OKiaMarkdownViewerApp: App {
         if env["OKIA_ANALYSE_COFFRE"] != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
+            }
+        }
+        // OKIA_RACCOURCI=<action> : une action de Raccourcis, lancée comme Raccourcis le ferait.
+        if let action = env["OKIA_RACCOURCI"], !action.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                Task { @MainActor in await EssaiRaccourcis.lancer(action, env, store: store) }
             }
         }
         // OKIA_PAGE=<adresse> : analyse une page web au lancement, comme un partage depuis Safari.
@@ -704,5 +718,27 @@ struct MdViewerShortcuts: AppShortcutsProvider {
                               "Open a report in \(.applicationName)"],
                     shortTitle: "Ouvrir un rapport",
                     systemImageName: "folder")
+        // Option Analytic (1.4, fonction Mac n° 6).
+        AppShortcut(intent: ImporterDocumentsIntent(),
+                    phrases: ["Importe dans \(.applicationName)",
+                              "Import into \(.applicationName)"],
+                    shortTitle: "Importer",
+                    systemImageName: "square.and.arrow.down.on.square")
+        AppShortcut(intent: FichePageWebIntent(),
+                    phrases: ["Fais la fiche d’une page avec \(.applicationName)",
+                              "Fiche de page \(.applicationName)",
+                              "Make a web page brief with \(.applicationName)"],
+                    shortTitle: "Fiche d’une page",
+                    systemImageName: "safari")
+        AppShortcut(intent: AnalyserDocumentIntent(),
+                    phrases: ["Analyse le document dans \(.applicationName)",
+                              "Analyze the document in \(.applicationName)"],
+                    shortTitle: "Analyser",
+                    systemImageName: "person.2")
+        AppShortcut(intent: ExporterPDFAnnoteIntent(),
+                    phrases: ["Exporte en PDF avec \(.applicationName)",
+                              "Export to PDF with \(.applicationName)"],
+                    shortTitle: "PDF annoté",
+                    systemImageName: "doc.richtext")
     }
 }

@@ -13241,6 +13241,741 @@
           }
         }
       }
+    },
+    "Importer dans md Viewer": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importer dans md Viewer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import into md Viewer"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In md Viewer importieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar en md Viewer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa in md Viewer"
+          }
+        }
+      }
+    },
+    "Convertit des documents Word, PDF ou PowerPoint en Markdown, les analyse et les range dans « Documents analysés ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convertit des documents Word, PDF ou PowerPoint en Markdown, les analyse et les range dans « Documents analysés »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Converts Word, PDF or PowerPoint documents to Markdown, analyzes them and files them in “Analyzed Documents”."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wandelt Word-, PDF- oder PowerPoint-Dokumente in Markdown um, analysiert sie und legt sie unter „Analysierte Dokumente“ ab."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convierte documentos Word, PDF o PowerPoint a Markdown, los analiza y los guarda en «Documentos analizados»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Converte documenti Word, PDF o PowerPoint in Markdown, li analizza e li archivia in «Documenti analizzati»."
+          }
+        }
+      }
+    },
+    "Importer ${documents}": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importer ${documents}"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import ${documents}"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${documents} importieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar ${documents}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa ${documents}"
+          }
+        }
+      }
+    },
+    "Faire la fiche d’une page web": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faire la fiche d’une page web"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make a Reading Sheet of a Web Page"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lesedossier einer Webseite erstellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hacer la ficha de lectura de una página web"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea la scheda di lettura di una pagina web"
+          }
+        }
+      }
+    },
+    "Lit une page web et en fait une fiche de lecture : résumé, chiffres, noms cités.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lit une page web et en fait une fiche de lecture : résumé, chiffres, noms cités."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads a web page and makes a reading sheet of it: summary, figures, names mentioned."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liest eine Webseite und erstellt ein Lesedossier: Zusammenfassung, Zahlen, genannte Namen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee una página web y hace su ficha de lectura: resumen, cifras, nombres citados."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legge una pagina web e ne fa una scheda di lettura: riassunto, cifre, nomi citati."
+          }
+        }
+      }
+    },
+    "Adresse": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Address"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirección"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indirizzo"
+          }
+        }
+      }
+    },
+    "Faire la fiche de ${adresse}": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faire la fiche de ${adresse}"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make a reading sheet of ${adresse}"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lesedossier von ${adresse} erstellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hacer la ficha de ${adresse}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea la scheda di ${adresse}"
+          }
+        }
+      }
+    },
+    "Analyser un document": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyser un document"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze a Document"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument analysieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar un documento"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizza un documento"
+          }
+        }
+      }
+    },
+    "Ouvre un document Markdown et montre les personnes, les lieux et les organisations qu’il cite. Sans document, celui qui est ouvert.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre un document Markdown et montre les personnes, les lieux et les organisations qu’il cite. Sans document, celui qui est ouvert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens a Markdown document and shows the people, places and organizations it mentions. Without a document, the one that is open."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet ein Markdown-Dokument und zeigt die genannten Personen, Orte und Organisationen. Ohne Dokument das geöffnete."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre un documento Markdown y muestra las personas, los lugares y las organizaciones que cita. Sin documento, el que está abierto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apre un documento Markdown e mostra le persone, i luoghi e le organizzazioni che cita. Senza documento, quello aperto."
+          }
+        }
+      }
+    },
+    "Document": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documento"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documento"
+          }
+        }
+      }
+    },
+    "Analyser ${document}": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyser ${document}"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze ${document}"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${document} analysieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar ${document}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizza ${document}"
+          }
+        }
+      }
+    },
+    "Exporter en PDF avec les annotations": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporter en PDF avec les annotations"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export as PDF with Annotations"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als PDF mit Anmerkungen exportieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar a PDF con las anotaciones"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta in PDF con le annotazioni"
+          }
+        }
+      }
+    },
+    "Exporte un document Markdown en PDF, avec ses annotations. Sans document, celui qui est ouvert.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporte un document Markdown en PDF, avec ses annotations. Sans document, celui qui est ouvert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exports a Markdown document as a PDF, with its annotations. Without a document, the one that is open."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportiert ein Markdown-Dokument als PDF, mit seinen Anmerkungen. Ohne Dokument das geöffnete."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporta un documento Markdown a PDF, con sus anotaciones. Sin documento, el que está abierto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta un documento Markdown in PDF, con le sue annotazioni. Senza documento, quello aperto."
+          }
+        }
+      }
+    },
+    "Exporter ${document} en PDF": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporter ${document} en PDF"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export ${document} as PDF"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${document} als PDF exportieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar ${document} a PDF"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta ${document} in PDF"
+          }
+        }
+      }
+    },
+    "Aucun document ouvert dans md Viewer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun document ouvert dans md Viewer."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No document open in md Viewer."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Dokument in md Viewer geöffnet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún documento abierto en md Viewer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun documento aperto in md Viewer."
+          }
+        }
+      }
+    },
+    "md Viewer n’a pas pu lire ce fichier.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer n’a pas pu lire ce fichier."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer could not read this file."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer konnte diese Datei nicht lesen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer no pudo leer este archivo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer non è riuscito a leggere questo file."
+          }
+        }
+      }
+    },
+    "md Viewer n’a pas pu exporter ce document en PDF.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer n’a pas pu exporter ce document en PDF."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer could not export this document as a PDF."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer konnte dieses Dokument nicht als PDF exportieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer no pudo exportar este documento a PDF."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer non è riuscito a esportare questo documento in PDF."
+          }
+        }
+      }
+    },
+    "Fiche d’une page": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiche d’une page"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web Page Sheet"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webseiten-Dossier"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ficha de una página"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheda di una pagina"
+          }
+        }
+      }
+    },
+    "Analyser": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyser"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyze"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizza"
+          }
+        }
+      }
+    },
+    "PDF annoté": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF annoté"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annotated PDF"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF mit Anmerkungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF anotado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF annotato"
+          }
+        }
+      }
+    },
+    "Sélection.md": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sélection.md"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selection.md"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auswahl.md"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selección.md"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selezione.md"
+          }
+        }
+      }
     }
   }
 }

@@ -86,6 +86,28 @@ targets:
     dependencies:
       # Option Analytic (1.4) : « md Viewer » dans le menu Partager de Safari.
       - target: Partage
+      # Option Analytic (1.4) : les Services macOS. Un module AppKit, embarqué dans le Mac seulement.
+      - target: ServicesMac
+        platformFilter: macOS        # Mac Catalyst seulement (« maccatalyst » dans le projet)
+        embed: true
+        copy:
+          destination: plugins
+
+  # Les Services macOS (« Ouvrir dans md Viewer », « Fiche de cette page ») : Catalyst ne sait pas les
+  # fournir, ce module AppKit le fait pour l'app, qui le charge au lancement sur Mac.
+  ServicesMac:
+    type: bundle
+    platform: macOS
+    deploymentTarget: "26.4"
+    sources:
+      - path: ServicesMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ch.ok-ia.markdownviewer.services
+        PRODUCT_NAME: ServicesMac
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSPrincipalClass: FournisseurServices
+        SKIP_INSTALL: YES
 
   # L'extension de partage : elle reçoit la page (le script de Safari, ou l'adresse) et la dépose dans
   # la boîte de réception partagée ; l'app compose la fiche de lecture.

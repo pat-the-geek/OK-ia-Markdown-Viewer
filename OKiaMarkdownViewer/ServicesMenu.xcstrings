@@ -1,0 +1,64 @@
+{
+  "sourceLanguage": "fr",
+  "version": "1.0",
+  "strings": {
+    "Ouvrir dans md Viewer": {
+      "comment": "Libellé d'un Service macOS (menu Services, Finder).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in md Viewer"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In md Viewer öffnen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir en md Viewer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri in md Viewer"
+          }
+        }
+      }
+    },
+    "Fiche de cette page": {
+      "comment": "Libellé d'un Service macOS (menu Services, Finder).",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading Sheet of This Page"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lesedossier dieser Seite"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ficha de lectura de esta página"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheda di lettura di questa pagina"
+          }
+        }
+      }
+    }
+  }
+}
