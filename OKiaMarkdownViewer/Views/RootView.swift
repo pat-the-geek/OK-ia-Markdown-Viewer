@@ -41,7 +41,8 @@ struct RootView: View {
                     onSample: { store.openSample() },
                     onRecent: { store.openRecent($0) },
                     onPickVault: { importFolder = true; importOffice = false; showImporter = true },
-                    onOpenVault: { store.openVaultReport($0) }
+                    onOpenVault: { store.openVaultReport($0) },
+                    onOpenAnalyse: { store.open(url: $0) }
                 )
             }
         }

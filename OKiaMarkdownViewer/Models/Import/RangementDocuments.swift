@@ -8,25 +8,63 @@ import Foundation
 /// - Dans **iCloud Drive**, dossier « md Viewer » : le même fichier sur tous les appareils de
 ///   l'utilisateur, et ses annotations le suivent (`SynchroICloud`, qui reconnaît un document à son
 ///   nom et à son contenu). Sans iCloud Drive, dans les documents de l'app, rangés pareil.
-/// - Par **date de création** : `Importés/2026/10/27/`.
+/// - Dans **« Documents analysés »** (Patrick, 27/10 : « appeler le nouveau dossier documents
+///   analysés »), à part du coffre de la 1.3 — le dossier de rapports que l'utilisateur a choisi.
+///   Réservé à l'option Analytic (« il faut avoir payé l'extension ») : sans elle, le texte d'une
+///   page web va dans « Pages web », un dossier local de l'app.
+/// - Par **date de création** : `Documents analysés/2026/10/27/`.
 /// - Sous un **nom lisible et normalisé** : le titre, accents gardés, sans les caractères qu'un nom
 ///   de fichier n'admet pas, 80 caractères au plus, « (2) » en cas de doublon.
 ///
 /// Les documents ouverts depuis Fichiers ne sont jamais déplacés ni renommés.
 enum RangementDocuments {
 
-    /// Le dossier du jour : `md Viewer/Importés/AAAA/MM/JJ` dans iCloud Drive, sinon dans les
+    /// Le dossier du jour : `md Viewer/Documents analysés/AAAA/MM/JJ` dans iCloud Drive, sinon dans les
     /// documents de l'app. ⚠️ Ne pas appeler sur le fil principal : la première demande du conteneur
     /// iCloud peut attendre.
     static func dossier(pour date: Date = Date()) -> URL {
-        let racine = FileManager.default.url(forUbiquityContainerIdentifier: SynchroICloud.conteneur)?
-            .appendingPathComponent("Documents", isDirectory: true)
-            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let c = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
-        return racine.appendingPathComponent("Importés", isDirectory: true)
+        return dossierAnalyses()
             .appendingPathComponent(String(format: "%04d", c.year ?? 0), isDirectory: true)
             .appendingPathComponent(String(format: "%02d", c.month ?? 0), isDirectory: true)
             .appendingPathComponent(String(format: "%02d", c.day ?? 0), isDirectory: true)
+    }
+
+    /// Le nom du dossier, dans la langue de l'app. Un dossier déjà là, dans une autre langue, reste
+    /// celui qu'on emploie : changer de langue ne doit pas couper les documents en deux.
+    static let nomsDuDossier = ["fr": "Documents analysés", "en": "Analyzed Documents",
+                                "de": "Analysierte Dokumente", "es": "Documentos analizados",
+                                "it": "Documenti analizzati"]
+
+    /// iCloud Drive (« md Viewer »), sinon les documents de l'app.
+    static func racine() -> URL {
+        FileManager.default.url(forUbiquityContainerIdentifier: SynchroICloud.conteneur)?
+            .appendingPathComponent("Documents", isDirectory: true)
+            ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+
+    /// Le dossier « Documents analysés ».
+    static func dossierAnalyses() -> URL {
+        let r = racine()
+        for nom in nomsDuDossier.values where FileManager.default.fileExists(atPath: r.appendingPathComponent(nom).path) {
+            return r.appendingPathComponent(nom, isDirectory: true)
+        }
+        let choisie = UserDefaults.standard.string(forKey: "okia.language").flatMap { nomsDuDossier[$0] }
+            ?? Locale.preferredLanguages.lazy.compactMap { nomsDuDossier[String($0.prefix(2))] }.first
+            ?? nomsDuDossier["en"]!
+        return r.appendingPathComponent(choisie, isDirectory: true)
+    }
+
+    /// Les documents analysés, du plus récent au plus ancien (date de création).
+    static func documents() -> [(url: URL, nom: String, date: Date)] {
+        let dossier = dossierAnalyses()
+        guard let e = FileManager.default.enumerator(at: dossier, includingPropertiesForKeys: [.creationDateKey],
+                                                     options: [.skipsHiddenFiles]) else { return [] }
+        return e.compactMap { $0 as? URL }.filter { $0.pathExtension.lowercased() == "md" }.map { u in
+            let d = (try? u.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+            return (u, u.deletingPathExtension().lastPathComponent, d)
+        }
+        .sorted { $0.date > $1.date }
     }
 
     /// Le nom lisible d'un document, sans extension : « Apple : la keynote / résumé » → « Apple - la
@@ -50,8 +88,12 @@ enum RangementDocuments {
     }
 
     /// Écrit un Markdown créé par md Viewer à sa place, sans écraser un document du même nom.
-    static func ecrire(_ markdown: String, titre: String) throws -> URL {
-        let dossier = dossier()
+    /// `analyse` : un document de l'option (import, fiche) ; faux, le texte seul d'une page web, sans
+    /// l'option — dans « Pages web », un dossier local de l'app, jamais dans « Documents analysés ».
+    static func ecrire(_ markdown: String, titre: String, analyse: Bool = true) throws -> URL {
+        let dossier = analyse ? dossier()
+            : FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Pages web", isDirectory: true)
         try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
         let base = nomNormalise(titre)
         var cible = dossier.appendingPathComponent(base + ".md")

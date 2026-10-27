@@ -12202,41 +12202,6 @@
         }
       }
     },
-    "rangés dans « md Viewer › Importés », au dossier du jour.": {
-      "extractionState": "manual",
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "rangés dans « md Viewer › Importés », au dossier du jour."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "filed in “md Viewer › Imported”, in today’s folder."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "abgelegt in „md Viewer › Importiert“, im Ordner des Tages."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "guardados en «md Viewer › Importados», en la carpeta del día."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "archiviati in «md Viewer › Importati», nella cartella del giorno."
-          }
-        }
-      }
-    },
     "Pas importés : %@": {
       "extractionState": "manual",
       "localizations": {
@@ -12713,6 +12678,111 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nota a mano (md Viewer)"
+          }
+        }
+      }
+    },
+    "rangés dans « Documents analysés », au dossier du jour.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rangés dans « Documents analysés », au dossier du jour."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "filed in “Analyzed Documents”, in today’s folder."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "abgelegt in „Analysierte Dokumente“, im Ordner des Tages."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "guardados en «Documentos analizados», en la carpeta del día."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "archiviati in «Documenti analizzati», nella cartella del giorno."
+          }
+        }
+      }
+    },
+    "Documents analysés": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents analysés"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyzed Documents"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysierte Dokumente"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentos analizados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documenti analizzati"
+          }
+        }
+      }
+    },
+    "Les plus anciens sont dans Fichiers, dossier « md Viewer ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les plus anciens sont dans Fichiers, dossier « md Viewer »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Older ones are in Files, in the “md Viewer” folder."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ältere liegen in Dateien, im Ordner „md Viewer“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los más antiguos están en Archivos, carpeta «md Viewer»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I più vecchi sono in File, nella cartella «md Viewer»."
           }
         }
       }

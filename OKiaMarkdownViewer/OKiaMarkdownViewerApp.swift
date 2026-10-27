@@ -254,7 +254,7 @@ final class DocumentStore: ObservableObject {
         lot = nil
         fermerDossiers()
         if let dernier = l.dernier { open(url: dernier) }
-        var bilan = tr("%d documents importés", l.importes) + " — " + tr("rangés dans « md Viewer › Importés », au dossier du jour.")
+        var bilan = tr("%d documents importés", l.importes) + " — " + tr("rangés dans « Documents analysés », au dossier du jour.")
         if !l.echecs.isEmpty { bilan += "\n\n" + tr("Pas importés : %@", l.echecs.joined(separator: ", ")) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { self.bilanLot = bilan }
         pageSuivante()

@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 /// Option Analytic (1.4) — l'import d'un document Word, PDF ou PowerPoint : le choix du
 /// convertisseur, l'avancement pour le compte à rebours, et le fichier Markdown écrit dans le
-/// dossier « Importés » de l'app, d'où le lecteur l'ouvre comme n'importe quel document (il entre
+/// dossier « Documents analysés » (`RangementDocuments`), d'où le lecteur l'ouvre comme n'importe quel document (il entre
 /// dans les récents ; on peut le partager ou l'exporter).
 @MainActor
 final class ImportEnCours: ObservableObject, Identifiable {
@@ -166,7 +166,7 @@ final class ImportEnCours: ObservableObject, Identifiable {
                     : FichePageWeb.texteSeul(page)
                 try Task.checkCancellation()
                 // Le nom du fichier : le titre de la page, normalisé (`RangementDocuments`).
-                fini(.success(Resultat(document: try Self.ecrire(md, nomSource: titre + ".md"), rapport: nil)))
+                fini(.success(Resultat(document: try Self.ecrire(md, nomSource: titre + ".md", analyse: analyser), rapport: nil)))
             } catch is CancellationError {
                 return
             } catch {
@@ -179,8 +179,8 @@ final class ImportEnCours: ObservableObject, Identifiable {
 
     /// Écrit le Markdown à sa place (`RangementDocuments` : iCloud Drive, dossier du jour, nom
     /// lisible), sous le nom du document d'origine, sans écraser un import précédent.
-    nonisolated static func ecrire(_ markdown: String, nomSource: String) throws -> URL {
-        try RangementDocuments.ecrire(markdown, titre: (nomSource as NSString).deletingPathExtension)
+    nonisolated static func ecrire(_ markdown: String, nomSource: String, analyse: Bool = true) throws -> URL {
+        try RangementDocuments.ecrire(markdown, titre: (nomSource as NSString).deletingPathExtension, analyse: analyse)
     }
 }
 

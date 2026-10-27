@@ -10,8 +10,12 @@ struct EmptyStateView: View {
     var onRecent: (RecentFile) -> Void
     var onPickVault: () -> Void
     var onOpenVault: (VaultReport) -> Void
+    /// Un document analysé (option Analytic, 1.4) : « Documents analysés », à part du coffre.
+    var onOpenAnalyse: (URL) -> Void = { _ in }
 
     @State private var showAbout = false
+    @State private var analyses: [DocumentsAnalysesSection.DocumentAnalyse] = []
+    @ObservedObject private var achat = AchatAnalytic.partage
     @State private var showSettings = false
     @ObservedObject private var loc = Localization.shared
 
@@ -34,6 +38,7 @@ struct EmptyStateView: View {
                         Text(rang == 0 ? tr("Récents") + " · " + groupe.titre : groupe.titre)
                     }
                 }
+                DocumentsAnalysesSection(documents: analyses, ouvrir: onOpenAnalyse)
                 VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault)
                 Section {
                     EmptyView()
@@ -46,6 +51,9 @@ struct EmptyStateView: View {
             .toolbar { barreAccueil }
         }
         .onAppear { vault.refresh() }
+        // Les documents analysés, relus à chaque retour à l'accueil (un import vient peut-être d'y entrer).
+        .task(id: achat.acces) { analyses = await DocumentsAnalysesSection.charger() }
+        .onAppear { Task { analyses = await DocumentsAnalysesSection.charger() } }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }

@@ -327,12 +327,22 @@ commentaire, révision, image), le PDF public du briefing fornews. Bancs : Word 
 pour la voir), la vitrine sans achat, le diaporama d'un PowerPoint importé — l'app ne se pilote pas
 d'ici ; à essayer sur B91.
 
+- [x] **« Documents analysés », à part du coffre** (Patrick, 27/10 : « il faut faire une différence
+      entre le coffre de la version précédente et le lieu de stockage des documents analysés » ;
+      « appeler le nouveau dossier documents analysés » ; « il faut avoir payé l'extension analytique
+      pour utiliser ce nouveau répertoire »). Le dossier s'appelle « Documents analysés » (dans la
+      langue de l'app ; un dossier déjà créé dans une autre langue reste celui qu'on emploie). Sur
+      l'accueil, une section « Documents analysés », par date, entre les récents et le coffre — le
+      coffre reste le dossier de rapports choisi en 1.3, et son analyse ne porte que sur lui.
+      Réservé à l'option : sans elle, la section n'apparaît pas, et le texte d'une page web partagée
+      va dans « Pages web », un dossier local de l'app. Vérifié au simulateur (lot de trois Word →
+      `Documents analysés/2026/10/27/`, section visible avec l'option, absente sans).
 - [x] **Rangement dans iCloud Drive, par date, sous un nom lisible** (Patrick, 27/10 : « si les
       documents sont stockés dans le cloud, il faut les auto-organiser dans des répertoires année,
       mois, jour » ; « normaliser automatiquement le nom du fichier » ; noms lisibles retenus) —
       `RangementDocuments` : les imports, leurs rapports d'analyse et les fiches de pages web vont dans
       iCloud Drive, dossier « md Viewer » (`NSUbiquitousContainers`, iCloud Documents), sous
-      `Importés/AAAA/MM/JJ/` ; sans iCloud Drive, dans les documents de l'app, rangés pareil. Le nom :
+      `Documents analysés/AAAA/MM/JJ/` (d'abord « Importés », renommé le même jour) ; sans iCloud Drive, dans les documents de l'app, rangés pareil. Le nom :
       le titre, accents gardés, `: / \ |` → « - », `? * " < >` retirés, espaces resserrés, 80
       caractères au plus (coupé à la fin d'un mot), « (2) » en cas de doublon ; écriture coordonnée
       (`NSFileCoordinator`). Les documents ouverts depuis Fichiers ne bougent jamais. Les imports d'avant
@@ -515,9 +525,16 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       l'un après l'autre, rangés dans iCloud Drive ; dossier surveillé `OKIA_SURVEILLE` : le nouveau
       importé, l'ancien non). Fichiers d'essai retirés d'iCloud Drive, réglage oublié. **Pas vu** : le
       dépôt de plusieurs fichiers et le sélecteur à choix multiple (l'app ne se pilote pas d'ici).
-- [ ] **4. Export Word avec les annotations en commentaires de relecture.** Surlignages et
-      soulignements deviennent des commentaires Word ancrés au passage ; les notes manuscrites, des
-      images en commentaire. À ajouter à l'export existant (`OOXMLExport`).
+- [x] **4. Export Word avec les annotations** (fait le 27/10, `AnnotationsWord`). Un surlignage
+      devient un surlignage de Word (jaune, vert, magenta, cyan), un soulignement un soulignement de la
+      même couleur — pas un commentaire par passage, qui noierait le volet de relecture ; une note
+      manuscrite devient un **commentaire de relecture** « Note manuscrite (md Viewer) » avec son
+      image, ancré au paragraphe. Passages retrouvés par citation et contexte, espaces réduits.
+      **Corrigé en route** : l'image d'une note manuscrite faisait perdre son paragraphe à l'export
+      Word (render.js le prenait pour une image) — les notes quittent la page le temps de l'export
+      (`OKIA_ANNOT.sansEncre`). Vérifié au simulateur (`OKIA_EXPORT_WORD`, Debug, canari) : trois
+      surlignages aux bonnes couleurs et aux bons paragraphes, deux commentaires avec image, XML bien
+      formé. **Pas vu** : l'ouverture dans Word et Pages (Quick Look ne rend pas les surlignages).
 - [ ] **5. Recherche dans tout le coffre, et Spotlight.** Une recherche plein texte sur les documents
       du coffre (et les importés), et l'indexation Core Spotlight pour les trouver depuis macOS.
 - [ ] **6. Raccourcis et Services macOS.** Des actions App Intents : importer un fichier, faire la
