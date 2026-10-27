@@ -584,6 +584,16 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       actions dans l'app Raccourcis elle-même, le menu Services à l'écran (l'app ne se pilote pas
       d'ici), la fiche jusqu'au bout par l'action (même appel que `OKIA_PAGE`, déjà vérifié), l'archive
       Mac avec le module (bloquée par « No Accounts » le 27/10).
+- [x] **Les photos des entités gardées sur l'appareil** (fait le 27/10, `CacheImagesEntites` ;
+      Patrick : « est-ce que tu as mis en œuvre un cache pour les images d'entité ? »). Avant, seule
+      leur adresse était gardée (`CacheEntites`) et `AsyncImage` retéléchargeait au gré du petit
+      cache de `URLSession` — en défilant, en rouvrant une fiche ; hors ligne, pas de photo.
+      Maintenant : en mémoire (`NSCache`, 300 images décodées), sur le disque
+      (`Caches/Analytic/Images`, 60 Mo au plus, les moins récemment vues retirées au lancement), une
+      seule requête par adresse, avec l'User-Agent de Wikimedia ; décodées à 720 pixels au plus. Pas
+      d'expiration : une nouvelle photo a une nouvelle adresse. « Oublier les fiches gardées » oublie
+      aussi les photos. Vérifié au simulateur iPad : galerie d'un rapport, 9 photos gardées (324 Ko) ;
+      relancée, relues du disque, aucune retéléchargée. **Pas vu** : hors ligne pour de bon, le Mac.
 - [ ] **7. Plusieurs fenêtres, pour comparer.** Deux documents côte à côte, ou deux versions d'un
       même document — avec les annotations de chacune (une version modifiée est un autre document,
       `IdentiteDocument`).

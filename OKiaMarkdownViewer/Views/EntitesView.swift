@@ -348,6 +348,7 @@ struct EntitesView: View {
             }
             Button(role: .destructive) {
                 CacheEntites.partage.vider()
+                CacheImagesEntites.partage.vider()
                 analyse.analyser(document, wikidata: consentement, force: true)
             } label: {
                 Label(tr("Oublier les fiches gardées"), systemImage: "trash")
@@ -382,22 +383,24 @@ struct VignetteEntite: View {
             .frame(width: rond ? taille : nil, height: taille)
             .frame(maxWidth: rond ? nil : .infinity)
             .overlay {
-                if let s = entite.image, let url = URL(string: s) {
-                    // L'image OU le symbole : sous un logo transparent, le symbole transparaissait.
-                    AsyncImage(url: url) { phase in
-                        if let image = phase.image {
-                            image.resizable().scaledToFill().background(Color.white)
-                        } else {
-                            symbole
-                        }
-                    }
+                // L'image OU le symbole : sous un logo transparent, le symbole transparaissait.
+                if let image = photo ?? entite.image.flatMap(CacheImagesEntites.partage.immediate) {
+                    Image(uiImage: image).resizable().scaledToFill().background(Color.white)
                 } else {
                     symbole
                 }
             }
             .clipShape(forme)
             .contentShape(forme)
+            // La photo vient du cache de l'appareil (`CacheImagesEntites`), sinon de Commons, une fois.
+            .task(id: entite.image) {
+                photo = nil
+                guard let s = entite.image else { return }
+                photo = await CacheImagesEntites.partage.image(s)
+            }
     }
+
+    @State private var photo: UIImage?
 
     private var symbole: some View {
         ZStack {
