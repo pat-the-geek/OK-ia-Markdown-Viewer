@@ -399,9 +399,11 @@ Apple Intelligence (absente du simulateur).
       fichier ; le cache se fusionne (fiche la plus récente), et ne repart que s'il a gagné des fiches.
       Sans compte iCloud, rien ne se passe. Conteneur `iCloud.ch.ok-ia.markdownviewer` créé par Xcode
       le 27/10 (compte de Patrick), entitlements iOS et Mac.
-- [ ] **Schéma en Production** : seed comme fornews (`-OKIASeedSchema YES`, build Debug du Mac) —
-      **fait le 27/10 à 07 h 23** (« seed RÉUSSI (3 types) », Development). Reste à Patrick :
-      CloudKit Console → Deploy Schema Changes — procédure : `docs/cloudkit/deploiement-synchro.md`.
+- [x] **Schéma en Production** : seed comme fornews (`-OKIASeedSchema YES`, build Debug du Mac),
+      fait le 27/10 à 07 h 23 (« seed RÉUSSI (3 types) », Development) ; **déployé en Production par
+      Patrick le 27/10** (CloudKit Console → Deploy Schema Changes) — procédure :
+      `docs/cloudkit/deploiement-synchro.md`. À vérifier sur appareils avec le prochain build : annoter
+      sur l'iPhone, retrouver sur le Mac.
       ⛔ Sans ce déploiement, TestFlight ne synchronise rien (la Production refuse les types inconnus).
 - [x] **Une annotation, un seul document** (Patrick, 27/10 : « les annotations doivent être liées à
       un seul document ; il faudra identifier clairement : date, taille, nom de fichier, contenu ») —
