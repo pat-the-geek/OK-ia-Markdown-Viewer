@@ -126,7 +126,7 @@ final class DocumentChat: ObservableObject {
         // The app language changed mid-conversation: the session's instructions — and every
         // answer already on screen — are in the previous language. Start clean rather than
         // mixing two languages in one thread.
-        if let previous = sessionLanguage, previous != Localization.shared.code {
+        if let previous = sessionLanguage, previous != LangueIA.code {
             sessionStore = nil
             sessionLanguage = nil
             turns.removeAll()
@@ -173,7 +173,7 @@ final class DocumentChat: ObservableObject {
     #if canImport(FoundationModels)
     @available(iOS 26.0, macOS 26.0, *)
     private func session() -> LanguageModelSession {
-        let language = Localization.shared.code
+        let language = LangueIA.code
         if let existing = sessionStore as? LanguageModelSession, sessionLanguage == language {
             return existing
         }
@@ -275,7 +275,7 @@ final class DocumentChat: ObservableObject {
 
     /// The rule that has to outlast every other: answer in the language chosen in Settings.
     static var languageRule: String {
-        let code = Localization.shared.code
+        let code = LangueIA.code
         switch code {
         case "fr": return "Réponds en français, quelle que soit la langue du document."
         case "de": return "Antworte auf Deutsch, in welcher Sprache das Dokument auch verfasst ist."
@@ -308,7 +308,7 @@ final class DocumentChat: ObservableObject {
     static func instructions(document: String, partial: Bool) -> String {
         let brief: String
         // Les langues ajoutées en 1.4 reçoivent la consigne anglaise, qui nomme leur langue.
-        let code = Localization.shared.code
+        let code = LangueIA.code
         switch ["fr", "de", "es", "it"].contains(code) ? code : "en" {
         case "en": brief = """
     You answer questions about the document below, in \(AppLanguage.nomAnglais(code)).
@@ -544,10 +544,10 @@ struct DocumentChatView: View {
     private var disclaimer: some View {
         HStack(spacing: 6) {
             AppleIntelligenceGlyph(size: 12)
-            Text(chat.partialDocument
+            Text((chat.partialDocument
                  ? tr("Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs.")
                    + " " + tr("Document trop long pour être lu en entier : seul son début a été analysé.")
-                 : tr("Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs."))
+                 : tr("Réponses générées sur l’appareil par Apple Intelligence, à partir de ce document seulement. Peuvent contenir des erreurs.")) + LangueIA.mention)
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)

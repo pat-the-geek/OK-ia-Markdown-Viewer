@@ -204,6 +204,8 @@ struct SettingsView: View {
     /// choix du lecteur, pas une surprise à l'ouverture.
     @AppStorage("okia.autoTranslate") private var autoTranslate = false
     @ObservedObject private var achat = AchatAnalytic.partage
+    /// 1.4 : la langue des réponses d'Apple Intelligence, quand il ne parle pas celle de l'app.
+    @AppStorage(LangueIA.cle) private var langueIA = Localization.fallback
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -223,6 +225,22 @@ struct SettingsView: View {
                     Text(tr("Langue de l’app"))
                 } footer: {
                     Text(tr("« Système » : la langue de l’appareil si elle est prise en charge, anglais sinon."))
+                }
+
+                // 1.4 : Apple Intelligence ne parle pas toutes les langues de l'app. Quand il ne
+                // parle pas celle-ci, on propose celles qu'il parle (Patrick, 27/10/2026).
+                if !LangueIA.parleLaLangueDeLApp {
+                    Section {
+                        Picker(tr("Langue des réponses"), selection: $langueIA) {
+                            ForEach(LangueIA.prisesEnCharge, id: \.self) { code in
+                                Text(AppLanguage(rawValue: code)?.nativeName ?? code).tag(code)
+                            }
+                        }
+                    } header: {
+                        Text(tr("Réponses d’Apple Intelligence"))
+                    } footer: {
+                        Text(tr("Apple Intelligence ne prend pas encore en charge la langue de l’app : ses résumés et ses réponses viennent dans la langue choisie ici."))
+                    }
                 }
 
                 // Option Analytic (1.4) : l'acheter ou la restaurer hors d'un document.

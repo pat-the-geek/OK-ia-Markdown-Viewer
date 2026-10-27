@@ -1564,7 +1564,9 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
   chinois simplifié, le portugais du Brésil, le néerlandais, le russe, l'ukrainien, le turc, le
   vietnamien et le hindi. Traduites sans relecteur natif. Le rendu des documents (`render.js`,
   de fornews) et la fiche d'une page web restent en anglais pour ces dix langues, en attendant
-  fornews ; Apple Intelligence ne les parle pas toutes. Détail dans `TACHES-1.4.md`.
+  fornews. Apple Intelligence n'en parle que douze (ni le russe, ni l'ukrainien, ni le hindi) :
+  pour celles-là, ses réponses viennent dans une langue proposée dans les Réglages (`LangueIA`),
+  l'anglais à défaut. Détail dans `TACHES-1.4.md`.
 - **Politique de confidentialité** : à mettre à jour à la sortie, pas avant — elle décrit ce que
   l'on télécharge sur l'App Store (Wikidata, la page chargée pour une adresse seule, iCloud une
   fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.

@@ -1589,7 +1589,7 @@ final class DocumentSummarizer: ObservableObject {
     private func run(_ text: String) async {
         do {
             let session = LanguageModelSession(instructions: Self.instructions(partial: partialDocument))
-            let prompt = tr("Voici le document à résumer :")
+            let prompt = LangueIA.texte("Voici le document à résumer :")
             // La règle de langue est répétée *après* le document, comme dans la discussion :
             // les instructions la posent une fois, mais un document rédigé dans une autre
             // langue tire fortement le modèle vers elle — un résumé demandé en français sur
@@ -1610,7 +1610,7 @@ final class DocumentSummarizer: ObservableObject {
     /// language explicitly, so the model answers in the language the reader chose.
     private static func instructions(partial: Bool) -> String {
         let note = partial ? "\n\n" + excerptNote : ""
-        let code = Localization.shared.code
+        let code = LangueIA.code
         switch code {
         case "en": return resumeEnAnglais(langue: "English", enBref: "In brief") + note
         case "de": return """
@@ -1663,7 +1663,7 @@ final class DocumentSummarizer: ObservableObject {
     """ + note
         // Les langues ajoutées en 1.4 : la consigne anglaise, qui nomme la langue du résumé, et
         // le titre du dernier chapitre déjà dans cette langue.
-        default: return resumeEnAnglais(langue: AppLanguage.nomAnglais(code), enBref: tr("En bref")) + note
+        default: return resumeEnAnglais(langue: AppLanguage.nomAnglais(code), enBref: LangueIA.texte("En bref")) + note
         }
     }
 
@@ -1744,7 +1744,7 @@ final class DocumentSummarizer: ObservableObject {
     static var excerptNote: String {
         // Les langues ajoutées en 1.4 lisent la note anglaise : elle ne dit rien de la langue de
         // la réponse, que la consigne principale fixe.
-        let code = Localization.shared.code
+        let code = LangueIA.code
         switch ["fr", "de", "es", "it"].contains(code) ? code : "en" {
         case "en": return """
     The document is too long to be sent whole. You are given its OPENING, then an OUTLINE — \
@@ -1891,10 +1891,10 @@ struct DocumentSummaryView: View {
     private var summaryDisclaimer: some View {
         HStack(spacing: 6) {
             AppleIntelligenceGlyph(size: 12)
-            Text(summarizer.partialDocument
+            Text((summarizer.partialDocument
                  ? tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs.")
                    + " " + tr("Document trop long pour être lu en entier : seul son début a été analysé.")
-                 : tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs."))
+                 : tr("Résumé généré sur l’appareil par Apple Intelligence. Peut contenir des erreurs.")) + LangueIA.mention)
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16).padding(.vertical, 8)

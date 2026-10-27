@@ -640,8 +640,15 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       analysés » existe dans les quinze. Une chaîne qui manquerait dans une langue lit l'anglais, pas le
       français (`tr`) ; `scripts/ajouter-traductions.py` prend désormais les quinze langues et
       signale celles qui manquent. ⚠️ **Traductions faites sans relecteur natif.** Apple
-      Intelligence ne parle pas toutes ces langues (à ma connaissance, ni le russe, ni l'ukrainien, ni
-      le hindi) : le résumé peut y échouer ou répondre dans une autre langue. Vérifié au simulateur
+      Intelligence ne parle pas toutes ces langues : contrôlé le 27/10 sur le Mac
+      (`SystemLanguageModel.default.supportedLanguages`, 24 variantes), il parle douze des quinze —
+      **ni le russe, ni l'ukrainien, ni le hindi**. D'où `LangueIA` (Patrick : « fais des contrôles »,
+      « si les langues ne fonctionnent pas, il faut proposer une autre langue ») : l'app demande au
+      modèle ses langues ; s'il ne parle pas celle de l'app, le résumé et la conversation viennent
+      dans la langue choisie dans les Réglages (section « Réponses d'Apple Intelligence », qui
+      n'apparaît qu'alors, avec les seules langues qu'il parle), l'anglais à défaut, et une mention
+      sous la réponse le dit. Les consignes et la phrase « Voici le document à résumer » partent dans
+      cette langue-là. Vérifié au simulateur
       iPad : l'accueil en japonais, les entités en russe. **Pas vu** : chaque écran dans chaque langue,
       le Mac (compilé seulement), la fiche App Store (à traduire à part).
 - [x] **7. Plusieurs fenêtres, pour comparer** (fait le 27/10, `Views/FenetreDocument.swift`). Deux
