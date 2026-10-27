@@ -13,6 +13,8 @@ extension Notification.Name {
     /// Ouvre un rapport du coffre par son identifiant (`VaultReport.id`) — depuis la fiche d'une
     /// entité, « Dans le coffre ».
     static let okiaOuvrirRapport = Notification.Name("okia.ouvrirRapport")
+    /// Le dossier d'import surveillé (option Analytic, Mac) : Fichier ▸ Dossier d'import surveillé…
+    static let okiaDossierSurveille = Notification.Name("okia.dossierSurveille")
 }
 
 /// Holds the currently displayed document and any load error.
@@ -150,12 +152,117 @@ final class DocumentStore: ObservableObject {
         }
     }
 
-    /// Option Analytic : convertit un document Word, PDF ou PowerPoint en Markdown, l'écrit
-    /// dans le dossier « Importés » et l'ouvre.
-    func importer(url: URL) {
+    /// Option Analytic : convertit un document Word, PDF ou PowerPoint en Markdown, le range
+    /// (`RangementDocuments`) et l'ouvre.
+    func importer(url: URL) { importerLot([url]) }
+
+    // MARK: Import par lot (option Analytic, 1.4)
+
+    /// Les fichiers à importer, l'un après l'autre : plusieurs fichiers choisis d'un coup, un dossier,
+    /// un dépôt, « Ouvrir avec », le dossier surveillé — une seule file.
+    private var fichiersEnAttente: [URL] = []
+    /// Les dossiers dont on importe le contenu : ouverts (accès du bac à sable) le temps du lot.
+    private var dossiersOuverts: [URL] = []
+    private struct Lot {
+        var total = 0
+        var faits = 0
+        var importes = 0
+        var dernier: URL?
+        var echecs: [String] = []
+        var choix: (consignes: Bool, rapport: Bool)?
+    }
+    private var lot: Lot?
+    /// Le bilan d'un lot, montré à la fin.
+    @Published var bilanLot: String?
+
+    /// Importe des fichiers et des dossiers (leurs Word, PDF et PowerPoint, sous-dossiers compris).
+    /// Un seul fichier : l'import habituel, qui s'ouvre à la fin ; plusieurs : à la suite, la
+    /// question d'Apple Intelligence posée une fois, un bilan à la fin.
+    func importerLot(_ urls: [URL]) {
+        var fichiers: [URL] = []
+        for u in urls {
+            let scoped = u.startAccessingSecurityScopedResource()
+            if (try? u.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                if scoped { dossiersOuverts.append(u) }
+                fichiers += Self.importables(dans: u)
+            } else {
+                if scoped { u.stopAccessingSecurityScopedResource() }
+                if ImportEnCours.estImportable(u) { fichiers.append(u) }
+            }
+        }
+        guard !fichiers.isEmpty else {
+            if lot == nil { fermerDossiers() }
+            errorMessage = tr("Aucun document Word, PDF ou PowerPoint à importer.")
+            return
+        }
+        if lot == nil { lot = Lot() }
+        lot?.total += fichiers.count
+        fichiersEnAttente += fichiers
+        fichierSuivant()
+    }
+
+    /// Les Word, PDF et PowerPoint d'un dossier et de ses sous-dossiers, dans l'ordre des noms.
+    nonisolated static func importables(dans dossier: URL) -> [URL] {
+        guard let e = FileManager.default.enumerator(at: dossier, includingPropertiesForKeys: nil,
+                                                     options: [.skipsHiddenFiles, .skipsPackageDescendants]) else { return [] }
+        return e.compactMap { $0 as? URL }.filter(ImportEnCours.estImportable)
+            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+    }
+
+    private func fichierSuivant() {
+        guard importEnCours == nil else { return }
+        guard !fichiersEnAttente.isEmpty else { terminerLot(); return }
+        let url = fichiersEnAttente.removeFirst()
         let i = ImportEnCours(nomSource: url.lastPathComponent)
+        if let l = lot, l.total > 1 {
+            i.lot = (l.faits + 1, l.total)
+            i.reponseImposee = l.choix
+            i.surReponse = { [weak self] c, r in self?.lot?.choix = (c, r) }
+        }
         importEnCours = i
-        i.lancer(url) { [weak self] issue in self?.finImport(i, issue) }
+        i.lancer(url) { [weak self] issue in self?.finImportLot(i, issue) }
+    }
+
+    private func finImportLot(_ i: ImportEnCours, _ issue: Result<ImportEnCours.Resultat, Error>) {
+        guard importEnCours === i else { return }
+        guard var l = lot, l.total > 1 else {
+            // Un seul document : il s'ouvre, comme avant.
+            lot = nil
+            fermerDossiers()
+            finImport(i, issue)
+            pageSuivante()
+            return
+        }
+        importEnCours = nil
+        l.faits += 1
+        switch issue {
+        case .success(let r):
+            l.importes += 1
+            recents.add(url: r.document)
+            if let a = r.rapport { recents.add(url: a) }
+            l.dernier = r.rapport ?? r.document
+        case .failure:
+            l.echecs.append(i.nomSource)
+        }
+        lot = l
+        // La fenêtre d'avancement se referme, la suivante s'ouvre.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.fichierSuivant() }
+    }
+
+    private func terminerLot() {
+        guard let l = lot else { return }
+        lot = nil
+        fermerDossiers()
+        if let dernier = l.dernier { open(url: dernier) }
+        var bilan = tr("%d documents importés", l.importes) + " — " + tr("rangés dans « md Viewer › Importés », au dossier du jour.")
+        if !l.echecs.isEmpty { bilan += "\n\n" + tr("Pas importés : %@", l.echecs.joined(separator: ", ")) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { self.bilanLot = bilan }
+        pageSuivante()
+    }
+
+    private func fermerDossiers() {
+        dossiersOuverts.forEach { $0.stopAccessingSecurityScopedResource() }
+        dossiersOuverts = []
     }
 
     private func finImport(_ i: ImportEnCours, _ issue: Result<ImportEnCours.Resultat, Error>) {
@@ -213,12 +320,16 @@ final class DocumentStore: ObservableObject {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.vitrineImport = true }
             }
             self.pageSuivante()
+            self.fichierSuivant()
         }
     }
 
     func annulerImport() {
         importEnCours?.annuler()
         importEnCours = nil
+        // Annuler un document d'un lot arrête le lot : ce qui est déjà importé reste.
+        fichiersEnAttente = []
+        if lot != nil { terminerLot() }
     }
 
     /// Reopens a previously stored recent entry (local file or remote report).
@@ -331,6 +442,17 @@ struct OKiaMarkdownViewerApp: App {
         if let dossier = env["OKIA_COFFRE"], !dossier.isEmpty {
             store.vault.setFolder(URL(fileURLWithPath: dossier, isDirectory: true))
         }
+        // OKIA_LOT=<dossier> : importe un dossier entier, comme un dossier choisi ou déposé.
+        if let dossier = env["OKIA_LOT"], !dossier.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                store.importerLot([URL(fileURLWithPath: dossier, isDirectory: true)])
+            }
+        }
+        // OKIA_SURVEILLE=<dossier> : le dossier d'import surveillé, sans le sélecteur ; « arreter » l'oublie.
+        if let dossier = env["OKIA_SURVEILLE"], !dossier.isEmpty {
+            if dossier == "arreter" { DossierSurveille.partage.arreter() }
+            else { DossierSurveille.partage.choisir(URL(fileURLWithPath: dossier, isDirectory: true)) }
+        }
         if env["OKIA_ANALYSE_COFFRE"] != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
@@ -348,6 +470,10 @@ struct OKiaMarkdownViewerApp: App {
             RootView()
                 .environmentObject(store)
                 .modifier(ApparenceDeCapture())
+                // Les fichiers et les liens confiés à l'app vont à la fenêtre ouverte : depuis que l'app
+                // déclare plusieurs scènes (1.4, fenêtre du public), chacun en ouvrait une nouvelle, et
+                // des imports d'un lot s'y perdaient (Mac, 27/10/2026).
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 // Handles file URLs (cold + warm "Open in…") and the mdviewer:// scheme.
                 .onOpenURL { url in
                     store.handleIncoming(url)
@@ -372,6 +498,9 @@ struct OKiaMarkdownViewerApp: App {
                     NotificationCenter.default.post(name: .okiaImporter, object: nil)
                 }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
+                Button(tr("Dossier d’import surveillé…")) {
+                    NotificationCenter.default.post(name: .okiaDossierSurveille, object: nil)
+                }
                 Button(tr("Analyser le coffre…")) {
                     NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
                 }

@@ -19,6 +19,12 @@ final class ImportEnCours: ObservableObject, Identifiable {
     let traducteur = TraducteurPonctuel()
     private var nom = ""
     private var fini: (@MainActor (Result<Resultat, Error>) -> Void)?
+    /// Dans un lot (1.4) : le rang de ce document et le total, que la fenêtre d'avancement dit.
+    var lot: (rang: Int, total: Int)?
+    /// La réponse déjà donnée pour le lot : la question n'est posée qu'une fois.
+    var reponseImposee: (consignes: Bool, rapport: Bool)?
+    /// L'utilisateur vient de répondre : le lot retient sa réponse.
+    var surReponse: ((Bool, Bool) -> Void)?
 
     /// Ce que l'import a écrit : le document, et le rapport d'analyse s'il a été demandé.
     struct Resultat {
@@ -80,7 +86,9 @@ final class ImportEnCours: ObservableObject, Identifiable {
                     return
                 }
                 #endif
-                if MoteurRedaction.disponible {
+                if let r = self?.reponseImposee {
+                    self?.poursuivre(consignes: r.consignes, rapport: r.rapport, doc: doc)
+                } else if MoteurRedaction.disponible {
                     self?.enAttente = doc
                 } else {
                     self?.poursuivre(consignes: false, rapport: false, doc: doc)
@@ -95,6 +103,8 @@ final class ImportEnCours: ObservableObject, Identifiable {
 
     /// La réponse à la question : rédiger les consignes, le rapport, ou ni l'un ni l'autre.
     func poursuivre(consignes: Bool, rapport: Bool, doc: DocumentImporte? = nil) {
+        // Sans `doc`, c'est la réponse de l'utilisateur à la question : le lot la retient.
+        if doc == nil { surReponse?(consignes, rapport) }
         guard let doc = doc ?? enAttente, let fini else { return }
         enAttente = nil
         debut = Date()

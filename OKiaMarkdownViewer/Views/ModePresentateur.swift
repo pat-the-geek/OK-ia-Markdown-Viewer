@@ -101,9 +101,10 @@ struct VuePublic: View {
     }
 }
 
-/// La fenêtre du public (Mac). Le système la restaure parfois au lancement,
-/// seule, sans présentation en cours : elle rouvre alors la fenêtre principale et se referme — sur
-/// iPad, elle restait noire, sans aucune issue.
+/// La fenêtre du public (Mac). Le système la restaure au lancement, sans présentation en cours : elle
+/// se referme aussitôt. Seule restaurée (iPad, au simulateur), elle rouvre d'abord la fenêtre
+/// principale — elle restait noire, sans issue ; à côté de la principale (Mac), en rouvrir une en
+/// faisait deux.
 struct FenetrePublique: View {
     @ObservedObject private var seance = SeancePresentation.partage
     @Environment(\.openWindow) private var openWindow
@@ -115,7 +116,10 @@ struct FenetrePublique: View {
                 // Restaurée sans présentation : elle s'efface sans se compter comme ouverte (une
                 // fenêtre détruite ne passe pas toujours par `onDisappear`).
                 guard seance.document != nil else {
-                    openWindow(id: "principal")
+                    let autres = UIApplication.shared.connectedScenes.filter {
+                        $0.session.role == .windowApplication && $0.activationState != .unattached
+                    }
+                    if autres.count <= 1 { openWindow(id: "principal") }
                     dismissWindow(id: "public")
                     return
                 }

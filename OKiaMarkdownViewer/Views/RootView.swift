@@ -12,6 +12,10 @@ struct RootView: View {
     @State private var importOffice = false
     /// L'analyse de tout le coffre (option Analytic, 1.4).
     @State private var analyseCoffre = false
+    /// Le dossier d'import surveillé (option Analytic, Mac) : son réglage, puis le choix du dossier.
+    @State private var reglageSurveille = false
+    @State private var choisirSurveille = false
+    @ObservedObject private var surveille = DossierSurveille.partage
     @ObservedObject private var achat = AchatAnalytic.partage
 
     /// UTTypes we accept in the in-app importer.
@@ -44,14 +48,16 @@ struct RootView: View {
         // One importer for both modes — `importFolder` selects file vs. vault folder.
         .fileImporter(
             isPresented: $showImporter,
-            allowedContentTypes: importFolder ? [.folder] : importOffice ? ImportEnCours.types : RootView.importedTypes,
-            allowsMultipleSelection: false
+            allowedContentTypes: importFolder ? [.folder] : importOffice ? ImportEnCours.types + [.folder] : RootView.importedTypes,
+            // L'import (1.4) : plusieurs fichiers d'un coup, ou un dossier entier.
+            allowsMultipleSelection: importOffice
         ) { result in
             switch result {
             case .success(let urls):
                 guard let url = urls.first else { return }
-                if importFolder { store.vault.setFolder(url) }
-                else if importOffice { store.importer(url: url) }
+                if choisirSurveille { choisirSurveille = false; surveille.choisir(url) }
+                else if importFolder { store.vault.setFolder(url) }
+                else if importOffice { store.importerLot(urls) }
                 else { store.open(url: url) }
             case .failure(let error):
                 store.errorMessage = error.localizedDescription
@@ -79,6 +85,22 @@ struct RootView: View {
             importOffice = true
             showImporter = true
         }
+        // Le dossier d'import surveillé : le choisir, ou arrêter.
+        .onReceive(NotificationCenter.default.publisher(for: .okiaDossierSurveille)) { _ in
+            guard achat.acces else { store.vitrineImport = true; return }
+            reglageSurveille = true
+        }
+        .confirmationDialog(surveille.nom.map { tr("Dossier surveillé : « %@ »", $0) } ?? tr("Aucun dossier surveillé"),
+                            isPresented: $reglageSurveille, titleVisibility: .visible) {
+            Button(surveille.nom == nil ? tr("Choisir un dossier…") : tr("Choisir un autre dossier…")) {
+                importFolder = true; importOffice = false; choisirSurveille = true; showImporter = true
+            }
+            if surveille.nom != nil {
+                Button(tr("Arrêter la surveillance"), role: .destructive) { surveille.arreter() }
+            }
+        } message: {
+            Text(tr("Chaque Word, PDF ou PowerPoint qui arrive dans ce dossier est importé et rangé, tant que md Viewer est ouvert. Ce qui s’y trouve déjà n’est pas importé."))
+        }
         // Un rapport du coffre demandé par la fiche d'une entité.
         .onReceive(NotificationCenter.default.publisher(for: .okiaOuvrirRapport)) { note in
             guard let id = note.userInfo?["id"] as? String else { return }
@@ -98,6 +120,13 @@ struct RootView: View {
                 // Une page entière sur iPad : la liste et la carte ont besoin de place.
                 .presentationSizing(.page)
         }
+        // Le bilan d'un import par lot.
+        .alert(tr("Import terminé"),
+               isPresented: Binding(get: { store.bilanLot != nil }, set: { if !$0 { store.bilanLot = nil } })) {
+            Button("OK", role: .cancel) { store.bilanLot = nil }
+        } message: {
+            Text(store.bilanLot ?? "")
+        }
         .sheet(item: $store.importEnCours) { i in
             ImportView(import_: i, annuler: { store.annulerImport() })
                 .interactiveDismissDisabled()
@@ -109,14 +138,22 @@ struct RootView: View {
                 #endif
         }
         // macOS: auto-open new reports landing in the vault folder.
-        .task { store.startVaultWatch() }
+        .task {
+            store.startVaultWatch()
+            #if targetEnvironment(macCatalyst)
+            // Le dossier d'import surveillé : ses nouveaux fichiers rejoignent la file d'import.
+            surveille.demarrer { urls in if AchatAnalytic.partage.acces { store.importerLot(urls) } }
+            #endif
+        }
         .onChange(of: store.vault.folderName) { _, _ in store.startVaultWatch() }
         // Drag a .md from Finder onto the window to open it.
         .dropDestination(for: URL.self) { urls, _ in
             guard let url = urls.first else { return false }
-            // Un Word, un PDF, un PowerPoint déposé s'importe — avec l'option.
-            if ImportEnCours.estImportable(url) {
-                if achat.acces { store.importer(url: url) } else { store.vitrineImport = true }
+            // Des Word, PDF, PowerPoint déposés — ou un dossier qui en contient — s'importent, à la
+            // suite, avec l'option.
+            let estDossier = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+            if estDossier || urls.contains(where: ImportEnCours.estImportable) {
+                if achat.acces { store.importerLot(urls) } else { store.vitrineImport = true }
                 return true
             }
             store.open(url: url)

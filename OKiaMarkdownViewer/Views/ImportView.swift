@@ -16,6 +16,12 @@ struct ImportView: View {
             Label(tr("Import de « %@ »", import_.nomSource), systemImage: "square.and.arrow.down.on.square")
                 .font(.headline)
                 .lineLimit(2)
+            // Un lot (1.4) : où l'on en est ; la question ne se pose qu'au premier document.
+            if let l = import_.lot {
+                Text(tr("Document %d sur %d", l.rang, l.total))
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
             if let doc = import_.enAttente {
                 question(doc)
             } else if let a = import_.avancement {

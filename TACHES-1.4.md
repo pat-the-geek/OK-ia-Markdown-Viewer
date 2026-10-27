@@ -496,10 +496,25 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       simulateur iPad, coffre de six rapports fornews : 147 entités, France dans 6 documents, détail,
       carte de 21 lieux. **Pas vu** : le Mac (compilé), un grand coffre (temps de la première lecture),
       un rapport sans section « Entités » (détection).
-- [ ] **3. Import par lot et dossier surveillé.** Déposer un dossier (ou plusieurs fichiers) de Word,
-      PDF et PowerPoint : tous convertis, à la suite, avec un compte à rebours d'ensemble ; un dossier
-      choisi peut être surveillé, et chaque nouveau fichier y est importé. Les options d'Apple
-      Intelligence (consignes, rapport) choisies une fois pour le lot.
+- [x] **3. Import par lot et dossier surveillé** (fait le 27/10). Une seule file d'import
+      (`DocumentStore.importerLot`) : plusieurs fichiers choisis d'un coup ou un dossier (sous-dossiers
+      compris) dans le sélecteur, un dépôt sur la fenêtre, « Ouvrir avec », le dossier surveillé, les
+      pages web. Un seul fichier : l'import habituel, qui s'ouvre. Plusieurs : « Document 3 sur 12 », la
+      question d'Apple Intelligence posée au premier seulement, un échec n'arrête pas la suite, un bilan
+      à la fin (« 3 documents importés — rangés dans md Viewer › Importés, au dossier du jour » ; les
+      noms pas importés), le dernier ouvert, tous dans les récents ; Annuler arrête le lot. **Dossier
+      surveillé** (Mac, `DossierSurveille`) : Fichier ▸ Dossier d'import surveillé… ; relu toutes les
+      10 s tant que l'app est ouverte ; ce qui s'y trouvait au choix n'est pas importé ; un fichier
+      modifié depuis moins de 5 s attend. **Corrigé en route** : depuis les scènes multiples, chaque
+      fichier confié à l'app ouvrait une nouvelle fenêtre (`handlesExternalEvents` sur la fenêtre
+      principale) ; la fenêtre du public restaurée à côté de la principale en ouvrait une seconde.
+      ⚠️ **Limite de SwiftUI** : plusieurs fichiers confiés d'un coup par le Finder (« Ouvrir avec »)
+      n'arrivent qu'un à la fois — seul l'un d'eux s'importe ; pour un lot, le sélecteur, le dossier ou
+      le dépôt. Vérifié : au simulateur (`OKIA_LOT`, dossier de trois Word dont un en sous-dossier :
+      question une fois, trois rangés, bilan, repli sans iCloud Drive) ; sur le Mac (deux Word confiés
+      l'un après l'autre, rangés dans iCloud Drive ; dossier surveillé `OKIA_SURVEILLE` : le nouveau
+      importé, l'ancien non). Fichiers d'essai retirés d'iCloud Drive, réglage oublié. **Pas vu** : le
+      dépôt de plusieurs fichiers et le sélecteur à choix multiple (l'app ne se pilote pas d'ici).
 - [ ] **4. Export Word avec les annotations en commentaires de relecture.** Surlignages et
       soulignements deviennent des commentaires Word ancrés au passage ; les notes manuscrites, des
       images en commentaire. À ajouter à l'export existant (`OOXMLExport`).
