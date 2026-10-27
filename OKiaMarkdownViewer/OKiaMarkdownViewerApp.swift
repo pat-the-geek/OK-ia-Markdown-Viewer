@@ -32,6 +32,14 @@ final class DocumentStore: ObservableObject {
     @Published var importEnCours: ImportEnCours?
     /// Un import demandé sans l'option : la vitrine de l'option s'ouvre.
     @Published var vitrineImport = false
+
+    /// Fait `action` si l'option Analytic est achetée, montre sa vitrine sinon — une fois les achats
+    /// lus (`AchatAnalytic.accesSur`), jamais sur l'ignorance du lancement.
+    func avecOption(_ action: @escaping @MainActor () -> Void) {
+        Task { @MainActor [weak self] in
+            if await AchatAnalytic.partage.accesSur() { action() } else { self?.vitrineImport = true }
+        }
+    }
     /// Ce que le document qui s'ouvre doit chercher : un document trouvé par la recherche du coffre.
     @Published var rechercheDemandee: String?
     /// Une action de Raccourcis (1.4) demande au lecteur d'ouvrir les entités du document.
@@ -75,7 +83,7 @@ final class DocumentStore: ObservableObject {
             // Un Word, un PDF, un PowerPoint confié à md Viewer (« Ouvrir avec », partage, dépôt sur
             // l'icône) s'importe avec l'option Analytic — sur Mac, iPhone et iPad depuis le 26/10 ;
             // sans elle, l'option se présente.
-            if AchatAnalytic.partage.acces { importer(url: url) } else { vitrineImport = true }
+            avecOption { [weak self] in self?.importer(url: url) }
         } else {
             open(url: url)
         }
@@ -354,19 +362,22 @@ final class DocumentStore: ObservableObject {
     private func pageSuivante() {
         guard importEnCours == nil, !pagesEnAttente.isEmpty else { return }
         let page = pagesEnAttente.removeFirst()
-        // Avec l'option, la fiche de lecture ; sans elle, le texte de la page, puis l'option se présente.
-        let acces = AchatAnalytic.partage.acces
         let wikidata = UserDefaults.standard.string(forKey: ConsentementWikidata.cle) == ConsentementWikidata.accepte.rawValue
         let i = ImportEnCours(nomSource: page.titre ?? page.url)
         importEnCours = i
-        i.lancerPage(page, analyser: acces, wikidata: wikidata) { [weak self] issue in
-            guard let self else { return }
-            self.finImport(i, issue)
-            if !acces, case .success = issue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.vitrineImport = true }
+        // Avec l'option, la fiche de lecture ; sans elle, le texte de la page, puis l'option se
+        // présente. Les achats lus d'abord : une page partagée lance souvent l'app.
+        Task { @MainActor in
+            let acces = await AchatAnalytic.partage.accesSur()
+            i.lancerPage(page, analyser: acces, wikidata: wikidata) { [weak self] issue in
+                guard let self else { return }
+                self.finImport(i, issue)
+                if !acces, case .success = issue {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.vitrineImport = true }
+                }
+                self.pageSuivante()
+                self.fichierSuivant()
             }
-            self.pageSuivante()
-            self.fichierSuivant()
         }
     }
 

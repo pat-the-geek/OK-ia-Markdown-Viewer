@@ -58,8 +58,8 @@ struct ImporterDocumentsIntent: AppIntent {
     }
 
     @MainActor static func faire(_ documents: [IntentFile], store: DocumentStore) throws {
-        guard AchatAnalytic.partage.acces else { store.vitrineImport = true; return }
-        store.importerLot(try documents.map(fichierLisible))
+        let urls = try documents.map(fichierLisible)
+        store.avecOption { store.importerLot(urls) }
     }
 }
 
@@ -214,7 +214,7 @@ extension DocumentStore {
     fileprivate func recevoirFichiers(_ urls: [URL]) {
         let aImporter = urls.filter(ImportEnCours.estImportable)
         if !aImporter.isEmpty {
-            if AchatAnalytic.partage.acces { importerLot(aImporter) } else { vitrineImport = true }
+            avecOption { [weak self] in self?.importerLot(aImporter) }
         } else if let premier = urls.first {
             open(url: premier)
         }

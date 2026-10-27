@@ -119,6 +119,14 @@ final class AchatAnalytic: ObservableObject {
         droitsLus = true
     }
 
+    /// `acces`, une fois les droits lus. Au lancement, ils ne le sont pas encore : un PowerPoint
+    /// ouvert avec md Viewer (ou une page partagée depuis Safari) montrait la vitrine de l'option à
+    /// qui l'avait achetée (Patrick, 27/10/2026).
+    func accesSur() async -> Bool {
+        if !accesConnu { await rafraichir() }
+        return acces
+    }
+
     /// `acces` est-il sûr ? Les droits lus, ou forcés (Debug).
     var accesConnu: Bool {
         #if DEBUG

@@ -651,6 +651,17 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       cette langue-là. Vérifié au simulateur
       iPad : l'accueil en japonais, les entités en russe. **Pas vu** : chaque écran dans chaque langue,
       le Mac (compilé seulement), la fiche App Store (à traduire à part).
+- [x] **La vitrine montrée à qui avait acheté, et impossible à fermer** (corrigé le 27/10 ; Patrick,
+      sur l'iPhone, un PowerPoint ouvert avec md Viewer : « je ne peux pas quitter », « l'option ne doit
+      plus s'afficher si on a acheté »). Deux défauts. ① Au lancement, les achats ne sont pas encore
+      lus (`Transaction.currentEntitlements`, en arrière-plan) : un document confié par « Ouvrir avec »,
+      une page partagée, un Raccourci ou un Service qui lance l'app voyait `acces` faux et montrait la
+      vitrine. Désormais `AchatAnalytic.accesSur()` lit les droits s'ils ne le sont pas, et
+      `DocumentStore.avecOption` décide après (import, page web, Raccourcis, Services, menus, dépôt).
+      ② La feuille n'avait pas de bouton : glisser vers le bas s'y confondait avec le défilement, et
+      le Mac n'a pas ce geste — un « Fermer » dans une barre de navigation. Vérifié au simulateur
+      iPhone : sans l'option, la vitrine et son « Fermer » ; avec, l'import direct. **Pas vu** : le
+      lancement à froid avec un vrai achat (StoreKit ne tourne pas au simulateur lancé par `simctl`).
 - [x] **7. Plusieurs fenêtres, pour comparer** (fait le 27/10, `Views/FenetreDocument.swift`). Deux
       documents côte à côte, ou deux versions d'un même document, chacune avec ses annotations (une
       version modifiée est un autre document, `IdentiteDocument`). **Chaque fenêtre a son

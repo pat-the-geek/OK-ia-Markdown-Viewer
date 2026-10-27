@@ -90,16 +90,16 @@ struct RootView: View {
         // sur Mac, le menu « … » et l'accueil sur iPhone et iPad.
         .onReceive(NotificationCenter.default.publisher(for: .okiaImporter)) { n in
             guard n.estPour(store) else { return }
-            guard achat.acces else { store.vitrineImport = true; return }
-            importFolder = false
-            importOffice = true
-            showImporter = true
+            store.avecOption {
+                importFolder = false
+                importOffice = true
+                showImporter = true
+            }
         }
         // Le dossier d'import surveillé : le choisir, ou arrêter.
         .onReceive(NotificationCenter.default.publisher(for: .okiaDossierSurveille)) { n in
             guard n.estPour(store) else { return }
-            guard achat.acces else { store.vitrineImport = true; return }
-            reglageSurveille = true
+            store.avecOption { reglageSurveille = true }
         }
         .confirmationDialog(surveille.nom.map { tr("Dossier surveillé : « %@ »", $0) } ?? tr("Aucun dossier surveillé"),
                             isPresented: $reglageSurveille, titleVisibility: .visible) {
@@ -125,14 +125,13 @@ struct RootView: View {
         // L'analyse de tout le coffre (option Analytic).
         .onReceive(NotificationCenter.default.publisher(for: .okiaAnalyseCoffre)) { n in
             guard n.estPour(store) else { return }
-            guard achat.acces else { store.vitrineImport = true; return }
-            analyseCoffre = true
+            store.avecOption { analyseCoffre = true }
         }
         // La recherche dans tout le coffre (option Analytic).
         .onReceive(NotificationCenter.default.publisher(for: .okiaRechercheCoffre)) { note in
             guard note.estPour(store) else { return }
-            guard achat.acces else { store.vitrineImport = true; return }
-            rechercheCoffre = DemandeRecherche(requete: note.userInfo?["requete"] as? String ?? "")
+            let requete = note.userInfo?["requete"] as? String ?? ""
+            store.avecOption { rechercheCoffre = DemandeRecherche(requete: requete) }
         }
         .sheet(item: $rechercheCoffre) { demande in
             RechercheCoffreView(ouvrir: { r in store.ouvrirTrouve(r.id, chercher: r.aChercher) },
@@ -160,12 +159,24 @@ struct RootView: View {
                 .interactiveDismissDisabled()
         }
         .sheet(isPresented: $store.vitrineImport) {
-            ScrollView { OptionAnalyticView().padding(24) }
-                // Dix apports depuis le 27/10 : la feuille de taille ordinaire coupait le bouton d'achat.
-                .presentationSizing(.page)
-                #if targetEnvironment(macCatalyst)
-                .frame(minWidth: 460, minHeight: 680)
-                #endif
+            // Un bouton pour la refermer (Patrick, 27/10/2026, sur l'iPhone : « je ne peux pas
+            // quitter ») : glisser vers le bas s'y confondait avec le défilement, et le Mac n'a pas
+            // ce geste. La barre de navigation la décolle aussi du haut de l'écran.
+            NavigationStack {
+                ScrollView { OptionAnalyticView().padding(24) }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(tr("Fermer")) { store.vitrineImport = false }
+                                .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
+                        }
+                    }
+            }
+            // Dix apports depuis le 27/10 : la feuille de taille ordinaire coupait le bouton d'achat.
+            .presentationSizing(.page)
+            #if targetEnvironment(macCatalyst)
+            .frame(minWidth: 460, minHeight: 680)
+            #endif
         }
         // macOS: auto-open new reports landing in the vault folder.
         .task {
@@ -186,7 +197,7 @@ struct RootView: View {
             // suite, avec l'option.
             let estDossier = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
             if estDossier || urls.contains(where: ImportEnCours.estImportable) {
-                if achat.acces { store.importerLot(urls) } else { store.vitrineImport = true }
+                store.avecOption { store.importerLot(urls) }
                 return true
             }
             store.open(url: url)
