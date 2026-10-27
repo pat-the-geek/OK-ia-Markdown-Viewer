@@ -23,7 +23,15 @@
   var annotations = [];        // l'état courant, tel que Swift l'a posé
   var occupe = false;          // nos propres retouches ne relancent pas l'observateur
 
-  function contenu() { return document.getElementById('content'); }
+  // La page du lecteur (et du livre) : #content. Le diaporama : #deck, toutes ses diapositives —
+  // une diapositive reprend le texte du document, les annotations s'y retrouvent.
+  function contenu() { return document.getElementById('content') || document.getElementById('deck'); }
+  // Là où chercher le bloc le plus proche d'un tracé : dans le diaporama, la diapositive affichée
+  // seulement (les autres sont cachées, à zéro).
+  function zone() {
+    var d = document.getElementById('deck');
+    return d ? (d.querySelector('.slide.active') || d) : contenu();
+  }
 
   function post(nom, charge) {
     try { window.webkit.messageHandlers[nom].postMessage(charge); } catch (e) { /* navigateur */ }
@@ -117,7 +125,7 @@
     var bloc = el && el.closest ? el.closest(BLOCS) : null;
     if (bloc && contenu().contains(bloc)) return bloc;
     // Dans la marge ou entre deux blocs : celui dont la hauteur contient le point, sinon le plus proche.
-    var tous = contenu().querySelectorAll(BLOCS), proche = null, ecart = Infinity;
+    var tous = zone().querySelectorAll(BLOCS), proche = null, ecart = Infinity;
     for (var i = 0; i < tous.length; i++) {
       var r = tous[i].getBoundingClientRect(), haut = r.top + window.scrollY, bas = r.bottom + window.scrollY;
       var d = y < haut ? haut - y : (y > bas ? y - bas : 0);

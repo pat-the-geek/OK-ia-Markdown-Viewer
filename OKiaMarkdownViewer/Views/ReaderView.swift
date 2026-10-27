@@ -344,6 +344,8 @@ struct ReaderView: View {
         .fullScreenCover(item: $tappedCarte) { carte in
             CarteZoomView(carte: carte)
         }
+        // Le diaporama a pu annoter le document : le lecteur relit ses annotations au retour.
+        .onChange(of: presenting) { _, ouvert in if !ouvert { annotationsDoc.charger(document) } }
         .fullScreenCover(isPresented: $presenting) {
             // Le diaporama reçoit le traducteur du lecteur, pas un neuf : sa mémoire
             // porte déjà tout ce que la lecture a traduit, et la même diapositive ne se
@@ -1841,17 +1843,36 @@ struct PresentationView: View {
     @State private var tappedDiagram: TappedDiagram?
     @State private var tappedImage: TappedImage?
     @State private var sharePayload: SharePayload?
+    /// Option Analytic (1.4) : les annotations du document, sur ses diapositives — les mêmes que
+    /// dans le lecteur (même fichier, relu au retour) — et le mode « Annoter » du diaporama.
+    @StateObject private var annotations = AnnotationsDocument()
+    @State private var annoter = false
+    @State private var calque: CalqueAnnotation?
 
     var body: some View {
         PresentationWebView(document: document,
                             translator: trad,
                             langueSource: langueSource,
                             traduire: traduire,
+                            annotations: annotations,
                             onExit: { dismiss() },
                             onDiagram: { tappedDiagram = $0 },
                             onImage: { tappedImage = $0 },
-                            onExportReady: { sharePayload = SharePayload(url: $0) })
+                            onExportReady: { sharePayload = SharePayload(url: $0) },
+                            onAnnoter: { annoter.toggle() })
             .ignoresSafeArea()
+            .overlay(alignment: .bottom) {
+                if annoter {
+                    PaletteAnnotation(annotations: annotations,
+                                      terminer: { annoter = false },
+                                      precedente: { diaporama("prev") },
+                                      suivante: { diaporama("next") })
+                        .padding(.bottom, 24)
+                }
+            }
+            .onChange(of: annoter) { _, actif in basculerAnnotation(actif) }
+            .onChange(of: annotations.outil) { _, _ in calque?.outilChange() }
+            .onChange(of: annotations.couleur) { _, _ in calque?.outilChange() }
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .fullScreenCover(item: $tappedDiagram) { DiagramZoomView(diagram: $0) }
@@ -1862,8 +1883,30 @@ struct PresentationView: View {
                 trad.absorber(memoireHeritee)
                 barreDeFenetre(visible: false)
             }
-            .onDisappear { barreDeFenetre(visible: true) }
+            .onDisappear {
+                barreDeFenetre(visible: true)
+                calque?.retirer()
+                calque = nil
+            }
             .overlay { TranslationHostView(translator: trad) }
+    }
+
+    private func diaporama(_ geste: String) {
+        annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.\(geste)();")
+    }
+
+    /// Le calque sur la diapositive : le doigt dessine, les flèches de la palette (et le clavier)
+    /// changent de diapositive.
+    private func basculerAnnotation(_ actif: Bool) {
+        annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.annotationActive(\(actif));")
+        if actif, let vue = annotations.diaporama, calque == nil {
+            let c = CalqueAnnotation(annotations: annotations)
+            c.installer(sur: vue)
+            calque = c
+        } else if !actif {
+            calque?.retirer()
+            calque = nil
+        }
     }
 
     /// Sur Mac, la barre de la fenêtre reste au-dessus d'une présentation plein écran et en cache
@@ -1922,16 +1965,18 @@ struct PresentationWebView: UIViewRepresentable {
     /// écran, sans chrome — donc pas de bascule vers l'original : on sort du diaporama
     /// pour retrouver le document.
     var traduire: Bool
+    var annotations: AnnotationsDocument
     var onExit: () -> Void
     var onDiagram: (TappedDiagram) -> Void
     var onImage: (TappedImage) -> Void
     var onExportReady: (URL) -> Void
+    var onAnnoter: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered"] {
+        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered", "annoter"] {
             controller.add(context.coordinator, name: name)
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
@@ -2002,6 +2047,10 @@ struct PresentationWebView: UIViewRepresentable {
                 self.envoyerTraduction(self.parent.translator.memoire, actif: true)
             }
             startPresentation()
+            // Les annotations du document sur ses diapositives ; le bouton « Annoter », avec l'option.
+            parent.annotations.diaporama = webView
+            parent.annotations.charger(parent.document)
+            webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettreAnnotation(\(AchatAnalytic.partage.acces));")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak webView] in
                 webView?.becomeFirstResponder()
             }
@@ -2139,6 +2188,8 @@ struct PresentationWebView: UIViewRepresentable {
         func userContentController(_ controller: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
             switch message.name {
+            case "annoter":
+                parent.onAnnoter()
             case "presentExit":
                 parent.onExit()
             case "diagramTapped":

@@ -555,12 +555,31 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
 /* ---- icônes des commandes : des tracés, pas des glyphes ------------------ */
 /* Les caractères ✕ ⚙ ▦ manquaient à la police du WebView en simulateur et sortaient en
    « ? » — jusque sur les captures store. Un SVG inline se dessine partout pareil. */
-.present-end, .present-menu-btn, .present-grid-btn, .overview-close {
+/* ---- Annoter (option Analytic, 1.4), à droite de la vue d'ensemble ------------------------ */
+.present-annot-btn {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(122px, calc(env(safe-area-inset-left) + 122px));
+  z-index: 41;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(40, 40, 40, 0.30);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+.present-annot-btn[hidden] { display: none !important; }
+.present-annot-btn:hover, .present-annot-btn.actif { opacity: 1; background: rgba(232, 151, 46, 0.6); }
+
+.present-end, .present-menu-btn, .present-grid-btn, .present-annot-btn, .overview-close {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.present-end svg, .present-menu-btn svg, .present-grid-btn svg, .overview-close svg {
+.present-end svg, .present-menu-btn svg, .present-grid-btn svg, .present-annot-btn svg, .overview-close svg {
   width: 20px;
   height: 20px;
   fill: none;
@@ -578,6 +597,7 @@ body.present-chantier .nav-arrow,
 body.present-chantier .present-end,
 body.present-chantier .present-menu-btn,
 body.present-chantier .present-grid-btn,
+body.present-chantier .present-annot-btn,
 body.present-chantier .present-counter,
 body.present-chantier .okia-agrandir { display: none; }
 body.present-chantier { --chantier-fond: #EEEEF1; }

@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="vendor/maplibre-gl.css" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="presentation.css" />
+  <!-- Option Analytic (1.4) : les annotations du document, sur ses diapositives aussi. -->
+  <link rel="stylesheet" href="annotations.css" />
   <!-- Offline vendored libraries (no CDN) -->
   <script src="vendor/marked.min.js"></script>
   <script src="vendor/mermaid.min.js"></script>
@@ -30,6 +32,8 @@
 
   <button id="presentGridBtn" class="present-grid-btn" aria-label="Vue d’ensemble des diapositives"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></button>
 
+  <button id="presentAnnotBtn" class="present-annot-btn" aria-label="Annoter" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.4L15.6 5.2a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.4 18.8z"/><path d="M13.8 7l3.2 3.2"/></svg></button>
+
   <div id="presentOverview" class="present-overview" hidden>
     <div class="overview-head">
       <span class="overview-title">Diapositives</span>
@@ -42,5 +46,6 @@
 
   <script src="render.js"></script>
   <script src="presentation.js"></script>
+  <script src="annotations.js"></script>
 </body>
 </html>

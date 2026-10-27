@@ -57,6 +57,7 @@
                                          es: 'Vista general de diapositivas',
                                          it: 'Panoramica delle diapositive' },
     'Fermer':         { en: 'Close', de: 'Schließen', es: 'Cerrar', it: 'Chiudi' },
+    'Annoter':        { en: 'Annotate', de: 'Anmerken', es: 'Anotar', it: 'Annota' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
     'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta' }
   };
@@ -949,6 +950,7 @@
     setLabel('presentEnd', 'Quitter le diaporama');
     setLabel('presentMenuBtn', 'Transitions');
     setLabel('presentGridBtn', 'Vue d’ensemble des diapositives');
+    setLabel('presentAnnotBtn', 'Annoter');
     setLabel('overviewClose', 'Fermer');
     var t = document.querySelector('.overview-title');
     if (t) t.textContent = TXT('Diapositives');
@@ -989,6 +991,9 @@
     if (menuBtn) menuBtn.onclick = toggleMenu;
     var gridBtn = el('presentGridBtn');
     if (gridBtn) gridBtn.onclick = toggleOverview;
+    // Option Analytic (1.4) : le mode « Annoter » est tenu par l'hôte (le calque PencilKit).
+    var annotBtn = el('presentAnnotBtn');
+    if (annotBtn) annotBtn.onclick = function (e) { e.stopPropagation(); closeMenu(); post('annoter', {}); };
     var ovClose = el('overviewClose');
     if (ovClose) ovClose.onclick = function (e) { e.stopPropagation(); closeOverview(); };
     // Tap anywhere else closes the transition menu.
@@ -1143,7 +1148,16 @@
     });
   }
 
+  // L'hôte montre le bouton « Annoter » quand l'option est acquise, et le dit actif pendant
+  // l'annotation.
+  function permettreAnnotation(oui) { var b = el('presentAnnotBtn'); if (b) b.hidden = !oui; }
+  function annotationActive(oui) {
+    var b = el('presentAnnotBtn');
+    if (b) b.classList.toggle('actif', !!oui);
+  }
+
   window.OKIA_PRESENT = { start: start, chantier: chantier, next: next, prev: prev, exit: exit,
+                          permettreAnnotation: permettreAnnotation, annotationActive: annotationActive,
                           collectSlide: collectSlide, collectAllSlides: collectAllSlides,
                           collectSlideExtras: collectSlideExtras,
                           collectAllSlidesExtras: collectAllSlidesExtras,

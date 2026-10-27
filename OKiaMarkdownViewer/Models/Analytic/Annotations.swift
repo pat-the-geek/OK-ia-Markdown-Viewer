@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import WebKit
 
 // Option Analytic (1.4) — les annotations d'un document. Le fichier .md n'est jamais modifié :
 // elles vivent à côté, liées au document, et la page les repose à chaque rendu (Web/annotations.js).
@@ -105,6 +106,8 @@ final class AnnotationsDocument: ObservableObject {
     weak var web: ReaderWebController?
     /// La page de droite du livre, quand il est ouvert.
     weak var livre: LivreController?
+    /// Le diaporama : ses diapositives reprennent le texte du document, les annotations s'y posent.
+    weak var diaporama: WKWebView?
 
     func charger(_ document: MarkdownDocument) {
         self.document = document
@@ -147,5 +150,6 @@ final class AnnotationsDocument: ObservableObject {
         let j = json
         web?.poserAnnotations(j)
         livre?.poserAnnotations(j)
+        diaporama?.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(j))")
     }
 }

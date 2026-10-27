@@ -242,13 +242,25 @@ enum PontAnnotations {
     }
 }
 
-/// La palette du mode « Annoter » : l'outil, la couleur, et Terminé.
+/// La palette du mode « Annoter » : l'outil, la couleur, et Terminé. Dans le diaporama, deux
+/// flèches de plus : le calque prend le doigt, la diapositive ne se balaie plus.
 struct PaletteAnnotation: View {
     @ObservedObject var annotations: AnnotationsDocument
+    /// Terminé ; par défaut, le mode « Annoter » du lecteur se referme.
+    var terminer: (() -> Void)?
+    var precedente: (() -> Void)?
+    var suivante: (() -> Void)?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
         HStack(spacing: 6) {
+            if let precedente {
+                Button(action: precedente) {
+                    Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).frame(width: 36, height: 40)
+                }
+                .tint(.primary)
+                .accessibilityLabel(tr("Diapositive précédente"))
+            }
             ForEach(AnnotationsDocument.Outil.allCases) { o in
                 Button { annotations.outil = o } label: {
                     Image(systemName: o.symbole)
@@ -273,8 +285,16 @@ struct PaletteAnnotation: View {
                 .accessibilityLabel(nomCouleur(c))
                 .accessibilityAddTraits(annotations.couleur == c ? .isSelected : [])
             }
+            if let suivante {
+                Divider().frame(height: 26).padding(.horizontal, 4)
+                Button(action: suivante) {
+                    Image(systemName: "chevron.right").font(.system(size: 17, weight: .semibold)).frame(width: 36, height: 40)
+                }
+                .tint(.primary)
+                .accessibilityLabel(tr("Diapositive suivante"))
+            }
             Divider().frame(height: 26).padding(.horizontal, 4)
-            Button { annotations.actif = false } label: {
+            Button { if let terminer { terminer() } else { annotations.actif = false } } label: {
                 Image(systemName: "checkmark")
                     .font(.system(size: 17, weight: .bold))
                     .frame(width: 40, height: 40)

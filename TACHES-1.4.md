@@ -412,7 +412,14 @@ Apple Intelligence (absente du simulateur).
 - [ ] **iPhone Duo** : le crayon y fonctionnera **dès iOS 27.2** (Patrick, 25/10) — rien à changer,
       le calque suit le réglage du système ; d'ici là, au doigt. À vérifier sur l'appareil, postures
       comprises.
-- [ ] **Annoter une diapositive pendant le diaporama** : oui (Patrick, 27/10).
+- [x] **Annoter une diapositive pendant le diaporama** (Patrick, 27/10 : « les annotations sont possibles
+      sur le diaporama »). Les mêmes annotations que le lecteur : une diapositive reprend le texte du
+      document, `annotations.js` les pose sur `#deck` (le bloc d'une note se cherche dans la diapositive
+      affichée). Bouton crayon à droite de la vue d'ensemble, montré avec l'option ; la palette y gagne
+      deux flèches (le calque prend le doigt, la diapositive ne se balaie plus ; le clavier marche
+      toujours). Le lecteur relit les annotations au retour. Vérifié au simulateur iPad 13″
+      (`OKIA_OPEN_SLIDES`) : annotation du document sur la diapositive 2, surlignage tracé dans le
+      diaporama, retrouvé dans le lecteur. **Pas vu** : le Mac (souris), un vrai crayon.
 
 **Vérifié au simulateur le 25/10** : iPad 13″ (surligner, souligner en couleur, écrire, gomme,
 relance → annotations retrouvées), iPhone 17 Pro Max (défilement à deux doigts, palette au-dessus de
