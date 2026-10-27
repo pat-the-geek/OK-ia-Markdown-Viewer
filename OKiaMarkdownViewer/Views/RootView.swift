@@ -10,6 +10,8 @@ struct RootView: View {
     @State private var importFolder = false
     /// Le même sélecteur, pour un document Word, PDF ou PowerPoint à importer (option Analytic).
     @State private var importOffice = false
+    /// L'analyse de tout le coffre (option Analytic, 1.4).
+    @State private var analyseCoffre = false
     @ObservedObject private var achat = AchatAnalytic.partage
 
     /// UTTypes we accept in the in-app importer.
@@ -76,6 +78,16 @@ struct RootView: View {
             importFolder = false
             importOffice = true
             showImporter = true
+        }
+        // L'analyse de tout le coffre (option Analytic).
+        .onReceive(NotificationCenter.default.publisher(for: .okiaAnalyseCoffre)) { _ in
+            guard achat.acces else { store.vitrineImport = true; return }
+            analyseCoffre = true
+        }
+        .sheet(isPresented: $analyseCoffre) {
+            AnalyseCoffreView(vault: store.vault, ouvrir: { store.openVaultReport($0) })
+                // Une page entière sur iPad : la liste et la carte ont besoin de place.
+                .presentationSizing(.page)
         }
         .sheet(item: $store.importEnCours) { i in
             ImportView(import_: i, annuler: { store.annulerImport() })

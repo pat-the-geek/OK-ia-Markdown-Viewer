@@ -38,6 +38,13 @@ struct VaultSectionView: View {
                 .popover(isPresented: $showSettings) {
                     settingsControls.presentationCompactAdaptation(.popover)
                 }
+                // Option Analytic (1.4) : l'analyse de tout le coffre.
+                if !vault.reports.isEmpty {
+                    Button { NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil) } label: {
+                        Image(systemName: "chart.dots.scatter")
+                    }
+                    .accessibilityLabel(tr("Analyser le coffre"))
+                }
                 Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
             }
             .tint(orange)

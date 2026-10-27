@@ -7,6 +7,9 @@ extension Notification.Name {
     /// Importer Word, PDF ou PowerPoint (option Analytic) : Fichier ▸ Importer sur Mac, menu « … »
     /// et accueil ailleurs.
     static let okiaImporter = Notification.Name("okia.importer")
+    /// L'analyse de tout le coffre (option Analytic) : Fichier ▸ Analyser le coffre sur Mac, l'en-tête
+    /// du coffre ailleurs.
+    static let okiaAnalyseCoffre = Notification.Name("okia.analyseCoffre")
 }
 
 /// Holds the currently displayed document and any load error.
@@ -320,6 +323,16 @@ struct OKiaMarkdownViewerApp: App {
             let name = env["OKIA_RENDER_NAME"] ?? "Demo.md"
             store.document = MarkdownDocument(filename: name, text: content)
         }
+        // OKIA_COFFRE=<dossier> : le coffre, sans le sélecteur (un dossier du conteneur au simulateur) ;
+        // OKIA_ANALYSE_COFFRE : ouvre l'analyse de tout le coffre au lancement.
+        if let dossier = env["OKIA_COFFRE"], !dossier.isEmpty {
+            store.vault.setFolder(URL(fileURLWithPath: dossier, isDirectory: true))
+        }
+        if env["OKIA_ANALYSE_COFFRE"] != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
+            }
+        }
         // OKIA_PAGE=<adresse> : analyse une page web au lancement, comme un partage depuis Safari.
         if let page = env["OKIA_PAGE"], !page.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { store.analyserPage(page) }
@@ -356,6 +369,10 @@ struct OKiaMarkdownViewerApp: App {
                     NotificationCenter.default.post(name: .okiaImporter, object: nil)
                 }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
+                Button(tr("Analyser le coffre…")) {
+                    NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
+                }
+                .keyboardShortcut("k", modifiers: [.command, .shift])
                 #endif
             }
         }

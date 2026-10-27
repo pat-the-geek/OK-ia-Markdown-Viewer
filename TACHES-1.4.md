@@ -483,10 +483,19 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       (`OKIA_PRESENTATEUR`, Debug, canari : colonne, suivante, notes, synchronisation à chaque
       diapositive) et sur le Mac (les deux fenêtres). **Pas vu** : un vrai écran externe sur iPad ou
       iPhone (le simulateur n'en branche pas d'ici), un projecteur, AirPlay.
-- [ ] **2. L'analyse de tout le coffre.** Les entités croisées entre tous les documents du coffre :
-      qui apparaît où et depuis quand, les documents qui partagent des noms, une carte de tout le
-      coffre. Un index tenu à jour quand le coffre change (`VaultWatcher`), par la même détection et
-      les mêmes corrections que l'analyse d'un document.
+- [x] **2. L'analyse de tout le coffre** (fait le 27/10, `AnalyseCoffre`, `AnalyseCoffreView`). Un
+      index des entités de chaque rapport — la section « Entités » d'un rapport fornews, sinon la
+      détection ; les corrections de l'utilisateur et le cache des fiches (aucune requête Wikidata) —
+      gardé dans `Analytic/coffre.json` ; seuls les documents nouveaux ou modifiés sont relus, ceux qui
+      ont disparu sont oubliés. La vue : les entités les plus répandues d'abord (nombre de documents,
+      puis de mentions ; les médias cités laissés de côté), recherche, filtre par genre ; une entité
+      ouvre ses documents (du plus récent, avec leurs mentions — toucher l'ouvre) et « Souvent avec »
+      (les noms des mêmes documents) ; la carte de tout le coffre. Entrées : bouton dans l'en-tête du
+      coffre, Fichier ▸ Analyser le coffre… (⇧⌘K) sur Mac ; sans l'option, la vitrine. Partout, pas
+      seulement sur Mac. Hooks `OKIA_COFFRE`, `OKIA_ANALYSE_COFFRE` (Debug, canaris). Vérifié au
+      simulateur iPad, coffre de six rapports fornews : 147 entités, France dans 6 documents, détail,
+      carte de 21 lieux. **Pas vu** : le Mac (compilé), un grand coffre (temps de la première lecture),
+      un rapport sans section « Entités » (détection).
 - [ ] **3. Import par lot et dossier surveillé.** Déposer un dossier (ou plusieurs fichiers) de Word,
       PDF et PowerPoint : tous convertis, à la suite, avec un compte à rebours d'ensemble ; un dossier
       choisi peut être surveillé, et chaque nouveau fichier y est importé. Les options d'Apple
