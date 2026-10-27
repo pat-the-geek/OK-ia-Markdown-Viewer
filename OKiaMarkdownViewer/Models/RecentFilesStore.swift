@@ -16,6 +16,9 @@ struct RecentFile: Identifiable, Codable, Equatable {
 /// On iOS, bookmarks created from document-picker / open-in URLs are security-scoped by default.
 @MainActor
 final class RecentFilesStore: ObservableObject {
+    /// Les mêmes récents dans toutes les fenêtres (1.4).
+    static let partage = RecentFilesStore()
+
     @Published private(set) var items: [RecentFile] = []
 
     private let key = "okia.recentFiles"

@@ -14,6 +14,9 @@ struct VaultReport: Identifiable, Equatable {
 /// Only matching folders are read — the rest of the vault is ignored.
 @MainActor
 final class VaultStore: ObservableObject {
+    /// Le même coffre dans toutes les fenêtres (1.4).
+    static let partage = VaultStore()
+
     @Published private(set) var folderName: String?
     @Published private(set) var reports: [VaultReport] = []
     @Published private(set) var pattern: String

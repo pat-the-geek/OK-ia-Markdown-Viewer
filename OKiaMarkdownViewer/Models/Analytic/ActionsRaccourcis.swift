@@ -53,7 +53,7 @@ struct ImporterDocumentsIntent: AppIntent {
     static var parameterSummary: some ParameterSummary { Summary("Importer \(\.$documents)") }
 
     @MainActor func perform() async throws -> some IntentResult {
-        try Self.faire(documents, store: store)
+        try Self.faire(documents, store: store.cible)
         return .result()
     }
 
@@ -75,7 +75,7 @@ struct FichePageWebIntent: AppIntent {
     static var parameterSummary: some ParameterSummary { Summary("Faire la fiche de \(\.$adresse)") }
 
     @MainActor func perform() async throws -> some IntentResult {
-        store.analyserPage(adresse.absoluteString)
+        store.cible.analyserPage(adresse.absoluteString)
         return .result()
     }
 }
@@ -93,7 +93,7 @@ struct AnalyserDocumentIntent: AppIntent {
     static var parameterSummary: some ParameterSummary { Summary("Analyser \(\.$document)") }
 
     @MainActor func perform() async throws -> some IntentResult {
-        try Self.faire(document, store: store)
+        try Self.faire(document, store: store.cible)
         return .result()
     }
 
@@ -119,7 +119,7 @@ struct ExporterPDFAnnoteIntent: AppIntent {
     static var parameterSummary: some ParameterSummary { Summary("Exporter \(\.$document) en PDF") }
 
     @MainActor func perform() async throws -> some IntentResult & ReturnsValue<IntentFile> {
-        .result(value: try await Self.faire(document, store: store))
+        .result(value: try await Self.faire(document, store: store.cible))
     }
 
     @MainActor static func faire(_ document: IntentFile?, store: DocumentStore) async throws -> IntentFile {
@@ -182,20 +182,21 @@ extension DocumentStore {
         centre.addObserver(forName: Notification.Name("okia.service.fichiers"), object: nil, queue: .main) { [weak self] n in
             guard let urls = n.userInfo?["urls"] as? [URL] else { return }
             Self.tracer("fichiers \(urls.map(\.lastPathComponent))")
-            MainActor.assumeIsolated { self?.recevoirFichiers(urls) }
+            MainActor.assumeIsolated { self?.cible.recevoirFichiers(urls) }
         }
         centre.addObserver(forName: Notification.Name("okia.service.texte"), object: nil, queue: .main) { [weak self] n in
             guard let texte = n.userInfo?["texte"] as? String else { return }
             Self.tracer("texte, \(texte.count) caractères")
             MainActor.assumeIsolated {
-                self?.document = MarkdownDocument(filename: tr("Sélection.md"), text: texte)
-                self?.errorMessage = nil
+                let cible = self?.cible
+                cible?.document = MarkdownDocument(filename: tr("Sélection.md"), text: texte)
+                cible?.errorMessage = nil
             }
         }
         centre.addObserver(forName: Notification.Name("okia.service.page"), object: nil, queue: .main) { [weak self] n in
             guard let adresse = n.userInfo?["adresse"] as? String else { return }
             Self.tracer("page \(adresse)")
-            MainActor.assumeIsolated { self?.analyserPage(adresse) }
+            MainActor.assumeIsolated { self?.cible.analyserPage(adresse) }
         }
         Self.tracer("module chargé")
     }
@@ -210,7 +211,7 @@ extension DocumentStore {
 
     /// Des fichiers du Finder : les Word, PDF et PowerPoint s'importent (avec l'option), le premier
     /// Markdown s'ouvre.
-    private func recevoirFichiers(_ urls: [URL]) {
+    fileprivate func recevoirFichiers(_ urls: [URL]) {
         let aImporter = urls.filter(ImportEnCours.estImportable)
         if !aImporter.isEmpty {
             if AchatAnalytic.partage.acces { importerLot(aImporter) } else { vitrineImport = true }

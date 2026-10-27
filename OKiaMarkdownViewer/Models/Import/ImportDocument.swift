@@ -42,8 +42,8 @@ final class ImportEnCours: ObservableObject, Identifiable {
     ]
 
     /// Demande l'import : le sélecteur de fichiers s'ouvre, ou la vitrine sans l'option (RootView).
-    static func demander() {
-        NotificationCenter.default.post(name: .okiaImporter, object: nil)
+    static func demander(pour store: DocumentStore? = nil) {
+        NotificationCenter.default.post(name: .okiaImporter, object: store)
     }
 
     static func estImportable(_ url: URL) -> Bool {

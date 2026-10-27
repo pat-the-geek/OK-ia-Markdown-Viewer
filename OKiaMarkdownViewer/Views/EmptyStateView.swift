@@ -16,6 +16,7 @@ struct EmptyStateView: View {
     @State private var showAbout = false
     @State private var analyses: [DocumentsAnalysesSection.DocumentAnalyse] = []
     @ObservedObject private var achat = AchatAnalytic.partage
+    @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
     @ObservedObject private var loc = Localization.shared
 
@@ -77,7 +78,7 @@ struct EmptyStateView: View {
                 .accessibilityLabel(tr("Voir un exemple"))
             Menu {
                 Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
-                Button { ImportEnCours.demander() } label: {
+                Button { ImportEnCours.demander(pour: store) } label: {
                     Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
                 }
             } label: {
@@ -102,7 +103,7 @@ struct EmptyStateView: View {
                     .buttonStyle(.borderedProminent)
                 Button(tr("Voir un exemple"), action: onSample)
                 // Option Analytic : un Word, un PDF, un PowerPoint devient un document md Viewer.
-                Button(tr("Importer Word, PDF ou PowerPoint…")) { ImportEnCours.demander() }
+                Button(tr("Importer Word, PDF ou PowerPoint…")) { ImportEnCours.demander(pour: store) }
                     .font(.subheadline)
             }
             .tint(orange)
@@ -157,6 +158,10 @@ struct EmptyStateView: View {
         // de l'app pour tout son libellé.
         .tint(.primary)
         .contextMenu {
+            // Pour comparer (1.4) : le document dans une autre fenêtre, à côté de celle-ci.
+            BoutonNouvelleFenetre {
+                DocumentAOuvrir(nom: item.name, signet: item.bookmark, adresse: item.remoteURLString)
+            }
             Button(role: .destructive) { recentsStore.remove(item) } label: {
                 Label(tr("Retirer de la liste"), systemImage: "trash")
             }

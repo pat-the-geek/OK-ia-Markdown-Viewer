@@ -80,21 +80,24 @@ struct RootView: View {
             Text(store.errorMessage ?? "")
         }
         // macOS: File ▸ Open (⌘O) menu command.
-        .onReceive(NotificationCenter.default.publisher(for: .okiaOpenFile)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .okiaOpenFile)) { n in
+            guard n.estPour(store) else { return }
             importFolder = false
             importOffice = false
             showImporter = true
         }
         // Importer Word, PDF ou PowerPoint, réservé à l'option Analytic : Fichier ▸ Importer (⇧⌘I)
         // sur Mac, le menu « … » et l'accueil sur iPhone et iPad.
-        .onReceive(NotificationCenter.default.publisher(for: .okiaImporter)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .okiaImporter)) { n in
+            guard n.estPour(store) else { return }
             guard achat.acces else { store.vitrineImport = true; return }
             importFolder = false
             importOffice = true
             showImporter = true
         }
         // Le dossier d'import surveillé : le choisir, ou arrêter.
-        .onReceive(NotificationCenter.default.publisher(for: .okiaDossierSurveille)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .okiaDossierSurveille)) { n in
+            guard n.estPour(store) else { return }
             guard achat.acces else { store.vitrineImport = true; return }
             reglageSurveille = true
         }
@@ -111,6 +114,7 @@ struct RootView: View {
         }
         // Un rapport du coffre demandé par la fiche d'une entité.
         .onReceive(NotificationCenter.default.publisher(for: .okiaOuvrirRapport)) { note in
+            guard note.estPour(store) else { return }
             guard let id = note.userInfo?["id"] as? String else { return }
             // La liste du coffre ne se charge qu'à l'accueil : ouvert directement sur un document,
             // elle est encore vide.
@@ -119,12 +123,14 @@ struct RootView: View {
             store.openVaultReport(r)
         }
         // L'analyse de tout le coffre (option Analytic).
-        .onReceive(NotificationCenter.default.publisher(for: .okiaAnalyseCoffre)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .okiaAnalyseCoffre)) { n in
+            guard n.estPour(store) else { return }
             guard achat.acces else { store.vitrineImport = true; return }
             analyseCoffre = true
         }
         // La recherche dans tout le coffre (option Analytic).
         .onReceive(NotificationCenter.default.publisher(for: .okiaRechercheCoffre)) { note in
+            guard note.estPour(store) else { return }
             guard achat.acces else { store.vitrineImport = true; return }
             rechercheCoffre = DemandeRecherche(requete: note.userInfo?["requete"] as? String ?? "")
         }

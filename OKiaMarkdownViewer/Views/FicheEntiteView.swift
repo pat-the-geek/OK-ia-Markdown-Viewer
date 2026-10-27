@@ -5,6 +5,7 @@ import SwiftUI
 struct FicheEntiteView: View {
     let entite: EntiteDocument
     @ObservedObject var analyse: AnalyseEntites
+    @EnvironmentObject private var store: DocumentStore
     var voirDansLeDocument: (EntiteDocument) -> Void
 
     @State private var cartePleinEcran: TappedCarte?
@@ -93,7 +94,7 @@ struct FicheEntiteView: View {
                     .font(.headline)
                 ForEach(e.presences) { p in
                     Button {
-                        NotificationCenter.default.post(name: .okiaOuvrirRapport, object: nil, userInfo: ["id": p.document])
+                        NotificationCenter.default.post(name: .okiaOuvrirRapport, object: store, userInfo: ["id": p.document])
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {

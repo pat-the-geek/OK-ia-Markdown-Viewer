@@ -39,15 +39,30 @@ final class DocumentStore: ObservableObject {
     /// Une action de Raccourcis (1.4) attend le PDF du document : le lecteur l'exporte une fois rendu.
     @Published var exportPDFDemande: DemandeExportPDF?
 
-    let recents = RecentFilesStore()
-    let vault = VaultStore()
+    // Partagés par toutes les fenêtres (1.4, fonction 7) : chacune a son document, pas son coffre.
+    let recents = RecentFilesStore.partage
+    let vault = VaultStore.partage
+
+    /// La fenêtre de l'app (fonction 7) : celle des actions de Raccourcis, des Services, du coffre
+    /// surveillé. Les autres fenêtres ont chacune leur `DocumentStore`.
+    static weak var principal: DocumentStore?
+    /// Le store de la fenêtre clé — la dernière touchée, celle au premier plan sur Mac : c'est à elle
+    /// que vont les commandes du menu, les actions de Raccourcis et les Services.
+    static weak var actif: DocumentStore?
+    /// Où une demande venue d'ailleurs que la fenêtre doit aller.
+    var cible: DocumentStore { Self.actif ?? Self.principal ?? self }
 
     #if targetEnvironment(macCatalyst)
     private lazy var vaultWatcher = VaultWatcher(vault: vault) { [weak self] report in
         self?.openVaultReport(report)
     }
     /// macOS: begin (or restart) watching the vault folder for newly arrived reports.
-    func startVaultWatch() { vaultWatcher.start() }
+    func startVaultWatch() {
+        // Une seule surveillance du coffre, celle de la fenêtre de l'app : chaque fenêtre ouvrirait
+        // sinon le rapport qui arrive.
+        guard Self.principal == nil || Self.principal === self else { return }
+        vaultWatcher.start()
+    }
     #else
     func startVaultWatch() {}
     #endif
@@ -447,11 +462,11 @@ struct OKiaMarkdownViewerApp: App {
     @StateObject private var store: DocumentStore
     /// L'écran externe (1.4, mode présentateur) : sa scène est celle du public.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @Environment(\.scenePhase) private var phase
 
     init() {
         let store = DocumentStore()
         _store = StateObject(wrappedValue: store)
+        DocumentStore.principal = store
         // Share the running store with App Intents (Siri / Spotlight / Shortcuts).
         AppDependencyManager.shared.add(dependency: store)
         // Option Analytic (1.4) : ce qui est acheté, et les achats qui arrivent d'ailleurs.
@@ -519,30 +534,11 @@ struct OKiaMarkdownViewerApp: App {
     }
 
     var body: some Scene {
-        WindowGroup(id: "principal") {
-            RootView()
-                .environmentObject(store)
+        // Une fenêtre par document (1.4, fonction 7) : la valeur dit ce qu'elle ouvre, rien pour
+        // l'accueil. Chaque fenêtre a son store (`FenetreDocument`).
+        WindowGroup(id: "principal", for: DocumentAOuvrir.self) { $aOuvrir in
+            FenetreDocument(aOuvrir: aOuvrir, principal: store)
                 .modifier(ApparenceDeCapture())
-                // Les fichiers et les liens confiés à l'app vont à la fenêtre ouverte : depuis que l'app
-                // déclare plusieurs scènes (1.4, fenêtre du public), chacun en ouvrait une nouvelle, et
-                // des imports d'un lot s'y perdaient (Mac, 27/10/2026).
-                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
-                // Handles file URLs (cold + warm "Open in…") and the mdviewer:// scheme.
-                .onOpenURL { url in
-                    store.handleIncoming(url)
-                }
-                // Option Analytic (1.4) : un document du coffre ou des documents analysés, touché dans Spotlight.
-                .onContinueUserActivity(CSSearchableItemActionType) { activite in
-                    guard let id = activite.userInfo?[CSSearchableItemActivityIdentifier] as? String else { return }
-                    store.ouvrirTrouve(id)
-                }
-                // Les pages partagées depuis Safari pendant que md Viewer était en arrière-plan.
-                .onChange(of: phase) { _, p in
-                    guard p == .active else { return }
-                    store.releverPages()
-                    // Option Analytic (1.4) : annotations, corrections et cache des autres appareils.
-                    Task { await SynchroICloud.partage.synchroniser() }
-                }
         }
         .commands {
             // macOS: replace the default "New" with "Ouvrir…" / "Open…" (⌘O).
@@ -552,6 +548,8 @@ struct OKiaMarkdownViewerApp: App {
                 }
                 .keyboardShortcut("o", modifiers: .command)
                 #if targetEnvironment(macCatalyst)
+                // Pour comparer (1.4) : une autre fenêtre, avec son propre document.
+                CommandeNouvelleFenetre()
                 Button(tr("Importer Word, PDF ou PowerPoint…")) {
                     NotificationCenter.default.post(name: .okiaImporter, object: nil)
                 }
@@ -654,7 +652,7 @@ struct OpenReportIntent: AppIntent {
     static var parameterSummary: some ParameterSummary { Summary("Ouvrir \(\.$report)") }
 
     @MainActor func perform() async throws -> some IntentResult {
-        store.openReport(id: report.id)
+        store.cible.openReport(id: report.id)
         return .result()
     }
 }
@@ -668,7 +666,7 @@ struct OpenLatestReportIntent: AppIntent {
     @Dependency var store: DocumentStore
 
     @MainActor func perform() async throws -> some IntentResult {
-        store.openLatestReport()
+        store.cible.openLatestReport()
         return .result()
     }
 }
@@ -687,10 +685,10 @@ struct SummarizeReportIntent: AppIntent {
 
     @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
         if DocumentSummarizer.isAvailable {
-            store.openReportAndSummarize(id: report.id)
+            store.cible.openReportAndSummarize(id: report.id)
             return .result(dialog: "Résumé de « \(report.name) » dans md Viewer.")
         } else {
-            store.openReport(id: report.id)
+            store.cible.openReport(id: report.id)
             return .result(dialog: "Le résumé n’est pas disponible sur cet appareil ; j’ouvre le rapport.")
         }
     }

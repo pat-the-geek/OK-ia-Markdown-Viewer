@@ -486,9 +486,8 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       montre que pendant une présentation, sinon le système recopie l'écran. **Mac** : bouton « Présenter
       sur un second écran » dans le diaporama → fenêtre « public » (`WindowGroup(id: "public")`), à
       poser sur le projecteur ; elle se ferme avec le diaporama. Réservé à l'option. L'app déclare
-      désormais plusieurs scènes (`UIApplicationSupportsMultipleScenes`) : ⚠️ sur iPad, plusieurs
-      fenêtres de md Viewer deviennent possibles, et toutes montrent le même document (à reprendre
-      avec la fonction 7). Une fenêtre du public restaurée seule au lancement rouvre la fenêtre
+      désormais plusieurs scènes (`UIApplicationSupportsMultipleScenes`) : sur iPad, plusieurs
+      fenêtres de md Viewer deviennent possibles — chacune avec son document depuis la fonction 7. Une fenêtre du public restaurée seule au lancement rouvre la fenêtre
       principale et se referme (vu au simulateur : écran noir sans issue). Vérifié au simulateur iPad
       (`OKIA_PRESENTATEUR`, Debug, canari : colonne, suivante, notes, synchronisation à chaque
       diapositive) et sur le Mac (les deux fenêtres). **Pas vu** : un vrai écran externe sur iPad ou
@@ -594,9 +593,28 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       d'expiration : une nouvelle photo a une nouvelle adresse. « Oublier les fiches gardées » oublie
       aussi les photos. Vérifié au simulateur iPad : galerie d'un rapport, 9 photos gardées (324 Ko) ;
       relancée, relues du disque, aucune retéléchargée. **Pas vu** : hors ligne pour de bon, le Mac.
-- [ ] **7. Plusieurs fenêtres, pour comparer.** Deux documents côte à côte, ou deux versions d'un
-      même document — avec les annotations de chacune (une version modifiée est un autre document,
-      `IdentiteDocument`).
+- [x] **7. Plusieurs fenêtres, pour comparer** (fait le 27/10, `Views/FenetreDocument.swift`). Deux
+      documents côte à côte, ou deux versions d'un même document, chacune avec ses annotations (une
+      version modifiée est un autre document, `IdentiteDocument`). **Chaque fenêtre a son
+      `DocumentStore`** : son document, ses feuilles, ses imports ; le coffre, les récents
+      (`partage`), l'option et les annotations sont partagés. Avant, toutes partageaient le même
+      store et montraient le même document (iPad, depuis les scènes multiples du point 1). La
+      première fenêtre prend le store de l'app (`DocumentStore.principal`, seule à surveiller le
+      coffre) ; la fenêtre clé (`DocumentStore.actif`, suivie par `UIWindow.didBecomeKeyNotification`
+      — deux fenêtres côte à côte sont actives ensemble) reçoit les commandes du menu, les actions de
+      Raccourcis et les Services (`cible`). Les boutons d'une fenêtre désignent son store
+      (`Notification.estPour`). La scène est `WindowGroup(for: DocumentAOuvrir)` : un signet, une
+      adresse ou un texte, gardé avec la fenêtre — une fenêtre restaurée rouvre son document.
+      Entrées, réservées à l'option (sinon la vitrine) : Fichier ▸ Nouvelle fenêtre (⌘N) et Ouvrir
+      dans une nouvelle fenêtre (⌥⌘N) sur Mac ; « Ouvrir dans une nouvelle fenêtre » dans le menu du
+      dossier du lecteur (iPad) et le menu contextuel des récents (iPad, Mac). Absent de l'iPhone.
+      ⚠️ Une fenêtre créée par le système (iPad, App Exposé) est indépendante pour tous, avec ou sans
+      l'option : c'est la correction du défaut, pas la fonction. Hook `OKIA_FENETRE=<chemin>`
+      (Debug, canari) et journal `ch.ok-ia.markdownviewer:fenetres`. Vérifié au simulateur iPad :
+      la fenêtre de l'app sur « Document A », une seconde sur le rapport Ebola avec son
+      annotation, deux stores distincts. **Pas vu** : le Mac à l'usage (compilé seulement : la version
+      Debug rouvrirait les vraies fenêtres de Patrick), deux fenêtres côte à côte à l'écran, une
+      fenêtre restaurée au relancement, le routage des commandes du menu vers la fenêtre clé.
 
 ## ⑤ Modèles plus poussés — sortis de la 1.4 (⓪ a dit non, 25/10)
 
