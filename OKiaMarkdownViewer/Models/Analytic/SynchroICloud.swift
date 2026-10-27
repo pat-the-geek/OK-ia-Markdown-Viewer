@@ -24,7 +24,7 @@ import CloudKit
 @MainActor
 final class SynchroICloud {
     static let partage = SynchroICloud()
-    static let conteneur = "iCloud.ch.ok-ia.markdownviewer"
+    nonisolated static let conteneur = "iCloud.ch.ok-ia.markdownviewer"
 
     /// Ce qui se partage, et où ça vit sur l'appareil.
     enum Genre: String, CaseIterable {

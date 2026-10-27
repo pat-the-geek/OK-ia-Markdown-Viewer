@@ -155,10 +155,8 @@ final class ImportEnCours: ObservableObject, Identifiable {
                                                   traducteur: self?.traducteur, suivi: suivi)
                     : FichePageWeb.texteSeul(page)
                 try Task.checkCancellation()
-                // Le nom du fichier : le titre de la page, sans ce qu'un nom de fichier n'admet pas.
-                let nom = String(titre.replacingOccurrences(of: "[/\\\\:?*\"<>|]", with: "-", options: .regularExpression)
-                    .prefix(90)) + ".md"
-                fini(.success(Resultat(document: try Self.ecrire(md, nomSource: nom), rapport: nil)))
+                // Le nom du fichier : le titre de la page, normalisé (`RangementDocuments`).
+                fini(.success(Resultat(document: try Self.ecrire(md, nomSource: titre + ".md"), rapport: nil)))
             } catch is CancellationError {
                 return
             } catch {
@@ -169,20 +167,10 @@ final class ImportEnCours: ObservableObject, Identifiable {
 
     func annuler() { tache?.cancel() }
 
-    /// Écrit le Markdown dans le dossier « Importés » des documents de l'app, sous le nom du
-    /// document d'origine, sans écraser un import précédent.
+    /// Écrit le Markdown à sa place (`RangementDocuments` : iCloud Drive, dossier du jour, nom
+    /// lisible), sous le nom du document d'origine, sans écraser un import précédent.
     nonisolated static func ecrire(_ markdown: String, nomSource: String) throws -> URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dossier = docs.appendingPathComponent("Importés", isDirectory: true)
-        try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
-        let base = (nomSource as NSString).deletingPathExtension
-        var cible = dossier.appendingPathComponent(base + ".md")
-        var n = 2
-        while FileManager.default.fileExists(atPath: cible.path) {
-            cible = dossier.appendingPathComponent("\(base) \(n).md"); n += 1
-        }
-        try markdown.write(to: cible, atomically: true, encoding: .utf8)
-        return cible
+        try RangementDocuments.ecrire(markdown, titre: (nomSource as NSString).deletingPathExtension)
     }
 }
 

@@ -327,6 +327,19 @@ commentaire, révision, image), le PDF public du briefing fornews. Bancs : Word 
 pour la voir), la vitrine sans achat, le diaporama d'un PowerPoint importé — l'app ne se pilote pas
 d'ici ; à essayer sur B91.
 
+- [x] **Rangement dans iCloud Drive, par date, sous un nom lisible** (Patrick, 27/10 : « si les
+      documents sont stockés dans le cloud, il faut les auto-organiser dans des répertoires année,
+      mois, jour » ; « normaliser automatiquement le nom du fichier » ; noms lisibles retenus) —
+      `RangementDocuments` : les imports, leurs rapports d'analyse et les fiches de pages web vont dans
+      iCloud Drive, dossier « md Viewer » (`NSUbiquitousContainers`, iCloud Documents), sous
+      `Importés/AAAA/MM/JJ/` ; sans iCloud Drive, dans les documents de l'app, rangés pareil. Le nom :
+      le titre, accents gardés, `: / \ |` → « - », `? * " < >` retirés, espaces resserrés, 80
+      caractères au plus (coupé à la fin d'un mot), « (2) » en cas de doublon ; écriture coordonnée
+      (`NSFileCoordinator`). Les documents ouverts depuis Fichiers ne bougent jamais. Les imports d'avant
+      restent dans « Importés » (documents de l'app). Vérifié sur le Mac : « Apple : keynote?.docx » →
+      `md Viewer/Importés/2026/10/27/Apple - keynote.md` (fichier d'essai retiré ensuite). **Pas vu** :
+      l'iPhone et l'iPad, le repli sans iCloud Drive.
+
 ## ④ ter Une page web, de Safari à md Viewer — demandé par Patrick le 26/10 (option payante)
 
 « Depuis Safari, on peut envoyer la page vers md Viewer qui prépare un rapport analytique de la page
@@ -348,7 +361,7 @@ page s'ouvre, puis l'option se présente.
       par Wikidata si accepté (carte), résumé « En bref » et chiffres par Apple Intelligence sous les
       gardes de fornews (sinon le chapeau de la page et les chiffres relevés par le code), schéma
       déterministe, signature md Viewer. Écrite dans « Importés » et ouverte ; même compte à rebours
-      que l'import.
+      que l'import (rangée par date dans iCloud Drive depuis le 27/10, voir ④).
 - [x] **L'extension de partage** (cible `Partage`, `ch.ok-ia.markdownviewer.partage`) : dépose la page
       dans la boîte `BoitePages` (groupe `group.ai.fornews.native`, déjà enregistré), tente d'ouvrir
       md Viewer (`mdviewer://pages`, accepté sur Mac), sinon « Ouvrez md Viewer ». L'app relève la
@@ -519,6 +532,8 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       politique décrit ce que l'on télécharge sur l'App Store.
       **À ajouter depuis le 27/10** (CloudKit) : les annotations, les corrections et le cache des fiches
       passent par la base **privée** iCloud de l'utilisateur (CloudKit), pour ses autres appareils ;
-      nous n'y avons pas accès. Les fichiers Markdown n'y vont pas. Une annotation garde le passage
-      qu'elle marque (quelques dizaines de caractères) et l'empreinte du document, pas le document.
+      nous n'y avons pas accès. Une annotation garde le passage qu'elle marque (quelques dizaines de
+      caractères) et l'empreinte du document, pas le document. **Et** les documents que md Viewer crée
+      (imports, rapports, fiches de pages web) sont rangés dans l'iCloud Drive de l'utilisateur, dossier
+      « md Viewer » ; ceux qu'il ouvre depuis Fichiers restent où ils sont.
 - [ ] Fiche App Store, captures, notes de version, post Mastodon.

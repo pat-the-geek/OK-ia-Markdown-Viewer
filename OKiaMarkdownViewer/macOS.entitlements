@@ -22,7 +22,8 @@
 		<string>group.ai.fornews.native</string>
 	</array>
 	<!-- Option Analytic (1.4) : annotations, corrections et cache des entités, partagés entre les
-	     appareils de l'utilisateur par CloudKit, dans sa base privée (`SynchroICloud`). -->
+	     appareils de l'utilisateur par CloudKit, dans sa base privée (`SynchroICloud`) ; et les
+	     documents que md Viewer crée, rangés dans iCloud Drive (`RangementDocuments`). -->
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.ch.ok-ia.markdownviewer</string>
@@ -30,6 +31,11 @@
 	<key>com.apple.developer.icloud-services</key>
 	<array>
 		<string>CloudKit</string>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.ch.ok-ia.markdownviewer</string>
 	</array>
 </dict>
 </plist>
