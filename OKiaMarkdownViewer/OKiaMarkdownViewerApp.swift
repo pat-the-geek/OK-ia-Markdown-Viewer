@@ -10,6 +10,9 @@ extension Notification.Name {
     /// L'analyse de tout le coffre (option Analytic) : Fichier ▸ Analyser le coffre sur Mac, l'en-tête
     /// du coffre ailleurs.
     static let okiaAnalyseCoffre = Notification.Name("okia.analyseCoffre")
+    /// Ouvre un rapport du coffre par son identifiant (`VaultReport.id`) — depuis la fiche d'une
+    /// entité, « Dans le coffre ».
+    static let okiaOuvrirRapport = Notification.Name("okia.ouvrirRapport")
 }
 
 /// Holds the currently displayed document and any load error.

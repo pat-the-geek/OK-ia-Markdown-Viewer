@@ -68,6 +68,9 @@ final class AnalyseCoffre: ObservableObject {
            let lu = try? JSONDecoder().decode([String: DocumentIndexe].self, from: data) {
             index = lu
         }
+        // Les entités tout de suite : la fiche d'une entité montre ses documents du coffre sans
+        // attendre qu'on ouvre l'analyse.
+        rassembler()
     }
 
     // MARK: L'index

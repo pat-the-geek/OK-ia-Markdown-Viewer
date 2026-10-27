@@ -79,6 +79,15 @@ struct RootView: View {
             importOffice = true
             showImporter = true
         }
+        // Un rapport du coffre demandé par la fiche d'une entité.
+        .onReceive(NotificationCenter.default.publisher(for: .okiaOuvrirRapport)) { note in
+            guard let id = note.userInfo?["id"] as? String else { return }
+            // La liste du coffre ne se charge qu'à l'accueil : ouvert directement sur un document,
+            // elle est encore vide.
+            if !store.vault.reports.contains(where: { $0.id == id }) { store.vault.refresh() }
+            guard let r = store.vault.reports.first(where: { $0.id == id }) else { return }
+            store.openVaultReport(r)
+        }
         // L'analyse de tout le coffre (option Analytic).
         .onReceive(NotificationCenter.default.publisher(for: .okiaAnalyseCoffre)) { _ in
             guard achat.acces else { store.vitrineImport = true; return }

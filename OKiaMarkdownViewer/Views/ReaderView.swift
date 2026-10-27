@@ -503,6 +503,9 @@ struct ReaderView: View {
             isSearching = false; searchText = ""; web.clearSearch(); showTOC = false
             conversion.annuler()
             if panneauDuo == .conversion { panneauDuo = nil }
+            // Un autre document ouvert depuis la fiche d'une entité (« Dans le coffre ») : la feuille
+            // des entités se referme sur l'ancien.
+            showEntites = false
             analyseEntites.annuler()
             annotationsDoc.actif = false
         }

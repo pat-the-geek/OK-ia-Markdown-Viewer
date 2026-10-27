@@ -43,6 +43,7 @@ struct FicheEntiteView: View {
                 .tint(orange)
                 .disabled(entite.mentions == 0)
                 if entite.aDesCoordonnees { miniCarte }
+                dansLeCoffre
                 provenance
             }
             .padding(16)
@@ -80,6 +81,37 @@ struct FicheEntiteView: View {
                 .padding(.bottom, EntitesView.margeSources)
                 .accessibilityLabel(tr("Carte en plein écran"))
             }
+    }
+
+    /// Les documents du coffre qui nomment cette entité (l'index de l'analyse du coffre), du plus
+    /// récent au plus ancien : toucher l'un d'eux l'ouvre (Patrick, 27/10/2026 : « on doit pouvoir
+    /// afficher les documents d'une entité »).
+    @ViewBuilder private var dansLeCoffre: some View {
+        if let e = AnalyseCoffre.partage.entite(nommee: entite.nom), !e.presences.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(tr("Dans le coffre") + " · " + tr("%d documents", e.presences.count))
+                    .font(.headline)
+                ForEach(e.presences) { p in
+                    Button {
+                        NotificationCenter.default.post(name: .okiaOuvrirRapport, object: nil, userInfo: ["id": p.document])
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(p.nom).lineLimit(2).multilineTextAlignment(.leading)
+                                Text(p.date.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            PastilleMentions(n: p.mentions)
+                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Divider()
+                }
+            }
+        }
     }
 
     /// D'où vient ce que la fiche affirme : le document, et Wikidata quand il a été consulté. La
