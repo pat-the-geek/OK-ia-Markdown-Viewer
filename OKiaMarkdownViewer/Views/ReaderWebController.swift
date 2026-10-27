@@ -279,7 +279,10 @@ final class ReaderWebController: ObservableObject {
     /// Fetch the structured export model (blocks) from the rendered document.
     func buildExportModel(completion: @escaping ([[String: Any]]?) -> Void) {
         guard let webView else { completion(nil); return }
-        let js = "return await window.OKIA.exportModel(document.getElementById('content'));"
+        // Sans les notes manuscrites (1.4) : leur image prenait la place du paragraphe annoté.
+        let js = "if (window.OKIA_ANNOT) window.OKIA_ANNOT.sansEncre();"
+            + "try { return await window.OKIA.exportModel(document.getElementById('content')); }"
+            + "finally { if (window.OKIA_ANNOT) window.OKIA_ANNOT.defiger(); }"
         webView.callAsyncJavaScript(js, arguments: [:], in: nil, in: .page) { result in
             if case .success(let value) = result { completion(value as? [[String: Any]]) }
             else { completion(nil) }

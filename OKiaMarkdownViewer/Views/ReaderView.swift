@@ -396,6 +396,19 @@ struct ReaderView: View {
             if ProcessInfo.processInfo.environment["OKIA_APPARENCE"] != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { showTextSize = true }
             }
+            // OKIA_EXPORT_WORD : de même pour le Word, avec les annotations (1.4).
+            if ProcessInfo.processInfo.environment["OKIA_EXPORT_WORD"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                    web.buildExportModel { model in
+                        guard let model else { return }
+                        OOXMLExportBridge.buildDocx(title: document.filename, model: model,
+                                                    annotations: annotationsDoc.annotations) { data in
+                            guard let data, let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+                            try? data.write(to: docs.appendingPathComponent("export-essai.docx"))
+                        }
+                    }
+                }
+            }
             // OKIA_EXPORT_PDF : exporte le document en PDF dans les documents de l'app, sans la feuille
             // de partage — pour vérifier ce que le PDF garde (les annotations, 1.4).
             if ProcessInfo.processInfo.environment["OKIA_EXPORT_PDF"] != nil {
@@ -1411,7 +1424,7 @@ struct ReaderView: View {
             web.buildExportModel { model in
                 fini()
                 guard let model else { return }
-                OOXMLExportBridge.buildDocx(title: base, model: model) { data in
+                OOXMLExportBridge.buildDocx(title: base, model: model, annotations: annotationsDoc.annotations) { data in
                     guard let data else { return }
                     let safe = name.replacingOccurrences(of: "/", with: "-")
                     let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).docx")

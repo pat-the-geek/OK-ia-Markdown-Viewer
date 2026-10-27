@@ -22,6 +22,17 @@ struct OOXMLRun: Equatable {
     /// Un appel de note : l'identifiant de la note (`3` pour `[^3]`), `text` portant le numéro
     /// affiché. Word en fait une vraie note de fin.
     var note: String? = nil
+    /// Les annotations de l'utilisateur (1.4) : la couleur de surlignage de Word (`yellow`,
+    /// `green`, `magenta`, `cyan`), et la couleur d'un soulignement (hexadécimal).
+    var surligne: String? = nil
+    var souligne: String? = nil
+}
+
+/// Un commentaire de relecture (1.4) : une note manuscrite de l'utilisateur, ancrée à un bloc.
+struct OOXMLCommentaire: Equatable {
+    var bloc: Int
+    var texte: String
+    var image: OOXMLImage?
 }
 
 /// Une note de bas de page du document, telle que la section Notes la porte.
@@ -156,7 +167,7 @@ enum EMU {
 
 enum DocxBuilder {
     /// Build a .docx from ordered blocks. `title` becomes a Title-styled heading.
-    static func build(title: String, blocks: [OOXMLBlock]) -> Data {
+    static func build(title: String, blocks: [OOXMLBlock], commentaires: [OOXMLCommentaire] = []) -> Data {
         var images: [(name: String, img: OOXMLImage)] = []
         var rels = ""
         var relId = 0
@@ -184,14 +195,54 @@ enum DocxBuilder {
             if r.bold { props += "<w:b/>" }
             if r.italic { props += "<w:i/>" }
             if r.code { props += "<w:rFonts w:ascii=\"Menlo\" w:hAnsi=\"Menlo\"/>" }
+            // Les annotations (1.4), dans l'ordre du schéma de Word : u, puis highlight.
+            if let c = r.souligne { props += "<w:u w:val=\"single\" w:color=\"\(c)\"/>" }
+            if let h = r.surligne { props += "<w:highlight w:val=\"\(h)\"/>" }
             let rPr = props.isEmpty ? "" : "<w:rPr>\(props)</w:rPr>"
             return "<w:r>\(rPr)<w:t xml:space=\"preserve\">\(XML.esc(r.text))</w:t></w:r>"
         }
         func runsXML(_ runs: [OOXMLRun]) -> String { runs.map(runXML).joined() }
 
+        // Les commentaires du bloc en cours (1.4) : ils encadrent son premier paragraphe.
+        var commentairesDuBloc: [Int] = []
+        var commentairesXML: [String] = []
+        var imagesCommentaires: [(name: String, img: OOXMLImage)] = []
+        func encadrer(_ contenu: String) -> String {
+            guard !commentairesDuBloc.isEmpty else { return contenu }
+            let ids = commentairesDuBloc
+            commentairesDuBloc = []
+            return ids.map { "<w:commentRangeStart w:id=\"\($0)\"/>" }.joined() + contenu
+                + ids.map { "<w:commentRangeEnd w:id=\"\($0)\"/><w:r><w:rPr><w:rStyle w:val=\"CommentReference\"/></w:rPr><w:commentReference w:id=\"\($0)\"/></w:r>" }.joined()
+        }
+
         func para(_ runs: [OOXMLRun], style: String? = nil) -> String {
             let pPr = style.map { "<w:pPr><w:pStyle w:val=\"\($0)\"/></w:pPr>" } ?? ""
-            return "<w:p>\(pPr)\(runsXML(runs))</w:p>"
+            return "<w:p>\(pPr)\(encadrer(runsXML(runs)))</w:p>"
+        }
+
+        /// Un commentaire : son texte, et l'image de la note manuscrite (relation propre à
+        /// comments.xml).
+        func commentaireXML(_ c: OOXMLCommentaire, id: Int) -> String {
+            var corps = "<w:p><w:pPr><w:pStyle w:val=\"CommentText\"/></w:pPr><w:r><w:rPr><w:rStyle w:val=\"CommentReference\"/></w:rPr><w:annotationRef/></w:r><w:r><w:t xml:space=\"preserve\">\(XML.esc(c.texte))</w:t></w:r></w:p>"
+            if let img = c.image {
+                let n = imagesCommentaires.count + 1
+                imagesCommentaires.append(("note\(n).png", img))
+                let maxW = EMU.perInch * 3
+                var w = EMU.px(img.widthPx), h = EMU.px(img.heightPx)
+                if w > maxW { h = h * maxW / max(w, 1); w = maxW }
+                let docPrId = 1000 + n
+                corps += "<w:p><w:r><w:drawing><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">"
+                    + "<wp:extent cx=\"\(w)\" cy=\"\(h)\"/><wp:docPr id=\"\(docPrId)\" name=\"Note\(n)\"/>"
+                    + "<a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\">"
+                    + "<a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
+                    + "<pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
+                    + "<pic:nvPicPr><pic:cNvPr id=\"\(docPrId)\" name=\"Note\(n)\"/><pic:cNvPicPr/></pic:nvPicPr>"
+                    + "<pic:blipFill><a:blip r:embed=\"rIdNote\(n)\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>"
+                    + "<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"\(w)\" cy=\"\(h)\"/></a:xfrm>"
+                    + "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>"
+                    + "</a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>"
+            }
+            return "<w:comment w:id=\"\(id)\" w:author=\"md Viewer\" w:initials=\"md\">\(corps)</w:comment>"
         }
 
         func imageXML(_ img: OOXMLImage) -> String {
@@ -239,7 +290,12 @@ enum DocxBuilder {
 
         var body = ""
         if !title.isEmpty { body += para([OOXMLRun(text: title)], style: "Title") }
-        for block in blocks {
+        for (indice, block) in blocks.enumerated() {
+            for c in commentaires where c.bloc == indice {
+                let id = commentairesXML.count
+                commentairesXML.append(commentaireXML(c, id: id))
+                commentairesDuBloc.append(id)
+            }
             switch block {
             case .heading(let level, let runs):
                 body += para(runs, style: "Heading\(min(max(level, 1), 4))")
@@ -249,7 +305,7 @@ enum DocxBuilder {
                 body += para(runs, style: "Quote")
             case .list(let ordered, let items):
                 for item in items {
-                    body += "<w:p><w:pPr><w:pStyle w:val=\"ListParagraph\"/><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"\(ordered ? 2 : 1)\"/></w:numPr></w:pPr>\(runsXML(item))</w:p>"
+                    body += "<w:p><w:pPr><w:pStyle w:val=\"ListParagraph\"/><w:numPr><w:ilvl w:val=\"0\"/><w:numId w:val=\"\(ordered ? 2 : 1)\"/></w:numPr></w:pPr>\(encadrer(runsXML(item)))</w:p>"
                 }
             case .table(let rows):
                 body += tableXML(rows)
@@ -276,6 +332,7 @@ enum DocxBuilder {
             }
         }
         let avecNotes = !notesDeFin.isEmpty
+        let avecCommentaires = !commentairesXML.isEmpty
 
         let document = """
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -284,7 +341,7 @@ enum DocxBuilder {
         """
 
         var zip = OOXMLZip()
-        zip.add("[Content_Types].xml", xml: contentTypes(avecNotes: avecNotes))
+        zip.add("[Content_Types].xml", xml: contentTypes(avecNotes: avecNotes, avecCommentaires: avecCommentaires))
         zip.add("_rels/.rels", xml: rootRels)
         zip.add("word/document.xml", xml: document)
         zip.add("word/styles.xml", xml: stylesXML)
@@ -303,6 +360,20 @@ enum DocxBuilder {
             <w:endnotePr><w:numFmt w:val="decimal"/><w:endnote w:id="-1"/><w:endnote w:id="0"/></w:endnotePr></w:settings>
             """)
         }
+        if avecCommentaires {
+            zip.add("word/comments.xml", xml: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+                + "<w:comments xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
+                + commentairesXML.joined() + "</w:comments>")
+            let relsNotes = imagesCommentaires.enumerated().map { i, e in
+                "<Relationship Id=\"rIdNote\(i + 1)\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/\(e.name)\"/>"
+            }.joined()
+            zip.add("word/_rels/comments.xml.rels", xml: "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+                + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\(relsNotes)</Relationships>")
+            for e in imagesCommentaires { zip.add("word/media/\(e.name)", e.img.data) }
+        }
+        let commentairesRels = avecCommentaires
+            ? "<Relationship Id=\"rIdComments\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments\" Target=\"comments.xml\"/>"
+            : ""
         let notesRels = avecNotes
             ? "<Relationship Id=\"rIdEndnotes\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes\" Target=\"endnotes.xml\"/>" +
               "<Relationship Id=\"rIdSettings\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings\" Target=\"settings.xml\"/>"
@@ -312,14 +383,14 @@ enum DocxBuilder {
         <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\
         <Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>\
         <Relationship Id="rIdNum" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>\
-        \(notesRels)\(rels)</Relationships>
+        \(notesRels)\(commentairesRels)\(rels)</Relationships>
         """
         zip.add("word/_rels/document.xml.rels", xml: docRels)
         for entry in images { zip.add("word/media/\(entry.name)", entry.img.data) }
         return zip.finalize()
     }
 
-    private static func contentTypes(avecNotes: Bool) -> String { """
+    private static func contentTypes(avecNotes: Bool, avecCommentaires: Bool) -> String { """
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\
     <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\
@@ -330,6 +401,7 @@ enum DocxBuilder {
     <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>\
     <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>\
     \(avecNotes ? "<Override PartName=\"/word/endnotes.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml\"/><Override PartName=\"/word/settings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml\"/>" : "")\
+    \(avecCommentaires ? "<Override PartName=\"/word/comments.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml\"/>" : "")\
     </Types>
     """ }
 
@@ -355,6 +427,8 @@ enum DocxBuilder {
     <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:pPr><w:ind w:left="420"/></w:pPr></w:style>\
     <w:style w:type="paragraph" w:styleId="EndnoteText"><w:name w:val="endnote text"/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:sz w:val="18"/></w:rPr></w:style>\
     <w:style w:type="character" w:styleId="EndnoteReference"><w:name w:val="endnote reference"/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style>\
+    <w:style w:type="paragraph" w:styleId="CommentText"><w:name w:val="annotation text"/><w:rPr><w:sz w:val="20"/></w:rPr></w:style>\
+    <w:style w:type="character" w:styleId="CommentReference"><w:name w:val="annotation reference"/><w:rPr><w:sz w:val="16"/></w:rPr></w:style>\
     </w:styles>
     """
 
@@ -830,10 +904,13 @@ enum OOXMLExportBridge {
     // MARK: public
 
     /// Build a .docx from the report export model (flat block array).
-    static func buildDocx(title: String, model: [[String: Any]], completion: @escaping (Data?) -> Void) {
+    /// `annotations` (1.4) : celles du document, portées dans le Word (`AnnotationsWord`).
+    static func buildDocx(title: String, model: [[String: Any]], annotations: [Annotation] = [],
+                          completion: @escaping (Data?) -> Void) {
         download(imageURLs(in: model)) { imgs in
             let blocks = model.compactMap { block($0, imgs) }
-            completion(DocxBuilder.build(title: title, blocks: blocks))
+            let annote = AnnotationsWord.appliquer(annotations, a: blocks, texteNote: tr("Note manuscrite (md Viewer)"))
+            completion(DocxBuilder.build(title: title, blocks: annote.blocs, commentaires: annote.commentaires))
         }
     }
 

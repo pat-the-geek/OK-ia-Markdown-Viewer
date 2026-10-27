@@ -266,6 +266,16 @@
     });
   }
 
+  // L'export Word ou PowerPoint lit les blocs de la page : l'image d'une note manuscrite, posée
+  // dans son paragraphe, le faisait prendre pour une image, et son texte se perdait. Le temps de
+  // l'export, les notes s'en vont ; `defiger()` les repose.
+  function sansEncre() {
+    var c = contenu();
+    if (!c) return;
+    occupe = true;
+    c.querySelectorAll('.okia-encre').forEach(function (img) { img.remove(); });
+  }
+
   function defiger() {
     var c = contenu();
     if (!c) return;
@@ -300,6 +310,7 @@
     ancrerEncre: ancrerEncre,
     sousLePoint: sousLePoint,
     figer: figer,
+    sansEncre: sansEncre,
     defiger: defiger
   };
 })();

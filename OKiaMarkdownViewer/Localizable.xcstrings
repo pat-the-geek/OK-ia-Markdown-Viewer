@@ -12681,6 +12681,41 @@
           }
         }
       }
+    },
+    "Note manuscrite (md Viewer)": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note manuscrite (md Viewer)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handwritten note (md Viewer)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handschriftliche Notiz (md Viewer)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nota manuscrita (md Viewer)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nota a mano (md Viewer)"
+          }
+        }
+      }
     }
   }
 }
