@@ -200,6 +200,20 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   height: auto;
   object-fit: contain;
 }
+/* Plusieurs images à la suite : une mosaïque, ses cases mesurées par presentation.js. */
+.slide-inner .okia-mosaique {
+  display: grid;
+  gap: 12px;
+  justify-content: center;
+  margin: 0.4em auto;
+}
+.slide-inner .okia-mosaique img {
+  margin: 0;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+.slide-inner .okia-mosaique > * { display: block; margin: 0; }
 .slide-inner pre.mermaid {
   background: transparent;
   border: none;

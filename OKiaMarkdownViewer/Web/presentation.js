@@ -376,6 +376,74 @@
     img.style.width = 'auto';
   }
 
+  // Des images qui se suivent, seules dans leur paragraphe — la planche d'un Word importé, treize
+  // instruments l'un sous l'autre — tombaient en colonne, et la diapositive, réduite pour tenir,
+  // n'en montrait plus que des timbres (Patrick, 27/10/2026). Elles passent dans une mosaïque.
+  // Une fois par diapositive : la mosaïque posée, l'appel suivant ne trouve plus de suite.
+  function seulementDesImages(n) {
+    if (n.nodeType !== 1 || n.tagName !== 'P' || n.textContent.trim()) return false;
+    var imgs = n.querySelectorAll('img');
+    if (!imgs.length) return false;
+    // Chaque enfant est une image, nue ou dans son enveloppe (le lien, l'agrandissement de
+    // render.js), ou un saut de ligne.
+    for (var i = 0; i < n.children.length; i++) {
+      var c = n.children[i];
+      if (c.tagName === 'BR' || c.tagName === 'IMG') continue;
+      if (c.querySelectorAll('img').length === 1) continue;
+      return false;
+    }
+    return true;
+  }
+
+  function poserMosaiques(inner) {
+    var enfants = Array.prototype.slice.call(inner.children);
+    var suite = [];
+    function fermer() {
+      var nombre = suite.reduce(function (t, p) { return t + p.querySelectorAll('img').length; }, 0);
+      if (nombre >= 2) {
+        var mosaique = document.createElement('div');
+        mosaique.className = 'okia-mosaique';
+        inner.insertBefore(mosaique, suite[0]);
+        suite.forEach(function (p) {
+          Array.prototype.slice.call(p.children).forEach(function (c) {
+            if (c.tagName !== 'BR') mosaique.appendChild(c);
+          });
+          inner.removeChild(p);
+        });
+      }
+      suite = [];
+    }
+    enfants.forEach(function (n) {
+      if (seulementDesImages(n)) suite.push(n); else fermer();
+    });
+    fermer();
+  }
+
+  // Des cases carrées, autant de colonnes qu'il faut pour que chaque image soit la plus grande
+  // possible dans la place que laissent le titre et le texte.
+  function fitMosaiques(inner) {
+    var mosaiques = inner.querySelectorAll('.okia-mosaique');
+    if (!mosaiques.length) return;
+    var availW = CW - PAD_H * 2, availH = CH - PAD_V * 2, ecart = 12;
+    Array.prototype.forEach.call(mosaiques, function (m) { m.style.height = '0px'; m.style.overflow = 'hidden'; });
+    var reste = (availH - inner.scrollHeight - 24) / mosaiques.length;
+    if (reste < 160) reste = availH * 0.6 / mosaiques.length;   // beaucoup de texte : la réduction suivra
+    Array.prototype.forEach.call(mosaiques, function (m) {
+      m.style.height = ''; m.style.overflow = '';
+      var n = m.children.length, meilleur = { cote: 0, colonnes: 1 };
+      for (var c = 1; c <= n; c++) {
+        var lignes = Math.ceil(n / c);
+        var cote = Math.min((availW - ecart * (c - 1)) / c, (reste - ecart * (lignes - 1)) / lignes);
+        if (cote > meilleur.cote) meilleur = { cote: cote, colonnes: c };
+      }
+      var px = Math.max(40, Math.floor(meilleur.cote)) + 'px';
+      m.style.gridTemplateColumns = 'repeat(' + meilleur.colonnes + ', ' + px + ')';
+      Array.prototype.forEach.call(m.querySelectorAll('img'), function (img) {
+        img.style.width = px; img.style.height = px;
+      });
+    });
+  }
+
   function fitSlide(section) {
     if (!section) return;
     var canvas = section.querySelector('.slide-canvas');
@@ -409,6 +477,9 @@
 
     // 0. Grow a lone image to fill the canvas's leftover height (PowerPoint-style).
     fitImage(section, inner);
+    // 0 bis. Plusieurs images à la suite : une mosaïque à la mesure de la place libre.
+    poserMosaiques(inner);
+    fitMosaiques(inner);
 
     // 1. Shrink content if it overflows the design canvas (never enlarge here).
     var availW = CW - PAD_H * 2, availH = CH - PAD_V * 2;
