@@ -12,8 +12,14 @@ Wikidata ne comble que ce qui manque.
 
 **Calendrier (Patrick, 25/10/2026)** : la 1.4 sortira **après fornews 1.7.4**, celle
 qui doit lui donner le cache d'entités partagé et l'ouverture par QID (« Demandes à fornews »).
-B89 envoyé le 25/10 (iOS + Mac) ; les commits depuis B88 ne sont pas poussés. **D'ici là, md Viewer 1.4
-reste en bêta (TestFlight)** : aucune soumission à Apple.
+B89 et B90 envoyés le 25/10, B91 à B96 le 26/10 (iOS + Mac) ; poussé jusqu'à B95. **D'ici là, md
+Viewer 1.4 reste en bêta (TestFlight)** : aucune soumission à Apple.
+
+**Décisions prises en route** (le détail dans chaque section) : signaler une erreur, six types
+(②, 25/10) ; import ouvert à l'iPhone et à l'iPad (④, 26/10) ; PDF scannés lus par Vision (④,
+26/10) ; commentaires comme consignes et rapport d'analyse, jamais cochés d'avance (④, 25/10) ; la
+fiche de lecture d'une page envoyée depuis Safari, réservée à l'option (④ ter, 26/10), traduite
+dans la langue de l'interface (④ ter, 26/10). Site à jour le 27/10 (feuille de route FR et EN).
 
 ## ⓪ Décisions de Patrick — prises le 25/10/2026 (« Ok commence »)
 
@@ -399,14 +405,16 @@ relance → annotations retrouvées), iPhone 17 Pro Max (défilement à deux doi
 la recherche). Hook `OKIA_ANNOTER=surligner|souligner|ecrire|gomme`. **Pas vu** : un vrai crayon,
 le Mac (souris), le Duo.
 
-## ⑤ Modèles plus poussés (si ⓪ dit oui)
+## ⑤ Modèles plus poussés — sortis de la 1.4 (⓪ a dit non, 25/10)
 
-- [ ] Private Cloud Compute, au choix explicite de l'utilisateur, document par document, jamais par
+- [ ] ~~Private Cloud Compute~~, au choix explicite de l'utilisateur, document par document, jamais par
       défaut ; libellés clairs sur ce qui quitte l'appareil.
 
 ## ⑥ Publication
 
-- [ ] Feuille de route publique (FR et EN) — après les décisions de ⓪.
+- [x] Feuille de route publique (FR et EN) : en test, 3 et 5 francs, annotations (OK-ia#524) ;
+      import partout, PDF scannés, options d'Apple Intelligence, signaler une erreur (OK-ia#526) ;
+      la page web depuis Safari, traduite, et le calendrier « après fornews 1.7.4 » (OK-ia#527, 27/10).
 - [ ] Politique de confidentialité mise à jour (Wikidata, iCloud ; pas de PCC). Texte proposé le
       25/10, section « Accès à Internet » — FR : « **Wikidata (option Analytic).** Pour compléter
       une entité que le document ne décrit pas (sa nature, sa position, sa photo), md Viewer peut
@@ -417,4 +425,11 @@ le Mac (souris), le Duo.
       viennent de Wikimedia Commons. Comme pour toute requête web, Wikimedia peut recevoir votre
       adresse IP. » — à compléter : la description vient aussi de **Wikipédia** (résumé de
       l'article), et « dans votre iCloud privé » n'est vrai qu'une fois le partage fait.
+      **À ajouter depuis le 26/10** (page web, ④ ter) : une page partagée depuis Safari est lue
+      dans Safari même ; pour une adresse seule, md Viewer charge la page comme un navigateur. Les
+      images de la fiche s'affichent depuis le site de la page ; ses lieux passent par Wikidata si
+      l'utilisateur l'a accepté. La
+      fiche est composée sur l'appareil, et sa traduction aussi (le système peut demander de
+      télécharger une langue, comme pour un document). À publier à la sortie, pas avant : la
+      politique décrit ce que l'on télécharge sur l'App Store.
 - [ ] Fiche App Store, captures, notes de version, post Mastodon.

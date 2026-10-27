@@ -240,7 +240,11 @@ OKiaMarkdownViewer/
 ├── Assets.xcassets/                # AppIcon (1024, sans alpha) + AccentColor (#E8972E)
 ├── Models/
 │   ├── MarkdownDocument.swift      # chargement UTF-8 → Latin-1, security-scoped, sans UIKit
-│   └── OOXMLExport.swift           # ZIP + builders DOCX/PPTX + bridge (export Word/PowerPoint)
+│   ├── OOXMLExport.swift           # ZIP + builders DOCX/PPTX + bridge (export Word/PowerPoint)
+│   ├── Analytic/                   # 1.4 : entités, Wikidata, cache, corrections signalées
+│   └── Import/                     # 1.4 : import Word, PDF (OCR), PowerPoint ; rédaction IA
+├── Fornews/                        # 1.4 : code de fornews.ai copié mot pour mot (copier-fornews.sh)
+├── PageWeb/                        # 1.4 : extraction d'une page, fiche de lecture, traduction
 ├── Views/
 │   ├── RootView.swift              # routage + .fileImporter + alertes
 │   ├── EmptyStateView.swift        # accueil (ouvrir / exemple)
@@ -258,6 +262,7 @@ OKiaMarkdownViewer/
 │   ├── fonts/Nunito-{Black,Regular}.woff2
 │   └── vendor/marked.min.js, mermaid.min.js, leaflet.{js,css}   # bundlés offline (aucun CDN)
 └── Samples/Demo.md                 # document de démonstration
+Partage/                            # 1.4 : extension de partage (Safari → fiche de lecture)
 ```
 
 ## Bundling des assets (offline, aucun CDN)
@@ -324,6 +329,15 @@ L'app enregistre le schéma d'URL `mdviewer://` (`CFBundleURLTypes` dans `Info.p
   n'envoie que le **nom** — jamais un chemin, dont le préfixe diffère d'une application à l'autre :
   ```
   mdviewer://fichier?nom=<nom du dépôt>
+  ```
+- **Une page web à mettre en fiche** (1.4, option Analytic) — l'extension de partage dépose la
+  page extraite dans la boîte `BoitePages` (dossier `mdviewer-pages` du même groupe) et ouvre
+  `mdviewer://pages` ; l'app relève aussi la boîte à chaque passage au premier plan. Une adresse
+  seule est chargée dans une vue web hors écran, qui exécute le même script d'extraction
+  (`PageWeb/ExtrairePage.js`) :
+  ```
+  mdviewer://pages
+  mdviewer://page?url=<URL https de la page, encodée>
   ```
 
 #### La boîte aux lettres partagée avec fornews.ai
@@ -1392,7 +1406,8 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    des entités localisées — **en plein écran sur demande**. Quand l'écran le permet (Duo déplié,
    grand écran en paysage, Mac), elles s'ouvrent **dans la partie de droite**, à côté du document,
    comme le sommaire aujourd'hui.
-3. **L'import de documents Word, PDF et PowerPoint — sur Mac seulement.** Un Word ou un PDF
+3. **L'import de documents Word, PDF et PowerPoint** — sur Mac d'abord, **ouvert à l'iPhone et à
+   l'iPad le 2026-10-26** (Patrick : « Oui ouvre »), même option et même code. Un Word ou un PDF
    devient un **rapport au format md Viewer**, comme fornews génère un rapport d'article : on
    reprend au maximum le code de fornews. **Un PowerPoint devient une présentation md Viewer**
    (ajouté par Patrick le 2026-10-08) : une diapositive par bloc séparé par `---`, titres, puces,
@@ -1411,8 +1426,13 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    document, et passent d'un appareil à l'autre par l'iCloud privé, comme le cache d'entités. Elles
    s'affichent sur Mac et partent dans l'export PDF. Pendant l'annotation, les gestes du livre
    (tour de page) sont suspendus. À voir aussi : annoter une diapositive pendant le diaporama.
-5. **Des modèles plus poussés** (Private Cloud Compute) — idée, voir les décisions ci-dessous.
+5. ~~**Des modèles plus poussés** (Private Cloud Compute)~~ — **écarté le 2026-10-25**, voir les
+   décisions ci-dessous.
 6. **Le lien avec fornews** (base d'entités, ouverture par QID).
+7. **Une page web, de Safari à md Viewer** (ajouté par Patrick le 2026-10-26, « option payante ») :
+   on partage une page depuis Safari, md Viewer en fait **la fiche de lecture de fornews** — grande
+   image, en bref, en chiffres, qui est cité, carte des lieux, schéma —, **traduite dans la langue
+   de l'interface**. Sans l'option, le texte de la page s'ouvre, puis l'option se présente.
 
 #### Prix
 
@@ -1453,7 +1473,35 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
 - **Prix** : ci-dessus. **Slogan** : « vos documents prennent vie » / « your documents come alive ».
 - **Code de fornews copié mot pour mot** (`OKiaMarkdownViewer/Fornews/`, source en tête), comme
   `BoiteAuxLettres.swift`, plutôt qu'une dépendance au dépôt fornews.
-- Reste à éprouver : **lire un `.docx` dans une app Catalyst** (AppKit sait le faire, UIKit pas
-  d'office — sinon extraction du zip XML).
+- ~~Reste à éprouver : lire un `.docx` dans une app Catalyst~~ — réglé sans AppKit ni
+  bibliothèque : le zip est lu par `LecteurZip`, le XML par `NoeudXML`.
+
+#### Décisions de Patrick depuis (2026-10-25 → 2026-10-27)
+
+- **Calendrier** : la 1.4 sort **après fornews 1.7.4**, qui lui apporte le cache d'entités partagé,
+  la route `fornews://entite?qid=…` et la fin des entités réduites à un nombre (`[[7]]`). D'ici là,
+  **la 1.4 reste en bêta TestFlight** : aucune soumission à Apple.
+- **Signaler une erreur** : un menu de six types sur la fiche, la liste et la galerie (pas la bonne
+  fiche, mauvais genre, source ou non, même entité que…, mauvaise photo, pas une entité). La
+  correction porte sur le nom et vaut pour tous les documents ; elle prime sur la détection, le
+  cache et Wikidata.
+- **Import ouvert à l'iPhone et à l'iPad** (26/10), par le menu, l'appui long sur le bouton
+  dossier, « Ouvrir avec » et le partage.
+- **PDF scannés** (26/10) : une page sans texte est lue par la reconnaissance de texte de
+  l'appareil (Vision) et signalée « à vérifier » ; une page dont on ne tire presque rien est gardée
+  en image.
+- **Deux options d'Apple Intelligence à l'import, jamais cochées d'avance** (25/10) : rédiger ce
+  que demandent les commentaires (le texte de l'auteur n'est jamais remplacé), et un rapport
+  d'analyse à la manière de fornews (consignes de fornews copiées mot pour mot).
+- **La fiche de lecture d'une page web**, depuis Safari, réservée à l'option (26/10) : extension de
+  partage `Partage`, boîte `BoitePages` dans `group.ai.fornews.native`, composition
+  `RapportObsidian` et `FicheArticle` de fornews copiées mot pour mot ; signée md Viewer.
+- **Traduite dans la langue de l'interface** (26/10 : « le texte doit être traduit dans la langue
+  choisie ») : titre, chapeau et texte, par le framework Translation sur l'appareil, comme le
+  lecteur ; la fiche dit « Traduit de… » et garde le titre original. Les entités sont détectées sur
+  le texte d'origine.
+- **Politique de confidentialité** : à mettre à jour à la sortie, pas avant — elle décrit ce que
+  l'on télécharge sur l'App Store (Wikidata, la page chargée pour une adresse seule, iCloud une
+  fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.
 
 Liste des tâches : `TACHES-1.4.md`.

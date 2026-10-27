@@ -3,6 +3,11 @@
 À coller tel quel dans une nouvelle conversation Claude Code, ouverte dans
 `~/Developer/OK-ia - Markdown Viewer`.
 
+> **Historique (prompt du 2026-10-25).** Les décisions qu'il demande ont été prises depuis, et
+> certaines le contredisent : 3 francs sur iPhone et iPad, 5 sur Mac (et non 2 + 2) ; l'import
+> ouvert aussi à l'iPhone et à l'iPad ; la fiche d'une page web envoyée depuis Safari. L'état à
+> jour est dans `TACHES-1.4.md` et dans le README, section « 1.4 ».
+
 ---
 
 ```
