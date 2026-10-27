@@ -10,7 +10,7 @@ options:
   # Both keys are needed: without knownRegions, only en.lproj is compiled from the
   # catalogue and the App Store lists a single language.
   developmentLanguage: fr
-  knownRegions: [Base, fr, en, de, es, it]
+  knownRegions: [Base, fr, en, de, es, it, ja, ko, zh-Hans, pt-BR, nl, ru, uk, tr, vi, hi]
 
 settings:
   base:

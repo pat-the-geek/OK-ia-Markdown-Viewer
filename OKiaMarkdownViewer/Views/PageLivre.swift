@@ -67,7 +67,7 @@ struct PageLivre: UIViewRepresentable {
         controller.add(context.coordinator, name: "imageTapped")
         controller.add(context.coordinator, name: "carteTapped")
         controller.addUserScript(WKUserScript(
-            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            source: Localization.shared.scriptLangue,
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
         let config = WKWebViewConfiguration()
         config.userContentController = controller

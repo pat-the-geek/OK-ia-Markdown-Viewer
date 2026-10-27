@@ -34,7 +34,11 @@ enum RangementDocuments {
     /// celui qu'on emploie : changer de langue ne doit pas couper les documents en deux.
     static let nomsDuDossier = ["fr": "Documents analysés", "en": "Analyzed Documents",
                                 "de": "Analysierte Dokumente", "es": "Documentos analizados",
-                                "it": "Documenti analizzati"]
+                                "it": "Documenti analizzati", "ja": "分析済みの書類", "ko": "분석된 문서",
+                                "zh-Hans": "已分析的文档", "pt-BR": "Documentos analisados",
+                                "nl": "Geanalyseerde documenten", "ru": "Проанализированные документы",
+                                "uk": "Проаналізовані документи", "tr": "Analiz Edilen Belgeler",
+                                "vi": "Tài liệu đã phân tích", "hi": "विश्लेषित दस्तावेज़"]
 
     /// iCloud Drive (« md Viewer »), sinon les documents de l'app.
     static func racine() -> URL {
@@ -50,7 +54,7 @@ enum RangementDocuments {
             return r.appendingPathComponent(nom, isDirectory: true)
         }
         let choisie = UserDefaults.standard.string(forKey: "okia.language").flatMap { nomsDuDossier[$0] }
-            ?? Locale.preferredLanguages.lazy.compactMap { nomsDuDossier[String($0.prefix(2))] }.first
+            ?? nomsDuDossier[Localization.systemCode]   // « zh-Hans », « pt-BR » : pas deux lettres
             ?? nomsDuDossier["en"]!
         return r.appendingPathComponent(choisie, isDirectory: true)
     }

@@ -16,56 +16,90 @@
   var CH = 720, PAD_H = 72, PAD_V = 48;
   var CW = 1280;   // current canvas logical width, recomputed per fit
 
-  // App language, injected by the host app (window.OKIA_LANG): fr | en | de | es | it.
-  var LANGS = ['fr', 'en', 'de', 'es', 'it'];
-  var LANG = LANGS.indexOf(window.OKIA_LANG) >= 0 ? window.OKIA_LANG : 'fr';
+  // App language, injected by the host app. window.OKIA_LANG is what render.js (fornews) knows
+  // — five languages, English for the others ; window.OKIA_LANG_APP is the app's own language
+  // (fifteen since 1.4).
+  var LANGS = ['fr', 'en', 'de', 'es', 'it', 'ja', 'ko', 'zh-Hans', 'pt-BR', 'nl', 'ru', 'uk',
+               'tr', 'vi', 'hi'];
+  var DEMANDE = window.OKIA_LANG_APP || window.OKIA_LANG;
+  var LANG = LANGS.indexOf(DEMANDE) >= 0 ? DEMANDE : 'fr';
 
   // The French text is the key, so French needs no entry of its own — and an untranslated
   // string degrades to readable French rather than to an identifier.
   var STRINGS = {
     // Transitions
-    'Fondu':          { en: 'Dissolve', de: 'Überblenden', es: 'Fundido', it: 'Dissolvenza' },
-    'Poussée':        { en: 'Push', de: 'Schieben', es: 'Empujar', it: 'Spinta' },
-    'Entrée':         { en: 'Move In', de: 'Einfahren', es: 'Entrada', it: 'Entrata' },
-    'Échelle':        { en: 'Scale', de: 'Skalieren', es: 'Escala', it: 'Scala' },
-    'Retournement 3D':{ en: '3D Flip', de: '3D-Drehung', es: 'Giro 3D', it: 'Ribaltamento 3D' },
-    'Balayage':       { en: 'Wipe', de: 'Wischen', es: 'Barrido', it: 'Tendina' },
-    'Découverte':     { en: 'Reveal', de: 'Aufdecken', es: 'Revelar', it: 'Rivela' },
-    'Cube':           { en: 'Cube', de: 'Würfel', es: 'Cubo', it: 'Cubo' },
-    'Iris':           { en: 'Iris', de: 'Iris', es: 'Iris', it: 'Iride' },
+    'Fondu':          { en: 'Dissolve', de: 'Überblenden', es: 'Fundido', it: 'Dissolvenza',
+        ja: 'ディゾルブ', ko: '디졸브', 'zh-Hans': '溶解', 'pt-BR': 'Dissolver', nl: 'Vervagen', ru: 'Растворение', uk: 'Розчинення', tr: 'Çözülme', vi: 'Hòa tan', hi: 'डिज़ॉल्व' },
+    'Poussée':        { en: 'Push', de: 'Schieben', es: 'Empujar', it: 'Spinta',
+        ja: 'プッシュ', ko: '밀어내기', 'zh-Hans': '推移', 'pt-BR': 'Empurrar', nl: 'Duwen', ru: 'Сдвиг', uk: 'Зсув', tr: 'İtme', vi: 'Đẩy', hi: 'पुश' },
+    'Entrée':         { en: 'Move In', de: 'Einfahren', es: 'Entrada', it: 'Entrata',
+        ja: 'ムーブイン', ko: '이동', 'zh-Hans': '移入', 'pt-BR': 'Mover para Dentro', nl: 'Inschuiven', ru: 'Наплыв', uk: 'Наплив', tr: 'İçeri Taşıma', vi: 'Di chuyển vào', hi: 'मूव इन' },
+    'Échelle':        { en: 'Scale', de: 'Skalieren', es: 'Escala', it: 'Scala',
+        ja: 'スケール', ko: '크기 조절', 'zh-Hans': '缩放', 'pt-BR': 'Escala', nl: 'Schalen', ru: 'Масштаб', uk: 'Масштаб', tr: 'Ölçekleme', vi: 'Thu phóng', hi: 'स्केल' },
+    'Retournement 3D':{ en: '3D Flip', de: '3D-Drehung', es: 'Giro 3D', it: 'Ribaltamento 3D',
+        ja: '3Dフリップ', ko: '3D 뒤집기', 'zh-Hans': '3D 翻转', 'pt-BR': 'Virar em 3D', nl: '3D-omslag', ru: '3D-переворот', uk: '3D-перевертання', tr: '3B Çevirme', vi: 'Lật 3D', hi: '3D फ़्लिप' },
+    'Balayage':       { en: 'Wipe', de: 'Wischen', es: 'Barrido', it: 'Tendina',
+        ja: 'ワイプ', ko: '닦아내기', 'zh-Hans': '擦除', 'pt-BR': 'Varrer', nl: 'Vegen', ru: 'Стирание', uk: 'Витирання', tr: 'Silme', vi: 'Quét', hi: 'वाइप' },
+    'Découverte':     { en: 'Reveal', de: 'Aufdecken', es: 'Revelar', it: 'Rivela',
+        ja: 'リビール', ko: '드러내기', 'zh-Hans': '显露', 'pt-BR': 'Revelar', nl: 'Onthullen', ru: 'Открытие', uk: 'Відкриття', tr: 'Açığa Çıkarma', vi: 'Hé lộ', hi: 'रिवील' },
+    'Cube':           { en: 'Cube', de: 'Würfel', es: 'Cubo', it: 'Cubo',
+        ja: 'キューブ', ko: '큐브', 'zh-Hans': '立方体', 'pt-BR': 'Cubo', nl: 'Kubus', ru: 'Куб', uk: 'Куб', tr: 'Küp', vi: 'Khối lập phương', hi: 'क्यूब' },
+    'Iris':           { en: 'Iris', de: 'Iris', es: 'Iris', it: 'Iride',
+        ja: 'アイリス', ko: '조리개', 'zh-Hans': '光圈', 'pt-BR': 'Íris', nl: 'Iris', ru: 'Диафрагма', uk: 'Діафрагма', tr: 'İris', vi: 'Mống mắt', hi: 'आइरिस' },
     'Fondu au noir':  { en: 'Fade Through Black', de: 'Über Schwarz', es: 'Fundido a negro',
-                        it: 'Dissolvenza al nero' },
-    'Damier':         { en: 'Checkerboard', de: 'Schachbrett', es: 'Damero', it: 'Scacchiera' },
+                        it: 'Dissolvenza al nero',
+        ja: '黒へフェード', ko: '검정색으로 페이드', 'zh-Hans': '渐隐至黑色', 'pt-BR': 'Esmaecer pelo Preto', nl: 'Vervagen via zwart', ru: 'Через чёрный', uk: 'Через чорне', tr: 'Siyah Üzerinden Geçiş', vi: 'Mờ dần qua màu đen', hi: 'काले रंग से फ़ेड' },
+    'Damier':         { en: 'Checkerboard', de: 'Schachbrett', es: 'Damero', it: 'Scacchiera',
+        ja: 'チェッカーボード', ko: '바둑판', 'zh-Hans': '棋盘格', 'pt-BR': 'Xadrez', nl: 'Dambord', ru: 'Шахматная доска', uk: 'Шахівниця', tr: 'Dama Tahtası', vi: 'Bàn cờ', hi: 'चेकरबोर्ड' },
     // Thèmes
-    'Clair':          { en: 'Light', de: 'Hell', es: 'Claro', it: 'Chiaro' },
-    'Sombre':         { en: 'Dark', de: 'Dunkel', es: 'Oscuro', it: 'Scuro' },
-    'Console':        { en: 'Console', de: 'Konsole', es: 'Consola', it: 'Console' },
-    'Sépia':          { en: 'Sepia', de: 'Sepia', es: 'Sepia', it: 'Seppia' },
-    'Océan':          { en: 'Ocean', de: 'Ozean', es: 'Océano', it: 'Oceano' },
+    'Clair':          { en: 'Light', de: 'Hell', es: 'Claro', it: 'Chiaro',
+        ja: 'ライト', ko: '라이트', 'zh-Hans': '浅色', 'pt-BR': 'Claro', nl: 'Licht', ru: 'Светлая', uk: 'Світла', tr: 'Açık', vi: 'Sáng', hi: 'लाइट' },
+    'Sombre':         { en: 'Dark', de: 'Dunkel', es: 'Oscuro', it: 'Scuro',
+        ja: 'ダーク', ko: '다크', 'zh-Hans': '深色', 'pt-BR': 'Escuro', nl: 'Donker', ru: 'Тёмная', uk: 'Темна', tr: 'Koyu', vi: 'Tối', hi: 'डार्क' },
+    'Console':        { en: 'Console', de: 'Konsole', es: 'Consola', it: 'Console',
+        ja: 'コンソール', ko: '콘솔', 'zh-Hans': '控制台', 'pt-BR': 'Console', nl: 'Console', ru: 'Консоль', uk: 'Консоль', tr: 'Konsol', vi: 'Console', hi: 'कंसोल' },
+    'Sépia':          { en: 'Sepia', de: 'Sepia', es: 'Sepia', it: 'Seppia',
+        ja: 'セピア', ko: '세피아', 'zh-Hans': '棕褐色', 'pt-BR': 'Sépia', nl: 'Sepia', ru: 'Сепия', uk: 'Сепія', tr: 'Sepya', vi: 'Sepia', hi: 'सीपिया' },
+    'Océan':          { en: 'Ocean', de: 'Ozean', es: 'Océano', it: 'Oceano',
+        ja: 'オーシャン', ko: '오션', 'zh-Hans': '海洋', 'pt-BR': 'Oceano', nl: 'Oceaan', ru: 'Океан', uk: 'Океан', tr: 'Okyanus', vi: 'Đại dương', hi: 'महासागर' },
     // Menu et chrome du diaporama
-    'Thème':          { en: 'Theme', de: 'Thema', es: 'Tema', it: 'Tema' },
-    'Transition':     { en: 'Transition', de: 'Übergang', es: 'Transición', it: 'Transizione' },
-    'Diapositives':   { en: 'Slides', de: 'Folien', es: 'Diapositivas', it: 'Diapositive' },
+    'Thème':          { en: 'Theme', de: 'Thema', es: 'Tema', it: 'Tema',
+        ja: 'テーマ', ko: '테마', 'zh-Hans': '主题', 'pt-BR': 'Tema', nl: 'Thema', ru: 'Тема', uk: 'Тема', tr: 'Tema', vi: 'Chủ đề', hi: 'थीम' },
+    'Transition':     { en: 'Transition', de: 'Übergang', es: 'Transición', it: 'Transizione',
+        ja: 'トランジション', ko: '전환 효과', 'zh-Hans': '过渡', 'pt-BR': 'Transição', nl: 'Overgang', ru: 'Переход', uk: 'Перехід', tr: 'Geçiş', vi: 'Chuyển tiếp', hi: 'ट्रांज़िशन' },
+    'Diapositives':   { en: 'Slides', de: 'Folien', es: 'Diapositivas', it: 'Diapositive',
+        ja: 'スライド', ko: '슬라이드', 'zh-Hans': '幻灯片', 'pt-BR': 'Slides', nl: 'Dia\'s', ru: 'Слайды', uk: 'Слайди', tr: 'Slaytlar', vi: 'Trang chiếu', hi: 'स्लाइड' },
     'Diapositive précédente': { en: 'Previous slide', de: 'Vorherige Folie',
-                                es: 'Diapositiva anterior', it: 'Diapositiva precedente' },
+                                es: 'Diapositiva anterior', it: 'Diapositiva precedente',
+        ja: '前のスライド', ko: '이전 슬라이드', 'zh-Hans': '上一张幻灯片', 'pt-BR': 'Slide anterior', nl: 'Vorige dia', ru: 'Предыдущий слайд', uk: 'Попередній слайд', tr: 'Önceki slayt', vi: 'Trang chiếu trước', hi: 'पिछली स्लाइड' },
     'Diapositive suivante':   { en: 'Next slide', de: 'Nächste Folie',
-                                es: 'Diapositiva siguiente', it: 'Diapositiva successiva' },
+                                es: 'Diapositiva siguiente', it: 'Diapositiva successiva',
+        ja: '次のスライド', ko: '다음 슬라이드', 'zh-Hans': '下一张幻灯片', 'pt-BR': 'Próximo slide', nl: 'Volgende dia', ru: 'Следующий слайд', uk: 'Наступний слайд', tr: 'Sonraki slayt', vi: 'Trang chiếu tiếp theo', hi: 'अगली स्लाइड' },
     'Quitter le diaporama':   { en: 'End slideshow', de: 'Diashow beenden',
-                                es: 'Salir de la presentación', it: 'Esci dalla presentazione' },
-    'Transitions':    { en: 'Transitions', de: 'Übergänge', es: 'Transiciones', it: 'Transizioni' },
+                                es: 'Salir de la presentación', it: 'Esci dalla presentazione',
+        ja: 'スライドショーを終了', ko: '슬라이드쇼 종료', 'zh-Hans': '结束放映', 'pt-BR': 'Encerrar apresentação', nl: 'Beëindig diavoorstelling', ru: 'Завершить слайд-шоу', uk: 'Завершити слайд-шоу', tr: 'Slayt gösterisinden çık', vi: 'Kết thúc trình chiếu', hi: 'स्लाइडशो से बाहर निकलें' },
+    'Transitions':    { en: 'Transitions', de: 'Übergänge', es: 'Transiciones', it: 'Transizioni',
+        ja: 'トランジション', ko: '전환 효과', 'zh-Hans': '过渡效果', 'pt-BR': 'Transições', nl: 'Overgangen', ru: 'Переходы', uk: 'Переходи', tr: 'Geçişler', vi: 'Hiệu ứng chuyển tiếp', hi: 'ट्रांज़िशन' },
     'Vue d’ensemble des diapositives': { en: 'Slide overview', de: 'Folienübersicht',
                                          es: 'Vista general de diapositivas',
-                                         it: 'Panoramica delle diapositive' },
-    'Fermer':         { en: 'Close', de: 'Schließen', es: 'Cerrar', it: 'Chiudi' },
-    'Annoter':        { en: 'Annotate', de: 'Anmerken', es: 'Anotar', it: 'Annota' },
+                                         it: 'Panoramica delle diapositive',
+        ja: 'スライドの概要', ko: '슬라이드 개요', 'zh-Hans': '幻灯片概览', 'pt-BR': 'Visão geral dos slides', nl: 'Overzicht van dia\'s', ru: 'Обзор слайдов', uk: 'Огляд слайдів', tr: 'Slayt genel bakışı', vi: 'Tổng quan trang chiếu', hi: 'स्लाइड ओवरव्यू' },
+    'Fermer':         { en: 'Close', de: 'Schließen', es: 'Cerrar', it: 'Chiudi',
+        ja: '閉じる', ko: '닫기', 'zh-Hans': '关闭', 'pt-BR': 'Fechar', nl: 'Sluit', ru: 'Закрыть', uk: 'Закрити', tr: 'Kapat', vi: 'Đóng', hi: 'बंद करें' },
+    'Annoter':        { en: 'Annotate', de: 'Anmerken', es: 'Anotar', it: 'Annota',
+        ja: '注釈', ko: '주석 달기', 'zh-Hans': '标注', 'pt-BR': 'Anotar', nl: 'Annoteer', ru: 'Аннотировать', uk: 'Анотувати', tr: 'Not ekle', vi: 'Chú thích', hi: 'एनोटेट करें' },
     'Présenter sur un second écran': { en: 'Present on a second screen', de: 'Auf zweitem Bildschirm präsentieren',
-                                       es: 'Presentar en una segunda pantalla', it: 'Presenta su un secondo schermo' },
+                                       es: 'Presentar en una segunda pantalla', it: 'Presenta su un secondo schermo',
+        ja: '2台目の画面で発表', ko: '보조 화면에서 발표', 'zh-Hans': '在第二个屏幕上演示', 'pt-BR': 'Apresentar em uma segunda tela', nl: 'Presenteer op een tweede scherm', ru: 'Показать на втором экране', uk: 'Показати на другому екрані', tr: 'İkinci ekranda sun', vi: 'Trình bày trên màn hình thứ hai', hi: 'दूसरी स्क्रीन पर प्रस्तुत करें' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
-    'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta' }
+    'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta',
+        ja: '書き出し', ko: '내보내기', 'zh-Hans': '导出', 'pt-BR': 'Exportar', nl: 'Exporteer', ru: 'Экспорт', uk: 'Експорт', tr: 'Dışa aktar', vi: 'Xuất', hi: 'एक्सपोर्ट करें' }
   };
   function TXT(fr) {
     var entry = STRINGS[fr];
-    return (LANG === 'fr' || !entry || !entry[LANG]) ? fr : entry[LANG];
+    if (LANG === 'fr' || !entry) return fr;
+    // Une langue sans sa traduction lit l'anglais plutôt que le français.
+    return entry[LANG] || entry.en || fr;
   }
 
   function post(name, payload) {

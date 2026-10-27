@@ -453,7 +453,7 @@ struct CarteWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
         controller.addUserScript(WKUserScript(
-            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            source: Localization.shared.scriptLangue,
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
         if surMarqueur != nil { controller.add(context.coordinator, name: "wikiTapped") }
         context.coordinator.surMarqueur = surMarqueur

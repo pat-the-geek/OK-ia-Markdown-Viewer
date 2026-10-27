@@ -1610,19 +1610,9 @@ final class DocumentSummarizer: ObservableObject {
     /// language explicitly, so the model answers in the language the reader chose.
     private static func instructions(partial: Bool) -> String {
         let note = partial ? "\n\n" + excerptNote : ""
-        switch Localization.shared.code {
-        case "en": return """
-    You are an assistant that summarises documents in English. CONDENSE aggressively:
-    do not copy the text, rephrase the essentials.
-    Produce a STRUCTURED summary in Markdown, ready to display:
-    - start with a bold hook sentence (**…**);
-    - organise into 3 to 5 chapters with level-2 headings, written exactly as "## Title"
-      (a single "##", never "## ##");
-    - under each chapter, 2 to 4 concise bullets, with key terms, proper nouns and
-      figures in **bold**;
-    - end with a "## In brief" chapter of 2 to 3 points.
-    Stay faithful to the document, invent nothing. Reply ONLY with the summary's Markdown.
-    """ + note
+        let code = Localization.shared.code
+        switch code {
+        case "en": return resumeEnAnglais(langue: "English", enBref: "In brief") + note
         case "de": return """
     Du bist ein Assistent, der Dokumente auf Deutsch zusammenfasst. VERDICHTE stark:
     schreibe den Text nicht ab, formuliere das Wesentliche neu.
@@ -1659,7 +1649,7 @@ final class DocumentSummarizer: ObservableObject {
     - concludi con un capitolo «## In breve» di 2 o 3 punti.
     Resta fedele al documento, non inventare nulla. Rispondi SOLO con il Markdown del riassunto.
     """ + note
-        default: return """
+        case "fr": return """
     Tu es un assistant qui résume des documents en français. CONDENSE fortement :
     ne recopie pas le texte, reformule l’essentiel.
     Produis un résumé STRUCTURÉ au format Markdown, prêt à être affiché :
@@ -1671,7 +1661,26 @@ final class DocumentSummarizer: ObservableObject {
     - termine par un chapitre « ## En bref » de 2 à 3 points.
     Reste fidèle au document, n’invente rien. Réponds UNIQUEMENT avec le Markdown du résumé.
     """ + note
+        // Les langues ajoutées en 1.4 : la consigne anglaise, qui nomme la langue du résumé, et
+        // le titre du dernier chapitre déjà dans cette langue.
+        default: return resumeEnAnglais(langue: AppLanguage.nomAnglais(code), enBref: tr("En bref")) + note
         }
+    }
+
+    private static func resumeEnAnglais(langue: String, enBref: String) -> String {
+        """
+    You are an assistant that summarises documents in \(langue). CONDENSE aggressively:
+    do not copy the text, rephrase the essentials.
+    Produce a STRUCTURED summary in Markdown, ready to display:
+    - start with a bold hook sentence (**…**);
+    - organise into 3 to 5 chapters with level-2 headings, written exactly as "## Title"
+      (a single "##", never "## ##");
+    - under each chapter, 2 to 4 concise bullets, with key terms, proper nouns and
+      figures in **bold**;
+    - end with a "## \(enBref)" chapter of 2 to 3 points.
+    Write everything in \(langue), whatever language the document is in.
+    Stay faithful to the document, invent nothing. Reply ONLY with the summary's Markdown.
+    """
     }
 
     /// Tidy the model's Markdown: drop wrapping ```-fences and collapse any doubled
@@ -1733,7 +1742,10 @@ final class DocumentSummarizer: ObservableObject {
     /// opening as the whole document and answers "the main themes" from the first few
     /// sections. Shared by the summary and the chat so the wording cannot drift apart.
     static var excerptNote: String {
-        switch Localization.shared.code {
+        // Les langues ajoutées en 1.4 lisent la note anglaise : elle ne dit rien de la langue de
+        // la réponse, que la consigne principale fixe.
+        let code = Localization.shared.code
+        switch ["fr", "de", "es", "it"].contains(code) ? code : "en" {
         case "en": return """
     The document is too long to be sent whole. You are given its OPENING, then an OUTLINE — \
     headings taken from across the entire document — under "----- OUTLINE -----". The outline \
@@ -2106,7 +2118,7 @@ struct PresentationWebView: UIViewRepresentable {
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
         controller.addUserScript(WKUserScript(
-            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            source: Localization.shared.scriptLangue,
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
 
         let config = WKWebViewConfiguration()

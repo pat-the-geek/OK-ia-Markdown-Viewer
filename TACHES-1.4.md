@@ -203,6 +203,11 @@ demi-journée tests compris. La lecture du cache côté md Viewer (~60 lignes) s
    longitude, langue }` des entités résolues, réécrit après chaque enrichissement.
 2. **Route `fornews://entite?qid=Q…`** pour ouvrir une entité par son QID.
 3. Ne plus exporter d'entité réduite à un nombre (`[[7]]`) dans la section `## Entités`.
+4. **Les dix langues de md Viewer dans `render.js`** (ajoutée le 27/10) : japonais, coréen, chinois
+   simplifié (`zh-Hans`), portugais du Brésil (`pt-BR`), néerlandais, russe, ukrainien, turc,
+   vietnamien, hindi. md Viewer lui passe l'anglais pour ces langues (`window.OKIA_LANG`) en
+   attendant ; la langue de l'app est dans `window.OKIA_LANG_APP`. Même chose pour la fiche d'une
+   page web (`FichePageWeb`, `RapportObsidian`, `ConsignesAnalyste`), rédigée en anglais pour elles.
 
 ## ③ Galerie et carte — deuxième lot, 25/10/2026
 
@@ -617,6 +622,28 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       et les compteurs repartent. Le système en affiche trois par an au plus, et jamais dans
       TestFlight. Vérifié au banc (règles) et au simulateur iPad (compteurs préparés, lien
       `mdviewer://open` : « Vous aimez md Viewer ? » s'affiche ; version notée, compteurs à zéro).
+- [x] **Dix langues de plus** (fait le 27/10 ; Patrick, après les chiffres de vente : « fais les
+      traductions pour ces langues : Corée, Russie, Inde, Pays-Bas, Turquie, Chine, Brésil, Vietnam,
+      Japon, et ajoute l'ukrainien »). Japonais, coréen, chinois simplifié, portugais du Brésil,
+      néerlandais, russe, ukrainien, turc, vietnamien et hindi (pour l'Inde) : 15 langues en tout.
+      `AppLanguage` (drapeau, nom natif), `Localization.langueDeLApp` (« zh-Hans-CN » → zh-Hans,
+      chinois traditionnel → anglais, « pt-PT » → pt-BR), `knownRegions`, contrôle du script de
+      livraison. Interface (402 chaînes, pluriels CLDR compris), menu Services et diaporama
+      (`presentation.js`, qui lit `window.OKIA_LANG_APP`) traduits par cinq agents, deux langues
+      chacun, vérifiés par script (toutes les clés, mêmes marqueurs de format) ; en chinois, les noms
+      d'Apple (访达, iCloud 云盘). Le résumé et la conversation : les cinq langues gardent leurs
+      consignes natives, les dix autres la consigne anglaise qui nomme la langue de la réponse
+      (`AppLanguage.nomAnglais`, titre « En bref » traduit). Restent en anglais pour elles, faute de
+      pouvoir toucher au code de fornews : le rendu (`render.js` : libellés, dates) et la fiche d'une
+      page web (`codeFornews`) — demande 4 à fornews ci-dessus. La conversion en présentation et le
+      rapport d'import suivent la langue du document (les cinq). Le nom du dossier « Documents
+      analysés » existe dans les quinze. Une chaîne qui manquerait dans une langue lit l'anglais, pas le
+      français (`tr`) ; `scripts/ajouter-traductions.py` prend désormais les quinze langues et
+      signale celles qui manquent. ⚠️ **Traductions faites sans relecteur natif.** Apple
+      Intelligence ne parle pas toutes ces langues (à ma connaissance, ni le russe, ni l'ukrainien, ni
+      le hindi) : le résumé peut y échouer ou répondre dans une autre langue. Vérifié au simulateur
+      iPad : l'accueil en japonais, les entités en russe. **Pas vu** : chaque écran dans chaque langue,
+      le Mac (compilé seulement), la fiche App Store (à traduire à part).
 - [x] **7. Plusieurs fenêtres, pour comparer** (fait le 27/10, `Views/FenetreDocument.swift`). Deux
       documents côte à côte, ou deux versions d'un même document, chacune avec ses annotations (une
       version modifiée est un autre document, `IdentiteDocument`). **Chaque fenêtre a son

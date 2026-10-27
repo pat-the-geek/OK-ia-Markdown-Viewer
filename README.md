@@ -1559,6 +1559,12 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
   secondes après l'ouverture, jamais par-dessus une feuille ou le diaporama ; une fois par
   version. Le classement de l'App Store tient compte des notes ; jusque-là, l'app n'en demandait
   aucune. TestFlight ne l'affiche jamais.
+- **Quinze langues** (27/10, d'après les pays qui téléchargent sans traduction) : en plus du
+  français, de l'anglais, de l'allemand, de l'espagnol et de l'italien, le japonais, le coréen, le
+  chinois simplifié, le portugais du Brésil, le néerlandais, le russe, l'ukrainien, le turc, le
+  vietnamien et le hindi. Traduites sans relecteur natif. Le rendu des documents (`render.js`,
+  de fornews) et la fiche d'une page web restent en anglais pour ces dix langues, en attendant
+  fornews ; Apple Intelligence ne les parle pas toutes. Détail dans `TACHES-1.4.md`.
 - **Politique de confidentialité** : à mettre à jour à la sortie, pas avant — elle décrit ce que
   l'on télécharge sur l'App Store (Wikidata, la page chargée pour une adresse seule, iCloud une
   fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.

@@ -28,7 +28,7 @@ PROJECT="OK-ia - md Viewer.xcodeproj"
 SCHEME="md Viewer"
 TEAM_ID="PU9BSXN2V5"
 BUILD_DIR="build/TestFlight"
-LANGS="de en es fr it"
+LANGS="de en es fr it hi ja ko nl pt-BR ru tr uk vi zh-Hans"
 
 BUMP=0
 UPLOAD=1

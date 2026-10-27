@@ -412,7 +412,7 @@ struct ChantierWebView: UIViewRepresentable {
         let controller = WKUserContentController()
         controller.add(context.coordinator, name: "presentReady")
         controller.addUserScript(WKUserScript(
-            source: "window.OKIA_LANG = '\(Localization.shared.code)';",
+            source: Localization.shared.scriptLangue,
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
         let config = WKWebViewConfiguration()
         config.userContentController = controller
