@@ -1848,18 +1848,22 @@ struct PresentationView: View {
     @StateObject private var annotations = AnnotationsDocument()
     @State private var annoter = false
     @State private var calque: CalqueAnnotation?
+    /// Le mode présentateur (1.4) : la séance que l'écran du public et l'aperçu suivent.
+    @ObservedObject private var seance = SeancePresentation.partage
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
-        PresentationWebView(document: document,
-                            translator: trad,
-                            langueSource: langueSource,
-                            traduire: traduire,
-                            annotations: annotations,
-                            onExit: { dismiss() },
-                            onDiagram: { tappedDiagram = $0 },
-                            onImage: { tappedImage = $0 },
-                            onExportReady: { sharePayload = SharePayload(url: $0) },
-                            onAnnoter: { annoter.toggle() })
+        // Le diaporama garde sa place (et son état) quand la colonne du présentateur s'ouvre.
+        GeometryReader { geo in
+            HStack(spacing: 0) {
+                diaporama
+                    .frame(width: seance.presentateur ? geo.size.width * 0.62 : geo.size.width)
+                if seance.presentateur {
+                    PanneauPresentateur(seance: seance, arreter: { dismissWindow(id: "public") })
+                }
+            }
+        }
             .ignoresSafeArea()
             .overlay(alignment: .bottom) {
                 if annoter {
@@ -1882,13 +1886,51 @@ struct PresentationView: View {
                 requestLandscapeIfPhone()
                 trad.absorber(memoireHeritee)
                 barreDeFenetre(visible: false)
+                seance.commencer(document)
+                seance.annotations = annotations
+                #if DEBUG
+                // OKIA_PRESENTATEUR : sur iPad et iPhone, fait comme si un écran externe était branché
+                // (la colonne du présentateur sans second écran, au simulateur) ; sur Mac, ouvre la
+                // vraie fenêtre du public, comme le bouton.
+                if ProcessInfo.processInfo.environment["OKIA_PRESENTATEUR"] != nil {
+                    #if targetEnvironment(macCatalyst)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { openWindow(id: "public") }
+                    #else
+                    seance.ecranExterne = true
+                    #endif
+                }
+                #endif
             }
             .onDisappear {
                 barreDeFenetre(visible: true)
                 calque?.retirer()
                 calque = nil
+                if seance.fenetrePublique { dismissWindow(id: "public") }
+                seance.terminer()
             }
             .overlay { TranslationHostView(translator: trad) }
+    }
+
+    private var diaporama: some View {
+        PresentationWebView(document: document,
+                            translator: trad,
+                            langueSource: langueSource,
+                            traduire: traduire,
+                            annotations: annotations,
+                            onExit: { dismiss() },
+                            onDiagram: { tappedDiagram = $0 },
+                            onImage: { tappedImage = $0 },
+                            onExportReady: { sharePayload = SharePayload(url: $0) },
+                            onAnnoter: { annoter.toggle() },
+                            onDiapositive: { i, total in
+                                seance.index = i
+                                seance.total = total
+                                annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
+                                    seance.notes = (r as? String) ?? ""
+                                }
+                            },
+                            onChoix: { seance.choix = $0 },
+                            onPresentateur: { openWindow(id: "public") })
     }
 
     private func diaporama(_ geste: String) {
@@ -1966,17 +2008,29 @@ struct PresentationWebView: UIViewRepresentable {
     /// pour retrouver le document.
     var traduire: Bool
     var annotations: AnnotationsDocument
+    /// Le mode présentateur (1.4) : « public » (l'écran du public) et « apercu » (la diapositive
+    /// suivante) montrent la diapositive `cible`, sans bouton, et suivent les choix du présentateur.
+    var mode: ModeDiaporama = .complet
+    var cible: Int = 0
+    var choix: [String: String] = [:]
+    var tableTraduction: [String: String]?
     var onExit: () -> Void
     var onDiagram: (TappedDiagram) -> Void
     var onImage: (TappedImage) -> Void
     var onExportReady: (URL) -> Void
     var onAnnoter: () -> Void
+    var onDiapositive: ((Int, Int) -> Void)?
+    var onChoix: (([String: String]) -> Void)?
+    var onPresentateur: (() -> Void)?
+
+    enum ModeDiaporama: String { case complet, `public`, apercu }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
-        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered", "annoter"] {
+        for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered", "annoter",
+                     "diapositive", "choix", "presentateur"] {
             controller.add(context.coordinator, name: name)
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
@@ -2010,6 +2064,7 @@ struct PresentationWebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {
         context.coordinator.parent = self
+        context.coordinator.suivreSeance()
     }
 
     private func loadRenderer(into webView: WKWebView) {
@@ -2021,10 +2076,45 @@ struct PresentationWebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: PresentationWebView
         weak var webView: WKWebView?
+        // Ce que l'écran du public ou l'aperçu montre déjà.
+        private var pret = false
+        private var cibleAffichee: Int?
+        private var choixAppliques: [String: String] = [:]
+        private var traductionAppliquee: [String: String]?
 
         init(_ parent: PresentationWebView) { self.parent = parent }
 
+        /// L'écran du public et l'aperçu suivent le présentateur : la diapositive (avec sa
+        /// transition pour le public, d'un coup pour l'aperçu), la transition et le thème choisis,
+        /// la traduction.
+        func suivreSeance() {
+            guard parent.mode != .complet, pret, let webView else { return }
+            if parent.choix != choixAppliques, let d = try? JSONSerialization.data(withJSONObject: parent.choix),
+               let j = String(data: d, encoding: .utf8) {
+                choixAppliques = parent.choix
+                webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.appliquerChoix(\(j));")
+            }
+            if parent.tableTraduction != traductionAppliquee {
+                traductionAppliquee = parent.tableTraduction
+                envoyerTraduction(parent.tableTraduction ?? [:], actif: parent.tableTraduction != nil)
+            }
+            if parent.cible != cibleAffichee {
+                let instantane = cibleAffichee == nil || parent.mode == .apercu
+                cibleAffichee = parent.cible
+                webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.aller(\(parent.cible), \(instantane));")
+            }
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            guard parent.mode == .complet else {
+                // L'écran du public, l'aperçu : la diapositive seule, qui suit la séance.
+                startPresentation()
+                webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.mode('\(parent.mode.rawValue)');")
+                pret = true
+                suivreSeance()
+                parent.annotations.suivre(webView)
+                return
+            }
             // Chaque bloc traduit alimente la table que le diaporama repose sur ses
             // diapositives — et que l'export PowerPoint relira.
             parent.translator.onBloc = { [weak self] _ in
@@ -2051,6 +2141,7 @@ struct PresentationWebView: UIViewRepresentable {
             parent.annotations.diaporama = webView
             parent.annotations.charger(parent.document)
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettreAnnotation(\(AchatAnalytic.partage.acces));")
+            webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettrePresentateur(\(AchatAnalytic.partage.acces && SeancePresentation.fenetrePossible));")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak webView] in
                 webView?.becomeFirstResponder()
             }
@@ -2123,6 +2214,12 @@ struct PresentationWebView: UIViewRepresentable {
         }
 
         func envoyerTraduction(_ table: [String: String], actif: Bool) {
+            // Le public voit la même traduction que le présentateur.
+            if parent.mode == .complet {
+                let seance = SeancePresentation.partage
+                if seance.traduction != table { seance.traduction = table }
+                if seance.traductionActive != actif { seance.traductionActive = actif }
+            }
             guard let webView,
                   let data = try? JSONSerialization.data(withJSONObject: table),
                   let json = String(data: data, encoding: .utf8) else { return }
@@ -2190,6 +2287,16 @@ struct PresentationWebView: UIViewRepresentable {
             switch message.name {
             case "annoter":
                 parent.onAnnoter()
+            case "diapositive":
+                if let d = message.body as? [String: Any] {
+                    let i = (d["index"] as? Int) ?? (d["index"] as? Double).map(Int.init) ?? 0
+                    let t = (d["total"] as? Int) ?? (d["total"] as? Double).map(Int.init) ?? 0
+                    parent.onDiapositive?(i, t)
+                }
+            case "choix":
+                if let d = message.body as? [String: String] { parent.onChoix?(d) }
+            case "presentateur":
+                parent.onPresentateur?()
             case "presentExit":
                 parent.onExit()
             case "diagramTapped":

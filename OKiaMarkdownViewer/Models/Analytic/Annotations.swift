@@ -165,6 +165,13 @@ final class AnnotationsDocument: ObservableObject {
     weak var livre: LivreController?
     /// Le diaporama : ses diapositives reprennent le texte du document, les annotations s'y posent.
     weak var diaporama: WKWebView?
+    /// Les autres vues du document : l'écran du public et l'aperçu du présentateur (1.4).
+    private let autresPages = NSHashTable<WKWebView>.weakObjects()
+
+    func suivre(_ vue: WKWebView) {
+        autresPages.add(vue)
+        vue.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(json))")
+    }
 
     func charger(_ document: MarkdownDocument) {
         self.document = document
@@ -221,5 +228,6 @@ final class AnnotationsDocument: ObservableObject {
         web?.poserAnnotations(j)
         livre?.poserAnnotations(j)
         diaporama?.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(j))")
+        for vue in autresPages.allObjects { vue.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(j))") }
     }
 }

@@ -58,6 +58,8 @@
                                          it: 'Panoramica delle diapositive' },
     'Fermer':         { en: 'Close', de: 'Schließen', es: 'Cerrar', it: 'Chiudi' },
     'Annoter':        { en: 'Annotate', de: 'Anmerken', es: 'Anotar', it: 'Annota' },
+    'Présenter sur un second écran': { en: 'Present on a second screen', de: 'Auf zweitem Bildschirm präsentieren',
+                                       es: 'Presentar en una segunda pantalla', it: 'Presenta su un secondo schermo' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
     'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta' }
   };
@@ -544,6 +546,8 @@
     el('navPrev').disabled = (current === 0);
     el('navNext').disabled = (current === sections.length - 1);
     syncOverviewCurrent();
+    // Le mode présentateur (1.4) : l'écran du public et l'aperçu de la suivante suivent.
+    post('diapositive', { index: current, total: sections.length });
   }
 
   function clearAnim(elm) {
@@ -660,6 +664,7 @@
     transition = key;
     try { localStorage.setItem('okia.transition', key); } catch (e) {}
     syncMenu();
+    post('choix', { transition: transition, theme: theme });
   }
 
   function setTheme(key) {
@@ -670,6 +675,7 @@
     b.classList.add('theme-' + key);
     try { localStorage.setItem('okia.theme', key); } catch (e) {}
     syncMenu();
+    post('choix', { transition: transition, theme: theme });
   }
 
   function syncMenu() {
@@ -905,6 +911,8 @@
   }
   function onTouchEnd(e) {
     if (touchX === null) return;
+    // L'écran du public et l'aperçu ne se pilotent pas : ils suivent le présentateur.
+    if (modeAffichage !== 'complet') { touchX = null; return; }
     var t = e.changedTouches[0];
     var dx = t.clientX - touchX, dy = t.clientY - touchY;
     touchX = null;
@@ -951,6 +959,7 @@
     setLabel('presentMenuBtn', 'Transitions');
     setLabel('presentGridBtn', 'Vue d’ensemble des diapositives');
     setLabel('presentAnnotBtn', 'Annoter');
+    setLabel('presentDuoBtn', 'Présenter sur un second écran');
     setLabel('overviewClose', 'Fermer');
     var t = document.querySelector('.overview-title');
     if (t) t.textContent = TXT('Diapositives');
@@ -994,6 +1003,8 @@
     // Option Analytic (1.4) : le mode « Annoter » est tenu par l'hôte (le calque PencilKit).
     var annotBtn = el('presentAnnotBtn');
     if (annotBtn) annotBtn.onclick = function (e) { e.stopPropagation(); closeMenu(); post('annoter', {}); };
+    var duoBtn = el('presentDuoBtn');
+    if (duoBtn) duoBtn.onclick = function (e) { e.stopPropagation(); closeMenu(); post('presentateur', {}); };
     var ovClose = el('overviewClose');
     if (ovClose) ovClose.onclick = function (e) { e.stopPropagation(); closeOverview(); };
     // Tap anywhere else closes the transition menu.
@@ -1148,6 +1159,59 @@
     });
   }
 
+  /* ---- mode présentateur (1.4) ------------------------------------------- */
+
+  // « complet » : le diaporama habituel. « public » : la diapositive seule, sans aucun bouton —
+  // l'écran externe ou la fenêtre du projecteur. « apercu » : la diapositive suivante, dans la
+  // vue du présentateur, sans transition.
+  var modeAffichage = 'complet';
+  function mode(m) {
+    modeAffichage = m;
+    document.body.classList.toggle('present-public', m === 'public');
+    document.body.classList.toggle('present-apercu', m === 'apercu');
+  }
+
+  // Aller à une diapositive, sur ordre de l'hôte. `instantane` : sans transition (l'aperçu, ou
+  // l'écran du public qui arrive en cours de séance).
+  function aller(index, instantane) {
+    if (index < 0 || index >= sections.length) return;
+    if (!instantane) { show(index); return; }
+    finishPending(sections[index]);
+    sections[current].classList.remove('active');
+    current = index;
+    sections[index].classList.add('active');
+    renderSlide(index).then(function () { fitSlide(sections[index]); });
+    fitSlide(sections[index]);
+    updateChrome();
+  }
+
+  // Les notes de l'orateur d'une diapositive : ses commentaires HTML (l'import PowerPoint y range
+  // les notes et les commentaires), sans les marques internes de l'import.
+  function notes(index) {
+    var md = rawSlides[index] || '', out = [], re = /<!--([\s\S]*?)-->/g, m;
+    while ((m = re.exec(md))) {
+      var t = m[1].trim();
+      // L'en-tête que l'import PowerPoint pose (« Notes de l’orateur : »), dans les cinq langues :
+      // la colonne du présentateur a déjà son titre.
+      t = t.replace(/^(Notes de l’orateur|Speaker notes|Sprechernotizen|Notas del orador|Note del relatore)\s*:\s*\n/, '').trim();
+      if (t && !/^consigne:\d+$/.test(t)) out.push(t);
+    }
+    return out.join('\n\n');
+  }
+
+  // Le présentateur change de transition ou de thème : le public suit.
+  function appliquerChoix(c) {
+    if (c && c.transition && SPECS[c.transition]) { transition = c.transition; syncMenu(); }
+    if (c && c.theme) {
+      var b = document.body;
+      THEMES.forEach(function (t) { b.classList.remove('theme-' + t.key); });
+      if (THEMES.some(function (t) { return t.key === c.theme; })) { theme = c.theme; b.classList.add('theme-' + theme); }
+    }
+  }
+
+  // L'hôte montre le bouton « Présentateur » sur Mac, avec l'option.
+  function permettrePresentateur(oui) { var b = el('presentDuoBtn'); if (b) b.hidden = !oui; }
+
   // L'hôte montre le bouton « Annoter » quand l'option est acquise, et le dit actif pendant
   // l'annotation.
   function permettreAnnotation(oui) { var b = el('presentAnnotBtn'); if (b) b.hidden = !oui; }
@@ -1158,6 +1222,8 @@
 
   window.OKIA_PRESENT = { start: start, chantier: chantier, next: next, prev: prev, exit: exit,
                           permettreAnnotation: permettreAnnotation, annotationActive: annotationActive,
+                          mode: mode, aller: aller, notes: notes, appliquerChoix: appliquerChoix,
+                          permettrePresentateur: permettrePresentateur,
                           collectSlide: collectSlide, collectAllSlides: collectAllSlides,
                           collectSlideExtras: collectSlideExtras,
                           collectAllSlidesExtras: collectAllSlidesExtras,

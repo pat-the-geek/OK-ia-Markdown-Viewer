@@ -452,11 +452,24 @@ Sept fonctions, dans l'ordre recommandé. **Version à fixer** : la 1.4 attend f
 n'est pas prêt d'ici là passera dans la suivante. Réservées à l'option sur Mac (« Analytic pour
 Mac ») sauf mention contraire — à confirmer fonction par fonction.
 
-- [ ] **1. Mode présentateur sur deux écrans.** La diapositive sur l'écran externe, le projecteur
-      ou AirPlay ; sur le Mac, les notes de l'orateur (reprises à l'import PowerPoint, dans le
-      commentaire HTML sous chaque diapositive), la diapositive suivante, un chronomètre et l'heure.
-      Une seconde scène (`UIWindowScene` sur l'écran externe) pilotée par le même moteur que le
-      diaporama. Utile aussi sur iPad branché à un écran.
+- [x] **1. Mode présentateur sur deux écrans** (fait le 27/10, `Views/ModePresentateur.swift`).
+      Une séance partagée (`SeancePresentation`) que suivent trois vues du même moteur
+      (presentation.js, modes `complet`, `public`, `apercu`) : le diaporama du présentateur, qui se
+      pilote ; l'écran du public, la diapositive seule avec ses transitions, son thème, sa traduction
+      et ses annotations ; l'aperçu de la suivante. La colonne du présentateur : chronomètre (pause,
+      remise à zéro), heure, position, diapositive suivante, notes (les commentaires HTML de la
+      diapositive, sans l'en-tête de l'import). **iPad et iPhone** : un écran branché (câble, AirPlay)
+      reçoit une scène « écran externe » (`AppDelegate`, `EcranExterneDelegate`) ; sa fenêtre ne se
+      montre que pendant une présentation, sinon le système recopie l'écran. **Mac** : bouton « Présenter
+      sur un second écran » dans le diaporama → fenêtre « public » (`WindowGroup(id: "public")`), à
+      poser sur le projecteur ; elle se ferme avec le diaporama. Réservé à l'option. L'app déclare
+      désormais plusieurs scènes (`UIApplicationSupportsMultipleScenes`) : ⚠️ sur iPad, plusieurs
+      fenêtres de md Viewer deviennent possibles, et toutes montrent le même document (à reprendre
+      avec la fonction 7). Une fenêtre du public restaurée seule au lancement rouvre la fenêtre
+      principale et se referme (vu au simulateur : écran noir sans issue). Vérifié au simulateur iPad
+      (`OKIA_PRESENTATEUR`, Debug, canari : colonne, suivante, notes, synchronisation à chaque
+      diapositive) et sur le Mac (les deux fenêtres). **Pas vu** : un vrai écran externe sur iPad ou
+      iPhone (le simulateur n'en branche pas d'ici), un projecteur, AirPlay.
 - [ ] **2. L'analyse de tout le coffre.** Les entités croisées entre tous les documents du coffre :
       qui apparaît où et depuis quand, les documents qui partagent des noms, une carte de tout le
       coffre. Un index tenu à jour quand le coffre change (`VaultWatcher`), par la même détection et

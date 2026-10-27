@@ -297,6 +297,8 @@ final class DocumentStore: ObservableObject {
 @main
 struct OKiaMarkdownViewerApp: App {
     @StateObject private var store: DocumentStore
+    /// L'écran externe (1.4, mode présentateur) : sa scène est celle du public.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var phase
 
     init() {
@@ -326,7 +328,7 @@ struct OKiaMarkdownViewerApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "principal") {
             RootView()
                 .environmentObject(store)
                 .modifier(ApparenceDeCapture())
@@ -357,6 +359,12 @@ struct OKiaMarkdownViewerApp: App {
                 #endif
             }
         }
+
+        // Le mode présentateur (1.4) : la fenêtre du public, à poser sur le projecteur (Mac). Elle ne reçoit jamais de fichier ni de lien : tout va à la fenêtre principale.
+        WindowGroup(id: "public") {
+            FenetrePublique()
+        }
+        .handlesExternalEvents(matching: [])
     }
 }
 
