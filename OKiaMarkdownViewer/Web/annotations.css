@@ -28,7 +28,20 @@
   -webkit-user-select: none;
 }
 
-/* L'impression et le PDF gardent les annotations : c'est le document annoté qu'on exporte. */
+/* L'impression et le PDF gardent les annotations : c'est le document annoté qu'on exporte. Le
+   moteur d'impression ne peint pas les surlignages natifs : annotations.js les change le temps de
+   l'export en <mark class="okia-fige …">, aux mêmes couleurs. */
+mark.okia-fige { background: transparent; color: inherit; padding: 0; border-radius: 0;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+mark.okia-fige.okia-surligne-jaune { background-color: rgba(255, 214, 10, 0.45); }
+mark.okia-fige.okia-surligne-vert  { background-color: rgba(52, 199, 89, 0.35); }
+mark.okia-fige.okia-surligne-rose  { background-color: rgba(255, 55, 135, 0.30); }
+mark.okia-fige.okia-surligne-bleu  { background-color: rgba(10, 132, 255, 0.30); }
+mark.okia-fige[class*="okia-souligne-"] { text-decoration-line: underline; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+mark.okia-fige.okia-souligne-jaune { text-decoration-color: rgb(232, 151, 46); }
+mark.okia-fige.okia-souligne-vert  { text-decoration-color: rgb(36, 160, 72); }
+mark.okia-fige.okia-souligne-rose  { text-decoration-color: rgb(230, 40, 120); }
+mark.okia-fige.okia-souligne-bleu  { text-decoration-color: rgb(10, 110, 230); }
 
 /* Une image posée en absolu dans son cadre — l'en-tête des fiches d'article fornews (photo en
    `position:absolute`, 100 % × 100 %, sous les pastilles source et temps de lecture). Le plein

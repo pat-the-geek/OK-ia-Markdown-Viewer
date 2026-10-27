@@ -365,8 +365,11 @@ page s'ouvre, puis l'option se présente.
       entités sont détectées sur le texte d'origine ; le résumé et les chiffres, sur le texte traduit.
       Banc sur le Mac : en→fr, 3 blocs en 2,1 s. **Pas vu dans l'app** (Mac verrouillé, simulateur sans
       traduction).
-- [ ] Le schéma écrit par le modèle (fornews : `validerDiagrammeIA`) : pas repris, le schéma déterministe
-      suffit pour commencer.
+- [x] **Le schéma écrit par le modèle** (27/10), comme fornews : `genererDiagramme` (extrait de
+      `PartageArticleIAView`, `DiagrammeArticle.swift`), validé par `validerDiagrammeIA` et
+      `schemaAncre` (un nombre absent du texte l'écarte) ; sinon le schéma des noms cités. Le script de
+      copie compte désormais les accolades hors des chaînes et des commentaires (les expressions
+      régulières de fornews en sont pleines). **Pas vu** : Apple Intelligence est absente du simulateur.
 
 Vérifié au simulateur iPhone (`OKIA_PAGE`, article de The Verge) : grande image et pastilles, en-tête,
 en bref, en chiffres, qui est cité, schéma. Pas vu : le partage depuis Safari (extension), le Mac,
@@ -388,17 +391,28 @@ Apple Intelligence (absente du simulateur).
       par-dessus, nouveau rendu — tout se repose (observateur de la page).
 - [x] Le `.md` n'est jamais modifié : `AnnotationsStore`, un fichier par document (chemin, sinon
       nom) dans Application Support. Gomme : ce que le trait touche disparaît.
-- [ ] **Partage par iCloud** : attend la capacité iCloud (même question que le cache d'entités).
-- [ ] **Le livre** : les deux pages ne portent pas encore les annotations ; le mode Annoter y est
-      fermé.
-- [ ] Export PDF avec les annotations : à vérifier (les surlignages natifs et les images sont dans
-      la page, l'export devrait les prendre).
-- [ ] Document traduit : les annotations, ancrées dans la langue d'origine, disparaissent le temps
-      de la traduction (signalées « orphelines ») — à dire à l'écran.
+- [ ] **Partage par iCloud** : **par CloudKit** (Patrick, 27/10), avec le cache d'entités et les
+      corrections.
+- [x] **Le livre** (27/10) : la page de droite reçoit les annotations (`LivreController.poserAnnotations`)
+      et les repose à chaque nouvelle copie ; le mode Annoter s'ouvre dans le livre, un calque sur
+      chaque page (`PontAnnotations` interroge la page annotée, quelle qu'elle soit). Le doigt qui
+      dessine ne tourne plus les pages ; si le crayon seul dessine (réglage du système), le doigt les
+      tourne encore. Vérifié au simulateur iPad 13″ en paysage : annotations sur les deux pages,
+      surlignage tracé sur la page de droite, pages qui tournent de nouveau après Terminé.
+- [x] **Export PDF** (27/10) : vérifié, il **perdait les surlignages** — le moteur d'impression ne
+      peint pas `CSS.highlights`. Le temps de l'export, `OKIA_ANNOT.figer()` les change en vrais
+      `<mark class="okia-fige">` (mêmes couleurs, annotations.css), `defiger()` les retire. Les notes
+      manuscrites sont désormais placées en pourcentages de leur bloc (la marge du haut, dont le %
+      se prend sur la largeur) : elles restent à leur place sur la feuille, plus étroite que l'écran,
+      comme dans le livre. Vérifié au simulateur (`OKIA_EXPORT_PDF`, Debug, canari) : surlignage et
+      note dans le PDF, annotations reposées à l'écran ensuite.
+- [x] **Document traduit** (27/10) : le bandeau de traduction le dit — « Traduit sur l'appareil ·
+      anglais · 3 annotations sur l'original » (pluriel dans les cinq langues), « Voir l'original »
+      juste à côté. **Pas vu** : le simulateur ne traduit pas.
 - [ ] **iPhone Duo** : le crayon y fonctionnera **dès iOS 27.2** (Patrick, 25/10) — rien à changer,
       le calque suit le réglage du système ; d'ici là, au doigt. À vérifier sur l'appareil, postures
       comprises.
-- [ ] À décider : annoter une diapositive pendant le diaporama.
+- [ ] **Annoter une diapositive pendant le diaporama** : oui (Patrick, 27/10).
 
 **Vérifié au simulateur le 25/10** : iPad 13″ (surligner, souligner en couleur, écrire, gomme,
 relance → annotations retrouvées), iPhone 17 Pro Max (défilement à deux doigts, palette au-dessus de

@@ -5,10 +5,10 @@ import Foundation
 /// que md Viewer sait faire sur l'appareil — la détection d'entités et vos corrections, Wikidata
 /// pour situer les lieux si vous l'avez accepté, Apple Intelligence pour le résumé et les chiffres.
 ///
-/// ⛔ Aucun fait ajouté : le résumé et les chiffres du modèle passent par les gardes de fornews
-/// (`FicheArticle.resumeFidele`, `chiffresDepuisModele`) ; à défaut, la fiche prend le chapeau de la
-/// page et les chiffres relevés par le code. Le schéma est celui que fornews dessine sans le modèle
-/// (les noms cités, par genre).
+/// ⛔ Aucun fait ajouté : le résumé, les chiffres et le schéma du modèle passent par les gardes de
+/// fornews (`FicheArticle.resumeFidele`, `chiffresDepuisModele`, `validerDiagrammeIA`,
+/// `schemaAncre`) ; à défaut, la fiche prend le chapeau de la page, les chiffres relevés par le code
+/// et le schéma que fornews dessine sans le modèle (les noms cités, par genre).
 enum FichePageWeb {
 
     /// La page en Markdown simple : le texte, sans analyse — sans l'option, ou en secours.
@@ -47,7 +47,7 @@ enum FichePageWeb {
         let texteOriginal = (p.blocs ?? []).filter { $0.t != "img" }.map(\.x).joined(separator: "\n\n")
         let langueArticle = String((p.langue?.nonVide ?? MoteurRedaction.langue(texteOriginal)).prefix(2)).lowercased()
         let titreOriginal = p.titre?.nonVide ?? p.url
-        let etapes = 5
+        let etapes = 6
         func etape(_ n: Int, _ quoi: String) async {
             await suivi?(AvancementImport(etape: tr("Fiche de lecture"), fait: n, total: etapes, dernier: quoi))
         }
@@ -99,6 +99,14 @@ enum FichePageWeb {
         let resume = await resumer(texte, langue: langue, langueArticle: traduit ? String(langue.prefix(2)) : langueArticle)
         await etape(4, tr("Chiffres"))
         let lots = await FicheArticle.chiffresIA(texte: texte, langue: langue)
+        // Le schéma, comme fornews : le type choisi par le modèle (chronologie, échanges, thèmes,
+        // répartition, causes et conséquences), écarté s'il est invalide ou s'il avance un nombre
+        // absent du texte — le schéma des noms cités prend alors sa place.
+        await etape(5, tr("Schéma"))
+        let diagramme = await DiagrammeArticle.genererDiagramme(titre: titre, texte: texte,
+                                                                 entites: entites.map(\.nom), langue: langue)
+            .flatMap { RapportObsidian.validerDiagrammeIA($0) }
+            .flatMap { FicheArticle.schemaAncre($0, texte: texte) }
 
         // 4. La composition de fornews.
         let d = RapportObsidian.DonneesRapport(
@@ -108,7 +116,7 @@ enum FichePageWeb {
             entites: entites.map { RapportObsidian.EntiteRapport(nom: $0.nom, type: $0.type) },
             geo: geo, titreOriginal: traduit ? titreOriginal : nil, logoSource: p.logo?.nonVide,
             traduit: traduit, longueurContenuOriginal: texte.count)
-        var md = RapportObsidian.generer(donnees: d, langue: langue, diagramme: nil, corpsComplet: corpsMD,
+        var md = RapportObsidian.generer(donnees: d, langue: langue, diagramme: diagramme, corpsComplet: corpsMD,
                                          imagesInline: images, pointsGeo: geo, carteDataURI: nil,
                                          resume: resume, lots: lots)
         // La signature est celle de md Viewer : c'est lui qui a composé cette fiche.

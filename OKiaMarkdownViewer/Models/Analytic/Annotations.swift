@@ -103,6 +103,8 @@ final class AnnotationsDocument: ObservableObject {
 
     private var document: MarkdownDocument?
     weak var web: ReaderWebController?
+    /// La page de droite du livre, quand il est ouvert.
+    weak var livre: LivreController?
 
     func charger(_ document: MarkdownDocument) {
         self.document = document
@@ -141,5 +143,9 @@ final class AnnotationsDocument: ObservableObject {
         return (try? String(data: JSONEncoder().encode(vues), encoding: .utf8)) ?? "[]"
     }
 
-    func poser() { web?.poserAnnotations(json) }
+    func poser() {
+        let j = json
+        web?.poserAnnotations(j)
+        livre?.poserAnnotations(j)
+    }
 }

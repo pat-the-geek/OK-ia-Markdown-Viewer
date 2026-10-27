@@ -142,6 +142,25 @@ open(f"{dest}/NettoyageRapport.swift", "w").write(
     + "import Foundation\n\nenum NettoyageRapport {\n" + t[a:b].rstrip() + "\n\n" + t[c:d].rstrip()
     + "\n\n" + t[e:f].rstrip() + "\n}\n")
 
+def horsChaines(ligne, longue):
+    """La ligne sans ses chaînes ni son commentaire de fin, pour compter les accolades : les
+    expressions régulières de fornews en sont pleines (`\\[[^\\]]*`). `longue` : dans une chaîne
+    sur plusieurs lignes (« \"\"\" »), à l'entrée et à la sortie."""
+    out = []; i = 0; n = len(ligne)
+    while i < n:
+        if longue:
+            j = ligne.find('"""', i)
+            if j < 0: return "".join(out), True
+            longue = False; i = j + 3; continue
+        if ligne.startswith('"""', i): longue = True; i += 3; continue
+        if ligne.startswith("//", i): break
+        if ligne[i] == '"':
+            i += 1
+            while i < n and ligne[i] != '"': i += 2 if ligne[i] == "\\" else 1
+            i += 1; continue
+        out.append(ligne[i]); i += 1
+    return "".join(out), longue
+
 def declarations(texte, motifs):
     """Les déclarations dont la première ligne correspond à un motif, avec leur doc au-dessus.
     Une déclaration s'arrête quand ses accolades, crochets et parenthèses se referment."""
@@ -150,11 +169,12 @@ def declarations(texte, motifs):
         if any(re.search(m, L[i]) for m in motifs):
             j = i
             while j > 0 and (L[j-1].strip().startswith("///") or L[j-1].strip().startswith("@")): j -= 1
-            prof = 0; k = i
+            prof = 0; k = i; longue = False
             while k < len(L):
-                prof += sum(L[k].count(c) for c in "{[(") - sum(L[k].count(c) for c in "}])")
+                code, longue = horsChaines(L[k], longue)
+                prof += sum(code.count(c) for c in "{[(") - sum(code.count(c) for c in "}])")
                 k += 1
-                if prof <= 0: break
+                if prof <= 0 and not longue: break
             out.append("\n".join(L[j:k])); i = k; continue
         i += 1
     return "\n\n".join(out)
@@ -169,7 +189,21 @@ open(f"{dest}/RapportObsidian.swift", "w").write(
         r"static func generer\(donnees", r"static func retirerTitreEnTete\(", r"static func blocLeaflet\(",
         r"static func nomsUniques\(", r"static func flowchartDeterministe\(", r"static func couleurClasse\(",
         r"static func nettoyerNoeud\(", r"static func echapYAML\(", r"static func echapMD\(",
-        r"static func slugTag\(", r"struct Labels\b", r"static func labels\("]) + "\n}\n")
+        r"static func slugTag\(", r"struct Labels\b", r"static func labels\(",
+        r"static func validerDiagrammeIA\(", r"static func flowchartPropre\(", r"static func mindmapPropre\(", r"static func libelleNoeud\("]) + "\n}\n")
+
+# Le schéma d'un article écrit par le modèle (la fiche de lecture d'une page web) : une méthode de la
+# vue de partage de fornews, sortie dans une énumération — seule retouche, `private func` devient
+# `static func`.
+t = nettoyer(open(f"{src}/FornewsFeatures/Explorer/PartageArticleIAView.swift").read())
+d = declarations(t, [r"private func genererDiagramme\("])
+assert d, "genererDiagramme introuvable dans PartageArticleIAView"
+open(f"{dest}/DiagrammeArticle.swift", "w").write(
+    entete("FornewsFeatures/Explorer/PartageArticleIAView.swift",
+           "EXTRAIT : `genererDiagramme` seul, le schéma Mermaid d'un article écrit par le modèle de l'appareil ;\n"
+           "// sorti de la vue dans une énumération (`private func` → `static func`).")
+    + "import Foundation\n#if canImport(FoundationModels)\nimport FoundationModels\n#endif\n\nenum DiagrammeArticle {\n"
+    + d.replace("private func genererDiagramme(", "static func genererDiagramme(", 1) + "\n}\n")
 
 t = nettoyer(open(f"{src}/FornewsModels/Article.swift").read())
 open(f"{dest}/Mesure.swift", "w").write(

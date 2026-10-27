@@ -13,27 +13,28 @@ import WebKit
 /// Le calque ne couvre que la partie visible de la page et la suit au défilement. Il est dans la
 /// vue de défilement de WebKit : avec le crayon, le doigt continue de faire défiler la page ; sans
 /// crayon (iPhone, Mac, simulateur), on dessine d'un doigt et l'on fait défiler à deux.
+///
+/// Un calque par page : dans le livre, chacune des deux pages a le sien (la page de droite est une
+/// copie du document, où les annotations s'ancrent au même texte).
 @MainActor
 final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
     private weak var webView: WKWebView?
     private let canvas = PKCanvasView()
     private let annotations: AnnotationsDocument
-    private let web: ReaderWebController
     private var suiviDefilement: NSKeyValueObservation?
     private var minuterie: Timer?
     private var traitsConnus = 0
     private var retouche = false
     private var toucherMinimal = 1
 
-    init(annotations: AnnotationsDocument, web: ReaderWebController) {
+    init(annotations: AnnotationsDocument) {
         self.annotations = annotations
-        self.web = web
         super.init()
     }
 
     /// Le crayon seul dessine quand l'utilisateur l'a choisi dans les réglages du système (et
     /// qu'un crayon est jumelé) ; sinon, le doigt ou la souris.
-    private static var crayonSeul: Bool {
+    static var crayonSeul: Bool {
         #if targetEnvironment(macCatalyst)
         return false
         #else
@@ -155,7 +156,7 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
         // On souligne SOUS la ligne : le texte visé est juste au-dessus du trait.
         if annotations.outil == .souligner { pts = [premier, dernier].map { CGPoint(x: $0.x, y: $0.y - 9) } }
         else { pts = [premier, dernier] }
-        guard let ancre = await web.ancrerTexte(de: pts[0], a: pts[1]) else { return }
+        guard let vue = webView, let ancre = await PontAnnotations.ancrerTexte(vue, de: pts[0], a: pts[1]) else { return }
         let genre: Annotation.Genre = annotations.outil == .souligner ? .souligne : .surligne
         annotations.ajouter(Annotation(type: genre, couleur: annotations.couleur, ancre: ancre))
     }
@@ -164,8 +165,9 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
         let pts = points(trait)
         // Un point sur six suffit : un trait de gomme est dense.
         var vus = Set<String>()
+        guard let vue = webView else { return }
         for (i, p) in pts.enumerated() where i % 6 == 0 || i == pts.count - 1 {
-            if let id = await web.annotationSous(p), vus.insert(id).inserted { annotations.supprimer(id) }
+            if let id = await PontAnnotations.annotationSous(vue, p), vus.insert(id).inserted { annotations.supprimer(id) }
         }
     }
 
@@ -187,10 +189,56 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
         let dansLaVue = canvas.convert(cadre, to: vue)
         let couleur = annotations.couleur
         Task {
-            guard let ancre = await web.ancrerEncre(dansLaVue) else { return }
+            guard let ancre = await PontAnnotations.ancrerEncre(vue, dansLaVue) else { return }
             annotations.ajouter(Annotation(type: .encre, couleur: couleur, ancre: ancre,
                                            image: png.base64EncodedString(), trace: dessin.dataRepresentation()))
         }
+    }
+}
+
+/// Les questions que le calque pose à la page (Web/annotations.js) : la plage de texte sous un
+/// trait, le bloc sous une note, l'annotation sous la gomme. Pour n'importe quelle page du lecteur.
+@MainActor
+enum PontAnnotations {
+    /// Un point de la vue web (ses coordonnées) en point de la page : le défilement compris, le
+    /// zoom retiré. C'est ce que `annotations.js` attend.
+    static func pointPage(_ vue: WKWebView, _ p: CGPoint) -> CGPoint {
+        let s = vue.scrollView
+        let contenu = vue.convert(p, to: s)
+        let z = max(s.zoomScale, 0.01)
+        return CGPoint(x: contenu.x / z, y: contenu.y / z)
+    }
+
+    private static func objet<T: Decodable>(_ vue: WKWebView, _ js: String, _ type: T.Type) async -> T? {
+        await withCheckedContinuation { suite in
+            vue.evaluateJavaScript(js) { valeur, _ in
+                guard let s = valeur as? String, let data = s.data(using: .utf8) else { suite.resume(returning: nil); return }
+                suite.resume(returning: try? JSONDecoder().decode(T.self, from: data))
+            }
+        }
+    }
+
+    /// La plage de texte qu'un trait couvre, de `debut` à `fin` (points de la vue web).
+    static func ancrerTexte(_ vue: WKWebView, de debut: CGPoint, a fin: CGPoint) async -> AncreAnnotation? {
+        let a = pointPage(vue, debut), b = pointPage(vue, fin)
+        return await objet(vue, "JSON.stringify(window.OKIA_ANNOT ? window.OKIA_ANNOT.ancrerTexte(\(a.x), \(a.y), \(b.x), \(b.y)) : null)",
+                           AncreAnnotation.self)
+    }
+
+    /// Le bloc sous un tracé (rectangle de la vue web) et sa place dans ce bloc.
+    static func ancrerEncre(_ vue: WKWebView, _ r: CGRect) async -> AncreAnnotation? {
+        let o = pointPage(vue, r.origin), c = pointPage(vue, CGPoint(x: r.maxX, y: r.maxY))
+        return await objet(vue, "JSON.stringify(window.OKIA_ANNOT ? window.OKIA_ANNOT.ancrerEncre(\(o.x), \(o.y), \(c.x - o.x), \(c.y - o.y)) : null)",
+                           AncreAnnotation.self)
+    }
+
+    /// L'annotation sous un point de la vue web (la gomme).
+    static func annotationSous(_ vue: WKWebView, _ p: CGPoint) async -> String? {
+        let q = pointPage(vue, p)
+        // Enveloppé dans un objet : une chaîne seule n'est pas un document JSON que le décodeur rende.
+        struct Reponse: Decodable { let id: String? }
+        return await objet(vue, "JSON.stringify({ id: window.OKIA_ANNOT ? window.OKIA_ANNOT.sousLePoint(\(q.x), \(q.y)) : null })",
+                           Reponse.self)?.id
     }
 }
 

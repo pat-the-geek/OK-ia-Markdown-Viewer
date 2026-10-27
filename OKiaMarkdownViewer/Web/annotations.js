@@ -8,7 +8,9 @@
      (CSS Custom Highlights) — rien n'est inséré dans le texte, la recherche et la traduction ne
      voient rien.
    - Écrire : l'image du tracé, accrochée au bloc (paragraphe, élément de liste, titre…) sous
-     lequel elle a été tracée, en proportion de sa largeur.
+     lequel elle a été tracée, en proportion de sa largeur — en pourcentages, que le navigateur
+     recalcule seul : la page de l'écran, celle du livre et la feuille du PDF n'ont pas la même
+     largeur.
 
    Le fichier .md n'est jamais modifié : Swift garde les annotations et les repose ici. Fichier à
    part de render.js, que fornews copie mot pour mot.
@@ -168,16 +170,20 @@
         var bloc = retrouverBloc(t, a.ancre);
         if (!bloc) { orphelines.push(a.id); return; }
         if (getComputedStyle(bloc).position === 'static') bloc.style.position = 'relative';
-        var w = bloc.getBoundingClientRect().width;
         var img = document.createElement('img');
         img.className = 'okia-encre';
         img.alt = '';
         img.setAttribute('aria-hidden', 'true');
         img.setAttribute('data-id', a.id);
         img.src = 'data:image/png;base64,' + a.image;
-        img.style.left = (a.ancre.fx * w) + 'px';
-        img.style.top = (a.ancre.fy * w) + 'px';
-        img.style.width = (a.ancre.fl * w) + 'px';
+        // En largeurs de bloc : `left` et `width` en % de la largeur du bloc ; la hauteur, par la
+        // marge du haut, dont le pourcentage se prend lui aussi sur la largeur (un `top` en % se
+        // prendrait sur la hauteur). Mesurée en pixels d'écran, la note sortait de sa place à
+        // l'impression, sur une feuille plus étroite.
+        img.style.left = (a.ancre.fx * 100) + '%';
+        img.style.top = '0';
+        img.style.setProperty('margin-top', (a.ancre.fy * 100) + '%', 'important');
+        img.style.width = (a.ancre.fl * 100) + '%';
         bloc.appendChild(img);
         return;
       }
@@ -216,6 +222,55 @@
     return null;
   }
 
+  /* ---- L'impression ------------------------------------------------------------------- */
+
+  // Le moteur d'impression (le PDF) ne peint pas les surlignages natifs : le temps de l'export,
+  // chaque plage devient un vrai <mark>, retiré ensuite. Les plages sont toutes relevées AVANT de
+  // toucher au texte, puis enveloppées nœud par nœud, de la fin vers le début : couper un nœud
+  // décalerait les plages suivantes.
+  function figer() {
+    var c = contenu();
+    if (!c) return;
+    occupe = true;
+    var t = noeudsTexte(c), morceaux = [];
+    annotations.forEach(function (a) {
+      if (a.type === 'encre') return;
+      var r = resoudre(t, a.ancre);
+      if (!r) return;
+      var classe = 'okia-fige okia-' + a.type + '-' + a.couleur;
+      t.noeuds.forEach(function (x) {
+        if (!r.intersectsNode(x.n)) return;
+        var debut = x.n === r.startContainer ? r.startOffset : 0;
+        var fin = x.n === r.endContainer ? r.endOffset : x.n.nodeValue.length;
+        if (fin > debut) morceaux.push({ n: x.n, debut: debut, fin: fin, classe: classe });
+      });
+    });
+    morceaux.sort(function (a, b) { return a.n === b.n ? b.debut - a.debut : 0; });
+    morceaux.forEach(function (m) {
+      var long = m.n.nodeValue.length, fin = Math.min(m.fin, long);
+      if (m.debut >= fin) return;
+      if (fin < long) m.n.splitText(fin);
+      var milieu = m.debut > 0 ? m.n.splitText(m.debut) : m.n;
+      var mark = document.createElement('mark');
+      mark.className = m.classe;
+      milieu.parentNode.insertBefore(mark, milieu);
+      mark.appendChild(milieu);
+    });
+  }
+
+  function defiger() {
+    var c = contenu();
+    if (!c) return;
+    c.querySelectorAll('mark.okia-fige').forEach(function (m) {
+      var parent = m.parentNode;
+      while (m.firstChild) parent.insertBefore(m.firstChild, m);
+      parent.removeChild(m);
+      parent.normalize();
+    });
+    // Les plages des surlignages natifs ont suivi les coupes et les recollages : on les repose.
+    setTimeout(function () { occupe = false; poser(); }, 0);
+  }
+
   // La page change sous nos annotations (recherche, traduction, nouveau rendu, thème) : on les
   // repose, une fois le calme revenu.
   var minuterie = null;
@@ -229,18 +284,14 @@
     if (c) observateur.observe(c, { childList: true, subtree: true, characterData: true });
   }
   observer();
-  // La largeur change (rotation, taille du texte, partie de droite) : les notes manuscrites se
-  // recalent sur la largeur de leur bloc.
-  window.addEventListener('resize', function () {
-    clearTimeout(minuterie);
-    minuterie = setTimeout(poser, 250);
-  });
 
   window.OKIA_ANNOT = {
     // annotations : [{ id, type: 'surligne'|'souligne'|'encre', couleur, ancre, image? }]
     appliquer: function (liste) { annotations = liste || []; poser(); },
     ancrerTexte: ancrerTexte,
     ancrerEncre: ancrerEncre,
-    sousLePoint: sousLePoint
+    sousLePoint: sousLePoint,
+    figer: figer,
+    defiger: defiger
   };
 })();

@@ -40,7 +40,7 @@ struct ReaderView: View {
     @State private var showEntites = false
     /// Option Analytic (1.4) : les annotations du document, et le calque du mode « Annoter ».
     @StateObject private var annotationsDoc = AnnotationsDocument()
-    @State private var calque: CalqueAnnotation?
+    @State private var calques: [CalqueAnnotation] = []
     @ObservedObject private var achat = AchatAnalytic.partage
     /// Vrai sur un appareil pliable (Duo) : sa colonne réservée à droite est alors rendue au
     /// texte, au lieu de rester une marge vide sur toute la hauteur.
@@ -394,6 +394,18 @@ struct ReaderView: View {
             if ProcessInfo.processInfo.environment["OKIA_APPARENCE"] != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { showTextSize = true }
             }
+            // OKIA_EXPORT_PDF : exporte le document en PDF dans les documents de l'app, sans la feuille
+            // de partage — pour vérifier ce que le PDF garde (les annotations, 1.4).
+            if ProcessInfo.processInfo.environment["OKIA_EXPORT_PDF"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                    web.exportPDF { url in
+                        guard let url, let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+                        let cible = docs.appendingPathComponent("export-essai.pdf")
+                        try? FileManager.default.removeItem(at: cible)
+                        try? FileManager.default.copyItem(at: url, to: cible)
+                    }
+                }
+            }
             switch ProcessInfo.processInfo.environment["OKIA_DUO_PANNEAU"] {
             case "sommaire":   panneauDuo = .sommaire
             case "resume":     panneauDuo = .resume
@@ -495,13 +507,15 @@ struct ReaderView: View {
         // Les annotations du document, à l'ouverture et à chaque changement de document.
         .task(id: document.id) {
             annotationsDoc.web = web
+            annotationsDoc.livre = livre
             web.onAnnotationsOrphelines = { [weak annotationsDoc] in annotationsDoc?.signalerOrphelines($0) }
             annotationsDoc.charger(document)
         }
         .onChange(of: annotationsDoc.actif) { _, actif in basculerAnnotation(actif) }
-        .onChange(of: annotationsDoc.outil) { _, _ in calque?.outilChange() }
-        .onChange(of: annotationsDoc.couleur) { _, _ in calque?.outilChange() }
-        .onChange(of: modeLivre) { _, livre in if livre { annotationsDoc.actif = false } }
+        .onChange(of: annotationsDoc.outil) { _, _ in calques.forEach { $0.outilChange() } }
+        .onChange(of: annotationsDoc.couleur) { _, _ in calques.forEach { $0.outilChange() } }
+        // Le livre s'ouvre ou se referme : les pages changent, le mode « Annoter » se referme.
+        .onChange(of: modeLivre) { _, _ in annotationsDoc.actif = false }
         .onChange(of: translator.state) { _, etat in
             // La barre du lecteur montre le titre du document : quand le document passe
             // en allemand, elle le suit. Le coffre et les Récents, eux, indexent des
@@ -560,15 +574,24 @@ struct ReaderView: View {
             bandeauProposition(source: source, cible: cible)
         case .running(let faits, let total):
             bandeau(progression: total > 0 ? Double(faits) / Double(total) : 0,
-                    texte: tr("Traduction en cours…"))
+                    texte: avecAnnotations(tr("Traduction en cours…")))
         case .finished(_, let echecs):
             bandeau(progression: nil,
-                    texte: echecs == 0
+                    texte: avecAnnotations(echecs == 0
                         ? tr("Traduit sur l’appareil · %@", nomLangueSource)
-                        : tr("Traduit, sauf %d passage", echecs))
+                        : tr("Traduit, sauf %d passage", echecs)))
         default:
             EmptyView()
         }
+    }
+
+    /// Option Analytic (1.4) : les annotations tiennent au texte d'origine — sur la traduction, la
+    /// page ne les retrouve pas et elles disparaissent. Le bandeau le dit, et « Voir l'original »,
+    /// juste à côté, les rend.
+    private func avecAnnotations(_ texte: String) -> String {
+        let n = annotationsDoc.orphelines.count
+        guard afficheTraduction, n > 0 else { return texte }
+        return texte + " · " + tr("%d annotation sur l’original", n)
     }
 
     /// Le bandeau qui demande avant de télécharger. Il dit le prix — un dictionnaire à
@@ -604,7 +627,7 @@ struct ReaderView: View {
                 Text(texte)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 Spacer(minLength: 8)
                 Button(afficheTraduction ? tr("Voir l’original") : tr("Voir la traduction")) {
                     afficheTraduction.toggle()
@@ -847,6 +870,8 @@ struct ReaderView: View {
         web.onRecouper = { pagination.recalculerPlusTard() }
         web.onCarte = { tappedCarte = $0 }
         web.suivreMiroir(true)
+        // Les annotations, sur la page de droite aussi (1.4).
+        annotationsDoc.poser()
         // La marge de la colonne avant la mesure : posée quand la page n'était pas encore prête,
         // elle s'était perdue, et la page de gauche passait sous les commandes.
         web.setMargeOutils(CGFloat(web.margeOutils), aGauche: web.outilsAGauche)
@@ -1070,14 +1095,12 @@ struct ReaderView: View {
         }
     }
 
-    /// Option Analytic (1.4) : le mode « Annoter ». Hors du livre, dont les deux pages ne portent
-    /// pas encore les annotations.
+    /// Option Analytic (1.4) : le mode « Annoter », dans le livre aussi — sur ses deux pages.
     private var boutonAnnoter: some View {
         Button { annoter() } label: {
             Image(systemName: annotationsDoc.actif ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
         }
         .teinteBarre()
-        .disabled(modeLivre)
         .accessibilityLabel(tr("Annoter"))
     }
 
@@ -1088,14 +1111,20 @@ struct ReaderView: View {
     }
 
     private func basculerAnnotation(_ actif: Bool) {
-        if actif, let vue = web.webView, calque == nil {
+        if actif, let vue = web.webView, calques.isEmpty {
             isSearching = false
-            let c = CalqueAnnotation(annotations: annotationsDoc, web: web)
-            c.installer(sur: vue)
-            calque = c
+            // Dans le livre, un calque sur chaque page ; le doigt qui dessine n'y tourne plus les pages.
+            let pages = modeLivre ? [vue, livre.webView].compactMap { $0 } : [vue]
+            calques = pages.map { page in
+                let c = CalqueAnnotation(annotations: annotationsDoc)
+                c.installer(sur: page)
+                return c
+            }
+            if modeLivre { paginationLivre.annoter(true, crayonSeul: CalqueAnnotation.crayonSeul) }
         } else if !actif {
-            calque?.retirer()
-            calque = nil
+            calques.forEach { $0.retirer() }
+            calques = []
+            paginationLivre.annoter(false, crayonSeul: false)
         }
     }
 
@@ -1209,7 +1238,6 @@ struct ReaderView: View {
                 .disabled(web.toc.isEmpty)
             Button { ouvrir(.entites) } label: { Label(tr("Entités"), systemImage: "person.2") }
             Button { annoter() } label: { Label(tr("Annoter"), systemImage: "pencil.tip.crop.circle") }
-                .disabled(modeLivre)
             if let source = langueDetectee {
                 Menu {
                     elementsTraduction(source)

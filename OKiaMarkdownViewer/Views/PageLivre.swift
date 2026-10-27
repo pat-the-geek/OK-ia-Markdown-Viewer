@@ -10,6 +10,7 @@ final class LivreController: ObservableObject {
     fileprivate var pret = false
     private var enAttente: [String: Any]?
     private var largeurEnAttente: CGFloat?
+    private var annotationsEnAttente: String?
 
     func poser(_ copie: [String: Any]) {
         guard pret, let webView,
@@ -30,10 +31,18 @@ final class LivreController: ObservableObject {
         webView.evaluateJavaScript("window.OKIA && window.OKIA.setLargeurLivre(\(Int(largeur.rounded())), 'droite')")
     }
 
+    /// Option Analytic (1.4) : les annotations du document, sur la copie aussi. La page les
+    /// repose d'elle-même à chaque nouvelle copie (l'observateur d'annotations.js).
+    func poserAnnotations(_ json: String) {
+        guard pret, let webView else { annotationsEnAttente = json; return }
+        webView.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(json))")
+    }
+
     fileprivate func estPret() {
         pret = true
         if let copie = enAttente { enAttente = nil; poser(copie) }
         if let l = largeurEnAttente { largeurEnAttente = nil; setLargeurLivre(l) }
+        if let a = annotationsEnAttente { annotationsEnAttente = nil; poserAnnotations(a) }
     }
 }
 
@@ -120,6 +129,23 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
     /// une page en bas ; la page du bas se soulève autour de la charnière et se pose en haut, et le
     /// geste est vertical (Patrick). À fixer avant `relier`.
     var vertical = false
+    /// Le mode « Annoter » (1.4) : le doigt dessine, il ne tourne plus les pages — sauf quand seul
+    /// le crayon dessine (réglage du système) : le doigt les tourne encore, le crayon jamais.
+    private var annotation = false
+    private var crayonSeul = false
+
+    func annoter(_ actif: Bool, crayonSeul: Bool) {
+        annotation = actif
+        self.crayonSeul = crayonSeul
+        for (_, g) in gestes { appliquerAnnotation(g) }
+    }
+
+    private func appliquerAnnotation(_ g: UIGestureRecognizer) {
+        g.isEnabled = !annotation || crayonSeul
+        g.allowedTouchTypes = annotation && crayonSeul
+            ? [NSNumber(value: UITouch.TouchType.direct.rawValue)]
+            : [UITouch.TouchType.direct, .pencil, .indirectPointer].map { NSNumber(value: $0.rawValue) }
+    }
 
     func relier(gauche: WKWebView?, droite: WKWebView?) {
         delier()
@@ -147,6 +173,7 @@ final class PaginationLivre: NSObject, UIGestureRecognizerDelegate {
                 gestes.append((vue, g))
             }
         }
+        for (_, g) in gestes { appliquerAnnotation(g) }
         recalculer()
         #if DEBUG
         lancerDemo()

@@ -182,6 +182,198 @@ enum RapportObsidian {
         }
     }
 
+    /// Valide/normalise un corps Mermaid **généré par IA** : retire d'éventuelles barrières ``` puis
+    /// applique une validation **par type de diagramme** (chacun a sa structure minimale propre — une
+    /// `timeline` ou un `pie` n'ont pas d'arête `-->`). `nil` si invalide : l'appelant se rabat alors
+    /// sur le flowchart déterministe, ce qui garantit toujours un diagramme rendu.
+    static func validerDiagrammeIA(_ s: String) -> String? {
+        var t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.hasPrefix("```") {   // retire d'éventuelles barrières de code
+            t = t.replacingOccurrences(of: "(?s)^```[a-zA-Z]*\\n?|```\\s*$", with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        // Le gras Markdown « ** » que l'IA insère parfois dans les libellés casse le parseur Mermaid.
+        t = t.replacingOccurrences(of: "**", with: "")
+        let bas = t.lowercased()
+        // Lignes de contenu = tout sauf l'en-tête de type et une éventuelle ligne `title`.
+        let lignesContenu = t.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .dropFirst()
+            .filter { !$0.lowercased().hasPrefix("title") }
+
+        if bas.hasPrefix("flowchart") || bas.hasPrefix("graph ") || bas.hasPrefix("graph\n") {
+            // ⛔ **Une arête ne suffit PAS : il faut qu'elle relie deux choses DIFFÉRENTES.** Vu le
+            // 10/09/2026 sur le corpus réel, deux fois de suite : le modèle rendait
+            // « graph TD / Elon Musk --> Elon Musk ». C'est du Mermaid valide, ça s'affiche, et ça
+            // n'apprend rien — une flèche d'un sujet vers lui-même occupe la place d'une carte des
+            // acteurs et laisse croire qu'on en a une.
+            return flowchartPropre(t)
+        }
+        if bas.hasPrefix("sequencediagram") {
+            return (t.contains("->>") || t.contains("-->>") || t.contains("->")) ? t : nil
+        }
+        if bas.hasPrefix("mindmap") {
+            // Mermaid mindmap est TRÈS fragile : parenthèses/crochets dans un libellé, indentation
+            // incohérente → erreur de syntaxe. On le RECONSTRUIT proprement (libellés nettoyés via
+            // `nettoyerNoeud`, indentation normalisée) au lieu de renvoyer le texte IA brut.
+            return mindmapPropre(t)
+        }
+        if bas.hasPrefix("timeline") {
+            return lignesContenu.filter { $0.contains(":") }.count >= 2 ? t : nil   // ≥ 2 « période : évènement »
+        }
+        if bas.hasPrefix("pie") {
+            let ns = t as NSString
+            let re = try? NSRegularExpression(pattern: "\"[^\"]+\"\\s*:\\s*[0-9]")  // ≥ 1 « "libellé" : nombre »
+            return (re?.firstMatch(in: t, range: NSRange(location: 0, length: ns.length)) != nil) ? t : nil
+        }
+        if bas.hasPrefix("classdiagram") {
+            return (t.contains("class ") || t.contains("--")) ? t : nil
+        }
+        // ⭐ **`xychart-beta`** — demandé par le prompt de rapport d'analyste (10/09/2026) pour les
+        //    séries chiffrées. Il était REJETÉ jusqu'ici faute d'être reconnu : un diagramme
+        //    parfaitement valide retombait sur le flowchart déterministe, sans que rien ne le dise.
+        //
+        // ⚠️ Sa structure minimale n'est pas une arête mais une SÉRIE : `line [1, 2, 3]` ou
+        //    `bar [1, 2, 3]`. Sans elle, le bloc se rend vide — pire qu'absent, parce qu'il occupe
+        //    la place d'un diagramme et laisse croire à une donnée.
+        if bas.hasPrefix("xychart") {
+            let ns = t as NSString
+            let re = try? NSRegularExpression(pattern: "(?i)\\b(line|bar)\\s*\\[[^\\]]*[0-9][^\\]]*\\]")
+            return (re?.firstMatch(in: t, range: NSRange(location: 0, length: ns.length)) != nil) ? t : nil
+        }
+        return nil
+    }
+
+    /// Reconstruit un **mindmap Mermaid garanti valide** à partir d'une sortie IA approximative : les
+    /// libellés sont nettoyés (`nettoyerNoeud` retire `()[]{}` etc. qui cassent le parseur mindmap) et
+    /// l'indentation est normalisée par niveau (chaque largeur d'indent distincte → un niveau). La
+    /// racine (1ʳᵉ ligne de contenu) devient `root((…))`. `nil` (→ flowchart déterministe) si moins de
+    /// deux nœuds exploitables.
+    /// **Reconstruit un flowchart au lieu de faire confiance au texte de l'IA.**
+    ///
+    /// ⛔ Défaut vu par Patrick le 10/09/2026, capture à l'appui : « Syntax error in text,
+    /// mermaid version 11.15.0 » à la place de la cartographie. Le modèle écrivait
+    /// « Elon Musk --> Alex Gibney » — **un identifiant de nœud ne peut pas contenir d'espace**.
+    /// Le validateur ne regardait que la présence d'une flèche, donc il laissait passer.
+    ///
+    /// ⭐ Même parti que `mindmapPropre`, et pour la même raison : sur une syntaxe fragile, valider
+    /// le texte de l'IA revient à espérer qu'il soit correct. On le RÉÉCRIT — identifiants
+    /// synthétiques `N1`, `N2`…, libellés entre guillemets, apostrophes et crochets neutralisés.
+    ///
+    /// ⚠️ Rend `nil` si, après réécriture, aucune arête ne relie deux libellés DIFFÉRENTS : une
+    /// flèche d'un sujet vers lui-même occupe la place d'une carte des acteurs et laisse croire
+    /// qu'on en a une.
+    static func flowchartPropre(_ t: String) -> String? {
+        let lignes = t.split(separator: "\n", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        guard let entete = lignes.first else { return nil }
+
+        // Les nœuds d'une ligne, dans l'ordre : « A[x] --> B[y] --> C » en donne trois, donc deux arêtes.
+        // ⚠️ Un libellé d'arête « -->|texte| » collerait au nœud de droite : on le retire.
+        func cotes(_ ligne: String) -> (sep: String, noeuds: [String])? {
+            guard let sep = ["-->", "---"].first(where: { ligne.contains($0) }) else { return nil }
+            return (sep, ligne.components(separatedBy: sep).map { cote in
+                var c = cote.trimmingCharacters(in: .whitespaces)
+                if c.hasPrefix("|"), let fin = c.dropFirst().firstIndex(of: "|") {
+                    c = String(c[c.index(after: fin)...]).trimmingCharacters(in: .whitespaces)
+                }
+                return c
+            })
+        }
+
+        // ⭐ **Le nom que l'IA donne à un nœud** (« B » dans « B[21,95 dollars] »), relevé sur TOUTES les lignes,
+        // déclarations seules comprises. ⛔ Vu le 06/10/2026 sur une fiche réelle : le modèle écrivait
+        // « A[Tarif initial] --> B[21,95 dollars] » puis rappelait le nœud par « B » tout court — qui devenait un
+        // nœud nommé « B », relié à rien de ce qu'il voulait dire.
+        var libellesIA: [String: String] = [:]
+        for ligne in lignes.dropFirst() {
+            for c in cotes(ligne)?.noeuds ?? [ligne] {
+                guard let d = c.firstIndex(where: { "[({".contains($0) }) else { continue }
+                let id = c[..<d].trimmingCharacters(in: .whitespaces)
+                guard !id.isEmpty, id.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) else { continue }
+                let libelle = libelleNoeud(c)
+                if !libelle.isEmpty, libellesIA[id] == nil { libellesIA[id] = libelle }
+            }
+        }
+
+        var ids: [String: String] = [:]      // libellé plié → identifiant
+        var declarations: [String] = []
+        var aretes: [String] = []
+
+        func identifiant(_ brut: String) -> String? {
+            let c = brut.trimmingCharacters(in: .whitespaces)
+            let libelle = libellesIA[c] ?? libelleNoeud(c)   // un nœud déjà nommé, rappelé par son seul identifiant
+            guard !libelle.isEmpty else { return nil }
+            let cle = libelle.lowercased()
+            if let deja = ids[cle] { return deja }
+            let id = "N\(ids.count + 1)"
+            ids[cle] = id
+            declarations.append("    \(id)[\"\(libelle)\"]")
+            return id
+        }
+
+        for ligne in lignes.dropFirst() {
+            guard let (sep, noeuds) = cotes(ligne), noeuds.count >= 2 else { continue }
+            for k in 0..<(noeuds.count - 1) {
+                guard let a = identifiant(noeuds[k]), let b = identifiant(noeuds[k + 1]), a != b else { continue }
+                let arete = "    \(a) \(sep) \(b)"
+                if !aretes.contains(arete) { aretes.append(arete) }
+            }
+        }
+        guard !aretes.isEmpty else { return nil }
+        return ([entete] + declarations + aretes).joined(separator: "\n")
+    }
+
+    /// Le libellé d'un nœud, qu'il soit écrit « A[Texte] », « A(Texte) » ou « Texte » tout court.
+    static func libelleNoeud(_ brut: String) -> String {
+        let c = brut.trimmingCharacters(in: .whitespaces)
+        var texte = c
+        if let d = c.firstIndex(where: { "[({".contains($0) }),
+           let f = c.lastIndex(where: { "])}".contains($0) }), d < f {
+            texte = String(c[c.index(after: d)..<f])
+        }
+        // ⛔ Les guillemets et les crochets casseraient le libellé qu'on va justement guillemeter.
+        return nettoyerNoeud(texte, max: 40)
+            .replacingOccurrences(of: "\"", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "' "))
+    }
+
+    private static func mindmapPropre(_ t: String) -> String? {
+        var lignes: [(indent: Int, texte: String)] = []
+        for brut in t.split(separator: "\n", omittingEmptySubsequences: false) {
+            let s = String(brut)
+            let trim = s.trimmingCharacters(in: .whitespaces)
+            if trim.isEmpty || trim.lowercased() == "mindmap" { continue }
+            let indent = s.prefix { $0 == " " || $0 == "\t" }.reduce(0) { $0 + ($1 == "\t" ? 2 : 1) }
+            let texte = nettoyerNoeud(trim, max: 40)
+            guard !texte.isEmpty else { continue }
+            lignes.append((indent, texte))
+        }
+        guard lignes.count >= 2 else { return nil }
+        // Mappe chaque largeur d'indentation distincte à un niveau (0,1,2…) → hiérarchie préservée.
+        let niveaux = Array(Set(lignes.map(\.indent))).sorted()
+        var out = ["mindmap"]
+        for (k, l) in lignes.enumerated() {
+            let prof = (niveaux.firstIndex(of: l.indent) ?? 0) + 1
+            let prefixe = String(repeating: "  ", count: prof)
+            if k == 0 {
+                // La racine vient de la syntaxe IA « root((Sujet)) » : nettoyerNoeud a retiré les
+                // parenthèses mais laissé le mot-clé « root » → on le retire pour ne pas le dupliquer.
+                var racine = l.texte
+                if racine.lowercased() == "root" { racine = "" }
+                else if racine.lowercased().hasPrefix("root ") { racine = String(racine.dropFirst(5)) }
+                racine = racine.trimmingCharacters(in: .whitespaces)
+                guard !racine.isEmpty else { return nil }
+                out.append("\(prefixe)root((\(racine)))")
+            } else {
+                out.append("\(prefixe)\(l.texte)")
+            }
+        }
+        return out.joined(separator: "\n")
+    }
+
     /// Texte de nœud Mermaid : retire les caractères de syntaxe (`"[]{}()|#\``) et borne la longueur.
     static func nettoyerNoeud(_ s: String, max: Int) -> String {
         let t = s.replacingOccurrences(of: "[\\(\\)\\[\\]{}\"`|#]", with: " ", options: .regularExpression)
