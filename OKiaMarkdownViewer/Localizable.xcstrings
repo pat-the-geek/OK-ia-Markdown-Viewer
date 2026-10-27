@@ -14326,6 +14326,41 @@
           }
         }
       }
+    },
+    "Les plus anciens sont dans le Finder : iCloud Drive, dossier « md Viewer ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les plus anciens sont dans le Finder : iCloud Drive, dossier « md Viewer »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Older ones are in the Finder: iCloud Drive, in the “md Viewer” folder."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ältere liegen im Finder: iCloud Drive, im Ordner „md Viewer“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los más antiguos están en el Finder: iCloud Drive, carpeta «md Viewer»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I più vecchi sono nel Finder: iCloud Drive, nella cartella «md Viewer»."
+          }
+        }
+      }
     }
   }
 }

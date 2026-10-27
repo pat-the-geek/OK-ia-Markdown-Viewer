@@ -46,7 +46,10 @@ struct DocumentsAnalysesSection: View {
                         }
                     } footer: {
                         if rang == groupes.count - 1, documents.count > plafond {
-                            Text(tr("Les plus anciens sont dans Fichiers, dossier « md Viewer »."))
+                            // Sur Mac, c'est le Finder, pas l'app Fichiers.
+                            Text(AchatAnalytic.surMac
+                                 ? tr("Les plus anciens sont dans le Finder : iCloud Drive, dossier « md Viewer ».")
+                                 : tr("Les plus anciens sont dans Fichiers, dossier « md Viewer »."))
                         }
                     }
                 }
