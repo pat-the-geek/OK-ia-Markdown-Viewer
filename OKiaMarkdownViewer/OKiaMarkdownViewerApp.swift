@@ -307,6 +307,10 @@ struct OKiaMarkdownViewerApp: App {
         // Option Analytic (1.4) : ce qui est acheté, et les achats qui arrivent d'ailleurs.
         AchatAnalytic.partage.demarrer()
         #if DEBUG
+        // Seed du schéma CloudKit (`-OKIASeedSchema YES`) : écrit les types en Développement, puis quitte.
+        Task { @MainActor in if await SynchroICloud.amorcerSchemaSiDemande() { exit(0) } }
+        #endif
+        #if DEBUG
         // Screenshot harness (Debug/simulator only): render a document handed in via
         // environment so App Store captures can be scripted headlessly.
         let env = ProcessInfo.processInfo.environment
@@ -331,7 +335,12 @@ struct OKiaMarkdownViewerApp: App {
                     store.handleIncoming(url)
                 }
                 // Les pages partagées depuis Safari pendant que md Viewer était en arrière-plan.
-                .onChange(of: phase) { _, p in if p == .active { store.releverPages() } }
+                .onChange(of: phase) { _, p in
+                    guard p == .active else { return }
+                    store.releverPages()
+                    // Option Analytic (1.4) : annotations, corrections et cache des autres appareils.
+                    Task { await SynchroICloud.partage.synchroniser() }
+                }
         }
         .commands {
             // macOS: replace the default "New" with "Ouvrir…" / "Open…" (⌘O).

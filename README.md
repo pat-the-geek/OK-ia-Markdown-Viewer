@@ -1500,6 +1500,12 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
   choisie ») : titre, chapeau et texte, par le framework Translation sur l'appareil, comme le
   lecteur ; la fiche dit « Traduit de… » et garde le titre original. Les entités sont détectées sur
   le texte d'origine.
+- **Annoter dans le livre et dans le diaporama** (27/10) ; le PDF exporté garde les annotations.
+- **Une annotation, un seul document** (27/10) : identifié par son nom, sa taille, sa date et
+  l'empreinte de son contenu (`IdentiteDocument`) ; un document modifié est un autre document.
+- **Partage entre appareils par CloudKit** (27/10), base privée de l'utilisateur : annotations,
+  corrections, cache des fiches. Les fichiers `.md` n'y vont pas. Le schéma se prépare par le seed du
+  Mac, comme fornews (`docs/cloudkit/deploiement-synchro.md`).
 - **Politique de confidentialité** : à mettre à jour à la sortie, pas avant — elle décrit ce que
   l'on télécharge sur l'App Store (Wikidata, la page chargée pour une adresse seule, iCloud une
   fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.

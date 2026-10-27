@@ -84,7 +84,8 @@ enum FichePageWeb {
         var entites = await DetecteurEntites.detecter(texteOriginal, langue: langueArticle).entites
         DetecteurEntites.compterMentions(&entites, dans: texteOriginal)
         entites = DetecteurEntites.absorberFormesCourtes(entites).filter { $0.mentions > 0 }
-        entites = await MainActor.run { CorrectionsEntites.partage.appliquer(entites) }
+        let detectees = entites
+        entites = await MainActor.run { CorrectionsEntites.partage.appliquer(detectees) }
         entites.sort { $0.mentions > $1.mentions }
 
         // 2. Les lieux situés, pour la carte — seulement si Wikidata est accepté ; seuls les noms partent.

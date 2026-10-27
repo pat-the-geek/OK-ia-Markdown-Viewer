@@ -37,9 +37,8 @@ struct ResolutionEntite: Codable, Sendable, Equatable {
     var perimee: Bool { Date().timeIntervalSince(date) > Self.duree }
 }
 
-/// Le cache des résolutions, sur l'appareil. Clé : langue, type et nom plié.
-/// ⚠️ La synchronisation iCloud entre appareils est une tâche du lot ① encore ouverte
-/// (TACHES-1.4.md) : elle demande une capacité iCloud que l'app n'a pas encore.
+/// Le cache des résolutions, sur l'appareil. Clé : langue, type et nom plié. Partagé entre les
+/// appareils par CloudKit (`SynchroICloud`), qui fusionne les caches.
 @MainActor
 final class CacheEntites {
     static let partage = CacheEntites()
@@ -83,12 +82,26 @@ final class CacheEntites {
         try? FileManager.default.removeItem(at: fichier)
     }
 
+    /// Le cache d'un autre appareil (`SynchroICloud`) : chaque fiche la plus récente l'emporte.
+    /// Rend vrai si ce cache-ci avait des fiches que l'autre n'a pas — il est alors à renvoyer.
+    func fusionner(_ data: Data) -> Bool {
+        guard let distantes = try? JSONDecoder().decode([String: ResolutionEntite].self, from: data) else { return false }
+        var ajoutsLocaux = false
+        for (cle, locale) in entrees where (distantes[cle]?.date ?? .distantPast) < locale.date { ajoutsLocaux = true }
+        for (cle, distante) in distantes where (entrees[cle]?.date ?? .distantPast) < distante.date {
+            entrees[cle] = distante
+        }
+        ecrire(signaler: ajoutsLocaux)
+        return ajoutsLocaux
+    }
+
     var nombre: Int { entrees.count }
 
-    private func ecrire() {
+    private func ecrire(signaler: Bool = true) {
         aEcrire = false
         try? FileManager.default.createDirectory(at: fichier.deletingLastPathComponent(), withIntermediateDirectories: true)
         if let data = try? JSONEncoder().encode(entrees) { try? data.write(to: fichier, options: .atomic) }
+        if signaler { SynchroICloud.partage.signaler() }
     }
 }
 

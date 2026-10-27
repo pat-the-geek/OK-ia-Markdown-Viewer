@@ -33,39 +33,93 @@ struct Annotation: Codable, Identifiable, Equatable {
     var date = Date()
 }
 
-/// Les annotations, une liste par document, dans Application Support. Clé : le chemin du fichier
-/// (un document du coffre garde le sien), à défaut son nom.
-/// ⚠️ Le passage d'un appareil à l'autre par l'iCloud privé attend la même capacité iCloud que le
-/// cache des entités (TACHES-1.4.md).
+/// Le document auquel des annotations appartiennent — **un seul** (Patrick, 27/10/2026 : « les
+/// annotations doivent être liées à un seul document ; il faudra identifier clairement : date,
+/// taille, nom de fichier, contenu »).
+///
+/// La clé est l'empreinte SHA-256 du nom de fichier ET du contenu : un autre document — un autre
+/// texte, même sous le même nom, ou le même texte sous un autre nom — n'hérite jamais des
+/// annotations d'un premier. Le chemin n'y entre pas : il diffère d'un appareil à l'autre, et la
+/// clé doit être la même partout pour le partage par CloudKit. La date non plus : une copie ou une
+/// synchronisation la change sans changer le document. Taille, date et chemin sont gardés pour
+/// reconnaître le document à l'œil.
+///
+/// ⚠️ Conséquence voulue : un document modifié est un autre document. Ses annotations restent
+/// liées à la version annotée.
+struct IdentiteDocument: Codable, Equatable {
+    /// Le nom du fichier.
+    var nom: String
+    /// La taille du contenu, en octets (UTF-8).
+    var taille: Int
+    /// La date de modification du fichier, quand on la connaît.
+    var modifie: Date?
+    /// L'empreinte SHA-256 du contenu, en hexadécimal.
+    var empreinte: String
+    /// Où il était, sur l'appareil qui l'a annoté — indicatif.
+    var chemin: String?
+
+    init(_ document: MarkdownDocument) {
+        let octets = Data(document.text.utf8)
+        nom = document.filename
+        taille = octets.count
+        empreinte = Self.hex(SHA256.hash(data: octets))
+        chemin = document.sourceURL?.standardizedFileURL.path
+        modifie = document.sourceURL.flatMap {
+            (try? FileManager.default.attributesOfItem(atPath: $0.path))?[.modificationDate] as? Date
+        }
+    }
+
+    /// La clé des annotations : le nom et le contenu, ensemble. C'est le nom du fichier
+    /// d'annotations, et celui de son enregistrement dans iCloud.
+    var cle: String {
+        String(Self.hex(SHA256.hash(data: Data((nom + "\u{0}" + empreinte).utf8))).prefix(32))
+    }
+
+    private static func hex(_ d: SHA256.Digest) -> String { d.map { String(format: "%02x", $0) }.joined() }
+}
+
+/// Les annotations, une liste par document, dans Application Support (`Annotations/<clé>.json`),
+/// avec l'identité de leur document. Partagées entre les appareils par CloudKit (`SynchroICloud`),
+/// fichier par fichier.
+@MainActor
 enum AnnotationsStore {
     private struct Fichier: Codable {
-        var cle: String
+        /// Le document annoté. Absent des fichiers d'avant le 27/10/2026 (B96 et avant).
+        var document: IdentiteDocument?
+        /// L'ancienne clé : le chemin, ou le nom.
+        var cle: String?
         var annotations: [Annotation]
     }
 
-    static func cle(_ document: MarkdownDocument) -> String {
-        document.sourceURL?.standardizedFileURL.path ?? document.filename
+    private static func url(_ cle: String) -> URL { SynchroICloud.Genre.annotations.url(cle) }
+
+    static func lire(_ identite: IdentiteDocument, document: MarkdownDocument) -> [Annotation] {
+        if let data = try? Data(contentsOf: url(identite.cle)),
+           let f = try? JSONDecoder().decode(Fichier.self, from: data),
+           f.document == nil || f.document?.empreinte == identite.empreinte {
+            return f.annotations
+        }
+        return reprendreAncien(identite, document: document)
     }
 
-    private static func url(_ cle: String) -> URL {
-        let dossier = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                                                     appropriateFor: nil, create: true))
-            ?? FileManager.default.temporaryDirectory
-        let nom = SHA256.hash(data: Data(cle.utf8)).map { String(format: "%02x", $0) }.joined()
-        return dossier.appendingPathComponent("Annotations/\(nom.prefix(32)).json")
-    }
-
-    static func lire(_ document: MarkdownDocument) -> [Annotation] {
-        guard let data = try? Data(contentsOf: url(cle(document))),
-              let f = try? JSONDecoder().decode(Fichier.self, from: data) else { return [] }
+    /// Les annotations des builds de test jusqu'à B96 étaient rangées sous l'empreinte du chemin (à
+    /// défaut du nom). Elles passent sous la nouvelle clé, une fois, au document ouvert.
+    private static func reprendreAncien(_ identite: IdentiteDocument, document: MarkdownDocument) -> [Annotation] {
+        let ancienne = document.sourceURL?.standardizedFileURL.path ?? document.filename
+        let nom = String(SHA256.hash(data: Data(ancienne.utf8)).map { String(format: "%02x", $0) }.joined().prefix(32))
+        guard let data = try? Data(contentsOf: url(nom)),
+              let f = try? JSONDecoder().decode(Fichier.self, from: data), f.document == nil else { return [] }
+        ecrire(f.annotations, pour: identite)
+        try? FileManager.default.removeItem(at: url(nom))
         return f.annotations
     }
 
-    static func ecrire(_ annotations: [Annotation], pour document: MarkdownDocument) {
-        let u = url(cle(document))
+    static func ecrire(_ annotations: [Annotation], pour identite: IdentiteDocument) {
+        let u = url(identite.cle)
+        defer { SynchroICloud.partage.signaler() }
         if annotations.isEmpty { try? FileManager.default.removeItem(at: u); return }
         try? FileManager.default.createDirectory(at: u.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let data = try? JSONEncoder().encode(Fichier(cle: cle(document), annotations: annotations)) {
+        if let data = try? JSONEncoder().encode(Fichier(document: identite, annotations: annotations)) {
             try? data.write(to: u, options: .atomic)
         }
     }
@@ -103,6 +157,9 @@ final class AnnotationsDocument: ObservableObject {
     @Published private(set) var orphelines: Set<String> = []
 
     private var document: MarkdownDocument?
+    /// Le document annoté, tel qu'on le reconnaît (`IdentiteDocument`).
+    private(set) var identite: IdentiteDocument?
+    private var abonnement: NSObjectProtocol?
     weak var web: ReaderWebController?
     /// La page de droite du livre, quand il est ouvert.
     weak var livre: LivreController?
@@ -111,9 +168,22 @@ final class AnnotationsDocument: ObservableObject {
 
     func charger(_ document: MarkdownDocument) {
         self.document = document
-        annotations = AnnotationsStore.lire(document)
+        let identite = IdentiteDocument(document)
+        self.identite = identite
+        annotations = AnnotationsStore.lire(identite, document: document)
         orphelines = []
         poser()
+        // Les annotations de ce document, changées sur un autre appareil : on les relit.
+        if abonnement == nil {
+            abonnement = NotificationCenter.default.addObserver(forName: SynchroICloud.recu, object: nil, queue: .main) { [weak self] note in
+                let nom = note.userInfo?["nom"] as? String
+                MainActor.assumeIsolated {
+                    guard let self, let d = self.document, let id = self.identite, nom == id.cle else { return }
+                    self.annotations = AnnotationsStore.lire(id, document: d)
+                    self.poser()
+                }
+            }
+        }
     }
 
     func ajouter(_ a: Annotation) {
@@ -134,7 +204,7 @@ final class AnnotationsDocument: ObservableObject {
     func signalerOrphelines(_ ids: [String]) { orphelines = Set(ids) }
 
     private func enregistrer() {
-        if let document { AnnotationsStore.ecrire(annotations, pour: document) }
+        if let identite { AnnotationsStore.ecrire(annotations, pour: identite) }
         poser()
     }
 

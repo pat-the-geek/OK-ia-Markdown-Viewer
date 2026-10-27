@@ -40,9 +40,16 @@ final class CorrectionsEntites {
                                                      appropriateFor: nil, create: true))
             ?? FileManager.default.temporaryDirectory
         self.fichier = fichier ?? dossier.appendingPathComponent("Analytic/corrections.json")
-        if let data = try? Data(contentsOf: self.fichier),
+        recharger()
+    }
+
+    /// Relit le fichier : au lancement, et quand un autre appareil l'a changé (`SynchroICloud`).
+    func recharger() {
+        if let data = try? Data(contentsOf: fichier),
            let lues = try? JSONDecoder().decode([String: CorrectionEntite].self, from: data) {
             corrections = lues
+        } else {
+            corrections = [:]
         }
     }
 
@@ -100,5 +107,6 @@ final class CorrectionsEntites {
     private func ecrire() {
         try? FileManager.default.createDirectory(at: fichier.deletingLastPathComponent(), withIntermediateDirectories: true)
         if let data = try? JSONEncoder().encode(corrections) { try? data.write(to: fichier, options: .atomic) }
+        SynchroICloud.partage.signaler()
     }
 }

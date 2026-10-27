@@ -391,8 +391,25 @@ Apple Intelligence (absente du simulateur).
       par-dessus, nouveau rendu — tout se repose (observateur de la page).
 - [x] Le `.md` n'est jamais modifié : `AnnotationsStore`, un fichier par document (chemin, sinon
       nom) dans Application Support. Gomme : ce que le trait touche disparaît.
-- [ ] **Partage par iCloud** : **par CloudKit** (Patrick, 27/10), avec le cache d'entités et les
-      corrections.
+- [x] **Partage par CloudKit** (Patrick, 27/10 : « le partage se fera par CloudKit ») —
+      `SynchroICloud` : base PRIVÉE, zone `Analytic`, un enregistrement par fichier (`nom`, `modifie`,
+      `contenu` en pièce jointe) pour les annotations de chaque document, les corrections et le cache
+      d'entités. Envoi par salve (3 s) après chaque écriture ; relève des autres appareils au lancement
+      et à chaque retour au premier plan. Conflit : la version la plus récente l'emporte, fichier par
+      fichier ; le cache se fusionne (fiche la plus récente), et ne repart que s'il a gagné des fiches.
+      Sans compte iCloud, rien ne se passe. Conteneur `iCloud.ch.ok-ia.markdownviewer` créé par Xcode
+      le 27/10 (compte de Patrick), entitlements iOS et Mac.
+- [ ] **Schéma en Production** : seed comme fornews (`-OKIASeedSchema YES`, build Debug du Mac),
+      puis CloudKit Console → Deploy Schema Changes — procédure : `docs/cloudkit/deploiement-synchro.md`.
+      ⛔ Sans ce déploiement, TestFlight ne synchronise rien (la Production refuse les types inconnus).
+- [x] **Une annotation, un seul document** (Patrick, 27/10 : « les annotations doivent être liées à
+      un seul document ; il faudra identifier clairement : date, taille, nom de fichier, contenu ») —
+      `IdentiteDocument` : nom, taille, date de modification, empreinte SHA-256 du contenu, chemin
+      (indicatif), gardés dans le fichier d'annotations. Clé = empreinte du nom ET du contenu : un
+      autre texte sous le même nom, ou le même texte sous un autre nom, n'hérite de rien ; la clé est
+      la même sur tous les appareils (le chemin et la date n'y entrent pas). Un document modifié est
+      un autre document. Les annotations rangées jusqu'à B96 sous le chemin passent sous la nouvelle
+      clé à l'ouverture. Vérifié au simulateur (reprise, puis autre texte sous le même nom : rien).
 - [x] **Le livre** (27/10) : la page de droite reçoit les annotations (`LivreController.poserAnnotations`)
       et les repose à chaque nouvelle copie ; le mode Annoter s'ouvre dans le livre, un calque sur
       chaque page (`PontAnnotations` interroge la page annotée, quelle qu'elle soit). Le doigt qui
@@ -453,4 +470,8 @@ le Mac (souris), le Duo.
       fiche est composée sur l'appareil, et sa traduction aussi (le système peut demander de
       télécharger une langue, comme pour un document). À publier à la sortie, pas avant : la
       politique décrit ce que l'on télécharge sur l'App Store.
+      **À ajouter depuis le 27/10** (CloudKit) : les annotations, les corrections et le cache des fiches
+      passent par la base **privée** iCloud de l'utilisateur (CloudKit), pour ses autres appareils ;
+      nous n'y avons pas accès. Les fichiers Markdown n'y vont pas. Une annotation garde le passage
+      qu'elle marque (quelques dizaines de caractères) et l'empreinte du document, pas le document.
 - [ ] Fiche App Store, captures, notes de version, post Mastodon.
