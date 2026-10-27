@@ -351,7 +351,7 @@ enum ImportWord {
             guard let ref = reservoir.reference(cible, part: largeur.map { $0 / largeurTexte },
                                                 donnees: { try? zip.donnees(cible) }) else { return nil }
             let alt = dessin.descendant("wp:docPr")?["descr"] ?? dessin.descendant("wp:docPr")?["title"] ?? ""
-            return "![\(MarkdownImport.echapper(alt))][\(ref)]"
+            return "![\(MarkdownImport.texteAlt(alt))][\(ref)]"
         }
 
         private mutating func note(_ id: String?, prefixe: String, dans passages: inout [Passage]) {

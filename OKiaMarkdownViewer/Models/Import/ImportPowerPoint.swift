@@ -128,7 +128,7 @@ enum ImportPowerPoint {
             guard let ref = reservoir.reference(cible, part: part > 0 ? part : nil,
                                                 donnees: { try? zip.donnees(cible) }) else { return }
             let alt = forme.descendant("p:cNvPr")?["descr"] ?? ""
-            lignes.append("![\(MarkdownImport.echapper(alt))][\(ref)]")
+            lignes.append("![\(MarkdownImport.texteAlt(alt))][\(ref)]")
         }
 
         private mutating func tableau(_ t: NoeudXML) {

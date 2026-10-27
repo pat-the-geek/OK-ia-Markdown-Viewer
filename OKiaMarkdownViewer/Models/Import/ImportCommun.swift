@@ -151,6 +151,20 @@ enum MarkdownImport {
         return r
     }
 
+    /// Le texte alternatif d'une image Word ou PowerPoint, prêt pour `![…]`. Office le rédige
+    /// lui-même (« Une image contenant… », une ligne vide, puis « Description générée
+    /// automatiquement ») : la ligne vide coupait le paragraphe, et l'image restait du texte
+    /// (Patrick, 27/10/2026). Tout tient donc sur une ligne, sans la mention d'Office.
+    static func texteAlt(_ s: String) -> String {
+        let mentions = ["Description générée automatiquement", "Description automatically generated",
+                        "Beschreibung automatisch generiert", "Descrizione generata automaticamente",
+                        "Descripción generada automáticamente"]
+        var t = s
+        for m in mentions { t = t.replacingOccurrences(of: m, with: "", options: .caseInsensitive) }
+        let ligne = t.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        return echapper(ligne)
+    }
+
     /// Un paragraphe ordinaire qui, en tête de ligne, passerait pour un titre, une liste ou une
     /// citation (« 1. », « # », « - », « > ») : sa première marque échappée.
     static func debutDeLigne(_ s: String) -> String {
