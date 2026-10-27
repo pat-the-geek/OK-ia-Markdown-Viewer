@@ -199,6 +199,14 @@ final class AnalyseCoffre: ObservableObject {
     /// Les entités situées, pour la carte.
     var situees: [EntiteDocument] { entites.map(\.entite).filter(\.aDesCoordonnees) }
 
+    /// Les noms d'un rapport, les plus cités d'abord (sans les médias cités) : les mots-clés de
+    /// Spotlight (`RechercheCoffre`).
+    func motsCles(_ rapport: String, limite: Int = 20) -> [String] {
+        (index[rapport]?.entites ?? []).filter { !$0.source }
+            .sorted { $0.mentions > $1.mentions }
+            .prefix(limite).map(\.nom)
+    }
+
     func entite(nommee nom: String) -> EntiteCoffre? {
         entites.first { $0.entite.nom == nom || $0.id == EntiteDocument.cle(nom) }
     }

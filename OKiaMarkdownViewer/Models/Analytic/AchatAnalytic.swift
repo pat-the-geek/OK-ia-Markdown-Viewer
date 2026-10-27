@@ -44,6 +44,9 @@ final class AchatAnalytic: ObservableObject {
     @Published private(set) var chargement = false
     @Published private(set) var enAchat = false
     @Published private(set) var restauration = false
+    /// Les droits ont-ils été lus ? Avant, `acces` est faux sans rien en savoir : Spotlight
+    /// n'efface pas son index sur cette ignorance (`RechercheCoffre`).
+    @Published private(set) var droitsLus = false
 
     private var ecoute: Task<Void, Never>?
     private var demarre = false
@@ -113,6 +116,15 @@ final class AchatAnalytic: ObservableObject {
             if t.productID == Self.produitID && t.revocationDate == nil { trouve = true }
         }
         achete = trouve
+        droitsLus = true
+    }
+
+    /// `acces` est-il sûr ? Les droits lus, ou forcés (Debug).
+    var accesConnu: Bool {
+        #if DEBUG
+        if Self.forcage != nil { return true }
+        #endif
+        return droitsLus
     }
 
     /// Lance l'achat. Rend un message à afficher, ou nil (réussite, ou annulation voulue).

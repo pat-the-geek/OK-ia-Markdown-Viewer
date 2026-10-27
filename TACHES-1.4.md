@@ -535,8 +535,28 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       (`OKIA_ANNOT.sansEncre`). Vérifié au simulateur (`OKIA_EXPORT_WORD`, Debug, canari) : trois
       surlignages aux bonnes couleurs et aux bons paragraphes, deux commentaires avec image, XML bien
       formé. **Pas vu** : l'ouverture dans Word et Pages (Quick Look ne rend pas les surlignages).
-- [ ] **5. Recherche dans tout le coffre, et Spotlight.** Une recherche plein texte sur les documents
-      du coffre (et les importés), et l'indexation Core Spotlight pour les trouver depuis macOS.
+- [x] **5. Recherche dans tout le coffre, et Spotlight** (fait le 27/10, `RechercheCoffre`,
+      `RechercheCoffreView`). Une recherche plein texte sur le coffre et les documents analysés : la
+      prose de chaque document (`TexteAnalysable`), gardée en mémoire tant que l'app est ouverte,
+      seuls les nouveaux ou modifiés relus. Plusieurs mots : chacun doit y être ; entre guillemets,
+      l'expression exacte ; sans tenir compte de la casse ni des accents. Les plus pertinents d'abord
+      (le titre compte beaucoup, puis le nombre d'occurrences), un extrait surligné, le nombre
+      d'occurrences, une portée (Tout, Coffre, Documents analysés) quand les deux existent. Un
+      résultat ouvre le document **sur sa première occurrence**, cherchée et surlignée (la requête
+      entière si elle s'y trouve telle quelle, sinon son premier terme). Entrées : loupe dans
+      l'en-tête du coffre et dans celui des documents analysés, Fichier ▸ Rechercher dans le coffre…
+      (⇧⌘F) sur Mac ; sans l'option, la vitrine. **Spotlight** (Mac, iPhone, iPad) : chaque document
+      — titre, début, texte entier, et les entités de l'analyse du coffre en mots-clés —, renvoyé
+      seulement s'il a changé (`Analytic/spotlight.json`), retiré quand il disparaît ; le toucher
+      l'ouvre (`onContinueUserActivity`). Sans l'option, l'index est vidé — mais pas tant que l'App
+      Store n'a pas répondu (`AchatAnalytic.accesConnu`) : sinon chaque lancement l'aurait effacé
+      puis refait. Hooks `OKIA_RECHERCHE`, `OKIA_TROUVE` (Debug, canaris). Vérifié au simulateur
+      iPad : `"intelligence artificielle" etats` → 5 documents, les mêmes que grep ; un résultat
+      ouvert sur « Intelligence artificielle » (1/13) ; un document analysé ouvert par son
+      identifiant ; les 9 documents envoyés à Spotlight ; sans l'option, la vitrine et l'index vidé.
+      **Corrigé en route** : la feuille gardait la requête d'avant (`.sheet(isPresented:)` → `item`).
+      **Pas vu** : un résultat dans le Spotlight du système (le simulateur ne l'ouvre pas d'ici ; à
+      essayer sur le Mac), un grand coffre (temps de la première lecture).
 - [ ] **6. Raccourcis et Services macOS.** Des actions App Intents : importer un fichier, faire la
       fiche d'une page, analyser un document, exporter en PDF annoté ; et un Service « Ouvrir dans md
       Viewer » / « Fiche de cette page » depuis n'importe quelle app.

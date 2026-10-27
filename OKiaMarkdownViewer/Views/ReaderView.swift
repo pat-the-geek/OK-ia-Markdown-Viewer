@@ -579,6 +579,14 @@ struct ReaderView: View {
         .onChange(of: store.summaryRequested) { _, requested in
             if requested { showSummary = true; store.summaryRequested = false }
         }
+        // Un document trouvé par la recherche du coffre s'ouvre sur ce qu'on cherchait — une fois la
+        // page rendue et la feuille de recherche fermée.
+        .onAppear {
+            if let q = store.rechercheDemandee { store.rechercheDemandee = nil; chercher(q, apres: 1.2) }
+        }
+        .onChange(of: store.rechercheDemandee) { _, q in
+            if let q { store.rechercheDemandee = nil; chercher(q, apres: 1.2) }
+        }
     }
 
     // MARK: Traduction
@@ -1153,14 +1161,19 @@ struct ReaderView: View {
     /// défilement doux vers la première mention (essai du 25/10/2026 : 15 mentions trouvées, la
     /// page restée en haut) : on cherche donc une seconde fois, le clavier parti.
     private func chercherEntite(_ e: EntiteDocument) {
-        let delai = panneauDuo == .entites ? 0 : 0.5
+        chercher(e.nom, apres: panneauDuo == .entites ? 0 : 0.5)
+    }
+
+    /// Cherche un texte dans le document, le clavier replié : une entité choisie, ou un document
+    /// trouvé par la recherche du coffre (option Analytic, 1.4).
+    private func chercher(_ texte: String, apres delai: Double) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delai) {
             isSearching = true
-            if searchText == e.nom { web.search(e.nom) } else { searchText = e.nom }
+            if searchText == texte { web.search(texte) } else { searchText = texte }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    if searchText == e.nom { web.search(e.nom) }
+                    if searchText == texte { web.search(texte) }
                 }
             }
         }

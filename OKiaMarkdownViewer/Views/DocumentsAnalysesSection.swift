@@ -29,7 +29,20 @@ struct DocumentsAnalysesSection: View {
                     Section {
                         ForEach(groupe.elements) { d in ligne(d) }
                     } header: {
-                        Text(rang == 0 ? tr("Documents analysés") + " · " + groupe.titre : groupe.titre)
+                        if rang == 0 {
+                            HStack {
+                                Text(tr("Documents analysés") + " · " + groupe.titre)
+                                Spacer()
+                                // La recherche dans tout le coffre couvre aussi les documents analysés.
+                                Button { NotificationCenter.default.post(name: .okiaRechercheCoffre, object: nil) } label: {
+                                    Image(systemName: "magnifyingglass")
+                                }
+                                .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
+                                .accessibilityLabel(tr("Rechercher dans le coffre"))
+                            }
+                        } else {
+                            Text(groupe.titre)
+                        }
                     } footer: {
                         if rang == groupes.count - 1, documents.count > plafond {
                             Text(tr("Les plus anciens sont dans Fichiers, dossier « md Viewer »."))

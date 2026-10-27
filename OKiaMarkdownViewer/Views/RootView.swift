@@ -12,6 +12,13 @@ struct RootView: View {
     @State private var importOffice = false
     /// L'analyse de tout le coffre (option Analytic, 1.4).
     @State private var analyseCoffre = false
+    /// La recherche dans tout le coffre (option Analytic, 1.4), et la requête qu'elle reçoit en
+    /// s'ouvrant. Une feuille `item` : avec `isPresented`, la feuille gardait la requête d'avant.
+    @State private var rechercheCoffre: DemandeRecherche?
+    private struct DemandeRecherche: Identifiable {
+        let id = UUID()
+        let requete: String
+    }
     /// Le dossier d'import surveillé (option Analytic, Mac) : son réglage, puis le choix du dossier.
     @State private var reglageSurveille = false
     @State private var choisirSurveille = false
@@ -116,6 +123,20 @@ struct RootView: View {
             guard achat.acces else { store.vitrineImport = true; return }
             analyseCoffre = true
         }
+        // La recherche dans tout le coffre (option Analytic).
+        .onReceive(NotificationCenter.default.publisher(for: .okiaRechercheCoffre)) { note in
+            guard achat.acces else { store.vitrineImport = true; return }
+            rechercheCoffre = DemandeRecherche(requete: note.userInfo?["requete"] as? String ?? "")
+        }
+        .sheet(item: $rechercheCoffre) { demande in
+            RechercheCoffreView(ouvrir: { r in store.ouvrirTrouve(r.id, chercher: r.aChercher) },
+                                requete: demande.requete)
+                // Une page entière sur iPad : les extraits ont besoin de largeur.
+                .presentationSizing(.page)
+        }
+        // Spotlight suit le coffre et l'option : un rapport arrivé, l'option achetée ou perdue.
+        .onChange(of: store.vault.reports) { _, _ in RechercheCoffre.partage.indexerSpotlight() }
+        .onChange(of: achat.acces) { _, _ in RechercheCoffre.partage.indexerSpotlight() }
         .sheet(isPresented: $analyseCoffre) {
             AnalyseCoffreView(vault: store.vault, ouvrir: { store.openVaultReport($0) })
                 // Une page entière sur iPad : la liste et la carte ont besoin de place.
@@ -141,6 +162,9 @@ struct RootView: View {
         // macOS: auto-open new reports landing in the vault folder.
         .task {
             store.startVaultWatch()
+            // Spotlight : ce qui a changé depuis le dernier lancement.
+            store.vault.refresh()
+            RechercheCoffre.partage.indexerSpotlight()
             #if targetEnvironment(macCatalyst)
             // Le dossier d'import surveillé : ses nouveaux fichiers rejoignent la file d'import.
             surveille.demarrer { urls in if AchatAnalytic.partage.acces { store.importerLot(urls) } }

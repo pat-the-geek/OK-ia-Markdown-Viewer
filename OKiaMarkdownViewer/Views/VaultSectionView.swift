@@ -38,8 +38,12 @@ struct VaultSectionView: View {
                 .popover(isPresented: $showSettings) {
                     settingsControls.presentationCompactAdaptation(.popover)
                 }
-                // Option Analytic (1.4) : l'analyse de tout le coffre.
+                // Option Analytic (1.4) : la recherche et l'analyse de tout le coffre.
                 if !vault.reports.isEmpty {
+                    Button { NotificationCenter.default.post(name: .okiaRechercheCoffre, object: nil) } label: {
+                        Image(systemName: "magnifyingglass")
+                    }
+                    .accessibilityLabel(tr("Rechercher dans le coffre"))
                     Button { NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil) } label: {
                         Image(systemName: "chart.dots.scatter")
                     }

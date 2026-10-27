@@ -1,5 +1,6 @@
 import SwiftUI
 import AppIntents
+import CoreSpotlight
 
 extension Notification.Name {
     /// Posted by the macOS File ▸ Open menu command; observed by RootView.
@@ -15,6 +16,9 @@ extension Notification.Name {
     static let okiaOuvrirRapport = Notification.Name("okia.ouvrirRapport")
     /// Le dossier d'import surveillé (option Analytic, Mac) : Fichier ▸ Dossier d'import surveillé…
     static let okiaDossierSurveille = Notification.Name("okia.dossierSurveille")
+    /// La recherche dans tout le coffre (option Analytic) : Fichier ▸ Rechercher dans le coffre… sur
+    /// Mac, l'en-tête du coffre ailleurs.
+    static let okiaRechercheCoffre = Notification.Name("okia.rechercheCoffre")
 }
 
 /// Holds the currently displayed document and any load error.
@@ -28,6 +32,8 @@ final class DocumentStore: ObservableObject {
     @Published var importEnCours: ImportEnCours?
     /// Un import demandé sans l'option : la vitrine de l'option s'ouvre.
     @Published var vitrineImport = false
+    /// Ce que le document qui s'ouvre doit chercher : un document trouvé par la recherche du coffre.
+    @Published var rechercheDemandee: String?
 
     let recents = RecentFilesStore()
     let vault = VaultStore()
@@ -149,6 +155,27 @@ final class DocumentStore: ObservableObject {
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Option Analytic (1.4) : ouvre un document trouvé par la recherche du coffre ou par Spotlight
+    /// (`RechercheCoffre`), et y cherche `chercher`.
+    func ouvrirTrouve(_ id: String, chercher: String? = nil) {
+        if id.hasPrefix("coffre:") {
+            let rapport = String(id.dropFirst("coffre:".count))
+            if !vault.reports.contains(where: { $0.id == rapport }) { vault.refresh() }
+            guard let r = vault.reports.first(where: { $0.id == rapport }) else {
+                errorMessage = tr("Ce fichier n’est plus accessible."); return
+            }
+            openVaultReport(r)
+            if errorMessage == nil { rechercheDemandee = chercher }
+        } else if id.hasPrefix("analyse:") {
+            // Le conteneur iCloud se demande hors du fil principal.
+            Task {
+                guard let url = await Task.detached(operation: { RechercheCoffre.urlAnalyse(id) }).value else { return }
+                open(url: url)
+                if errorMessage == nil { rechercheDemandee = chercher }
+            }
         }
     }
 
@@ -425,6 +452,8 @@ struct OKiaMarkdownViewerApp: App {
         AppDependencyManager.shared.add(dependency: store)
         // Option Analytic (1.4) : ce qui est acheté, et les achats qui arrivent d'ailleurs.
         AchatAnalytic.partage.demarrer()
+        // La recherche dans le coffre et Spotlight lisent le coffre de l'app.
+        RechercheCoffre.partage.brancher(store.vault)
         #if DEBUG
         // Seed du schéma CloudKit (`-OKIASeedSchema YES`) : écrit les types en Développement, puis quitte.
         Task { @MainActor in if await SynchroICloud.amorcerSchemaSiDemande() { exit(0) } }
@@ -453,6 +482,16 @@ struct OKiaMarkdownViewerApp: App {
             if dossier == "arreter" { DossierSurveille.partage.arreter() }
             else { DossierSurveille.partage.choisir(URL(fileURLWithPath: dossier, isDirectory: true)) }
         }
+        // OKIA_RECHERCHE=<requête> : ouvre la recherche dans le coffre, la requête posée ;
+        // OKIA_TROUVE=<identifiant> : ouvre un document comme depuis Spotlight.
+        if let q = env["OKIA_RECHERCHE"], !q.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                NotificationCenter.default.post(name: .okiaRechercheCoffre, object: nil, userInfo: ["requete": q])
+            }
+        }
+        if let id = env["OKIA_TROUVE"], !id.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { store.ouvrirTrouve(id) }
+        }
         if env["OKIA_ANALYSE_COFFRE"] != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
@@ -477,6 +516,11 @@ struct OKiaMarkdownViewerApp: App {
                 // Handles file URLs (cold + warm "Open in…") and the mdviewer:// scheme.
                 .onOpenURL { url in
                     store.handleIncoming(url)
+                }
+                // Option Analytic (1.4) : un document du coffre ou des documents analysés, touché dans Spotlight.
+                .onContinueUserActivity(CSSearchableItemActionType) { activite in
+                    guard let id = activite.userInfo?[CSSearchableItemActivityIdentifier] as? String else { return }
+                    store.ouvrirTrouve(id)
                 }
                 // Les pages partagées depuis Safari pendant que md Viewer était en arrière-plan.
                 .onChange(of: phase) { _, p in
@@ -505,6 +549,10 @@ struct OKiaMarkdownViewerApp: App {
                     NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
                 }
                 .keyboardShortcut("k", modifiers: [.command, .shift])
+                Button(tr("Rechercher dans le coffre…")) {
+                    NotificationCenter.default.post(name: .okiaRechercheCoffre, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
                 #endif
             }
         }

@@ -109,6 +109,8 @@ enum RangementDocuments {
             do { try markdown.write(to: url, atomically: true, encoding: .utf8) } catch { erreurEcriture = error }
         }
         if let e = erreurCoordination ?? erreurEcriture { throw e }
+        // Spotlight apprend le nouveau document (un lot n'envoie qu'une fois).
+        if analyse { Task { @MainActor in RechercheCoffre.partage.indexerSpotlight() } }
         return cible
     }
 }
