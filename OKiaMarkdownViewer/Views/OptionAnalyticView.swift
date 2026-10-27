@@ -12,16 +12,23 @@ struct OptionAnalyticView: View {
     @State private var message: String?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
-    /// Ce que l'option apporte, sur Mac comme sur iPhone et iPad (l'import aussi, depuis le 26/10).
+    /// Ce que l'option apporte, sur Mac comme sur iPhone et iPad (l'import aussi, depuis le 26/10 ; la
+    /// page web, le coffre, la recherche, le présentateur, les fenêtres et Raccourcis depuis le 27/10).
     private var apports: [(String, String)] {
         [("person.2", tr("Les personnes, organisations, lieux et produits du document, rassemblés par genre.")),
          ("square.grid.2x2", tr("Une galerie, et une carte des lieux en plein écran.")),
          ("text.magnifyingglass", tr("De chaque fiche, un geste vous ramène à ses mentions dans le texte.")),
          ("pencil.tip.crop.circle", AchatAnalytic.surMac
-            ? tr("Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte.")
-            : tr("Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte.")),
+            ? tr("Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte, et vous suivent dans les exports PDF et Word.")
+            : tr("Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte, et vous suivent dans les exports PDF et Word.")),
          ("newspaper", tr("Un rapport fornews est exploité d’abord : ce qu’il donne n’est jamais redemandé.")),
-         ("square.and.arrow.down.on.square", tr("Importez vos documents Word, PDF et PowerPoint : titres, listes, tableaux, images et commentaires repris en Markdown."))]
+         ("square.and.arrow.down.on.square", tr("Importez vos documents Word, PDF et PowerPoint, un à un ou par dossier entier : titres, listes, tableaux, images et commentaires repris en Markdown.")),
+         ("safari", tr("Partagez une page depuis Safari : md Viewer en fait une fiche de lecture, traduite dans votre langue.")),
+         ("magnifyingglass", tr("Cherchez dans tout votre coffre, voyez qui y apparaît, où et depuis quand, et retrouvez vos documents dans Spotlight.")),
+         ("play.rectangle.on.rectangle", tr("Présentez sur deux écrans : le public voit la diapositive, vous gardez vos notes et le chronomètre.")),
+         ("macwindow.on.rectangle", AchatAnalytic.surMac
+            ? tr("Plusieurs fenêtres pour comparer, et vos actions dans Raccourcis et le menu Services.")
+            : tr("Plusieurs fenêtres pour comparer sur iPad, et vos actions dans Raccourcis."))]
     }
 
     var body: some View {

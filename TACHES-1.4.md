@@ -649,4 +649,9 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       caractères) et l'empreinte du document, pas le document. **Et** les documents que md Viewer crée
       (imports, rapports, fiches de pages web) sont rangés dans l'iCloud Drive de l'utilisateur, dossier
       « md Viewer » ; ceux qu'il ouvre depuis Fichiers restent où ils sont.
+      **Et encore, le 27/10** : avec l'option, le texte des documents du coffre et des documents
+      analysés est confié à **Spotlight**, l'index de recherche du système, **sur l'appareil**, pour
+      les retrouver d'une recherche ; sans l'option, il en est retiré. Les photos des entités sont
+      gardées dans les caches de l'app, sur l'appareil (60 Mo au plus). Les actions de Raccourcis et
+      les Services macOS ne font rien partir : ils passent par les mêmes chemins que l'app.
 - [ ] Fiche App Store, captures, notes de version, post Mastodon.

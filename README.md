@@ -1505,9 +1505,29 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
   l'empreinte de son contenu (`IdentiteDocument`) ; un document modifié est un autre document.
 - **Partage entre appareils par CloudKit** (27/10), base privée de l'utilisateur : annotations,
   corrections, cache des fiches. Les `.md` ouverts depuis Fichiers n'y vont pas ; ceux que md Viewer
-  crée (imports, fiches web) vont dans iCloud Drive, `md Viewer/Importés/AAAA/MM/JJ/`, sous un nom
-  lisible normalisé (`RangementDocuments`). Le schéma se prépare par le seed du
+  crée (imports, fiches web) vont dans iCloud Drive, `md Viewer/Documents analysés/AAAA/MM/JJ/`,
+  sous un nom lisible normalisé (`RangementDocuments`) — **à part du coffre** de la 1.3 et **réservé
+  à l'option** (27/10 : « il faut avoir payé l'extension analytique pour utiliser ce nouveau
+  répertoire »). Le schéma se prépare par le seed du
   Mac, comme fornews (`docs/cloudkit/deploiement-synchro.md`).
+- **Les sept fonctions Mac** (27/10 : « on fera toutes tes idées de 1 à 7 », TACHES ⑦), réservées
+  à l'option, toutes livrées en **B97** le 27/10 :
+  1. **Mode présentateur sur deux écrans** — le public voit la diapositive ; le présentateur, le
+     chronomètre, la suivante et les notes. Mac : une seconde fenêtre ; iPad et iPhone : un écran
+     branché ou AirPlay.
+  2. **L'analyse de tout le coffre** — qui apparaît où, depuis quand, avec qui, et une carte ; la
+     fiche d'une entité montre ses documents du coffre.
+  3. **Import par lot et dossier d'import surveillé** (Mac).
+  4. **Export Word avec les annotations** — surlignages et soulignements de Word, notes en
+     commentaires.
+  5. **La recherche dans tout le coffre**, et **Spotlight** (entités en mots-clés).
+  6. **Raccourcis et Services macOS** — quatre actions (importer, fiche d'une page, analyser,
+     PDF annoté) ; « Ouvrir dans md Viewer » et « Fiche de cette page » dans le menu Services, par
+     un module AppKit (`ServicesMac`), Catalyst ne sachant pas les fournir.
+  7. **Plusieurs fenêtres, pour comparer** — chaque fenêtre a son document (`FenetreDocument`).
+- **Les photos des entités gardées sur l'appareil** (27/10 : « est-ce que tu as mis en œuvre un
+  cache pour les images d'entité ? ») — `CacheImagesEntites`, 60 Mo au plus ; elles s'affichent
+  hors ligne.
 - **Politique de confidentialité** : à mettre à jour à la sortie, pas avant — elle décrit ce que
   l'on télécharge sur l'App Store (Wikidata, la page chargée pour une adresse seule, iCloud une
   fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.

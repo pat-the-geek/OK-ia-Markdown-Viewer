@@ -161,8 +161,10 @@ struct RootView: View {
         }
         .sheet(isPresented: $store.vitrineImport) {
             ScrollView { OptionAnalyticView().padding(24) }
+                // Dix apports depuis le 27/10 : la feuille de taille ordinaire coupait le bouton d'achat.
+                .presentationSizing(.page)
                 #if targetEnvironment(macCatalyst)
-                .frame(minWidth: 460, minHeight: 520)
+                .frame(minWidth: 460, minHeight: 680)
                 #endif
         }
         // macOS: auto-open new reports landing in the vault folder.

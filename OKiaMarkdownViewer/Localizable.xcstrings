@@ -14046,6 +14046,286 @@
           }
         }
       }
+    },
+    "Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte, et vous suivent dans les exports PDF et Word.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surlignez, soulignez et annotez à la souris ou au trackpad : vos notes restent attachées au texte, et vous suivent dans les exports PDF et Word."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highlight, underline and annotate with the mouse or trackpad: your notes stay attached to the text, and follow you into PDF and Word exports."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markieren, unterstreichen und kommentieren Sie mit Maus oder Trackpad: Ihre Notizen bleiben am Text und begleiten Sie in PDF- und Word-Exporte."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resalte, subraye y anote con el ratón o el trackpad: sus notas quedan unidas al texto y le acompañan en las exportaciones PDF y Word."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evidenziate, sottolineate e annotate con il mouse o il trackpad: le note restano legate al testo e vi seguono negli export PDF e Word."
+          }
+        }
+      }
+    },
+    "Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte, et vous suivent dans les exports PDF et Word.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surlignez, soulignez et écrivez au crayon : vos notes restent attachées au texte, et vous suivent dans les exports PDF et Word."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highlight, underline and write with the pencil: your notes stay attached to the text, and follow you into PDF and Word exports."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markieren, unterstreichen und schreiben Sie mit dem Stift: Ihre Notizen bleiben am Text und begleiten Sie in PDF- und Word-Exporte."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resalte, subraye y escriba con el lápiz: sus notas quedan unidas al texto y le acompañan en las exportaciones PDF y Word."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evidenziate, sottolineate e scrivete con la matita: le note restano legate al testo e vi seguono negli export PDF e Word."
+          }
+        }
+      }
+    },
+    "Importez vos documents Word, PDF et PowerPoint, un à un ou par dossier entier : titres, listes, tableaux, images et commentaires repris en Markdown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importez vos documents Word, PDF et PowerPoint, un à un ou par dossier entier : titres, listes, tableaux, images et commentaires repris en Markdown."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import your Word, PDF and PowerPoint documents, one by one or a whole folder at once: headings, lists, tables, images and comments carried over into Markdown."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importieren Sie Ihre Word-, PDF- und PowerPoint-Dokumente einzeln oder als ganzen Ordner: Überschriften, Listen, Tabellen, Bilder und Kommentare werden in Markdown übernommen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe sus documentos Word, PDF y PowerPoint, uno a uno o una carpeta entera: títulos, listas, tablas, imágenes y comentarios pasan a Markdown."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importate i vostri documenti Word, PDF e PowerPoint, uno alla volta o un'intera cartella: titoli, elenchi, tabelle, immagini e commenti ripresi in Markdown."
+          }
+        }
+      }
+    },
+    "Partagez une page depuis Safari : md Viewer en fait une fiche de lecture, traduite dans votre langue.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partagez une page depuis Safari : md Viewer en fait une fiche de lecture, traduite dans votre langue."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share a page from Safari: md Viewer turns it into a reading sheet, translated into your language."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teilen Sie eine Seite aus Safari: md Viewer macht daraus ein Lesedossier, in Ihre Sprache übersetzt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparta una página desde Safari: md Viewer la convierte en una ficha de lectura, traducida a su idioma."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividete una pagina da Safari: md Viewer ne fa una scheda di lettura, tradotta nella vostra lingua."
+          }
+        }
+      }
+    },
+    "Cherchez dans tout votre coffre, voyez qui y apparaît, où et depuis quand, et retrouvez vos documents dans Spotlight.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cherchez dans tout votre coffre, voyez qui y apparaît, où et depuis quand, et retrouvez vos documents dans Spotlight."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search your whole Store, see who appears in it, where and since when, and find your documents in Spotlight."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchsuchen Sie Ihren ganzen Store, sehen Sie, wer darin vorkommt, wo und seit wann, und finden Sie Ihre Dokumente in Spotlight."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busque en todo su Store, vea quién aparece, dónde y desde cuándo, y encuentre sus documentos en Spotlight."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cercate in tutto il vostro Store, scoprite chi vi compare, dove e da quando, e ritrovate i vostri documenti in Spotlight."
+          }
+        }
+      }
+    },
+    "Présentez sur deux écrans : le public voit la diapositive, vous gardez vos notes et le chronomètre.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Présentez sur deux écrans : le public voit la diapositive, vous gardez vos notes et le chronomètre."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Present on two screens: the audience sees the slide, you keep your notes and the timer."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Präsentieren Sie auf zwei Bildschirmen: Das Publikum sieht die Folie, Sie behalten Notizen und Stoppuhr."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presente en dos pantallas: el público ve la diapositiva, usted conserva sus notas y el cronómetro."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presentate su due schermi: il pubblico vede la diapositiva, voi tenete le note e il cronometro."
+          }
+        }
+      }
+    },
+    "Plusieurs fenêtres pour comparer, et vos actions dans Raccourcis et le menu Services.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plusieurs fenêtres pour comparer, et vos actions dans Raccourcis et le menu Services."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Several windows to compare, and your actions in Shortcuts and the Services menu."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mehrere Fenster zum Vergleichen, und Ihre Aktionen in Kurzbefehlen und im Dienste-Menü."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varias ventanas para comparar, y sus acciones en Atajos y en el menú Servicios."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più finestre per confrontare, e le vostre azioni in Comandi rapidi e nel menu Servizi."
+          }
+        }
+      }
+    },
+    "Plusieurs fenêtres pour comparer sur iPad, et vos actions dans Raccourcis.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plusieurs fenêtres pour comparer sur iPad, et vos actions dans Raccourcis."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Several windows to compare on iPad, and your actions in Shortcuts."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mehrere Fenster zum Vergleichen auf dem iPad, und Ihre Aktionen in Kurzbefehlen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varias ventanas para comparar en el iPad, y sus acciones en Atajos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più finestre per confrontare su iPad, e le vostre azioni in Comandi rapidi."
+          }
+        }
+      }
     }
   }
 }
