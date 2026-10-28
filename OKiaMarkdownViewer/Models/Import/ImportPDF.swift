@@ -134,7 +134,8 @@ enum ImportPDF {
                     continue
                 }
                 let parTaille = l.reconnue ? l.niveauReconnu(corps: corps) : niveauParTaille[l.taille]
-                if let n = signets[cle] ?? (signets.isEmpty && l.peutEtreTitre(corps: corps) ? parTaille : nil) {
+                // Une entrée de sommaire reprend souvent un signet : elle reste une entrée, pas un titre.
+                if !l.sommaire, let n = signets[cle] ?? (signets.isEmpty && l.peutEtreTitre(corps: corps) ? parTaille : nil) {
                     fermer()
                     if titre == nil { titre = l.texte }
                     // Un titre sur deux lignes : la seconde rejoint la première.
@@ -157,7 +158,10 @@ enum ImportPDF {
                 if ecart < -Double(l.taille) * 2, let fin = paragraphe.last, finDePhrase(fin) { ecart = .infinity }
                 // Un changement net de taille (une légende, un encadré) ouvre un paragraphe.
                 if let p = precedente, abs(p.taille - l.taille) >= 2 { ecart = .infinity }
-                if let (reste, numero) = Self.puce(l.texte) {
+                if l.sommaire {
+                    if !paragraphe.isEmpty { fermer() }
+                    liste.append("- " + Self.enForme(l.texte, l))
+                } else if let (reste, numero) = Self.puce(l.texte) {
                     if !paragraphe.isEmpty { fermer() }
                     let marque = numero.map { "\($0)." } ?? "-"
                     liste.append(marque + " " + Self.enForme(reste, l))
@@ -220,6 +224,8 @@ enum ImportPDF {
         var estTitre = false
         /// Lue par la reconnaissance de texte : sa taille n'est qu'approchée.
         var reconnue = false
+        /// Une entrée de table des matières (« Préambule … 6 ») : une puce à elle.
+        var sommaire = false
         /// Une figure ou un tableau de la page, en Markdown : la « ligne » n'est que sa place.
         var bloc: String?
 
@@ -300,6 +306,13 @@ enum ImportPDF {
         }
     }
 
+    /// Le texte sans caractères de commande ni caractères privés de police (ils s'affichaient en carrés).
+    static func nettoyer(_ t: String) -> String {
+        t.replacingOccurrences(of: #"[\x00-\x1F\x7F\x{E000}-\x{F8FF}]"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #" {2,}"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+    }
+
     static func lignes(_ page: PDFPage) -> [Ligne] {
         let boite = page.bounds(for: .mediaBox)
         guard let tout = page.selection(for: boite) else { return [] }
@@ -307,7 +320,14 @@ enum ImportPDF {
         var r: [Ligne] = []
         for s in tout.selectionsByLine() {
             guard let attr = s.attributedString else { continue }
-            let texte = attr.string.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Une entrée de table des matières : un caractère de commande (une tabulation, un U+0008
+            // à la place des points de conduite) puis le numéro de page. Elle reste une entrée, une par
+            // ligne, et le caractère ne passe pas dans le texte (Patrick, 28/10/2026 : des carrés).
+            let brut = attr.string.trimmingCharacters(in: .whitespacesAndNewlines)
+            let sommaire = brut.range(of: #"[\x00-\x08\x0B-\x1F\t]\s*\d{0,4}$"#, options: .regularExpression) != nil
+                && brut.range(of: #"^[\x00-\x1F\s\d]*$"#, options: .regularExpression) == nil
+            let texte = Self.nettoyer(brut.replacingOccurrences(of: #"[\x00-\x08\x0B-\x1F\t]+\s*(\d{1,4})$"#,
+                                                                with: " … $1", options: .regularExpression))
             guard !texte.isEmpty else { continue }
             let b = s.bounds(for: page)
             var tailles: [Int: Int] = [:]
@@ -322,11 +342,13 @@ enum ImportPDF {
                 if traits.contains(.traitItalic) || nomPolice.contains("italic") || nomPolice.contains("oblique") { italiqueCar += n }
                 total += n
             }
-            r.append(Ligne(texte: texte, haut: boite.maxY - b.maxY, bas: boite.maxY - b.minY, gauche: b.minX,
-                           droite: b.maxX,
-                           taille: tailles.max(by: { $0.value < $1.value })?.key ?? 11,
-                           gras: total > 0 && grasCar * 10 >= total * 9,
-                           italique: total > 0 && italiqueCar * 10 >= total * 9, page: index))
+            var l = Ligne(texte: texte, haut: boite.maxY - b.maxY, bas: boite.maxY - b.minY, gauche: b.minX,
+                          droite: b.maxX,
+                          taille: tailles.max(by: { $0.value < $1.value })?.key ?? 11,
+                          gras: total > 0 && grasCar * 10 >= total * 9,
+                          italique: total > 0 && italiqueCar * 10 >= total * 9, page: index)
+            l.sommaire = sommaire
+            r.append(l)
         }
         // L'ordre de lecture : de haut en bas, puis de gauche à droite.
         return r.sorted { abs($0.haut - $1.haut) < 2 ? $0.gauche < $1.gauche : $0.haut < $1.haut }
@@ -526,9 +548,8 @@ enum ImportPDF {
             let hauteur = h
             return plages.compactMap { a, b in
                 let zone = CGRect(x: CGFloat(a) - 0.5, y: yMilieu - hauteur * 0.3, width: CGFloat(b - a) + 1.5, height: hauteur * 0.6)
-                guard let t = page.selection(for: zone)?.string?
-                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-                    .trimmingCharacters(in: .whitespaces), !t.isEmpty else { return nil }
+                guard let t = page.selection(for: zone)?.string.map(Self.nettoyer)?
+                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression), !t.isEmpty else { return nil }
                 return Case(texte: t, gauche: a, droite: b + 1)
             }
         }
