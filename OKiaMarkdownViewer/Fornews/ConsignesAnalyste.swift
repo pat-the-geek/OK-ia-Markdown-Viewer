@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsPipeline/ConsignesAnalyste.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsPipeline/ConsignesAnalyste.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // Seule retouche : les `import Fornews…` retirés.
@@ -85,25 +85,61 @@ public enum ConsignesAnalyste {
     /// **Le NOM de la langue, en français, pour la consigne** (03/10/2026, essais en cinq langues : l'app passe le
     /// CODE — « en » —, la consigne disait « Tu rédiges, en en, … » et le modèle écrivait en français ; seul le cadre
     /// posé par le code était en anglais). Un nom déjà donné (« français ») passe tel quel.
+    ///
+    /// ⭐ 1.7.4 ⑥ (md Viewer 1.4, quinze langues) : les dix nouvelles langues ont leur nom. ⚠️ Pour le russe,
+    /// l'ukrainien et le hindi, ce nom n'est pas une langue de RÉDACTION : cf. `langueDeRedaction`.
     static func nomLangue(_ codeOuNom: String) -> String {
-        switch codeOuNom.lowercased() {
+        switch codeOuNom.lowercased().replacingOccurrences(of: "_", with: "-") {
         case "fr", "fr-fr", "fr-ch": "français"
         case "en", "en-us", "en-gb": "anglais"
         case "de", "de-de", "de-ch": "allemand"
         case "es", "es-es": "espagnol"
         case "it", "it-it", "it-ch": "italien"
+        case "ja", "ja-jp": "japonais"
+        case "ko", "ko-kr": "coréen"
+        case "zh-hans", "zh", "zh-cn", "zh-hans-cn": "chinois simplifié"
+        case "pt-br", "pt": "portugais du Brésil"
+        case "nl", "nl-nl", "nl-be": "néerlandais"
+        case "ru", "ru-ru": "russe"
+        case "uk", "uk-ua": "ukrainien"
+        case "tr", "tr-tr": "turc"
+        case "vi", "vi-vn": "vietnamien"
+        case "hi", "hi-in": "hindi"
         default: codeOuNom
         }
     }
 
+    /// Les langues de md Viewer qu'Apple Intelligence NE parle PAS (`SystemLanguageModel.default.supportedLanguages`,
+    /// contrôlé le 27/10/2026 : 24 variantes, dont ja, ko, zh-Hans, pt-BR, nl, tr, vi — mais ni ru, ni uk, ni hi).
+    static let horsDuModele: Set<String> = ["russe", "ukrainien", "hindi"]
+
+    /// **La langue dans laquelle le modèle peut rédiger** : celle demandée, sauf le russe, l'ukrainien et le hindi,
+    /// qu'il ne parle pas — l'anglais à leur place (1.7.4 ⑥). Les libellés d'un document restent, eux, dans la langue
+    /// de l'utilisateur ; seule la prose écrite par le modèle passe à l'anglais. ⚠️ Toute consigne composée hors de
+    /// `consigne(_:langue:sujet:)` doit passer son code par ici avant `nomLangue`.
+    public static func langueDeRedaction(_ codeOuNom: String) -> String {
+        horsDuModele.contains(nomLangue(codeOuNom)) ? "en" : codeOuNom
+    }
+
     /// **L'ordre de langue, écrit DANS la langue cible**, en fin de consigne (03/10/2026 : avec « Tu rédiges, en
     /// anglais » seulement, le modèle suivait les extraits français — titre en anglais, synthèse en français).
+    ///
+    /// ⭐ 1.7.4 ⑥ : les sept nouvelles langues que le modèle parle ont leur ordre, écrit dans la langue ; le russe,
+    /// l'ukrainien et le hindi reçoivent l'ordre ANGLAIS (cf. `langueDeRedaction`) — une consigne au modèle part
+    /// toujours dans une langue qu'il parle.
     static func ordreDeLangue(_ codeOuNom: String) -> String {
-        switch nomLangue(codeOuNom) {
+        switch nomLangue(langueDeRedaction(codeOuNom)) {
         case "anglais": "\nWrite in English only, even when the excerpts are in French."
         case "allemand": "\nSchreibe nur auf Deutsch, auch wenn die Auszüge auf Französisch sind."
         case "espagnol": "\nEscribe solo en español, aunque los extractos estén en francés."
         case "italien": "\nScrivi solo in italiano, anche se gli estratti sono in francese."
+        case "japonais": "\n抜粋がフランス語であっても、日本語だけで書いてください。"
+        case "coréen": "\n발췌문이 프랑스어로 되어 있더라도 한국어로만 작성하세요."
+        case "chinois simplifié": "\n即使摘录是法语，也只用简体中文写作。"
+        case "portugais du Brésil": "\nEscreva apenas em português do Brasil, mesmo que os trechos estejam em francês."
+        case "néerlandais": "\nSchrijf alleen in het Nederlands, ook als de fragmenten in het Frans zijn."
+        case "turc": "\nAlıntılar Fransızca olsa bile yalnızca Türkçe yaz."
+        case "vietnamien": "\nChỉ viết bằng tiếng Việt, kể cả khi các đoạn trích bằng tiếng Pháp."
         default: ""
         }
     }
@@ -164,7 +200,9 @@ public enum ConsignesAnalyste {
     """
 
     /// **La consigne d'une section.** `sujet` nomme l'aspect pour un point clé ou une perspective.
-    public static func consigne(_ s: Section, langue codeOuNom: String, sujet: String? = nil) -> String {
+    public static func consigne(_ s: Section, langue demandee: String, sujet: String? = nil) -> String {
+        // Le russe, l'ukrainien et le hindi : rédigés en anglais, que le modèle parle (1.7.4 ⑥).
+        let codeOuNom = langueDeRedaction(demandee)
         let langue = nomLangue(codeOuNom)
         // ⭐ Hors du français, la consigne est écrite DANS la langue du rapport (04/10/2026) : cf. `ConsignesLocales`.
         if let locale = ConsignesLocales.consigne(s, code: codeLangue(codeOuNom), sujet: sujet) { return locale }

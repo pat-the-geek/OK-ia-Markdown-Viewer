@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsPipeline/RevuePresse.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsPipeline/RevuePresse.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // EXTRAIT : la pastille d'un média et la reconnaissance des signatures, pour la fiche de lecture.

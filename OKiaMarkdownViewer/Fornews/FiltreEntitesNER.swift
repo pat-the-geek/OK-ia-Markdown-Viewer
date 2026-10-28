@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsAI/FiltreEntitesNER.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsAI/FiltreEntitesNER.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // Seule retouche : les `import Fornews…` retirés.
@@ -318,6 +318,34 @@ public enum FiltreEntitesNER {
             return false
         }
 
+        return true
+    }
+
+    /// **Une entité qu'un document exporté peut nommer** dans sa section « ## Entités » (1.7.4 ⑤,
+    /// demande de md Viewer, 27/10/2026) : jamais un nombre (« [[7]] », « [[2026]] »), un mot-outil
+    /// (« [[Je]] », « [[Le]] », « [[Mais]] ») ou un nom commun pris pour un nom propre (« [[bureau]] »).
+    ///
+    /// ⛔ **Pas `estValide` tout entière, et c'est mesuré.** Rejouée le 27/10/2026 sur les 45 854 entités
+    /// liées de la base du mini, elle en retirait 150, dont des dizaines de vraies : « X » (50 articles),
+    /// « Mouvement international de la Croix-Rouge et du Croissant-Rouge », « Ernst & Young », « Le
+    /// diable s'habille en Prada », « Armée de terre des États-Unis ». Ses règles d'énumération, de
+    /// titre et de clause sont faites pour trier ce que le modèle VIENT de détecter ; une entité déjà en
+    /// base, souvent rattachée à Wikidata, ne doit plus y être soumise. On ne garde ici que les règles
+    /// sans faux positif sur la base : lettres, stop-list, titres, mots-outils, majuscule d'un nom
+    /// propre, libellé promotionnel.
+    ///
+    /// ⚠️ Une seule lettre passe pour une organisation ou un produit en capitale (« X », l'ex-Twitter) ;
+    /// ailleurs (« O », « À »), elle ne nomme rien.
+    public static func estNommable(_ valeur: String, type: TypeEntite) -> Bool {
+        let v = valeur.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard v.contains(where: \.isLetter) else { return false }
+        let n = normaliser(v)
+        let sansPoint = n.replacingOccurrences(of: ".", with: "")
+        if stopList.contains(n) || titres.contains(n) || titres.contains(sansPoint)
+            || TermesGeneriquesNER.motsOutils.contains(n) { return false }
+        if typesNomPropre.contains(type), !v.contains(where: { $0.isUppercase }) { return false }
+        if n.count < 2, !([.org, .product].contains(type) && v.count == 1 && v == v.uppercased()) { return false }
+        if LibellePromotionnel.detecte(v) { return false }
         return true
     }
 

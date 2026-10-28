@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsPipeline/GenerateurRapportAnalyste.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsPipeline/GenerateurRapportAnalyste.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // EXTRAIT : le nettoyage de la prose (tics d'ouverture, marques recopiées, redites) et les contrôles

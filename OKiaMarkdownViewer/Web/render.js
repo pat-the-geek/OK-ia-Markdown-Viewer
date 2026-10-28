@@ -10,46 +10,98 @@
 
   var NOIR = '#111111';
 
-  // App language, injected by the host app (window.OKIA_LANG): fr | en | de | es | it.
-  var LANGS = ['fr', 'en', 'de', 'es', 'it'];
-  var LANG = LANGS.indexOf(window.OKIA_LANG) >= 0 ? window.OKIA_LANG : 'fr';
+  // App language, injected by the host app. md Viewer 1.4 speaks fifteen languages: it passes the
+  // real one in window.OKIA_LANG_APP, and in window.OKIA_LANG the language its own strings use
+  // (English for the ten newest, for now); fornews passes OKIA_LANG only. The real language wins.
+  // ⚠️ zh-Hans and pt-BR are not two-letter codes: never truncate a code to its first two letters.
+  // An unknown language reads English, not French.
+  var LANGS = ['fr', 'en', 'de', 'es', 'it', 'ja', 'ko', 'zh-Hans', 'pt-BR', 'nl', 'ru', 'uk', 'tr', 'vi', 'hi'];
+  // A code → one of LANGS: exact match (case ignored), else by base language (« de-CH » → de,
+  // « pt-PT » → pt-BR, « zh-CN » → zh-Hans). Traditional Chinese is not simplified: it reads English.
+  function codeLangue(raw) {
+    if (!raw) return null;
+    var c = String(raw).trim().replace(/_/g, '-').toLowerCase();
+    if (!c) return null;
+    for (var i = 0; i < LANGS.length; i++) if (LANGS[i].toLowerCase() === c) return LANGS[i];
+    if (/^zh-(hant|tw|hk|mo)\b/.test(c)) return null;
+    var base = c.split('-')[0];
+    for (var k = 0; k < LANGS.length; k++) if (LANGS[k].split('-')[0].toLowerCase() === base) return LANGS[k];
+    return null;
+  }
+  var LANG = codeLangue(window.OKIA_LANG_APP) || codeLangue(window.OKIA_LANG) || 'en';
 
-  // The French text is the key, so French needs no entry of its own — and an untranslated
-  // string degrades to readable French rather than to an identifier.
+  // The French text is the key, so French needs no entry of its own. A missing translation falls
+  // back to English, then to French.
   var STRINGS = {
-    'Lire l\'article': { en: 'Read the article', de: 'Den Artikel lesen',
-                         es: 'Leer el artículo', it: 'Leggi l\'articolo' },
-    'Erreur de rendu':  { en: 'Rendering error', de: 'Rendering-Fehler',
-                          es: 'Error de renderizado', it: 'Errore di rendering' },
-    'Document volumineux, rendu en cours…':
-      { en: 'Large document, rendering…', de: 'Umfangreiches Dokument, wird gerendert…',
-        es: 'Documento voluminoso, procesando…', it: 'Documento voluminoso, rendering in corso…' },
-    'Carte indisponible hors connexion':
-      { en: 'Map unavailable offline', de: 'Karte offline nicht verfügbar',
-        es: 'Mapa no disponible sin conexión', it: 'Mappa non disponibile offline' },
-    'Aller à la note':
-      { en: 'Go to the note', de: 'Zur Anmerkung', es: 'Ir a la nota', it: 'Vai alla nota' },
-    'Retour au texte':
-      { en: 'Back to the text', de: 'Zurück zum Text', es: 'Volver al texto', it: 'Torna al testo' },
-    'Dates passées':
-      { en: 'Past dates', de: 'Vergangene Daten', es: 'Fechas pasadas', it: 'Date passate' },
-    'Dates à venir':
-      { en: 'Upcoming dates', de: 'Kommende Daten', es: 'Fechas próximas', it: 'Date future' },
-    'Montants':
-      { en: 'Amounts', de: 'Beträge', es: 'Importes', it: 'Importi' },
-    'Chargement de la carte…':
-      { en: 'Loading the map…', de: 'Karte wird geladen…',
-        es: 'Cargando el mapa…', it: 'Caricamento della mappa…' },
-    'Plein écran':
-      { en: 'Full screen', de: 'Vollbild', es: 'Pantalla completa', it: 'Schermo intero' }
+    'Lire l\'article': { en: 'Read the article', de: 'Den Artikel lesen', es: 'Leer el artículo',
+      it: 'Leggi l\'articolo', ja: '記事を読む', ko: '기사 읽기', 'zh-Hans': '阅读文章',
+      'pt-BR': 'Ler o artigo', nl: 'Het artikel lezen', ru: 'Читать статью', uk: 'Читати статтю',
+      tr: 'Makaleyi oku', vi: 'Đọc bài viết', hi: 'लेख पढ़ें' },
+    'Erreur de rendu': { en: 'Rendering error', de: 'Rendering-Fehler', es: 'Error de renderizado',
+      it: 'Errore di rendering', ja: 'レンダリングエラー', ko: '렌더링 오류', 'zh-Hans': '渲染错误',
+      'pt-BR': 'Erro de renderização', nl: 'Weergavefout', ru: 'Ошибка отображения',
+      uk: 'Помилка відображення', tr: 'Görüntüleme hatası', vi: 'Lỗi hiển thị', hi: 'रेंडरिंग त्रुटि' },
+    'Erreur de rendu Mermaid': { en: 'Mermaid rendering error', de: 'Mermaid-Rendering-Fehler',
+      es: 'Error de renderizado de Mermaid', it: 'Errore di rendering Mermaid', ja: 'Mermaid のレンダリングエラー',
+      ko: 'Mermaid 렌더링 오류', 'zh-Hans': 'Mermaid 渲染错误', 'pt-BR': 'Erro de renderização do Mermaid',
+      nl: 'Mermaid-weergavefout', ru: 'Ошибка отображения Mermaid', uk: 'Помилка відображення Mermaid',
+      tr: 'Mermaid görüntüleme hatası', vi: 'Lỗi hiển thị Mermaid', hi: 'Mermaid रेंडरिंग त्रुटि' },
+    'Document volumineux, rendu en cours…': { en: 'Large document, rendering…',
+      de: 'Umfangreiches Dokument, wird gerendert…', es: 'Documento voluminoso, procesando…',
+      it: 'Documento voluminoso, rendering in corso…', ja: '大きな文書です。表示しています…',
+      ko: '큰 문서입니다. 표시하는 중…', 'zh-Hans': '文档较大，正在渲染…', 'pt-BR': 'Documento grande, renderizando…',
+      nl: 'Groot document, wordt weergegeven…', ru: 'Большой документ, идёт отображение…',
+      uk: 'Великий документ, триває відображення…', tr: 'Büyük belge, görüntüleniyor…',
+      vi: 'Tài liệu lớn, đang hiển thị…', hi: 'बड़ा दस्तावेज़, प्रदर्शित हो रहा है…' },
+    'Carte indisponible hors connexion': { en: 'Map unavailable offline',
+      de: 'Karte offline nicht verfügbar', es: 'Mapa no disponible sin conexión',
+      it: 'Mappa non disponibile offline', ja: 'オフラインでは地図を表示できません',
+      ko: '오프라인에서는 지도를 사용할 수 없습니다', 'zh-Hans': '离线时地图不可用',
+      'pt-BR': 'Mapa indisponível offline', nl: 'Kaart niet beschikbaar zonder verbinding',
+      ru: 'Карта недоступна без подключения', uk: 'Мапа недоступна без з’єднання',
+      tr: 'Harita çevrimdışı kullanılamıyor', vi: 'Bản đồ không khả dụng khi ngoại tuyến',
+      hi: 'ऑफ़लाइन होने पर नक्शा उपलब्ध नहीं है' },
+    'Aller à la note': { en: 'Go to the note', de: 'Zur Anmerkung', es: 'Ir a la nota', it: 'Vai alla nota',
+      ja: '注へ移動', ko: '주석으로 이동', 'zh-Hans': '转到注释', 'pt-BR': 'Ir para a nota', nl: 'Naar de noot',
+      ru: 'К примечанию', uk: 'До примітки', tr: 'Nota git', vi: 'Đến chú thích', hi: 'टिप्पणी पर जाएँ' },
+    'Retour au texte': { en: 'Back to the text', de: 'Zurück zum Text', es: 'Volver al texto',
+      it: 'Torna al testo', ja: '本文に戻る', ko: '본문으로 돌아가기', 'zh-Hans': '返回正文',
+      'pt-BR': 'Voltar ao texto', nl: 'Terug naar de tekst', ru: 'Вернуться к тексту',
+      uk: 'Повернутися до тексту', tr: 'Metne dön', vi: 'Quay lại văn bản', hi: 'पाठ पर लौटें' },
+    'Dates passées': { en: 'Past dates', de: 'Vergangene Daten', es: 'Fechas pasadas', it: 'Date passate',
+      ja: '過去の日付', ko: '지난 날짜', 'zh-Hans': '过去的日期', 'pt-BR': 'Datas passadas', nl: 'Afgelopen data',
+      ru: 'Прошедшие даты', uk: 'Минулі дати', tr: 'Geçmiş tarihler', vi: 'Ngày đã qua', hi: 'बीती तारीखें' },
+    'Dates à venir': { en: 'Upcoming dates', de: 'Kommende Daten', es: 'Fechas próximas', it: 'Date future',
+      ja: '今後の日付', ko: '다가오는 날짜', 'zh-Hans': '即将到来的日期', 'pt-BR': 'Próximas datas',
+      nl: 'Komende data', ru: 'Предстоящие даты', uk: 'Майбутні дати', tr: 'Yaklaşan tarihler',
+      vi: 'Ngày sắp tới', hi: 'आने वाली तारीखें' },
+    'Montants': { en: 'Amounts', de: 'Beträge', es: 'Importes', it: 'Importi', ja: '金額', ko: '금액',
+      'zh-Hans': '金额', 'pt-BR': 'Valores', nl: 'Bedragen', ru: 'Суммы', uk: 'Суми', tr: 'Tutarlar',
+      vi: 'Số tiền', hi: 'राशियाँ' },
+    'Chargement de la carte…': { en: 'Loading the map…', de: 'Karte wird geladen…',
+      es: 'Cargando el mapa…', it: 'Caricamento della mappa…', ja: '地図を読み込み中…',
+      ko: '지도를 불러오는 중…', 'zh-Hans': '正在加载地图…', 'pt-BR': 'Carregando o mapa…',
+      nl: 'Kaart wordt geladen…', ru: 'Загрузка карты…', uk: 'Завантаження мапи…',
+      tr: 'Harita yükleniyor…', vi: 'Đang tải bản đồ…', hi: 'नक्शा लोड हो रहा है…' },
+    'Plein écran': { en: 'Full screen', de: 'Vollbild', es: 'Pantalla completa', it: 'Schermo intero',
+      ja: '全画面表示', ko: '전체 화면', 'zh-Hans': '全屏', 'pt-BR': 'Tela cheia', nl: 'Volledig scherm',
+      ru: 'Во весь экран', uk: 'На весь екран', tr: 'Tam ekran', vi: 'Toàn màn hình', hi: 'पूर्ण स्क्रीन' },
+    'Quitter le plein écran': { en: 'Exit full screen', de: 'Vollbild beenden',
+      es: 'Salir de pantalla completa', it: 'Esci da schermo intero', ja: '全画面表示を終了',
+      ko: '전체 화면 종료', 'zh-Hans': '退出全屏', 'pt-BR': 'Sair da tela cheia', nl: 'Volledig scherm verlaten',
+      ru: 'Выйти из полноэкранного режима', uk: 'Вийти з повноекранного режиму', tr: 'Tam ekrandan çık',
+      vi: 'Thoát toàn màn hình', hi: 'पूर्ण स्क्रीन से बाहर निकलें' }
   };
   function TXT(fr) {
+    if (LANG === 'fr') return fr;
     var entry = STRINGS[fr];
-    return (LANG === 'fr' || !entry || !entry[LANG]) ? fr : entry[LANG];
+    return (entry && (entry[LANG] || entry.en)) || fr;
   }
 
   // Date formatting locale per language (Swiss variants where the app has one).
-  var DATE_LOCALE = { fr: 'fr-CH', en: 'en-GB', de: 'de-CH', es: 'es-ES', it: 'it-CH' };
+  var DATE_LOCALE = { fr: 'fr-CH', en: 'en-GB', de: 'de-CH', es: 'es-ES', it: 'it-CH', ja: 'ja-JP',
+                      ko: 'ko-KR', 'zh-Hans': 'zh-Hans-CN', 'pt-BR': 'pt-BR', nl: 'nl-NL', ru: 'ru-RU',
+                      uk: 'uk-UA', tr: 'tr-TR', vi: 'vi-VN', hi: 'hi-IN' };
 
   /* ---- native bridge ----------------------------------------------------- */
   function post(name, payload) {
@@ -293,7 +345,9 @@
      Ici, les appels deviennent des exposants et les définitions une seule section, quel que
      soit l'endroit d'où on les appelle — callout, cadre HTML ou prose.
      ========================================================================= */
-  var NOTES_TITRE = { fr: 'Notes', en: 'Notes', de: 'Anmerkungen', es: 'Notas', it: 'Note' };
+  var NOTES_TITRE = { fr: 'Notes', en: 'Notes', de: 'Anmerkungen', es: 'Notas', it: 'Note', ja: '注',
+                      ko: '주석', 'zh-Hans': '注释', 'pt-BR': 'Notas', nl: 'Noten', ru: 'Примечания',
+                      uk: 'Примітки', tr: 'Notlar', vi: 'Chú thích', hi: 'टिप्पणियाँ' };
   var FN_DEF = /^\[\^([^\]\s]+)\]:[ \t]?(.*)$/;
   var HR = /^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/;
 
@@ -303,16 +357,23 @@
     var m, re = /^##\s+(.+?)\s*$/gm;
     while ((m = re.exec(body))) {
       if (!isEntityHeading(m[1])) continue;
-      var a = m[1].trim().toLowerCase();
+      var brut = m[1].trim().toLowerCase();
+      if (brut.normalize) brut = brut.normalize('NFC');
+      if (brut in ENTITY_HEADINGS_LANG) return ENTITY_HEADINGS_LANG[brut];
+      var a = brut;
       if (a.normalize) a = a.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      // « Entidades » est espagnol ET portugais : même titre de notes (« Notas »), l'espagnol suffit.
       if (/^entidad/.test(a)) return 'es';
       if (/^entit(?:y|ies)$/.test(a)) return 'en';
       if (a === 'entita') return 'it';
       if (/^entit(?:at|aet)/.test(a)) return 'de';
+      if (/^entiteit/.test(a)) return 'nl';
+      if (a in ENTITY_HEADINGS_LANG) return ENTITY_HEADINGS_LANG[a];
       return 'fr';
     }
-    var code = String((meta && (meta.lang || meta.langue || meta.language)) || '').slice(0, 2).toLowerCase();
-    return NOTES_TITRE[code] ? code : null;
+    // ⚠️ Not truncated to two letters: « zh-Hans », « pt-BR ».
+    var code = codeLangue((meta && (meta.lang || meta.langue || meta.language)) || '');
+    return code && NOTES_TITRE[code] ? code : null;
   }
 
   function transformFootnotes(md, langue) {
@@ -485,11 +546,20 @@
   // (fr/en/de/es/it), singulier ou pluriel. Le titre est d'abord dépouillé de ses
   // accents, donc « Entités », « Entites », « Entità » et « Entitäten » se ramènent
   // tous à une forme ASCII. La liste reste fermée : « Sources » n'est pas reconnu.
+  // ⭐ 1.7.4 (md Viewer 1.4, quinze langues) : le néerlandais « Entiteiten » et, hors alphabet latin,
+  // les titres de `RapportObsidian.labels` — comparés tels quels, sans dépouillement (le NFD
+  // décomposerait les kana et le devanagari).
   var ENTITY_HEADING_RE =
-    /^(?:entit(?:es?|y|ies|a|at(?:en)?|aet(?:en)?)|entidad(?:es)?)$/;
+    /^(?:entit(?:es?|y|ies|a|at(?:en)?|aet(?:en)?|eit(?:en)?)|entidad(?:es)?|thuc the|varl[iı]klar)$/;
+  var ENTITY_HEADINGS_LANG = { 'エンティティ': 'ja', '개체': 'ko', '实体': 'zh-Hans', 'сущности': 'ru',
+                               'сутності': 'uk', 'इकाइयाँ': 'hi', 'thuc the': 'vi', 'varlıklar': 'tr',
+                               'varliklar': 'tr' };
 
   function isEntityHeading(title) {
-    var ascii = title.trim().toLowerCase();
+    var brut = title.trim().toLowerCase();
+    if (brut.normalize) brut = brut.normalize('NFC');
+    if (brut in ENTITY_HEADINGS_LANG) return true;
+    var ascii = brut;
     // NFD + suppression des diacritiques : é→e, ä→a, à→a…
     if (ascii.normalize) ascii = ascii.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return ENTITY_HEADING_RE.test(ascii);
@@ -972,7 +1042,8 @@
       blocks.forEach(function (pre) {
         if (!pre.querySelector('svg')) {
           pre.classList.add('mermaid-error');
-          pre.textContent = 'Erreur de rendu Mermaid : ' + (err && err.message ? err.message : err);
+          pre.textContent = TXT('Erreur de rendu Mermaid') + (LANG === 'fr' ? ' : ' : ': ') +
+                            (err && err.message ? err.message : err);
         }
       });
     });
@@ -1017,7 +1088,7 @@
           var full = mapEl.classList.toggle('okia-map-fullscreen');
           document.body.classList.toggle('okia-map-has-fullscreen', full);
           a.innerHTML = full ? '✕' : ICONE_AGRANDIR;
-          a.title = full ? 'Quitter le plein écran' : 'Plein écran';
+          a.title = full ? TXT('Quitter le plein écran') : TXT('Plein écran');
           // Let the layout settle, then tell Leaflet its size changed.
           setTimeout(function () { map.invalidateSize(); }, 60);
         });

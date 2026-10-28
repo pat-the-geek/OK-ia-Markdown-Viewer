@@ -61,6 +61,8 @@ ENTIERS = [
     "FornewsServices/Flux/ImageMarkdown.swift",
     "FornewsFeatures/Components/CleImage.swift",
     "FornewsModels/AvertissementIA.swift",
+    # Le cache des entités que fornews a résolues par Wikidata, publié dans l'App Group (fornews 1.7.4).
+    "FornewsModels/CacheEntitesFornews.swift",
 ]
 
 def entete(chemin, note):

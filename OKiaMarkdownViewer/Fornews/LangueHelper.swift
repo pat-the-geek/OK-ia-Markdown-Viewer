@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsFeatures/Components/LangueHelper.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsFeatures/Components/LangueHelper.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // Seule retouche : les `import Fornews…` retirés.
@@ -65,6 +65,16 @@ enum LangueHelper {
         case "es": return "espagnol"
         case "de": return "allemand"
         case "it": return "italien"
+        // ⭐ 1.7.4 ⑥ (md Viewer 1.4) : les langues que le modèle de l'appareil parle ; le russe, l'ukrainien et le
+        // hindi, qu'il ne parle pas, demandent l'anglais (cf. `ConsignesAnalyste.langueDeRedaction`).
+        case "ja": return "japonais"
+        case "ko": return "coréen"
+        case "zh": return "chinois simplifié"
+        case "pt": return "portugais du Brésil"
+        case "nl": return "néerlandais"
+        case "tr": return "turc"
+        case "vi": return "vietnamien"
+        case "ru", "uk", "hi": return "anglais"
         default:   return "français"
         }
     }

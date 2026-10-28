@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsFeatures/Explorer/RapportObsidian.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsFeatures/Explorer/RapportObsidian.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // EXTRAIT : la composition du rapport d'un article à partir de ses données (`generer(donnees:)`), avec
@@ -410,8 +410,77 @@ enum RapportObsidian {
         }
     }
 
+    /// ⭐ 1.7.4 ⑥ (md Viewer 1.4, quinze langues) : ja, ko, zh(-Hans), pt(-BR), nl, ru, uk, tr, vi, hi en plus,
+    /// avec les clés de frontmatter anglaises (`title`, `source`…), que le lecteur de md Viewer reconnaît. Une
+    /// langue inconnue lit l'ANGLAIS — elle tombait sur le français.
     static func labels(_ langue: String) -> Labels {
-        switch langue.prefix(2) {
+        switch langue.prefix(2).lowercased() {
+        case "ja": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "エンティティ", sectionLieux: "場所の地図", sectionCarte: "マインドマップ", sectionReference: "参考情報",
+                                 sectionNote: "メモ",
+                                 refSource: "出典", refDate: "日付", refURL: "URL", refScore: "信頼性", tagBase: "ニュース",
+                                 tagPerson: "人物", tagOrg: "組織", tagGpe: "国・地域", tagLoc: "場所", tagProduct: "製品",
+                                 tagEvent: "出来事", tagWork: "作品", tagDate: "日付", tagMoney: "金額", tagAutre: "エンティティ", tagMaladie: "病気")
+        case "ko": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "개체", sectionLieux: "장소 지도", sectionCarte: "마인드맵", sectionReference: "참고",
+                                 sectionNote: "내 메모",
+                                 refSource: "출처", refDate: "날짜", refURL: "URL", refScore: "신뢰도", tagBase: "뉴스",
+                                 tagPerson: "인물", tagOrg: "조직", tagGpe: "국가/지역", tagLoc: "장소", tagProduct: "제품",
+                                 tagEvent: "사건", tagWork: "작품", tagDate: "날짜", tagMoney: "금액", tagAutre: "개체", tagMaladie: "질병")
+        case "zh": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "实体", sectionLieux: "地点地图", sectionCarte: "思维导图", sectionReference: "参考",
+                                 sectionNote: "我的笔记",
+                                 refSource: "来源", refDate: "日期", refURL: "URL", refScore: "可信度", tagBase: "新闻",
+                                 tagPerson: "人物", tagOrg: "组织", tagGpe: "国家/地区", tagLoc: "地点", tagProduct: "产品",
+                                 tagEvent: "事件", tagWork: "作品", tagDate: "日期", tagMoney: "金额", tagAutre: "实体", tagMaladie: "疾病")
+        case "pt": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "Entidades", sectionLieux: "Mapa de lugares", sectionCarte: "Mapa mental", sectionReference: "Referência",
+                                 sectionNote: "Minha nota",
+                                 refSource: "Fonte", refDate: "Data", refURL: "URL", refScore: "Credibilidade", tagBase: "notícias",
+                                 tagPerson: "Pessoa", tagOrg: "Organização", tagGpe: "País/Região", tagLoc: "Lugar", tagProduct: "Produto",
+                                 tagEvent: "Evento", tagWork: "Obra", tagDate: "Data", tagMoney: "Valor", tagAutre: "Entidade", tagMaladie: "Doença")
+        case "nl": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "Entiteiten", sectionLieux: "Kaart van plaatsen", sectionCarte: "Mindmap", sectionReference: "Referentie",
+                                 sectionNote: "Mijn notitie",
+                                 refSource: "Bron", refDate: "Datum", refURL: "URL", refScore: "Betrouwbaarheid", tagBase: "nieuws",
+                                 tagPerson: "Persoon", tagOrg: "Organisatie", tagGpe: "Land/Regio", tagLoc: "Plaats", tagProduct: "Product",
+                                 tagEvent: "Gebeurtenis", tagWork: "Werk", tagDate: "Datum", tagMoney: "Bedrag", tagAutre: "Entiteit", tagMaladie: "Ziekte")
+        case "ru": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "Сущности", sectionLieux: "Карта мест", sectionCarte: "Интеллект-карта", sectionReference: "Справка",
+                                 sectionNote: "Моя заметка",
+                                 refSource: "Источник", refDate: "Дата", refURL: "URL", refScore: "Достоверность", tagBase: "новости",
+                                 tagPerson: "Персона", tagOrg: "Организация", tagGpe: "Страна/регион", tagLoc: "Место", tagProduct: "Продукт",
+                                 tagEvent: "Событие", tagWork: "Произведение", tagDate: "Дата", tagMoney: "Сумма", tagAutre: "Сущность", tagMaladie: "Болезнь")
+        case "uk": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "Сутності", sectionLieux: "Мапа місць", sectionCarte: "Інтелект-карта", sectionReference: "Довідка",
+                                 sectionNote: "Моя нотатка",
+                                 refSource: "Джерело", refDate: "Дата", refURL: "URL", refScore: "Достовірність", tagBase: "новини",
+                                 tagPerson: "Особа", tagOrg: "Організація", tagGpe: "Країна/регіон", tagLoc: "Місце", tagProduct: "Продукт",
+                                 tagEvent: "Подія", tagWork: "Твір", tagDate: "Дата", tagMoney: "Сума", tagAutre: "Сутність", tagMaladie: "Хвороба")
+        case "tr": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "Varlıklar", sectionLieux: "Yerler haritası", sectionCarte: "Zihin haritası", sectionReference: "Kaynakça",
+                                 sectionNote: "Notum",
+                                 refSource: "Kaynak", refDate: "Tarih", refURL: "URL", refScore: "Güvenilirlik", tagBase: "haberler",
+                                 tagPerson: "Kişi", tagOrg: "Kuruluş", tagGpe: "Ülke/Bölge", tagLoc: "Yer", tagProduct: "Ürün",
+                                 tagEvent: "Olay", tagWork: "Eser", tagDate: "Tarih", tagMoney: "Tutar", tagAutre: "Varlık", tagMaladie: "Hastalık")
+        case "vi": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "Thực thể", sectionLieux: "Bản đồ địa điểm", sectionCarte: "Sơ đồ tư duy", sectionReference: "Tham khảo",
+                                 sectionNote: "Ghi chú của tôi",
+                                 refSource: "Nguồn", refDate: "Ngày", refURL: "URL", refScore: "Độ tin cậy", tagBase: "tin tức",
+                                 tagPerson: "Người", tagOrg: "Tổ chức", tagGpe: "Quốc gia/Khu vực", tagLoc: "Địa điểm", tagProduct: "Sản phẩm",
+                                 tagEvent: "Sự kiện", tagWork: "Tác phẩm", tagDate: "Ngày", tagMoney: "Số tiền", tagAutre: "Thực thể", tagMaladie: "Bệnh")
+        case "hi": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
+                                 sectionEntites: "इकाइयाँ", sectionLieux: "स्थानों का नक्शा", sectionCarte: "माइंड मैप", sectionReference: "संदर्भ",
+                                 sectionNote: "मेरा नोट",
+                                 refSource: "स्रोत", refDate: "तारीख", refURL: "URL", refScore: "विश्वसनीयता", tagBase: "समाचार",
+                                 tagPerson: "व्यक्ति", tagOrg: "संगठन", tagGpe: "देश/क्षेत्र", tagLoc: "स्थान", tagProduct: "उत्पाद",
+                                 tagEvent: "घटना", tagWork: "कृति", tagDate: "तारीख", tagMoney: "राशि", tagAutre: "इकाई", tagMaladie: "रोग")
+        case "fr": return Labels(cleTitre: "titre", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "langue", cleTags: "tags",
+                                 sectionEntites: "Entités", sectionLieux: "Carte des lieux", sectionCarte: "Carte mentale", sectionReference: "Référence",
+                                 sectionNote: "Ma note",
+                                 refSource: "Source", refDate: "Date", refURL: "URL", refScore: "Crédibilité", tagBase: "actualité",
+                                 tagPerson: "Personne", tagOrg: "Organisation", tagGpe: "Pays/Région", tagLoc: "Lieu", tagProduct: "Produit",
+                                 tagEvent: "Événement", tagWork: "Œuvre", tagDate: "Date", tagMoney: "Montant", tagAutre: "Entité", tagMaladie: "Maladie")
         case "en": return Labels(cleTitre: "title", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "language", cleTags: "tags",
                                  sectionEntites: "Entities", sectionLieux: "Map of places", sectionCarte: "Mind map", sectionReference: "Reference",
                                  sectionNote: "My note",
@@ -436,12 +505,7 @@ enum RapportObsidian {
                                  refSource: "Fonte", refDate: "Data", refURL: "URL", refScore: "Credibilità", tagBase: "attualità",
                                  tagPerson: "Persona", tagOrg: "Organizzazione", tagGpe: "Paese/Regione", tagLoc: "Luogo", tagProduct: "Prodotto",
                                  tagEvent: "Evento", tagWork: "Opera", tagDate: "Data", tagMoney: "Importo", tagAutre: "Entità", tagMaladie: "Malattia")
-        default:   return Labels(cleTitre: "titre", cleSource: "source", cleURL: "url", cleDate: "date", cleLangue: "langue", cleTags: "tags",
-                                 sectionEntites: "Entités", sectionLieux: "Carte des lieux", sectionCarte: "Carte mentale", sectionReference: "Référence",
-                                 sectionNote: "Ma note",
-                                 refSource: "Source", refDate: "Date", refURL: "URL", refScore: "Crédibilité", tagBase: "actualité",
-                                 tagPerson: "Personne", tagOrg: "Organisation", tagGpe: "Pays/Région", tagLoc: "Lieu", tagProduct: "Produit",
-                                 tagEvent: "Événement", tagWork: "Œuvre", tagDate: "Date", tagMoney: "Montant", tagAutre: "Entité", tagMaladie: "Maladie")
+        default:   return labels("en")
         }
     }
 }

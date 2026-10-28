@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsModels/AvertissementIA.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsModels/AvertissementIA.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // Seule retouche : les `import Fornews…` retirés.
@@ -26,8 +26,31 @@ public enum AvertissementIA {
             "Los contenidos generados por inteligencia artificial se ofrecen a título indicativo y pueden contener errores u omisiones; el usuario debe verificarlos y validarlos antes de cualquier uso o toma de decisiones. Los artículos originales siguen siendo la referencia."
         case "it":
             "I contenuti generati dall'intelligenza artificiale sono forniti a titolo indicativo e possono contenere errori o omissioni; devono essere verificati e convalidati dall'utente prima di qualsiasi utilizzo o decisione. Gli articoli originali restano il riferimento."
-        default:
+        // ⭐ 1.7.4 ⑥ : les dix langues de md Viewer 1.4. Une langue inconnue lit l'anglais.
+        case "ja":
+            "人工知能が生成したコンテンツは参考情報として提供されるもので、誤りや欠落を含む場合があります。利用や判断の前に、必ず利用者が確認・検証してください。元の記事が基準となります。"
+        case "ko":
+            "인공지능이 생성한 콘텐츠는 참고용으로 제공되며 오류나 누락이 있을 수 있습니다. 사용하거나 결정하기 전에 반드시 사용자가 확인하고 검증해야 합니다. 원문 기사가 기준입니다."
+        case "zh":
+            "人工智能生成的内容仅供参考，可能存在错误或遗漏；在任何使用或决策之前，用户必须进行核实和确认。以原始文章为准。"
+        case "pt":
+            "Os conteúdos gerados por inteligência artificial são fornecidos apenas a título informativo e podem conter erros ou omissões; devem ser verificados e validados pelo usuário antes de qualquer uso ou decisão. Os artigos originais continuam sendo a referência."
+        case "nl":
+            "Door kunstmatige intelligentie gegenereerde inhoud dient alleen ter informatie en kan fouten of omissies bevatten; de gebruiker moet deze controleren en bevestigen vóór elk gebruik of elke beslissing. De oorspronkelijke artikelen blijven de referentie."
+        case "ru":
+            "Материалы, созданные искусственным интеллектом, носят справочный характер и могут содержать ошибки или пропуски; перед любым использованием или принятием решения пользователь должен их проверить и подтвердить. Исходные статьи остаются основным источником."
+        case "uk":
+            "Матеріали, створені штучним інтелектом, мають довідковий характер і можуть містити помилки чи пропуски; перед будь-яким використанням або ухваленням рішення користувач має їх перевірити й підтвердити. Оригінальні статті залишаються основним джерелом."
+        case "tr":
+            "Yapay zekâ tarafından üretilen içerikler yalnızca bilgi amaçlıdır ve hata ya da eksiklik içerebilir; her türlü kullanım veya karardan önce kullanıcı tarafından kontrol edilip doğrulanmalıdır. Esas olan özgün makalelerdir."
+        case "vi":
+            "Nội dung do trí tuệ nhân tạo tạo ra chỉ mang tính tham khảo và có thể có sai sót hoặc thiếu sót; người dùng cần kiểm tra và xác nhận trước khi sử dụng hoặc ra quyết định. Các bài viết gốc vẫn là căn cứ."
+        case "hi":
+            "कृत्रिम बुद्धिमत्ता द्वारा तैयार की गई सामग्री केवल जानकारी के लिए है और इसमें त्रुटियाँ या चूक हो सकती हैं; किसी भी उपयोग या निर्णय से पहले उपयोगकर्ता को इसकी जाँच और पुष्टि करनी चाहिए। मूल लेख ही संदर्भ बने रहते हैं।"
+        case "fr":
             "Les contenus générés par l'intelligence artificielle sont fournis à titre indicatif et peuvent comporter des erreurs ou omissions ; ils doivent être vérifiés et validés par l'utilisateur avant toute utilisation ou prise de décision. Les articles d'origine restent la référence."
+        default:
+            texte("en")
         }
     }
 
@@ -44,7 +67,18 @@ public enum AvertissementIA {
         case "de": return "Dokument erstellt von fornews.ai am \(jour)."
         case "es": return "Documento generado por fornews.ai el \(jour)."
         case "it": return "Documento generato da fornews.ai il \(jour)."
-        default: return "Document généré par fornews.ai le \(jour)."
+        case "ja": return "fornews.ai が\(jour)に作成した文書。"
+        case "ko": return "fornews.ai가 \(jour)에 생성한 문서입니다."
+        case "zh": return "本文档由 fornews.ai 于\(jour)生成。"
+        case "pt": return "Documento gerado por fornews.ai em \(jour)."
+        case "nl": return "Document gegenereerd door fornews.ai op \(jour)."
+        case "ru": return "Документ создан fornews.ai \(jour)."
+        case "uk": return "Документ створено fornews.ai \(jour)."
+        case "tr": return "Bu belge fornews.ai tarafından \(jour) tarihinde oluşturuldu."
+        case "vi": return "Tài liệu do fornews.ai tạo ngày \(jour)."
+        case "hi": return "यह दस्तावेज़ fornews.ai ने \(jour) को तैयार किया।"
+        case "fr": return "Document généré par fornews.ai le \(jour)."
+        default: return "Document generated by fornews.ai on \(jour)."
         }
     }
 

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Copie de fornews.ai — FornewsCore/Sources/FornewsFeatures/Explorer/FicheArticle.swift (commit b2d8c521, 26/10/2026).
+// Copie de fornews.ai — FornewsCore/Sources/FornewsFeatures/Explorer/FicheArticle.swift (commit fda62384, 28/10/2026).
 // Option Analytic (1.4) : le même algorithme que fornews. ⛔ Ne pas modifier ici : corriger dans
 // fornews, puis relancer scripts/copier-fornews.sh.
 // Seule retouche : les `import Fornews…` retirés.
@@ -82,8 +82,219 @@ enum FicheArticle {
         }
     }
 
+    /// ⭐ 1.7.4 ⑥ (md Viewer 1.4) : quinze langues ; une langue inconnue lit l'ANGLAIS (elle tombait sur le français).
     static func textes(_ langue: String) -> Textes {
         switch String(langue.prefix(2)).lowercased() {
+        case "ja": return Textes(
+            surtitre: "読書メモ", enBref: "概要", enChiffres: "数字で見る", quiEstCite: "登場する人物・組織",
+            schema: "図解", texteIntegral: "全文", pointsCles: "要点", articleOrigine: "元の記事",
+            personnes: "人物", organisations: "組織", lieux: "場所", autres: "その他",
+            lireOriginal: "原文を読む ↗", titreOriginal: "原題", foi: "機械翻訳です。元の記事が優先されます。",
+            resumeAuto: "記事本文から自動的に作成した要約です。", chapeau: "記事のリード文。",
+            chapeauTraduit: "記事のリード文（翻訳）。", surligne: "本文では、各名称がそのグループの色で強調表示されています。",
+            figure: "図", schemaNote: "記事本文から自動的に作成した図です。",
+            chiffresNote: "数字はすべて本文のとおりに引用しています。", publicationCitee: "引用された刊行物",
+            lecture: { "\($0)分で読めます" }, image: { "画像：\($0)" }, publie: { "\($0)公開" },
+            lireSur: { "\($0)で記事を読む →" },
+            legende: {
+                switch $0 {
+                case .liens: return "記事の主要な要素のつながり。"
+                case .chronologie: return "記事の出来事の時系列。"
+                case .echanges: return "記事の登場人物間のやり取り。"
+                case .themes: return "記事のテーマ。"
+                case .repartition: return "記事に示された数字。"
+                case .noms: return "記事に登場する名称（グループ別）。"
+                }
+            })
+        case "ko": return Textes(
+            surtitre: "읽기 노트", enBref: "요약", enChiffres: "숫자로 보기", quiEstCite: "언급된 대상",
+            schema: "도식", texteIntegral: "전문", pointsCles: "핵심 내용", articleOrigine: "원문 기사",
+            personnes: "인물", organisations: "조직", lieux: "장소", autres: "기타",
+            lireOriginal: "원문 읽기 ↗", titreOriginal: "원제", foi: "기계 번역입니다. 원문 기사가 우선합니다.",
+            resumeAuto: "기사 본문을 바탕으로 자동 작성한 요약입니다.", chapeau: "기사의 리드.",
+            chapeauTraduit: "기사의 리드(번역).", surligne: "본문에서 각 이름은 해당 그룹의 색으로 강조 표시됩니다.",
+            figure: "그림", schemaNote: "기사 본문을 바탕으로 자동 작성한 도식입니다.",
+            chiffresNote: "모든 숫자는 본문 그대로 인용했습니다.", publicationCitee: "인용된 출판물",
+            lecture: { "읽는 데 \($0)분" }, image: { "이미지: \($0)" }, publie: { "\($0) 게시" },
+            lireSur: { "\($0)에서 기사 읽기 →" },
+            legende: {
+                switch $0 {
+                case .liens: return "기사의 핵심 요소가 연결되는 방식."
+                case .chronologie: return "시간에 따른 기사 속 사건."
+                case .echanges: return "기사 속 인물 간의 교류."
+                case .themes: return "기사의 주제."
+                case .repartition: return "기사가 제시한 숫자."
+                case .noms: return "기사에 언급된 이름(그룹별)."
+                }
+            })
+        case "zh": return Textes(
+            surtitre: "阅读笔记", enBref: "摘要", enChiffres: "数字一览", quiEstCite: "提及对象",
+            schema: "示意图", texteIntegral: "全文", pointsCles: "要点", articleOrigine: "原文",
+            personnes: "人物", organisations: "组织", lieux: "地点", autres: "其他",
+            lireOriginal: "阅读原文 ↗", titreOriginal: "原标题", foi: "机器翻译，以原文为准。",
+            resumeAuto: "根据文章内容自动生成的摘要。", chapeau: "文章导语。",
+            chapeauTraduit: "文章导语（译文）。", surligne: "正文中，每个名称都以其所属类别的颜色突出显示。",
+            figure: "图", schemaNote: "根据文章内容自动生成的示意图。",
+            chiffresNote: "所有数字均按原文引用。", publicationCitee: "引用的出版物",
+            lecture: { "阅读约需\($0)分钟" }, image: { "图片：\($0)" }, publie: { "发布于\($0)" },
+            lireSur: { "在\($0)阅读文章 →" },
+            legende: {
+                switch $0 {
+                case .liens: return "文章关键要素之间的联系。"
+                case .chronologie: return "文章中事件的时间顺序。"
+                case .echanges: return "文章人物之间的交流。"
+                case .themes: return "文章的主题。"
+                case .repartition: return "文章给出的数字。"
+                case .noms: return "文章提及的名称（按类别）。"
+                }
+            })
+        case "pt": return Textes(
+            surtitre: "Ficha de leitura", enBref: "Em resumo", enChiffres: "Em números", quiEstCite: "Quem é citado",
+            schema: "O esquema", texteIntegral: "O texto integral", pointsCles: "Pontos-chave", articleOrigine: "O artigo original",
+            personnes: "Pessoas", organisations: "Organizações", lieux: "Lugares", autres: "Outros",
+            lireOriginal: "Ler o original ↗", titreOriginal: "Título original", foi: "Tradução automática; prevalece o artigo original.",
+            resumeAuto: "Resumo elaborado automaticamente a partir do texto do artigo.", chapeau: "O lide do artigo.",
+            chapeauTraduit: "O lide do artigo, traduzido.", surligne: "No texto, cada nome é destacado com a cor do seu grupo.",
+            figure: "Figura", schemaNote: "Esquema elaborado automaticamente a partir do texto do artigo.",
+            chiffresNote: "Cada número é citado exatamente como aparece no texto.", publicationCitee: "Publicação citada",
+            lecture: { "\($0) min de leitura" }, image: { "Imagem: \($0)" }, publie: { "Publicado em \($0)" },
+            lireSur: { "Ler o artigo em \($0) →" },
+            legende: {
+                switch $0 {
+                case .liens: return "Como os elementos-chave do artigo se relacionam."
+                case .chronologie: return "Os fatos do artigo ao longo do tempo."
+                case .echanges: return "As trocas entre os atores do artigo."
+                case .themes: return "Os temas do artigo."
+                case .repartition: return "Os números apresentados pelo artigo."
+                case .noms: return "Os nomes citados no artigo, por grupo."
+                }
+            })
+        case "nl": return Textes(
+            surtitre: "Leesfiche", enBref: "In het kort", enChiffres: "In cijfers", quiEstCite: "Wie wordt genoemd",
+            schema: "Het schema", texteIntegral: "De volledige tekst", pointsCles: "Kernpunten", articleOrigine: "Het oorspronkelijke artikel",
+            personnes: "Personen", organisations: "Organisaties", lieux: "Plaatsen", autres: "Overige",
+            lireOriginal: "Origineel lezen ↗", titreOriginal: "Oorspronkelijke titel", foi: "Machinevertaling; het oorspronkelijke artikel is leidend.",
+            resumeAuto: "Samenvatting automatisch opgesteld op basis van de tekst van het artikel.", chapeau: "De inleiding van het artikel.",
+            chapeauTraduit: "De inleiding van het artikel, vertaald.", surligne: "In de tekst is elke naam gemarkeerd in de kleur van zijn groep.",
+            figure: "Figuur", schemaNote: "Schema automatisch opgesteld op basis van de tekst van het artikel.",
+            chiffresNote: "Elk cijfer staat precies zo in de tekst.", publicationCitee: "Geciteerde publicatie",
+            lecture: { "\($0) min lezen" }, image: { "Afbeelding: \($0)" }, publie: { "Gepubliceerd op \($0)" },
+            lireSur: { "Lees het artikel op \($0) →" },
+            legende: {
+                switch $0 {
+                case .liens: return "Hoe de kernelementen van het artikel samenhangen."
+                case .chronologie: return "De gebeurtenissen van het artikel in de tijd."
+                case .echanges: return "De uitwisselingen tussen de actoren van het artikel."
+                case .themes: return "De thema's van het artikel."
+                case .repartition: return "De cijfers uit het artikel."
+                case .noms: return "De namen in het artikel, per groep."
+                }
+            })
+        case "ru": return Textes(
+            surtitre: "Конспект статьи", enBref: "Коротко", enChiffres: "В цифрах", quiEstCite: "Кто упоминается",
+            schema: "Схема", texteIntegral: "Полный текст", pointsCles: "Ключевые моменты", articleOrigine: "Исходная статья",
+            personnes: "Персоны", organisations: "Организации", lieux: "Места", autres: "Прочее",
+            lireOriginal: "Читать оригинал ↗", titreOriginal: "Исходный заголовок", foi: "Машинный перевод; приоритет имеет исходная статья.",
+            resumeAuto: "Краткое изложение, составленное автоматически по тексту статьи.", chapeau: "Лид статьи.",
+            chapeauTraduit: "Лид статьи, в переводе.", surligne: "В тексте каждое имя выделено цветом своей группы.",
+            figure: "Рисунок", schemaNote: "Схема, составленная автоматически по тексту статьи.",
+            chiffresNote: "Каждая цифра приведена точно так, как в тексте.", publicationCitee: "Цитируемая публикация",
+            lecture: { "\($0) мин чтения" }, image: { "Изображение: \($0)" }, publie: { "Опубликовано \($0)" },
+            lireSur: { "Читать статью на \($0) →" },
+            legende: {
+                switch $0 {
+                case .liens: return "Как связаны ключевые элементы статьи."
+                case .chronologie: return "События статьи во времени."
+                case .echanges: return "Обмены между участниками статьи."
+                case .themes: return "Темы статьи."
+                case .repartition: return "Цифры, приведённые в статье."
+                case .noms: return "Имена, упомянутые в статье, по группам."
+                }
+            })
+        case "uk": return Textes(
+            surtitre: "Конспект статті", enBref: "Коротко", enChiffres: "У цифрах", quiEstCite: "Хто згадується",
+            schema: "Схема", texteIntegral: "Повний текст", pointsCles: "Ключові моменти", articleOrigine: "Оригінальна стаття",
+            personnes: "Особи", organisations: "Організації", lieux: "Місця", autres: "Інше",
+            lireOriginal: "Читати оригінал ↗", titreOriginal: "Оригінальний заголовок", foi: "Машинний переклад; пріоритет має оригінальна стаття.",
+            resumeAuto: "Стислий виклад, складений автоматично за текстом статті.", chapeau: "Лід статті.",
+            chapeauTraduit: "Лід статті, у перекладі.", surligne: "У тексті кожне ім’я виділено кольором його групи.",
+            figure: "Рисунок", schemaNote: "Схема, складена автоматично за текстом статті.",
+            chiffresNote: "Кожна цифра наведена точно так, як у тексті.", publicationCitee: "Цитована публікація",
+            lecture: { "\($0) хв читання" }, image: { "Зображення: \($0)" }, publie: { "Опубліковано \($0)" },
+            lireSur: { "Читати статтю на \($0) →" },
+            legende: {
+                switch $0 {
+                case .liens: return "Як пов’язані ключові елементи статті."
+                case .chronologie: return "Події статті в часі."
+                case .echanges: return "Обміни між учасниками статті."
+                case .themes: return "Теми статті."
+                case .repartition: return "Цифри, наведені в статті."
+                case .noms: return "Імена, згадані в статті, за групами."
+                }
+            })
+        case "tr": return Textes(
+            surtitre: "Okuma notu", enBref: "Kısaca", enChiffres: "Rakamlarla", quiEstCite: "Kimlerden söz ediliyor",
+            schema: "Şema", texteIntegral: "Tam metin", pointsCles: "Önemli noktalar", articleOrigine: "Özgün makale",
+            personnes: "Kişiler", organisations: "Kuruluşlar", lieux: "Yerler", autres: "Diğerleri",
+            lireOriginal: "Orijinalini oku ↗", titreOriginal: "Özgün başlık", foi: "Makine çevirisi; özgün makale esastır.",
+            resumeAuto: "Makalenin metninden otomatik olarak hazırlanan özet.", chapeau: "Makalenin girişi.",
+            chapeauTraduit: "Makalenin girişi, çeviri.", surligne: "Metinde her ad, grubunun rengiyle vurgulanır.",
+            figure: "Şekil", schemaNote: "Makalenin metninden otomatik olarak hazırlanan şema.",
+            chiffresNote: "Her rakam metindeki haliyle aktarılmıştır.", publicationCitee: "Alıntılanan yayın",
+            lecture: { "\($0) dk okuma" }, image: { "Görsel: \($0)" }, publie: { "Yayın tarihi: \($0)" },
+            lireSur: { "Makaleyi \($0) üzerinde oku →" },
+            legende: {
+                switch $0 {
+                case .liens: return "Makalenin temel öğelerinin nasıl bağlandığı."
+                case .chronologie: return "Makaledeki olayların zaman içindeki akışı."
+                case .echanges: return "Makaledeki aktörler arasındaki alışverişler."
+                case .themes: return "Makalenin temaları."
+                case .repartition: return "Makalede verilen rakamlar."
+                case .noms: return "Makalede geçen adlar, gruba göre."
+                }
+            })
+        case "vi": return Textes(
+            surtitre: "Phiếu đọc", enBref: "Tóm tắt", enChiffres: "Qua các con số", quiEstCite: "Những ai được nhắc đến",
+            schema: "Sơ đồ", texteIntegral: "Toàn văn", pointsCles: "Điểm chính", articleOrigine: "Bài viết gốc",
+            personnes: "Người", organisations: "Tổ chức", lieux: "Địa điểm", autres: "Khác",
+            lireOriginal: "Đọc bản gốc ↗", titreOriginal: "Tiêu đề gốc", foi: "Bản dịch máy; bài viết gốc là căn cứ.",
+            resumeAuto: "Bản tóm tắt được lập tự động từ nội dung bài viết.", chapeau: "Phần dẫn của bài viết.",
+            chapeauTraduit: "Phần dẫn của bài viết, đã dịch.", surligne: "Trong văn bản, mỗi tên được tô màu theo nhóm của nó.",
+            figure: "Hình", schemaNote: "Sơ đồ được lập tự động từ nội dung bài viết.",
+            chiffresNote: "Mỗi con số được trích nguyên văn từ bài viết.", publicationCitee: "Ấn phẩm được trích dẫn",
+            lecture: { "\($0) phút đọc" }, image: { "Ảnh: \($0)" }, publie: { "Đăng ngày \($0)" },
+            lireSur: { "Đọc bài viết trên \($0) →" },
+            legende: {
+                switch $0 {
+                case .liens: return "Cách các yếu tố chính của bài viết liên kết với nhau."
+                case .chronologie: return "Các sự kiện của bài viết theo thời gian."
+                case .echanges: return "Các trao đổi giữa những nhân vật trong bài viết."
+                case .themes: return "Các chủ đề của bài viết."
+                case .repartition: return "Các con số mà bài viết đưa ra."
+                case .noms: return "Các tên được nhắc đến trong bài viết, theo nhóm."
+                }
+            })
+        case "hi": return Textes(
+            surtitre: "पठन नोट", enBref: "संक्षेप में", enChiffres: "आँकड़ों में", quiEstCite: "किसका ज़िक्र है",
+            schema: "आरेख", texteIntegral: "पूरा पाठ", pointsCles: "मुख्य बिंदु", articleOrigine: "मूल लेख",
+            personnes: "व्यक्ति", organisations: "संगठन", lieux: "स्थान", autres: "अन्य",
+            lireOriginal: "मूल पढ़ें ↗", titreOriginal: "मूल शीर्षक", foi: "मशीन अनुवाद; मूल लेख ही मान्य है।",
+            resumeAuto: "लेख के पाठ से स्वतः तैयार किया गया सारांश।", chapeau: "लेख का आमुख।",
+            chapeauTraduit: "लेख का आमुख, अनूदित।", surligne: "पाठ में हर नाम उसके समूह के रंग में हाइलाइट किया गया है।",
+            figure: "चित्र", schemaNote: "लेख के पाठ से स्वतः तैयार किया गया आरेख।",
+            chiffresNote: "हर आँकड़ा पाठ से ज्यों का त्यों लिया गया है।", publicationCitee: "उद्धृत प्रकाशन",
+            lecture: { "\($0) मिनट का पाठ" }, image: { "चित्र: \($0)" }, publie: { "\($0) को प्रकाशित" },
+            lireSur: { "\($0) पर लेख पढ़ें →" },
+            legende: {
+                switch $0 {
+                case .liens: return "लेख के मुख्य तत्व आपस में कैसे जुड़े हैं।"
+                case .chronologie: return "समय के साथ लेख की घटनाएँ।"
+                case .echanges: return "लेख के पात्रों के बीच आदान-प्रदान।"
+                case .themes: return "लेख के विषय।"
+                case .repartition: return "लेख में दिए गए आँकड़े।"
+                case .noms: return "लेख में आए नाम, समूह के अनुसार।"
+                }
+            })
         case "en": return Textes(
             surtitre: "Reading notes", enBref: "In brief", enChiffres: "By the numbers", quiEstCite: "Who is mentioned",
             schema: "The diagram", texteIntegral: "The full text", pointsCles: "Key points", articleOrigine: "The original article",
@@ -168,7 +379,7 @@ enum FicheArticle {
                 case .noms: return "I nomi citati nell'articolo, per gruppo."
                 }
             })
-        default: return Textes(
+        case "fr": return Textes(
             surtitre: "Fiche de lecture", enBref: "En bref", enChiffres: "En chiffres", quiEstCite: "Qui est cité",
             schema: "Le schéma", texteIntegral: "Le texte intégral", pointsCles: "Points clés", articleOrigine: "L'article d'origine",
             personnes: "Personnes", organisations: "Organisations", lieux: "Lieux", autres: "Autres",
@@ -189,6 +400,7 @@ enum FicheArticle {
                 case .noms: return "Les noms cités dans l'article, par famille."
                 }
             })
+        default: return textes("en")
         }
     }
 
@@ -196,8 +408,11 @@ enum FicheArticle {
     static func nomLangue(_ code: String, dans langue: String) -> String {
         let doc = String(langue.prefix(2)).lowercased()
         let brut = Locale(identifier: doc).localizedString(forLanguageCode: String(code.prefix(2)).lowercased()) ?? code
-        // Les noms de langue prennent une minuscule en français, en espagnol et en italien.
-        return ["fr", "es", "it"].contains(doc) ? brut.lowercased() : brut.prefix(1).uppercased() + brut.dropFirst()
+        // Les noms de langue prennent une minuscule en français, en espagnol, en italien, en portugais, en russe et en
+        // ukrainien ; en vietnamien, seul « tiếng » en prend une (« tiếng Anh »). Les écritures sans casse n'y changent rien.
+        if ["fr", "es", "it", "pt", "ru", "uk"].contains(doc) { return brut.lowercased() }
+        if doc == "vi" { return brut.prefix(1).lowercased() + brut.dropFirst() }
+        return brut.prefix(1).uppercased() + brut.dropFirst()
     }
 
     /// « Traduit de l'anglais », « Translated from English », « Aus dem Englischen übersetzt »…
@@ -208,6 +423,18 @@ enum FicheArticle {
         case "en": return "Translated from \(nom)"
         case "de": return "Aus dem \(nom)en übersetzt"
         case "es": return "Traducido del \(nom)"
+        // ⭐ 1.7.4 ⑥ : les dix langues de md Viewer. Le russe et l'ukrainien déclinent le nom de langue (« с
+        // английского ») : la tournure « langue d'origine — … » garde le nominatif que donne `Locale`.
+        case "ja": return "\(nom)から翻訳"
+        case "ko": return "\(nom)에서 번역됨"
+        case "zh": return "译自\(nom)"
+        case "pt": return "Traduzido do \(nom)"
+        case "nl": return "Vertaald uit het \(nom)"
+        case "ru": return "Перевод; язык оригинала — \(nom)"
+        case "uk": return "Переклад; мова оригіналу — \(nom)"
+        case "tr": return "\(nom) dilinden çevrildi"
+        case "vi": return "Dịch từ \(nom)"
+        case "hi": return "\(nom) से अनुवादित"
         case "it":
             let lo = nom.hasPrefix("s") && nom.dropFirst().first.map { !"aeiou".contains($0) } == true || nom.hasPrefix("z")
             return voyelle ? "Tradotto dall'\(nom)" : (lo ? "Tradotto dallo \(nom)" : "Tradotto dal \(nom)")
@@ -221,7 +448,18 @@ enum FicheArticle {
         switch String(langue.prefix(2)).lowercased() {
         case "en", "it": return "in \(nom)"
         case "de": return "auf \(nom)"
-        default: return "en \(nom)"
+        case "es", "fr": return "en \(nom)"
+        case "ja": return "\(nom)"
+        case "ko": return "\(nom)"
+        case "zh": return "\(nom)"
+        case "pt": return "em \(nom)"
+        case "nl": return "in het \(nom)"
+        case "ru": return "язык: \(nom)"
+        case "uk": return "мова: \(nom)"
+        case "tr": return "\(nom)"
+        case "vi": return "bằng \(nom)"
+        case "hi": return "\(nom) में"
+        default: return "in \(nom)"
         }
     }
 
@@ -711,6 +949,10 @@ enum FicheArticle {
         case "en": return "“\(s)”"
         case "de": return "„\(s)“"
         case "fr": return "«\u{00A0}\(s)\u{00A0}»"
+        case "ja": return "「\(s)」"
+        case "ko", "zh", "pt", "tr", "vi", "hi": return "“\(s)”"
+        case "nl": return "‘\(s)’"
+        case "ru", "uk": return "«\(s)»"
         default: return "«\(s)»"
         }
     }
