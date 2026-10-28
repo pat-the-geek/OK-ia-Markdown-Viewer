@@ -1379,6 +1379,11 @@
         var marker = L.marker([mk.lat, mk.lng], { icon: icon }).addTo(map);
         if (mk.label) {
           marker.bindPopup('<strong>' + escapeHtml(mk.label) + '</strong>');
+          // Les cartes d'entités (1.4) : le nom à côté du marqueur, sans le toucher (Patrick, 28/10/2026).
+          if (cfg.etiquettes) {
+            marker.bindTooltip(escapeHtml(mk.label), { permanent: true, direction: 'right',
+                                                        offset: [8, -20], className: 'okia-etiquette' });
+          }
           el._okiaMarqueurs.push({ marker: marker, label: mk.label });
         }
         if (mk.link) {
@@ -1386,6 +1391,18 @@
         }
         pts.push([mk.lat, mk.lng]);
       });
+
+      // Les noms, tant qu'ils se lisent : soixante marqueurs dans la vue au plus. Au-delà (le monde
+      // entier, trois cents lieux), ils se chevauchent ; on les retrouve en zoomant.
+      if (cfg.etiquettes) {
+        var lisibles = function () {
+          var b = map.getBounds(), n = 0;
+          for (var k = 0; k < pts.length; k++) if (b.contains(pts[k])) n++;
+          el.classList.toggle('okia-etiquettes-cachees', n > 60);
+        };
+        map.on('moveend zoomend', lisibles);
+        setTimeout(lisibles, 0);
+      }
 
       // View: explicit center/zoom wins; otherwise fit to the markers; else world.
       if (cfg.lat != null && cfg.lng != null && isFinite(cfg.lat) && isFinite(cfg.lng)) {
@@ -3261,6 +3278,7 @@
         var trad = table[m.label];
         if (!trad) return;
         m.marker.setPopupContent('<strong>' + escapeHtml(trad) + '</strong>');
+        if (m.marker.getTooltip()) m.marker.setTooltipContent(escapeHtml(trad));
         faits++;
       });
     });
@@ -3291,6 +3309,7 @@
     container.querySelectorAll('.okia-map').forEach(function (el) {
       (el._okiaMarqueurs || []).forEach(function (m) {
         m.marker.setPopupContent('<strong>' + escapeHtml(m.label) + '</strong>');
+        if (m.marker.getTooltip()) m.marker.setTooltipContent(escapeHtml(m.label));
       });
     });
 

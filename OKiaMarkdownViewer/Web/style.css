@@ -693,6 +693,19 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   border-radius: 8px;
 }
 .okia-map .leaflet-popup-content { font: inherit; }
+/* Le nom d'une entité à côté de son marqueur (cartes d'entités, 1.4). */
+.okia-map .leaflet-tooltip.okia-etiquette {
+  background: var(--card-bg);
+  color: var(--fg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  font: 600 11px/1.3 -apple-system, system-ui, sans-serif;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.okia-map .leaflet-tooltip.okia-etiquette::before { display: none; }
+.okia-map.okia-etiquettes-cachees .leaflet-tooltip.okia-etiquette { display: none; }
 
 @media (prefers-color-scheme: dark) {
   .okia-map .leaflet-container { background: #23232a; }

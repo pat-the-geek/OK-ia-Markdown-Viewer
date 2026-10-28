@@ -11,23 +11,42 @@ struct AnalyseCoffreView: View {
     @ObservedObject private var analyse = AnalyseCoffre.partage
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var vue: Vue = .entites
+    @State private var vue: Vue = .galerie
+    /// Le tri des entités dans chaque genre, retenu d'une ouverture à l'autre.
+    @AppStorage("okia.coffre.tri") private var tri: Tri = .mentions
     @State private var recherche = ""
     @State private var genre: TypeEntite?
     @State private var chemin: [AnalyseCoffre.EntiteCoffre] = []
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
+    /// La liste, la galerie (grandes photos) et la carte ; liste et galerie groupées par genre (Patrick,
+    /// 28/10/2026 : « groupées par genre, triées dans l'ordre alphabétique ou du nombre d'occurrences,
+    /// en mode galerie avec une image plus grande »).
     enum Vue: String, CaseIterable, Identifiable {
-        case entites, carte
+        case liste, galerie, carte
         var id: String { rawValue }
-        var libelle: String { self == .entites ? tr("Entités") : tr("Carte") }
+        var libelle: String {
+            switch self {
+            case .liste: return tr("Liste")
+            case .galerie: return tr("Galerie")
+            case .carte: return tr("Carte")
+            }
+        }
+    }
+
+    enum Tri: String, CaseIterable, Identifiable {
+        case mentions, alphabetique
+        var id: String { rawValue }
+        var libelle: String { self == .mentions ? tr("Par nombre de mentions") : tr("Par ordre alphabétique") }
+        var symbole: String { self == .mentions ? "number" : "textformat.abc" }
     }
 
     var body: some View {
         NavigationStack(path: $chemin) {
             Group {
                 switch vue {
-                case .entites: liste
+                case .liste: liste
+                case .galerie: galerie
                 case .carte: carte
                 }
             }
@@ -54,7 +73,7 @@ struct AnalyseCoffreView: View {
                 ForEach(Vue.allCases) { v in Text(v.libelle).tag(v) }
             }
             .pickerStyle(.segmented)
-            .frame(maxWidth: 260)
+            .frame(maxWidth: 320)
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
@@ -63,6 +82,9 @@ struct AnalyseCoffreView: View {
                     ForEach(genresPresents, id: \.self) { t in
                         Label(tr(t.libelle), systemImage: t.symbole).tag(TypeEntite?.some(t))
                     }
+                }
+                Picker(tr("Trier"), selection: $tri) {
+                    ForEach(Tri.allCases) { t in Label(t.libelle, systemImage: t.symbole).tag(t) }
                 }
                 Divider()
                 Button { analyse.oublier(); analyse.analyser(vault) } label: {
@@ -113,15 +135,73 @@ struct AnalyseCoffreView: View {
         }
     }
 
+    /// Les entités retenues, par genre (dans l'ordre des genres), triées dans chacun.
+    private var groupes: [(type: TypeEntite, entites: [AnalyseCoffre.EntiteCoffre])] {
+        let parType = Dictionary(grouping: filtrees, by: \.entite.type)
+        return TypeEntite.allCases.compactMap { t in
+            guard let liste = parType[t], !liste.isEmpty else { return nil }
+            let triees = liste.sorted { a, b in
+                if tri == .mentions, a.mentions != b.mentions { return a.mentions > b.mentions }
+                return a.entite.nom.localizedStandardCompare(b.entite.nom) == .orderedAscending
+            }
+            return (t, triees)
+        }
+    }
+
+    private func entete(_ t: TypeEntite, _ n: Int) -> some View {
+        Label(tr(t.libelle) + " · \(n)", systemImage: t.symbole)
+            .font(.headline)
+            .foregroundStyle(t.couleur)
+    }
+
+    @ViewBuilder private var aucune: some View {
+        ContentUnavailableView(tr("Aucune entité"), systemImage: "person.2",
+                               description: Text(tr("Les rapports du coffre ne nomment encore personne.")))
+    }
+
     @ViewBuilder private var liste: some View {
         if analyse.entites.isEmpty, analyse.etat == .fini {
-            ContentUnavailableView(tr("Aucune entité"), systemImage: "person.2",
-                                   description: Text(tr("Les rapports du coffre ne nomment encore personne.")))
+            aucune
         } else {
-            List(filtrees) { e in
-                NavigationLink(value: e) { LigneEntiteCoffre(entite: e) }
+            List {
+                ForEach(groupes, id: \.type) { g in
+                    Section {
+                        ForEach(g.entites) { e in
+                            NavigationLink(value: e) { LigneEntiteCoffre(entite: e) }
+                        }
+                    } header: {
+                        entete(g.type, g.entites.count).textCase(nil)
+                    }
+                }
             }
             .listStyle(.plain)
+            .searchable(text: $recherche, prompt: tr("Chercher un nom"))
+        }
+    }
+
+    /// Des cartes de 170 à 240 points, la photo en grand.
+    private let colonnes = [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 16, alignment: .top)]
+
+    @ViewBuilder private var galerie: some View {
+        if analyse.entites.isEmpty, analyse.etat == .fini {
+            aucune
+        } else {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 26) {
+                    ForEach(groupes, id: \.type) { g in
+                        VStack(alignment: .leading, spacing: 12) {
+                            entete(g.type, g.entites.count)
+                            LazyVGrid(columns: colonnes, alignment: .leading, spacing: 18) {
+                                ForEach(g.entites) { e in
+                                    NavigationLink(value: e) { CarteEntiteCoffre(entite: e) }
+                                        .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+            }
             .searchable(text: $recherche, prompt: tr("Chercher un nom"))
         }
     }
@@ -144,6 +224,28 @@ struct AnalyseCoffreView: View {
                         .padding(.bottom, EntitesView.margeSources)
                 }
         }
+    }
+}
+
+/// Une carte de la galerie : la photo en grand, le nom, combien de documents, et ses mentions.
+private struct CarteEntiteCoffre: View {
+    let entite: AnalyseCoffre.EntiteCoffre
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            VignetteEntite(entite: entite.entite, taille: 170, rond: false)
+                .overlay(alignment: .topTrailing) { PastilleMentions(n: entite.mentions).padding(6) }
+                .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+            Text(entite.entite.nom)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+            Text(tr("%d documents", entite.presences.count) + " · " + tr("depuis le %@", entite.premiere.dateCourte))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .contentShape(Rectangle())
     }
 }
 

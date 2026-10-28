@@ -262,7 +262,9 @@ final class AnalyseEntites: ObservableObject {
             return ["lat": lat, "lng": lon, "label": e.nom, "link": e.nom]
         }
         let cfg: [String: Any] = ["markers": marqueurs, "lat": NSNull(), "lng": NSNull(), "zoom": NSNull(),
-                                  "minZoom": 1, "maxZoom": 18, "height": "420px", "defaultTiles": NSNull()]
+                                  "minZoom": 1, "maxZoom": 18, "height": "420px", "defaultTiles": NSNull(),
+                                  // Le nom à côté de chaque marqueur (render.js).
+                                  "etiquettes": true]
         let data = (try? JSONSerialization.data(withJSONObject: cfg)) ?? Data()
         return data.base64EncodedString()
     }
