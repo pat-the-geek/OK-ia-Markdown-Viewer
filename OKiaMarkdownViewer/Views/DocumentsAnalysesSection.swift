@@ -11,7 +11,6 @@ struct DocumentsAnalysesSection: View {
     let documents: [DocumentAnalyse]
     var ouvrir: (URL) -> Void
     @ObservedObject private var achat = AchatAnalytic.partage
-    @EnvironmentObject private var store: DocumentStore
     @ObservedObject private var loc = Localization.shared
     /// Au-delà, la liste renvoie à Fichiers.
     private let plafond = 30
@@ -30,24 +29,9 @@ struct DocumentsAnalysesSection: View {
                     Section {
                         ForEach(groupe.elements) { d in ligne(d) }
                     } header: {
+                        // La recherche et l'analyse du coffre sont dans la barre de l'accueil.
                         if rang == 0 {
-                            HStack {
-                                Text(tr("Documents analysés") + " · " + groupe.titre)
-                                Spacer()
-                                // La recherche dans tout le coffre couvre aussi les documents analysés.
-                                Button { NotificationCenter.default.post(name: .okiaRechercheCoffre, object: store) } label: {
-                                    Image(systemName: "magnifyingglass")
-                                }
-                                .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
-                                .accessibilityLabel(tr("Rechercher dans le coffre"))
-                                // L'analyse du coffre aussi (28/10) : sans coffre choisi, c'est d'ici
-                                // seulement qu'on l'ouvre sur iPhone et iPad.
-                                Button { NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: store) } label: {
-                                    Image(systemName: "chart.dots.scatter")
-                                }
-                                .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
-                                .accessibilityLabel(tr("Analyser le coffre"))
-                            }
+                            Text(tr("Documents analysés") + " · " + groupe.titre)
                         } else {
                             Text(groupe.titre)
                         }

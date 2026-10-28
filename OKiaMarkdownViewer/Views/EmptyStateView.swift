@@ -72,6 +72,24 @@ struct EmptyStateView: View {
             .teinteBarre()
             .accessibilityLabel(tr("Réglages"))
         }
+        // Option Analytic (1.4) : la recherche et l'analyse de tout le coffre, en vue dans la barre
+        // plutôt que dans les en-têtes des listes (Patrick, 28/10/2026 : « les mettre en valeur »).
+        // Sans l'option, elles mènent à la vitrine.
+        if !vault.reports.isEmpty || !analyses.isEmpty {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button { NotificationCenter.default.post(name: .okiaRechercheCoffre, object: store) } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .teinteBarre()
+                .accessibilityLabel(tr("Rechercher dans le coffre"))
+                Button { NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: store) } label: {
+                    Image(systemName: "chart.dots.scatter")
+                }
+                .teinteBarre()
+                .accessibilityLabel(tr("Analyser le coffre"))
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+        }
         ToolbarItemGroup(placement: .primaryAction) {
             Button(action: onSample) { Image(systemName: "doc.text.image") }
                 .teinteBarre()

@@ -3,7 +3,6 @@ import SwiftUI
 /// Home-screen section listing the Markdown reports found in the watched vault folder.
 struct VaultSectionView: View {
     @ObservedObject var vault: VaultStore
-    @EnvironmentObject private var store: DocumentStore
     var onPick: () -> Void
     var onOpen: (VaultReport) -> Void
 
@@ -38,17 +37,6 @@ struct VaultSectionView: View {
                 .accessibilityLabel(tr("Réglages du coffre"))
                 .popover(isPresented: $showSettings) {
                     settingsControls.presentationCompactAdaptation(.popover)
-                }
-                // Option Analytic (1.4) : la recherche et l'analyse de tout le coffre.
-                if !vault.reports.isEmpty {
-                    Button { NotificationCenter.default.post(name: .okiaRechercheCoffre, object: store) } label: {
-                        Image(systemName: "magnifyingglass")
-                    }
-                    .accessibilityLabel(tr("Rechercher dans le coffre"))
-                    Button { NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: store) } label: {
-                        Image(systemName: "chart.dots.scatter")
-                    }
-                    .accessibilityLabel(tr("Analyser le coffre"))
                 }
                 Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
             }
