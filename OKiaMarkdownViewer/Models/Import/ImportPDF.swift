@@ -16,8 +16,11 @@ import Vision
 /// - Les **pages scannées** (une image, sans couche de texte) sont lues par la reconnaissance de
 ///   texte de l'appareil (Vision), puis traitées comme les autres ; une page dont on ne tire presque
 ///   rien (photo, schéma, écriture illisible) est gardée en image (Patrick, 26/10/2026).
-/// Les images d'une page à texte ne sont pas reprises : un PDF ne dit pas où finit une image et où
-/// commence le décor.
+/// - Les **colonnes** : une page en deux ou trois colonnes se lit colonne après colonne ; une ligne
+///   qui les traverse (titre, tableau, légende) coupe la page en bandes (Patrick, 28/10/2026).
+/// - Les **figures** d'une page à texte (photos, graphiques, schémas) : ce que la page dessine hors de
+///   ses lignes de texte, assez grand pour ne pas être un filet ou un logo, est repris en image à sa
+///   place ; le texte posé dessus (les libellés d'un graphique) part avec elle (28/10/2026).
 enum ImportPDF {
 
     /// En dessous, une page passe pour scannée : un numéro de page ou un tampon ne fait pas un texte.
@@ -38,7 +41,11 @@ enum ImportPDF {
         for i in 0..<pdf.pageCount {
             guard let page = pdf.page(at: i) else { pages.append([]); continue }
             var lignes = Self.lignes(page)
-            if lignes.reduce(0, { $0 + $1.texte.count }) < seuilPageScannee {
+            let largeur = Double(page.bounds(for: .mediaBox).width)
+            if lignes.reduce(0, { $0 + $1.texte.count }) >= seuilPageScannee {
+                lignes = Self.avecFigures(lignes, page: page, index: i, reservoir: reservoir)
+            }
+            if lignes.reduce(0, { $0 + $1.texte.count }) < seuilPageScannee, !lignes.contains(where: { $0.image != nil }) {
                 await suivi?(AvancementImport(etape: tr("Reconnaissance du texte"), fait: i + 1, total: pdf.pageCount,
                                               dernier: tr("Page %d", i + 1)))
                 let lues = Self.reconnaitre(page, index: i)
@@ -52,7 +59,7 @@ enum ImportPDF {
             } else if i % 5 == 0 || i == pdf.pageCount - 1 {
                 await suivi?(AvancementImport(etape: tr("Pages"), fait: i + 1, total: pdf.pageCount, dernier: nil))
             }
-            pages.append(lignes)
+            pages.append(Self.ordreDeLecture(lignes, largeur: largeur))
         }
         guard pages.contains(where: { !$0.isEmpty }) || !imagesDePage.isEmpty else { throw Erreur.sansTexte }
         // Les tailles lues sur une image ne sont pas des tailles de police : on les ramène à l'échelle
@@ -77,14 +84,42 @@ enum ImportPDF {
         var paragraphe: [String] = []
         var liste: [String] = []
         var titre: String?
+        // Une figure posée au milieu d'une phrase (la colonne continue plus loin) attend, avec sa
+        // légende, que le paragraphe se termine : la phrase ne se coupe pas sur une photo.
+        var apres: [String] = []
+        var legende: [String] = []
+        var corpsAvantFigure: Int?
         func fermer() {
             if !paragraphe.isEmpty { blocs.append(MarkdownImport.debutDeLigne(Self.recoller(paragraphe))); paragraphe = [] }
             if !liste.isEmpty { blocs.append(liste.joined(separator: "\n")); liste = [] }
+            if !legende.isEmpty { apres.append(MarkdownImport.debutDeLigne(Self.recoller(legende))); legende = [] }
+            corpsAvantFigure = nil
+            blocs += apres
+            apres = []
         }
+        func finDePhrase(_ t: String) -> Bool { [".", ":", "!", "?"].contains { t.hasSuffix($0) } }
         for (i, lignes) in pages.enumerated() {
             if let img = imagesDePage[i] { fermer(); blocs.append(img) }
             var precedente: Ligne?
             for l in lignes where !decor.contains(Self.cle(l)) {
+                if let image = l.image {
+                    if let fin = paragraphe.last, !finDePhrase(fin), let p = precedente {
+                        if !legende.isEmpty { apres.append(MarkdownImport.debutDeLigne(Self.recoller(legende))); legende = [] }
+                        apres.append(image)
+                        corpsAvantFigure = p.taille
+                        continue
+                    }
+                    fermer()
+                    blocs.append(image)
+                    precedente = nil
+                    continue
+                }
+                // La légende d'une figure qui attend : plus petite que le texte qu'elle interrompt.
+                if let corps = corpsAvantFigure {
+                    if l.taille < corps - 1 { legende.append(Self.enForme(l.texte, l)); continue }
+                    if !legende.isEmpty { apres.append(MarkdownImport.debutDeLigne(Self.recoller(legende))); legende = [] }
+                    corpsAvantFigure = nil
+                }
                 let cle = KeywordMatcher.normalize(l.texte)
                 // La suite d'un titre lu sur une image (« a démissionné, … » sous « Un employé de… ») :
                 // même taille à un quart près, juste dessous — elle le continue, minuscule comprise.
@@ -113,8 +148,12 @@ enum ImportPDF {
                     precedente = l.titre()
                     continue
                 }
-                let ecart = precedente.map { l.haut - $0.bas } ?? .infinity
+                var ecart = precedente.map { l.haut - $0.bas } ?? .infinity
                 let interligne = Double(l.taille) * 0.75
+                // Remonté en haut de la colonne suivante : la phrase continue, sauf si elle était finie.
+                if ecart < -Double(l.taille) * 2, let fin = paragraphe.last, finDePhrase(fin) { ecart = .infinity }
+                // Un changement net de taille (une légende, un encadré) ouvre un paragraphe.
+                if let p = precedente, abs(p.taille - l.taille) >= 2 { ecart = .infinity }
                 if let (reste, numero) = Self.puce(l.texte) {
                     if !paragraphe.isEmpty { fermer() }
                     let marque = numero.map { "\($0)." } ?? "-"
@@ -169,6 +208,7 @@ enum ImportPDF {
         var haut: Double
         var bas: Double
         var gauche: Double
+        var droite: Double
         /// La taille de police la plus répandue de la ligne, arrondie au point.
         var taille: Int
         var gras: Bool
@@ -177,6 +217,8 @@ enum ImportPDF {
         var estTitre = false
         /// Lue par la reconnaissance de texte : sa taille n'est qu'approchée.
         var reconnue = false
+        /// Une figure de la page, en Markdown : la « ligne » n'est que sa place.
+        var image: String?
 
         func titre() -> Ligne { var l = self; l.estTitre = true; return l }
 
@@ -229,7 +271,8 @@ enum ImportPDF {
             let haut = (1 - b.maxY) * boite.height, bas = (1 - b.minY) * boite.height
             // La hauteur d'une ligne reconnue couvre jambages et accents : la police en vaut ~80 %.
             let taille = max(1, Int(((bas - haut) * 0.8).rounded()))
-            var l = Ligne(texte: texte, haut: haut, bas: bas, gauche: b.minX * boite.width, taille: taille,
+            var l = Ligne(texte: texte, haut: haut, bas: bas, gauche: b.minX * boite.width,
+                          droite: b.maxX * boite.width, taille: taille,
                           gras: false, italique: false, page: index)
             l.reconnue = true
             return l
@@ -254,7 +297,7 @@ enum ImportPDF {
         }
     }
 
-    private static func lignes(_ page: PDFPage) -> [Ligne] {
+    static func lignes(_ page: PDFPage) -> [Ligne] {
         let boite = page.bounds(for: .mediaBox)
         guard let tout = page.selection(for: boite) else { return [] }
         let index = page.document.map { $0.index(for: page) } ?? 0
@@ -277,6 +320,7 @@ enum ImportPDF {
                 total += n
             }
             r.append(Ligne(texte: texte, haut: boite.maxY - b.maxY, bas: boite.maxY - b.minY, gauche: b.minX,
+                           droite: b.maxX,
                            taille: tailles.max(by: { $0.value < $1.value })?.key ?? 11,
                            gras: total > 0 && grasCar * 10 >= total * 9,
                            italique: total > 0 && italiqueCar * 10 >= total * 9, page: index))
@@ -285,12 +329,367 @@ enum ImportPDF {
         return r.sorted { abs($0.haut - $1.haut) < 2 ? $0.gauche < $1.gauche : $0.haut < $1.haut }
     }
 
+    // MARK: Colonnes
+
+    /// L'ordre de lecture d'une page : de haut en bas, sauf sur une page en colonnes, lue colonne
+    /// après colonne. Les colonnes se voient aux couloirs verticaux que les lignes de texte ne
+    /// traversent pas. Une ligne qui traverse un couloir (titre, ligne de tableau, figure large)
+    /// ferme la bande en cours : on lit ses colonnes, puis cette ligne, puis la bande suivante.
+    static func ordreDeLecture(_ lignes: [Ligne], largeur: Double) -> [Ligne] {
+        let triees = lignes.sorted { abs($0.haut - $1.haut) < 2 ? $0.gauche < $1.gauche : $0.haut < $1.haut }
+        let couloirs = Self.couloirs(triees, largeur: largeur)
+        guard !couloirs.isEmpty else { return triees }
+        // La colonne d'une ligne ; nil si elle les traverse. Une figure qui déborde d'une colonne (un
+        // graphique un peu plus large que son texte) reste à celle qui en porte les trois quarts.
+        let bornes = [0.0] + couloirs + [largeur]
+        func colonne(_ l: Ligne) -> Int? {
+            let parts = (0..<bornes.count - 1).map { k in
+                max(0, min(l.droite, bornes[k + 1]) - max(l.gauche, bornes[k]))
+            }
+            let total = max(l.droite - l.gauche, 1)
+            guard let k = parts.indices.max(by: { parts[$0] < parts[$1] }) else { return nil }
+            if l.image != nil { return parts[k] >= total * 0.7 ? k : nil }
+            return couloirs.contains { l.gauche < $0 - 3 && l.droite > $0 + 3 } ? nil : k
+        }
+        // Une ligne de tableau (trois cases ou plus à la même hauteur) se lit d'une traite.
+        var parRangee: [Int: Int] = [:]
+        for l in triees { parRangee[Int(l.haut.rounded()), default: 0] += 1 }
+        func rangee(_ l: Ligne) -> Bool {
+            let h = Int(l.haut.rounded())
+            return (parRangee[h] ?? 0) + (parRangee[h - 1] ?? 0) + (parRangee[h + 1] ?? 0) >= 3
+        }
+        var r: [Ligne] = []
+        var bande: [[Ligne]] = Array(repeating: [], count: couloirs.count + 1)
+        func vider() {
+            for c in bande.indices { r += bande[c]; bande[c] = [] }
+        }
+        for l in triees {
+            if let k = colonne(l), l.image != nil || !rangee(l) {
+                bande[k].append(l)
+            } else {
+                vider()
+                r.append(l)
+            }
+        }
+        vider()
+        return r
+    }
+
+    /// Les couloirs entre colonnes (leur abscisse), dans le tiers central de la page au sens large :
+    /// des bandes d'au moins 6 points que presque aucune ligne de texte ne traverse, avec assez de
+    /// lignes de part et d'autre. Seules comptent les lignes de prose, faites de lettres : les libellés
+    /// courts d'un graphique ou les chiffres d'un tableau débordent dans le couloir.
+    static func couloirs(_ lignes: [Ligne], largeur: Double) -> [Double] {
+        let prose = lignes.filter { l in
+            l.image == nil && l.texte.count >= 20 && l.droite - l.gauche < largeur * 0.6
+                && l.texte.filter(\.isLetter).count * 10 >= l.texte.count * 6
+        }
+        guard prose.count >= 10, largeur > 100 else { return [] }
+        let pas = 2.0, n = Int(largeur / pas) + 1
+        var couverture = [Int](repeating: 0, count: n)
+        for l in prose {
+            let a = max(0, Int(l.gauche / pas)), b = min(n - 1, Int(l.droite / pas))
+            if a <= b { for k in a...b { couverture[k] += 1 } }
+        }
+        let tolere = max(1, prose.count / 12)
+        var r: [Double] = []
+        var k = Int(largeur * 0.2 / pas)
+        let fin = Int(largeur * 0.8 / pas)
+        while k <= fin {
+            guard couverture[k] <= tolere else { k += 1; continue }
+            var j = k
+            while j + 1 < n, couverture[j + 1] <= tolere { j += 1 }
+            let a = Double(k) * pas, b = Double(j + 1) * pas, x = (a + b) / 2
+            if b - a >= 6,
+               prose.filter({ $0.droite <= x }).count >= 4, prose.filter({ $0.gauche >= x }).count >= 4 {
+                r.append(x)
+            }
+            k = j + 1
+        }
+        return r
+    }
+
+    // MARK: Figures
+
+    /// Les figures d'une page à texte, chacune en « ligne » à sa place ; le texte posé sur une figure
+    /// (libellés, axes, légende intégrée) est retiré, il est dans l'image.
+    static func avecFigures(_ lignes: [Ligne], page: PDFPage, index: Int, reservoir: ReservoirImages) -> [Ligne] {
+        let (visibles, cadres) = figures(page, lignes: lignes)
+        let lignes = visibles
+        guard !cadres.isEmpty else { return lignes }
+        let boite = page.bounds(for: .mediaBox)
+        // Le rendu de la page à l'échelle des figures : 1600 px pour la plus large, trois fois au plus.
+        let plusLarge = cadres.map(\.width).max() ?? boite.width
+        let k = min(3, ImagesImport.coteMax / max(plusLarge, 1))
+        guard let rendu = Self.image(page, largeur: (boite.width * k).rounded())?.cgImage else { return lignes }
+        let kx = CGFloat(rendu.width) / boite.width, ky = CGFloat(rendu.height) / boite.height
+        var r = lignes.filter { l in
+            !cadres.contains { $0.contains(CGPoint(x: (l.gauche + l.droite) / 2, y: (l.haut + l.bas) / 2)) }
+        }
+        for (n, c) in cadres.enumerated() {
+            let pixels = CGRect(x: c.minX * kx, y: c.minY * ky, width: c.width * kx, height: c.height * ky).integral
+            guard let morceau = rendu.cropping(to: pixels),
+                  let jpeg = UIImage(cgImage: morceau).jpegData(compressionQuality: ImagesImport.qualite),
+                  let ref = reservoir.reference("page-\(index + 1)-figure-\(n + 1).jpg", donnees: { jpeg }) else { continue }
+            var l = Ligne(texte: "", haut: c.minY, bas: c.maxY, gauche: c.minX, droite: c.maxX,
+                          taille: 0, gras: false, italique: false, page: index)
+            l.image = "![\(tr("Page %d", index + 1))][\(ref)]"
+            r.append(l)
+        }
+        return r
+    }
+
+    /// Les cadres des figures d'une page, comptés depuis le haut de la page : la page est rendue à un
+    /// point par pixel, ses lignes de texte effacées ; ce qui reste d'encre, regroupé à 8 points près,
+    /// fait une figure s'il mesure au moins 60 × 40 points. Un bloc de prose (un encadré sur fond de
+    /// couleur, le titre ou la source d'un graphique) n'en fait jamais partie : son texte reste du texte.
+    /// Le rendu dit aussi quelles lignes se voient : un texte qui ne laisse aucune trace sur la page
+    /// (les libellés d'un graphique masqué, blanc sur blanc) est écarté (28/10/2026).
+    static func figures(_ page: PDFPage, lignes: [Ligne]) -> (visibles: [Ligne], cadres: [CGRect]) {
+        let boite = page.bounds(for: .mediaBox)
+        let w = Int(boite.width.rounded()), h = Int(boite.height.rounded())
+        guard w > 50, h > 50, let cg = Self.image(page, largeur: CGFloat(w))?.cgImage else { return (lignes, []) }
+        var px = [UInt8](repeating: 255, count: w * h * 4)
+        let dessine = px.withUnsafeMutableBytes { tampon -> Bool in
+            guard let ctx = CGContext(data: tampon.baseAddress, width: w, height: h, bitsPerComponent: 8,
+                                      bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        guard dessine else { return (lignes, []) }
+        // Une ligne se voit si son cadre n'est pas d'une seule teinte, là où aucune ligne plus grande
+        // ne la recouvre : deux textes ne se superposent pas, le plus petit est caché.
+        var plusGrande = [Int](repeating: 0, count: w * h)
+        func cadre(_ l: Ligne) -> (Int, Int, Int, Int)? {
+            let x0 = max(0, Int(l.gauche)), x1 = min(w - 1, Int(l.droite.rounded(.up)))
+            let y0 = max(0, Int(l.haut)), y1 = min(h - 1, Int(l.bas.rounded(.up)))
+            return x0 < x1 && y0 < y1 ? (x0, x1, y0, y1) : nil
+        }
+        for l in lignes { if let (x0, x1, y0, y1) = cadre(l) {
+            for y in y0...y1 { for x in x0...x1 { plusGrande[y * w + x] = max(plusGrande[y * w + x], l.taille) } }
+        } }
+        let visibles = lignes.filter { l in
+            guard let (x0, x1, y0, y1) = cadre(l) else { return true }
+            var bas = 255 * 3, haut = 0
+            for y in y0...y1 { for x in x0...x1 where plusGrande[y * w + x] <= l.taille {
+                let i = (y * w + x) * 4
+                let v = Int(px[i]) + Int(px[i + 1]) + Int(px[i + 2])
+                bas = min(bas, v); haut = max(haut, v)
+            } }
+            return haut - bas > 60
+        }
+        // Le fond : la couleur la plus répandue de la page.
+        var freq: [Int: Int] = [:]
+        for i in stride(from: 0, to: w * h * 4, by: 4 * 7) {
+            freq[Int(px[i] >> 4) << 8 | Int(px[i + 1] >> 4) << 4 | Int(px[i + 2] >> 4), default: 0] += 1
+        }
+        let fond = freq.max { $0.value < $1.value }?.key ?? 0xFFF
+        let fr = (fond >> 8 & 0xF) * 16 + 8, fv = (fond >> 4 & 0xF) * 16 + 8, fb = (fond & 0xF) * 16 + 8
+        // Le texte effacé : ses cadres ne comptent pas comme encre (la ligne 0 du tampon est le haut de la page).
+        var texte = [Bool](repeating: false, count: w * h)
+        for l in lignes {
+            let x0 = max(0, Int(l.gauche) - 2), x1 = min(w - 1, Int(l.droite) + 2)
+            let y0 = max(0, Int(l.haut) - 1), y1 = min(h - 1, Int(l.bas) + 1)
+            guard x0 <= x1, y0 <= y1 else { continue }
+            for y in y0...y1 { for x in x0...x1 { texte[y * w + x] = true } }
+        }
+        // L'encre, par cases de 4 points.
+        let c = 4, cw = (w + c - 1) / c, ch = (h + c - 1) / c
+        var encre = [Bool](repeating: false, count: cw * ch)
+        var compte = [Int](repeating: 0, count: cw * ch)
+        for y in 0..<h {
+            for x in 0..<w where !texte[y * w + x] {
+                let i = (y * w + x) * 4
+                if abs(Int(px[i]) - fr) + abs(Int(px[i + 1]) - fv) + abs(Int(px[i + 2]) - fb) > 60 {
+                    compte[(y / c) * cw + x / c] += 1
+                }
+            }
+        }
+        for i in compte.indices where compte[i] >= 3 { encre[i] = true }
+        let encreBrute = encre
+        // Les filets et les bandes de décor (un liseré au bord de la page, le trait sous un titre) :
+        // cinq cases d'épaisseur au plus (20 points) sur une grande longueur. Ils ne font pas une figure, et
+        // ils en soudaient d'autres entre elles.
+        var enLigne = [Int](repeating: 0, count: cw * ch), enColonne = [Int](repeating: 0, count: cw * ch)
+        for y in 0..<ch {
+            var x = 0
+            while x < cw {
+                guard encre[y * cw + x] else { x += 1; continue }
+                var f = x
+                while f + 1 < cw, encre[y * cw + f + 1] { f += 1 }
+                for k in x...f { enLigne[y * cw + k] = f - x + 1 }
+                x = f + 1
+            }
+        }
+        for x in 0..<cw {
+            var y = 0
+            while y < ch {
+                guard encre[y * cw + x] else { y += 1; continue }
+                var f = y
+                while f + 1 < ch, encre[(f + 1) * cw + x] { f += 1 }
+                for k in y...f { enColonne[k * cw + x] = f - y + 1 }
+                y = f + 1
+            }
+        }
+        for i in encre.indices where encre[i] {
+            if (enLigne[i] <= 5 && enColonne[i] >= 25) || (enColonne[i] <= 5 && enLigne[i] >= 25) { encre[i] = false }
+        }
+        // Regrouper : deux cases d'encre à 8 points l'une de l'autre sont d'une même figure.
+        var etendue = encre
+        for y in 0..<ch { for x in 0..<cw where encre[y * cw + x] {
+            for dy in -2...2 { for dx in -2...2 {
+                let yy = y + dy, xx = x + dx
+                if yy >= 0, yy < ch, xx >= 0, xx < cw { etendue[yy * cw + xx] = true }
+            } }
+        } }
+        var vu = [Bool](repeating: false, count: cw * ch)
+        var trouves: [CGRect] = []
+        for depart in etendue.indices where etendue[depart] && !vu[depart] {
+            var pile = [depart]; vu[depart] = true
+            var minX = Int.max, minY = Int.max, maxX = -1, maxY = -1
+            while let i = pile.popLast() {
+                let x = i % cw, y = i / cw
+                if encre[i] { minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y) }
+                for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                    let xx = x + dx, yy = y + dy
+                    guard xx >= 0, xx < cw, yy >= 0, yy < ch else { continue }
+                    let j = yy * cw + xx
+                    if etendue[j], !vu[j] { vu[j] = true; pile.append(j) }
+                }
+            }
+            guard maxX >= 0 else { continue }
+            trouves.append(CGRect(x: minX * c, y: minY * c, width: (maxX - minX + 1) * c, height: (maxY - minY + 1) * c))
+        }
+        // Un cadre dans un autre (le contour d'un graphique et son tracé) ou qui le chevauche : une figure.
+        var fusionnes = true
+        while fusionnes {
+            fusionnes = false
+            outer: for i in trouves.indices { for j in trouves.indices where j > i && trouves[i].intersects(trouves[j]) {
+                trouves[i] = trouves[i].union(trouves[j]); trouves.remove(at: j); fusionnes = true; break outer
+            } }
+        }
+        // L'encre restée dans un rectangle : son cadre au plus juste.
+        func serre(_ z: CGRect) -> CGRect? {
+            let x0 = max(0, Int(z.minX) / c), x1 = min(cw - 1, Int(z.maxX - 1) / c)
+            let y0 = max(0, Int(z.minY) / c), y1 = min(ch - 1, Int(z.maxY - 1) / c)
+            guard x0 <= x1, y0 <= y1 else { return nil }
+            var a = Int.max, b = Int.max, e = -1, f = -1
+            for y in y0...y1 { for x in x0...x1 where encre[y * cw + x] { a = min(a, x); e = max(e, x); b = min(b, y); f = max(f, y) } }
+            return e < 0 ? nil : CGRect(x: a * c, y: b * c, width: (e - a + 1) * c, height: (f - b + 1) * c)
+        }
+        func dedans(_ z: CGRect) -> [Ligne] {
+            visibles.filter { z.contains(CGPoint(x: ($0.gauche + $0.droite) / 2, y: ($0.haut + $0.bas) / 2)) }
+        }
+        func estProse(_ l: Ligne) -> Bool { l.texte.count >= 25 }
+        // Le corps de la page : la taille la plus répandue de son texte.
+        var parTaille: [Int: Int] = [:]
+        for l in visibles { parTaille[l.taille, default: 0] += l.texte.count }
+        let corps = parTaille.max { $0.value < $1.value }?.key ?? 11
+        var r: [CGRect] = []
+        for depart in trouves {
+            let poses = dedans(depart)
+            // Un tableau (des rangées de trois cases ou plus, dont des mots) n'est pas une figure :
+            // ses filets ne font pas une image, son texte reste du texte.
+            var rangees: [Int: [Ligne]] = [:]
+            for l in poses { rangees[Int(l.haut.rounded()), default: []].append(l) }
+            let rangeesDeTableau = rangees.values.filter { r in
+                r.count >= 3 && r.filter { $0.texte.filter(\.isLetter).count >= 4 }.count >= 2
+            }.count
+            guard rangeesDeTableau < 2 else { continue }
+            // Les blocs de prose posés dans le cadre (un encadré collé à une photo, le titre ou la
+            // source d'un graphique) : des lignes longues, voisines, regroupées.
+            // Une ligne longue seule (un titre de graphique, une entrée de légende) reste dans l'image.
+            var blocsProse: [(cadre: CGRect, lignes: Int)] = []
+            for l in poses where estProse(l) {
+                var b = (cadre: CGRect(x: l.gauche, y: l.haut, width: l.droite - l.gauche, height: l.bas - l.haut), lignes: 1)
+                let marge = { (z: CGRect) in z.insetBy(dx: -6, dy: -(l.bas - l.haut) * 0.8) }
+                while let k = blocsProse.firstIndex(where: { $0.cadre.intersects(marge(b.cadre)) }) {
+                    let o = blocsProse.remove(at: k)
+                    b = (b.cadre.union(o.cadre), b.lignes + o.lignes)
+                }
+                blocsProse.append(b)
+            }
+            // Le texte de la page qui mord sur le bord du cadre (une colonne qui longe la photo) en
+            // sort aussi : une image ne coupe pas une ligne.
+            let mordent = visibles.filter { l in
+                let z = CGRect(x: l.gauche, y: l.haut, width: l.droite - l.gauche, height: l.bas - l.haut)
+                return z.intersects(depart) && !depart.contains(CGPoint(x: z.midX, y: z.midY))
+            }.map { CGRect(x: $0.gauche, y: $0.haut, width: $0.droite - $0.gauche, height: $0.bas - $0.haut) }
+            // La prose reste du texte : la figure est ce qui reste du cadre à côté d'elle (la plus
+            // grande des quatre bandes autour du bloc).
+            var cadre = depart
+            for p in blocsProse.filter({ $0.lignes >= 2 }).map(\.cadre) + mordent where p.intersects(cadre) {
+                let bandes = [CGRect(x: cadre.minX, y: cadre.minY, width: p.minX - 4 - cadre.minX, height: cadre.height),
+                              CGRect(x: p.maxX + 4, y: cadre.minY, width: cadre.maxX - p.maxX - 4, height: cadre.height),
+                              CGRect(x: cadre.minX, y: cadre.minY, width: cadre.width, height: p.minY - 4 - cadre.minY),
+                              CGRect(x: cadre.minX, y: p.maxY + 4, width: cadre.width, height: cadre.maxY - p.maxY - 4)]
+                    .filter { $0.width > 0 && $0.height > 0 }.compactMap(serre)
+                guard let plusGrande = bandes.max(by: { $0.width * $0.height < $1.width * $1.height }) else { cadre = .zero; break }
+                cadre = plusGrande
+            }
+            // Les libellés qui la bordent (axes, légende, crédit photo), courts et plus petits que le
+            // corps, sont de la figure ; un titre, une citation, une case de tableau restent du texte.
+            var agrandi = true
+            while agrandi {
+                agrandi = false
+                for l in visibles where l.texte.count <= 40 && !l.texte.hasSuffix(".") && l.taille <= corps - 2 {
+                    let z = CGRect(x: l.gauche, y: l.haut, width: l.droite - l.gauche, height: l.bas - l.haut)
+                    if !cadre.contains(z), cadre.insetBy(dx: -10, dy: -10).intersects(z) {
+                        cadre = cadre.union(z); agrandi = true
+                    }
+                }
+            }
+            // Assez grande, pas un filet ni une bande d'en-tête, et sans prose restée dedans.
+            guard cadre.width >= 60, cadre.height >= 40, cadre.width * cadre.height >= 6000,
+                  cadre.width <= cadre.height * 8 else { continue }
+            let restes = dedans(cadre)
+            // Les libellés courts ne comptent pas : un graphique en est fait.
+            let surface = restes.filter { $0.texte.count > 40 || $0.texte.hasSuffix(".") }
+                .reduce(0.0) { $0 + ($1.droite - $1.gauche) * ($1.bas - $1.haut) }
+            guard restes.filter(estProse).count <= 3, surface < Double(cadre.width * cadre.height) * 0.35 else { continue }
+            // Et pas un fond presque vide : un quarantième de ses cases au moins porte de l'encre (les
+            // trois courbes d'un graphique en lignes n'en couvrent guère plus).
+            let x0 = Int(cadre.minX) / c, x1 = min(cw - 1, Int(cadre.maxX - 1) / c)
+            let y0 = Int(cadre.minY) / c, y1 = min(ch - 1, Int(cadre.maxY - 1) / c)
+            var pleines = 0
+            for y in y0...y1 { for x in x0...x1 where encreBrute[y * cw + x] { pleines += 1 } }
+            guard pleines * 40 >= (x1 - x0 + 1) * (y1 - y0 + 1) else { continue }
+            // Une seule teinte presque partout (le fond d'un encadré, un bandeau de titre) : du décor.
+            var teintes: [Int: Int] = [:], total = 0
+            for y in Int(cadre.minY)..<min(h, Int(cadre.maxY)) {
+                for x in Int(cadre.minX)..<min(w, Int(cadre.maxX)) where !texte[y * w + x] {
+                    let i = (y * w + x) * 4
+                    guard abs(Int(px[i]) - fr) + abs(Int(px[i + 1]) - fv) + abs(Int(px[i + 2]) - fb) > 60 else { continue }
+                    teintes[Int(px[i] >> 4) << 8 | Int(px[i + 1] >> 4) << 4 | Int(px[i + 2] >> 4), default: 0] += 1
+                    total += 1
+                }
+            }
+            // Mesuré sur le bilan de législature de Fribourg (86 pages) : photos et graphiques sous 0,3 ;
+            // encadrés et bandeaux au-dessus de 0,66, ou de 0,45 avec moins de quinze teintes.
+            let dominante = Double(teintes.values.max() ?? 0) / Double(max(total, 1))
+            guard dominante < 0.66, teintes.count >= 15 || dominante < 0.45 else { continue }
+            r.append(cadre)
+        }
+        // Deux figures qui se touchent (un graphique et son axe de droite) n'en font qu'une.
+        var fusion = true
+        while fusion {
+            fusion = false
+            boucle: for i in r.indices { for j in r.indices where j > i && r[i].insetBy(dx: -14, dy: -14).intersects(r[j]) {
+                r[i] = r[i].union(r[j]); r.remove(at: j); fusion = true; break boucle
+            } }
+        }
+        return (visibles, r)
+    }
+
     // MARK: Décor, signets, puces
 
     /// La clé d'une ligne pour reconnaître le décor : son texte sans chiffres (« Page 3 sur 12 »)
     /// et sa hauteur sur la page, à 10 points près.
     private static func cle(_ l: Ligne) -> String {
-        "\(Int(l.haut / 10))|" + l.texte.filter { !$0.isNumber }.trimmingCharacters(in: .whitespaces)
+        // Une figure : sa place et sa taille — le logo qui revient sur chaque page.
+        if l.image != nil { return "img|\(Int(l.haut / 10))|\(Int(l.gauche / 10))|\(Int((l.droite - l.gauche) / 10))|\(Int((l.bas - l.haut) / 10))" }
+        return "\(Int(l.haut / 10))|" + l.texte.filter { !$0.isNumber }.trimmingCharacters(in: .whitespaces)
     }
 
     /// Les lignes qui reviennent au même endroit sur au moins la moitié des pages (trois au moins),
