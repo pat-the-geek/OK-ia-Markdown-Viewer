@@ -1,10 +1,11 @@
 import SwiftUI
 import CryptoKit
 
-/// L'accueil en grand format (Mac, iPad) : une grille de cartes, chacune avec la vignette de son
-/// document, à la place des lignes (1.4, Patrick, 28/10/2026 : « sur Mac, un affichage plus
-/// spectaculaire avec des thumbnails de document »). Les sections, leurs intitulés et leurs menus
-/// restent ceux de la liste ; l'iPhone garde la liste.
+/// L'accueil en cartes : une grille, chaque carte avec la vignette de son document, à la place des
+/// lignes (1.4, Patrick, 28/10/2026 : « sur Mac, un affichage plus spectaculaire avec des
+/// thumbnails de document », puis « aussi sur iPhone petit écran »). Les sections, leurs
+/// intitulés et leurs menus restent ceux de la liste ; la liste revient aux tailles de texte
+/// d'accessibilité.
 extension EnvironmentValues {
     @Entry var accueilEnGrille = false
 }
@@ -200,13 +201,17 @@ final class ApercusDocuments {
 }
 
 /// La grille d'une section de l'accueil : des cartes de 190 à 260 points, autant que la largeur
-/// en admet. Dans la liste, sur le fond de la liste.
+/// en admet ; sur iPhone (et le Duo replié), de 140 à 220 points, deux par rangée au moins.
+/// Dans la liste, sur le fond de la liste.
 struct GrilleCartes<Contenu: View>: View {
+    @Environment(\.horizontalSizeClass) private var tailleHorizontale
     @ViewBuilder var contenu: () -> Contenu
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 190, maximum: 260), spacing: 20, alignment: .top)],
-                  alignment: .leading, spacing: 24, content: contenu)
+        let etroit = tailleHorizontale == .compact
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: etroit ? 140 : 190, maximum: etroit ? 220 : 260),
+                                     spacing: etroit ? 14 : 20, alignment: .top)],
+                  alignment: .leading, spacing: etroit ? 18 : 24, content: contenu)
             .padding(.vertical, 6)
             .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 12, trailing: 4))
             .listRowBackground(Color.clear)
@@ -283,7 +288,12 @@ struct CarteDocument<Menu: View>: View {
 
     @ViewBuilder private var badge: some View {
         if let o = apercu?.origine {
-            Label(o.libelle, systemImage: o.symbole)
+            // Pas un `Label` : dans une liste, il réserve à l'icône la colonne des lignes, et le
+            // mot partait loin de son icône.
+            HStack(spacing: 4) {
+                Image(systemName: o.symbole)
+                Text(o.libelle)
+            }
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)

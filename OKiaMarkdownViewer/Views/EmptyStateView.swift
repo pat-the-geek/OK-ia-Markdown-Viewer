@@ -18,8 +18,8 @@ struct EmptyStateView: View {
     @ObservedObject private var achat = AchatAnalytic.partage
     @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
-    /// En grand format (Mac, iPad), l'accueil montre des cartes avec vignettes.
-    @Environment(\.horizontalSizeClass) private var tailleHorizontale
+    /// L'accueil montre des cartes avec vignettes, sauf aux tailles de texte d'accessibilité.
+    @Environment(\.dynamicTypeSize) private var tailleTexte
     /// Le document dont on demande la suppression, en attente de confirmation.
     @State private var aSupprimer: Suppression?
     @State private var erreurSuppression: String?
@@ -45,7 +45,7 @@ struct EmptyStateView: View {
                 }
                 ForEach(Array(groupesRecents.enumerated()), id: \.element.id) { rang, groupe in
                     Section {
-                        if tailleHorizontale == .regular {
+                        if enGrille {
                             GrilleCartes { ForEach(groupe.elements) { item in carteRecente(item) } }
                         } else {
                             ForEach(groupe.elements) { item in ligneRecente(item) }
@@ -75,7 +75,7 @@ struct EmptyStateView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .environment(\.accueilEnGrille, tailleHorizontale == .regular)
+            .environment(\.accueilEnGrille, enGrille)
             .navigationTitle("md Viewer")
             .toolbar { barreAccueil }
         }
@@ -202,7 +202,12 @@ struct EmptyStateView: View {
         DecoupageParDate.grouper(recents, date: \.openedAt)
     }
 
-    /// Un récent en carte (grand format) : mêmes gestes que la ligne.
+    /// Les cartes partout, l'iPhone compris (Patrick, 28/10/2026 : « il faut utiliser des
+    /// thumbnails aussi sur iPhone petit écran ») ; la liste revient aux tailles de texte
+    /// d'accessibilité, où deux cartes côte à côte ne laissent plus lire les noms.
+    private var enGrille: Bool { !tailleTexte.isAccessibilitySize }
+
+    /// Un récent en carte : mêmes gestes que la ligne.
     private func carteRecente(_ item: RecentFile) -> some View {
         CarteDocument(nom: (item.name as NSString).deletingPathExtension,
                       mention: DecoupageParDate.mention(pour: item.openedAt),
