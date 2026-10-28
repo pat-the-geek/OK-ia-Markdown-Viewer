@@ -89,3 +89,11 @@ enum DecoupageParDate {
         }
     }
 }
+
+extension Date {
+    /// La date courte (« 28 oct. 2026 »), dans la langue de l'app et non dans celle de l'appareil
+    /// (28/10/2026 : « 28 ott 2026 » dans l'analyse du coffre d'une app réglée en français).
+    var dateCourte: String {
+        formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(Localization.shared.locale))
+    }
+}

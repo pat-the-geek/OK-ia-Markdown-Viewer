@@ -99,7 +99,7 @@ struct FicheEntiteView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(p.nom).lineLimit(2).multilineTextAlignment(.leading)
-                                Text(p.date.formatted(date: .abbreviated, time: .omitted))
+                                Text(p.date.dateCourte)
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()

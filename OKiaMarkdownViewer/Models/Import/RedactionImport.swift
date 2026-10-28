@@ -58,12 +58,21 @@ enum MoteurRedaction {
         return paragraphes.isEmpty ? nil : paragraphes.joined(separator: "\n\n")
     }
 
-    /// La langue d'un texte (code à deux lettres), le français à défaut.
-    static func langue(_ texte: String) -> String {
+    /// La langue d'un texte telle que le système la reconnaît (« ja », « zh-Hans », « pl »…), nil
+    /// s'il n'en reconnaît aucune.
+    static func langueReconnue(_ texte: String) -> String? {
         let r = NLLanguageRecognizer()
         r.processString(String(texte.prefix(4000)))
-        let code = r.dominantLanguage?.rawValue ?? "fr"
-        return ["fr", "en", "de", "es", "it"].contains(code) ? code : "fr"
+        return r.dominantLanguage?.rawValue
+    }
+
+    /// La langue dans laquelle rédiger à propos d'un texte : la sienne parmi les quinze de l'app,
+    /// sinon celle de l'app (28/10/2026 : seules cinq étaient reconnues, un Word japonais recevait un
+    /// rapport en français). Le russe, l'ukrainien et le hindi, que le modèle ne parle pas, donnent
+    /// l'anglais : les intitulés suivent la prose (`ConsignesAnalyste.langueDeRedaction`).
+    static func langue(_ texte: String) -> String {
+        let code = langueReconnue(texte).flatMap(Localization.langueDeLApp) ?? Localization.shared.code
+        return ConsignesAnalyste.langueDeRedaction(code)
     }
 }
 
@@ -240,20 +249,39 @@ enum RapportAnalyseImport {
         return (titre, lignes.joined(separator: "\n\n"))
     }
 
-    /// Les intitulés du rapport, dans la langue du document.
+    /// Les intitulés du rapport, dans la langue de rédaction (`MoteurRedaction.langue`).
     static func intitule(_ cle: String, _ langue: String) -> String {
         let table: [String: [String: String]] = [
-            "resume": ["fr": "Résumé exécutif", "en": "Executive summary", "de": "Zusammenfassung", "es": "Resumen ejecutivo", "it": "Sintesi"],
-            "points": ["fr": "Points clés", "en": "Key points", "de": "Kernpunkte", "es": "Puntos clave", "it": "Punti chiave"],
-            "humain": ["fr": "Dimension humaine", "en": "Human dimension", "de": "Menschliche Dimension", "es": "Dimensión humana", "it": "Dimensione umana"],
-            "perspectives": ["fr": "Perspectives", "en": "Outlook", "de": "Ausblick", "es": "Perspectivas", "it": "Prospettive"],
-            "critiques": ["fr": "Voix critiques", "en": "Critical voices", "de": "Kritische Stimmen", "es": "Voces críticas", "it": "Voci critiche"],
+            "resume": ["fr": "Résumé exécutif", "en": "Executive summary", "de": "Zusammenfassung", "es": "Resumen ejecutivo", "it": "Sintesi",
+                       "ja": "エグゼクティブサマリー", "ko": "핵심 요약", "zh-Hans": "执行摘要", "pt-BR": "Resumo executivo",
+                       "nl": "Samenvatting", "tr": "Yönetici özeti", "vi": "Tóm tắt tổng quan"],
+            "points": ["fr": "Points clés", "en": "Key points", "de": "Kernpunkte", "es": "Puntos clave", "it": "Punti chiave",
+                       "ja": "要点", "ko": "주요 내용", "zh-Hans": "要点", "pt-BR": "Pontos-chave",
+                       "nl": "Kernpunten", "tr": "Temel noktalar", "vi": "Điểm chính"],
+            "humain": ["fr": "Dimension humaine", "en": "Human dimension", "de": "Menschliche Dimension", "es": "Dimensión humana", "it": "Dimensione umana",
+                       "ja": "人間的な側面", "ko": "인간적 측면", "zh-Hans": "人的维度", "pt-BR": "Dimensão humana",
+                       "nl": "Menselijke dimensie", "tr": "İnsani boyut", "vi": "Khía cạnh con người"],
+            "perspectives": ["fr": "Perspectives", "en": "Outlook", "de": "Ausblick", "es": "Perspectivas", "it": "Prospettive",
+                             "ja": "展望", "ko": "전망", "zh-Hans": "展望", "pt-BR": "Perspectivas",
+                             "nl": "Vooruitzichten", "tr": "Görünüm", "vi": "Triển vọng"],
+            "critiques": ["fr": "Voix critiques", "en": "Critical voices", "de": "Kritische Stimmen", "es": "Voces críticas", "it": "Voci critiche",
+                          "ja": "批判的な声", "ko": "비판적 목소리", "zh-Hans": "批评声音", "pt-BR": "Vozes críticas",
+                          "nl": "Kritische stemmen", "tr": "Eleştirel sesler", "vi": "Ý kiến phản biện"],
             "avertissement": ["fr": "Rapport rédigé sur l’appareil par Apple Intelligence, à partir du seul document « %@ ». Il peut se tromper : relisez-le avant de vous en servir.",
                               "en": "Report written on device by Apple Intelligence, from the document “%@” alone. It can be wrong: review it before using it.",
                               "de": "Bericht, auf dem Gerät von Apple Intelligence verfasst, allein aus dem Dokument „%@“. Er kann irren: Prüfen Sie ihn vor der Verwendung.",
                               "es": "Informe redactado en el dispositivo por Apple Intelligence, a partir únicamente del documento «%@». Puede equivocarse: revíselo antes de usarlo.",
-                              "it": "Rapporto redatto sul dispositivo da Apple Intelligence, a partire dal solo documento «%@». Può sbagliare: rileggetelo prima di usarlo."],
-            "analyse": ["fr": "Analyse", "en": "Analysis", "de": "Analyse", "es": "Análisis", "it": "Analisi"],
+                              "it": "Rapporto redatto sul dispositivo da Apple Intelligence, a partire dal solo documento «%@». Può sbagliare: rileggetelo prima di usarlo.",
+                              "ja": "Apple Intelligence がデバイス上で、書類「%@」だけをもとに作成したレポートです。誤りを含むことがあります。使う前に読み返してください。",
+                              "ko": "Apple Intelligence가 기기에서 문서 ‘%@’만을 바탕으로 작성한 보고서입니다. 틀릴 수 있으니 사용하기 전에 다시 읽어 보세요.",
+                              "zh-Hans": "本报告由 Apple Intelligence 在设备上仅根据文档“%@”撰写。可能有误：使用前请先复核。",
+                              "pt-BR": "Relatório redigido no dispositivo pelo Apple Intelligence, a partir apenas do documento “%@”. Pode conter erros: revise-o antes de usá-lo.",
+                              "nl": "Rapport op het apparaat opgesteld door Apple Intelligence, uitsluitend op basis van het document ‘%@’. Het kan fouten bevatten: lees het na voordat je het gebruikt.",
+                              "tr": "Apple Intelligence tarafından cihazda, yalnızca “%@” belgesinden hazırlanan rapor. Hatalı olabilir: kullanmadan önce gözden geçirin.",
+                              "vi": "Báo cáo do Apple Intelligence soạn trên thiết bị, chỉ dựa vào tài liệu “%@”. Báo cáo có thể sai: hãy đọc lại trước khi sử dụng."],
+            "analyse": ["fr": "Analyse", "en": "Analysis", "de": "Analyse", "es": "Análisis", "it": "Analisi",
+                        "ja": "分析", "ko": "분석", "zh-Hans": "分析", "pt-BR": "Análise",
+                        "nl": "Analyse", "tr": "Analiz", "vi": "Phân tích"],
         ]
         return table[cle]?[langue] ?? table[cle]?["fr"] ?? cle
     }

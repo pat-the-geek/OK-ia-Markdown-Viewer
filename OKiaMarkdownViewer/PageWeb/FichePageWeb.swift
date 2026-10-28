@@ -45,7 +45,7 @@ enum FichePageWeb {
     static func produire(_ p: PageWeb, langue: String, wikidata: Bool, traducteur: TraducteurPonctuel?,
                          suivi: SuiviImport?) async -> (titre: String, markdown: String) {
         let texteOriginal = (p.blocs ?? []).filter { $0.t != "img" }.map(\.x).joined(separator: "\n\n")
-        let langueArticle = String((p.langue?.nonVide ?? MoteurRedaction.langue(texteOriginal)).prefix(2)).lowercased()
+        let langueArticle = String((p.langue?.nonVide ?? MoteurRedaction.langueReconnue(texteOriginal) ?? langue).prefix(2)).lowercased()
         let titreOriginal = p.titre?.nonVide ?? p.url
         let etapes = 6
         func etape(_ n: Int, _ quoi: String) async {

@@ -157,7 +157,7 @@ private struct LigneEntiteCoffre: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entite.entite.nom).font(.body.weight(.medium)).lineLimit(1)
                 Text(tr("%d documents", entite.presences.count) + " · "
-                     + tr("depuis le %@", entite.premiere.formatted(date: .abbreviated, time: .omitted)))
+                     + tr("depuis le %@", entite.premiere.dateCourte))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -185,8 +185,8 @@ private struct DetailEntiteCoffre: View {
                             Text(d).font(.subheadline)
                         }
                         Text(tr("Du %@ au %@",
-                                entite.premiere.formatted(date: .abbreviated, time: .omitted),
-                                entite.derniere.formatted(date: .abbreviated, time: .omitted)))
+                                entite.premiere.dateCourte,
+                                entite.derniere.dateCourte))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -198,7 +198,7 @@ private struct DetailEntiteCoffre: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(p.nom).lineLimit(2)
-                                Text(p.date.formatted(date: .abbreviated, time: .omitted))
+                                Text(p.date.dateCourte)
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
