@@ -319,6 +319,7 @@ struct ReaderView: View {
         .safeAreaInset(edge: .top, spacing: 0) { bandeauTraduction }
         .navigationTitle(title.isEmpty ? document.filename : title)
         .navigationBarTitleDisplayMode(.inline)
+        .barreSansReduction()
         // Sur Mac, une barre « éditeur » se range dans la barre de la fenêtre.
         .toolbarRole(.editor)
         #if !targetEnvironment(macCatalyst)
@@ -2507,6 +2508,24 @@ extension View {
         self
         #else
         tint(.primary)
+        #endif
+    }
+
+    /// La barre du lecteur ne se réduit pas au défilement. iOS 27 la réduit quand on descend et la
+    /// rétablit quand le sens s'inverse ; la zone sûre suit, la marge du haut de la page aussi, et
+    /// WebKit remet la page en place : un saut que le système prenait pour un défilement inverse.
+    /// La barre se rétablissait, se réduisait, quinze fois par seconde — le document tremblait
+    /// (Patrick, Duo replié, vidéo du 28/10/2026 : titre de la barre 9 points plus haut une image
+    /// sur deux, texte 12 points).
+    @ViewBuilder func barreSansReduction() -> some View {
+        #if targetEnvironment(macCatalyst)
+        self
+        #else
+        if #available(iOS 27.0, *) {
+            toolbarMinimizationBehavior(.never, for: .navigationBar)
+        } else {
+            self
+        }
         #endif
     }
 }
