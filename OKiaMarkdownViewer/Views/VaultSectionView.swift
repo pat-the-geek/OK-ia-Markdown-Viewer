@@ -5,6 +5,8 @@ struct VaultSectionView: View {
     @ObservedObject var vault: VaultStore
     var onPick: () -> Void
     var onOpen: (VaultReport) -> Void
+    /// Demande la suppression d'un rapport (l'accueil confirme).
+    var onDelete: (VaultReport) -> Void = { _ in }
 
     @State private var showSettings = false
     @State private var patternDraft = ""
@@ -77,6 +79,12 @@ struct VaultSectionView: View {
             }
         }
         .tint(.primary)
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) { onDelete(report) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
+        .contextMenu {
+            Button(role: .destructive) { onDelete(report) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
     }
 
     private var settingsControls: some View {

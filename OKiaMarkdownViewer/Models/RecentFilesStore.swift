@@ -66,6 +66,17 @@ final class RecentFilesStore: ObservableObject {
         return url
     }
 
+    /// Retire des récents le fichier qu'on va supprimer : son signet le suivrait jusqu'à la corbeille.
+    func retirer(url: URL) {
+        let chemin = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let avant = items.count
+        items.removeAll { item in
+            guard item.bookmark != nil, let u = resolve(item) else { return false }
+            return u.standardizedFileURL.resolvingSymlinksInPath().path == chemin
+        }
+        if items.count != avant { save() }
+    }
+
     func remove(_ item: RecentFile) {
         items.removeAll { $0.id == item.id }
         save()

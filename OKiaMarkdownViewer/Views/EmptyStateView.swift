@@ -18,7 +18,17 @@ struct EmptyStateView: View {
     @ObservedObject private var achat = AchatAnalytic.partage
     @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
+    /// Le document dont on demande la suppression, en attente de confirmation.
+    @State private var aSupprimer: Suppression?
+    @State private var erreurSuppression: String?
     @ObservedObject private var loc = Localization.shared
+
+    struct Suppression: Identifiable {
+        let nom: String
+        let duCoffre: Bool
+        let action: () throws -> Void
+        var id: String { nom }
+    }
 
     private var recents: [RecentFile] { recentsStore.items }
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
@@ -39,8 +49,19 @@ struct EmptyStateView: View {
                         Text(rang == 0 ? tr("Récents") + " · " + groupe.titre : groupe.titre)
                     }
                 }
-                DocumentsAnalysesSection(documents: analyses, ouvrir: onOpenAnalyse)
-                VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault)
+                DocumentsAnalysesSection(documents: analyses, ouvrir: onOpenAnalyse, supprimer: { d in
+                    aSupprimer = Suppression(nom: d.nom, duCoffre: false) {
+                        RecentFilesStore.partage.retirer(url: d.url)
+                        try SuppressionDocument.supprimer(d.url)
+                        analyses.removeAll { $0.url == d.url }
+                        RechercheCoffre.partage.indexerSpotlight()
+                    }
+                })
+                VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault, onDelete: { r in
+                    aSupprimer = Suppression(nom: (r.name as NSString).deletingPathExtension, duCoffre: true) {
+                        try vault.supprimer(r)
+                    }
+                })
                 Section {
                     EmptyView()
                 } footer: {
@@ -55,6 +76,24 @@ struct EmptyStateView: View {
         // Les documents analysés, relus à chaque retour à l'accueil (un import vient peut-être d'y entrer).
         .task(id: achat.acces) { analyses = await DocumentsAnalysesSection.charger() }
         .onAppear { Task { analyses = await DocumentsAnalysesSection.charger() } }
+        .confirmationDialog(tr("Supprimer « %@ » ?", aSupprimer?.nom ?? ""),
+                            isPresented: Binding(get: { aSupprimer != nil }, set: { if !$0 { aSupprimer = nil } }),
+                            titleVisibility: .visible, presenting: aSupprimer) { s in
+            Button(tr("Supprimer"), role: .destructive) {
+                do { try s.action() } catch { erreurSuppression = error.localizedDescription }
+            }
+            Button(tr("Annuler"), role: .cancel) {}
+        } message: { s in
+            Text(s.duCoffre
+                 ? tr("Le rapport est retiré du coffre « %@ », sur tous vos appareils.", vault.folderName ?? "")
+                 : tr("Le document est retiré du dossier « Documents analysés », sur tous vos appareils."))
+        }
+        .alert(tr("Impossible de supprimer le document."),
+               isPresented: Binding(get: { erreurSuppression != nil }, set: { if !$0 { erreurSuppression = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text(erreurSuppression ?? "")
+        }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }

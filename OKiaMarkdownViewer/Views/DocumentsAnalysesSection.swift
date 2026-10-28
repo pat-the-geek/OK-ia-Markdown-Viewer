@@ -10,6 +10,8 @@ import SwiftUI
 struct DocumentsAnalysesSection: View {
     let documents: [DocumentAnalyse]
     var ouvrir: (URL) -> Void
+    /// Demande la suppression d'un document (l'accueil confirme).
+    var supprimer: (DocumentAnalyse) -> Void = { _ in }
     @ObservedObject private var achat = AchatAnalytic.partage
     @ObservedObject private var loc = Localization.shared
     /// Au-delà, la liste renvoie à Fichiers.
@@ -66,6 +68,13 @@ struct DocumentsAnalysesSection: View {
         }
         // Comme les récents : le nom en noir, l'icône seule en orange.
         .tint(.primary)
+        // Supprimer : balayer vers la gauche, ou le menu contextuel (le clic droit sur Mac).
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) { supprimer(d) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
+        .contextMenu {
+            Button(role: .destructive) { supprimer(d) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
     }
 
     /// Le dossier se lit hors du fil principal : le conteneur iCloud peut se faire attendre. Rien

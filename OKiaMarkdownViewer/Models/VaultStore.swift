@@ -81,6 +81,21 @@ final class VaultStore: ObservableObject {
         resolveFolder()?.appendingPathComponent(report.subfolder).appendingPathComponent(report.name)
     }
 
+    /// Supprime un rapport du coffre (1.4), téléchargé ou encore dans iCloud, puis relit le coffre.
+    func supprimer(_ report: VaultReport) throws {
+        guard let root = resolveFolder() else { return }
+        let scoped = root.startAccessingSecurityScopedResource()
+        defer { if scoped { root.stopAccessingSecurityScopedResource() } }
+        let dossier = root.appendingPathComponent(report.subfolder)
+        var url = dossier.appendingPathComponent(report.name)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            url = dossier.appendingPathComponent("." + report.name + ".icloud")
+        }
+        RecentFilesStore.partage.retirer(url: dossier.appendingPathComponent(report.name))
+        try SuppressionDocument.supprimer(url)
+        refresh()
+    }
+
     /// Scan immediate subfolders matching `pattern` and collect their `.md` reports, newest first.
     func refresh() {
         guard let root = resolveFolder() else { reports = []; return }
