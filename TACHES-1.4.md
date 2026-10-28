@@ -379,6 +379,38 @@ d'ici ; à essayer sur B91.
       `md Viewer/Importés/2026/10/27/Apple - keynote.md` (fichier d'essai retiré ensuite). **Pas vu** :
       l'iPhone et l'iPad, le repli sans iCloud Drive.
 
+- [x] **Le texte rédigé à l'import dans la langue du document** (B108, 28/10) : `MoteurRedaction.langue`
+      reconnaît les quinze langues de l'app (sinon la langue de l'app) ; le russe, l'ukrainien et le hindi,
+      que le modèle ne parle pas, donnent l'anglais. Intitulés du rapport en douze langues. **Pas vu** :
+      Apple Intelligence est absente du simulateur.
+- [x] **PDF : les images et les graphiques** (B110, 28/10, Patrick : « les graphiques et les images ne sont
+      pas repris ») — la page rendue, son texte effacé ; l'encre restante, sans filets ni liserés, regroupée
+      à 8 points, fait une figure (60 × 40 points au moins). Ni un tableau, ni un encadré d'une seule teinte,
+      ni un bloc de prose n'en sont ; les petits libellés qui la bordent (axes, légende, crédit) en sont ;
+      le texte posé dessus part avec elle. Une figure au milieu d'une phrase attend, avec sa légende, la fin
+      du paragraphe. Le texte invisible (libellés d'un graphique masqué, texte caché sous un plus grand) est
+      écarté.
+- [x] **PDF : les colonnes dans l'ordre** (B110) : les couloirs que la prose ne traverse pas ; la page se lit
+      colonne après colonne, une ligne qui les traverse coupe la bande ; une phrase continue en haut de la
+      colonne suivante.
+- [x] **PDF : les tableaux** (B111) : une ligne de PDFKit est sondée point par point (`characterIndex(at:)`)
+      et coupée aux grands blancs — ⚠️ jamais par les indices de `characterBounds` ni de
+      `selection(for: NSRange)`, qui ne suivent pas le texte de la page. Des rangées de trois cases ou plus
+      font un tableau Markdown ; une case sur plusieurs lignes reste une case.
+- [x] **PDF : la table des matières** (28/10) : une entrée par ligne, en puce (« Préambule … 6 »), jamais un
+      titre ; les caractères de commande (U+0008 à la place des points de conduite) et les caractères privés
+      de police sont retirés.
+- [x] **Banc** `tools/BancPDF/banc.sh fichier.pdf` (Mac Catalyst, hors de l'app) : `BANC_PAGE`, `BANC_FIGURES`,
+      `BANC_CASES`. Réglé sur le bilan de législature 2022-2026 de l'État de Fribourg (86 pages) : 53 figures,
+      57 tableaux, 2,6 s. **Restes** : un tableau qui continue sur la page suivante sort en paragraphes ;
+      deux colonnes trop proches se fondent (4 tableaux sur 57) ; quelques figures gardent un liseré.
+- [x] **Un lien vers un PDF l'importe** (B112) : une adresse en .pdf ou annoncée `application/pdf` est
+      téléchargée (« %PDF » vérifié) et importée comme un fichier ; sans l'option, la vitrine, puis l'import
+      reprend après l'achat. Vérifié au simulateur avec le PDF de fr.ch.
+- [x] **Un document illustré s'ouvre en secondes** (B112) : `render.js` met de côté les images embarquées en
+      définitions de référence (`imagesEmbarquees`) et les pose après le rendu ; le moteur web du simulateur
+      tourne sans compilation (plus d'une minute pour 7 Mo, moins de cinq secondes ensuite).
+
 ## ④ ter Une page web, de Safari à md Viewer — demandé par Patrick le 26/10 (option payante)
 
 « Depuis Safari, on peut envoyer la page vers md Viewer qui prépare un rapport analytique de la page
@@ -426,6 +458,17 @@ page s'ouvre, puis l'option se présente.
 Vérifié au simulateur iPhone (`OKIA_PAGE`, article de The Verge) : grande image et pastilles, en-tête,
 en bref, en chiffres, qui est cité, schéma. Pas vu : le partage depuis Safari (extension), le Mac,
 Apple Intelligence (absente du simulateur).
+
+- [x] **Le bandeau des cookies n'est plus l'article** (B113, 28/10) : une classe Tailwind à valeur
+      (`[--sticky-top:var(--header-h)]`) faisait de tout l'article d'openai.com un en-tête ; ces classes ne
+      disent plus le rôle d'un élément, et le bandeau des cookies est reconnu quel que soit son nom.
+- [x] **md Viewer prend la page même déjà ouvert** (B114) : l'extension prévient l'app par une notification
+      Darwin (`BoitePages.signaler`) ; l'app relève la boîte dans la fenêtre active (Duo déplié, iPad
+      partagé, Mac).
+- [x] **Et à l'ouverture** (B115) : la fenêtre relève la boîte à son ouverture — sur Mac, l'app (version
+      iPad) démarre déjà au premier plan, sans passage à `.active`. **Pas vu** : le Mac et le Duo déplié
+      avec ces builds.
+
 
 ## ④ bis Annotations à l'Apple Pencil — quatrième lot, 25/10/2026
 
@@ -497,6 +540,11 @@ Apple Intelligence (absente du simulateur).
 relance → annotations retrouvées), iPhone 17 Pro Max (défilement à deux doigts, palette au-dessus de
 la recherche). Hook `OKIA_ANNOTER=surligner|souligner|ecrire|gomme`. **Pas vu** : un vrai crayon,
 le Mac (souris), le Duo.
+
+- [x] **La palette tient dans la largeur** (B112, 28/10, Patrick : coupée sur le Duo replié) : en ligne, en
+      ligne resserrée ou sur deux rangées (`ViewThatFits`), hors de la colonne d'outils du Duo. **Pas vu** :
+      le vrai Duo replié.
+
 
 ## ⑦ Donner de la valeur au Mac — décidé par Patrick le 27/10 (« on fera toutes tes idées de 1 à 7 »)
 
@@ -709,6 +757,20 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       Debug rouvrirait les vraies fenêtres de Patrick), deux fenêtres côte à côte à l'écran, une
       fenêtre restaurée au relancement, le routage des commandes du menu vers la fenêtre clé.
 
+- [x] **Les documents analysés dans l'analyse du coffre** (B106, 28/10) : entités, carte, fiche d'une
+      entité, Spotlight ; un toucher les ouvre. L'achat fait depuis la vitrine reprend l'action demandée
+      (`actionApresAchat`). **Pas vu** : un vrai achat.
+- [x] **Recherche et analyse du coffre dans la barre de l'accueil** (B107), plus dans les en-têtes.
+- [x] **Masquer ou montrer une diapositive de la présentation générée** (B109) : un œil sur chaque vignette ;
+      masquée, elle est grisée et barrée, et le diaporama la saute (écran, public, vue d'ensemble, export
+      PowerPoint) ; le fichier la garde, marquée `<!-- okia:masquee -->`. Pas depuis la vue d'ensemble d'un
+      diaporama ouvert.
+- [x] **Supprimer un document analysé ou un rapport du coffre depuis l'accueil** (B112) : balayer (iPhone,
+      iPad) ou clic droit (Mac), puis confirmer ; corbeille sur Mac, suppression ailleurs ; récents et
+      Spotlight suivent.
+- [x] **Dates de l'analyse du coffre dans la langue de l'app** (B108, `Date.dateCourte`).
+
+
 ## ⑤ Modèles plus poussés — sortis de la 1.4 (⓪ a dit non, 25/10)
 
 - [ ] ~~Private Cloud Compute~~, au choix explicite de l'utilisateur, document par document, jamais par
@@ -749,4 +811,6 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       les retrouver d'une recherche ; sans l'option, il en est retiré. Les photos des entités sont
       gardées dans les caches de l'app, sur l'appareil (60 Mo au plus). Les actions de Raccourcis et
       les Services macOS ne font rien partir : ils passent par les mêmes chemins que l'app.
+      **Et depuis le 28/10** : une adresse qui mène à un PDF (Safari qui montre un PDF, puis Partager) fait
+      télécharger ce PDF par md Viewer, comme un navigateur, pour l'importer sur l'appareil.
 - [ ] Fiche App Store, captures, notes de version, post Mastodon.
