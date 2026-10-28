@@ -46,7 +46,9 @@ struct PresentationConverterView: View {
                         Divider()
                         ChantierWebView(diapositives: conversion.diapositives,
                                         markdownFinal: conversion.markdownFinal,
-                                        prevues: conversion.prevues)
+                                        prevues: conversion.prevues,
+                                        masquees: conversion.masquees,
+                                        basculer: { conversion.basculer($0) })
                             .ignoresSafeArea(edges: [.bottom, .horizontal])
                     }
                 }
@@ -177,7 +179,10 @@ struct PresentationConverterView: View {
     }
 
     private func compte(_ r: ConversionEnCours.Fini) -> some View {
-        Label(tr("%d diapositives prêtes", r.diapositives), systemImage: "checkmark.circle")
+        Label(tr("%d diapositives prêtes", r.diapositives)
+              + (conversion.masquees.isEmpty ? "" : " · " + (conversion.masquees.count == 1
+                    ? tr("1 masquée") : tr("%d masquées", conversion.masquees.count))),
+              systemImage: "checkmark.circle")
             .font(.subheadline.weight(.semibold))
             .lineLimit(1)
     }
@@ -188,13 +193,13 @@ struct PresentationConverterView: View {
         }
         .buttonStyle(.bordered)
         .accessibilityLabel(tr("Recommencer"))
-        if let url = r.document.sourceURL {
+        if let url = conversion.document(r).sourceURL {
             ShareLink(item: url) { Image(systemName: "square.and.arrow.down") }
                 .buttonStyle(.bordered)
                 .accessibilityLabel(tr("Enregistrer le fichier .md"))
         }
         Button {
-            onPresenter(r.document)
+            onPresenter(conversion.document(r))
             // Dans une feuille, le diaporama attend qu'elle se referme ; dans la seconde
             // partie, il s'ouvre par-dessus, et les vignettes attendent son retour.
             if fermerPanneau == nil { dismiss() }
@@ -238,12 +243,15 @@ final class ConversionEnCours: ObservableObject {
     /// La présentation finie, telle qu'enregistrée : les vignettes s'y alignent une dernière fois.
     @Published private(set) var markdownFinal: String?
     @Published private(set) var prevues = 0
+    /// Les diapositives que l'utilisateur a masquées, par leur rang dans la présentation finie.
+    @Published private(set) var masquees: Set<Int> = []
     private var tache: Task<Void, Never>?
 
     func lancer(markdown: String, titre: String, diapositives: Int) {
         tache?.cancel()
         self.diapositives = []
         markdownFinal = nil
+        masquees = []
         prevues = diapositives
         etat = .enCours(etape: 0, total: 1, section: "", titres: [], prevues: diapositives)
         #if DEBUG
@@ -372,6 +380,26 @@ final class ConversionEnCours: ObservableObject {
         etat = .reglage
         diapositives = []
         markdownFinal = nil
+        masquees = []
+    }
+
+    /// Masquer ou montrer une diapositive de la présentation finie (Patrick, 28/10/2026). Il en
+    /// reste toujours une à montrer. Le fichier enregistré suit : la diapositive y reste, marquée,
+    /// et le diaporama la saute.
+    func basculer(_ i: Int) {
+        guard case .fini(let r) = etat, i >= 0, i < r.diapositives else { return }
+        if masquees.contains(i) { masquees.remove(i) }
+        else if masquees.count + 1 < r.diapositives { masquees.insert(i) }
+        else { return }
+        if let url = r.document.sourceURL { try? document(r).text.write(to: url, atomically: true, encoding: .utf8) }
+    }
+
+    /// La présentation telle qu'on la lance ou l'enregistre : les diapositives masquées marquées.
+    func document(_ r: Fini) -> MarkdownDocument {
+        guard !masquees.isEmpty else { return r.document }
+        return MarkdownDocument(filename: r.document.filename,
+                                text: DiapositivesMasquees.marquer(r.document.text, masquees: masquees),
+                                sourceURL: r.document.sourceURL)
     }
 
     #if canImport(FoundationModels)
@@ -405,12 +433,16 @@ struct ChantierWebView: UIViewRepresentable {
     /// La présentation finie, si elle l'est : elle remplace les diapositives envoyées en route.
     var markdownFinal: String?
     var prevues: Int
+    /// Une fois finie : les diapositives masquées, et le geste qui masque ou montre.
+    var masquees: Set<Int> = []
+    var basculer: (Int) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
         controller.add(context.coordinator, name: "presentReady")
+        controller.add(context.coordinator, name: "masquerDiapo")
         controller.addUserScript(WKUserScript(
             source: Localization.shared.scriptLangue,
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -433,19 +465,25 @@ struct ChantierWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        let charge: [String: Any] = markdownFinal.map { ["md": $0, "fini": true] }
+        context.coordinator.basculer = basculer
+        let charge: [String: Any] = markdownFinal.map { ["md": $0, "fini": true, "masquees": masquees.sorted()] }
             ?? ["slides": diapositives, "prevues": prevues, "fini": false]
         context.coordinator.envoyer(charge)
     }
 
     final class Coordinator: NSObject, WKScriptMessageHandler {
         weak var webView: WKWebView?
+        var basculer: (Int) -> Void = { _ in }
         private var pret = false
         private var enAttente: [String: Any]?
         private var dernier: Data?
 
         func userContentController(_ userContentController: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
+            if message.name == "masquerDiapo" {
+                if let i = (message.body as? [String: Any])?["index"] as? Int { basculer(i) }
+                return
+            }
             guard message.name == "presentReady" else { return }
             pret = true
             if let charge = enAttente { enAttente = nil; envoyer(charge) }
@@ -459,5 +497,42 @@ struct ChantierWebView: UIViewRepresentable {
             dernier = data
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.chantier(\(json));")
         }
+    }
+}
+
+/// Le marquage des diapositives masquées dans le fichier d'une présentation : un commentaire en tête
+/// de la diapositive, que `presentation.js` reconnaît (`MASQUEE`). Le découpage suit celui du
+/// diaporama (`splitSlides`) — séparateurs `---` hors des blocs de code, en-tête YAML à part,
+/// diapositives vides ignorées —, sinon le rang ne désignerait pas la même diapositive.
+enum DiapositivesMasquees {
+    static let marque = "<!-- okia:masquee -->"
+
+    static func marquer(_ markdown: String, masquees: Set<Int>) -> String {
+        var lignes = markdown.components(separatedBy: "\n")
+        var debut = 0
+        if lignes.first?.trimmingCharacters(in: .whitespaces) == "---",
+           let fin = lignes.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" }) {
+            debut = fin + 1
+        }
+        // Le premier rang non vide de chaque diapositive, dans l'ordre.
+        var tetes: [Int] = [], tete: Int?, cloture: String?
+        for i in debut..<lignes.count {
+            let t = lignes[i].trimmingCharacters(in: .whitespaces)
+            if let c = cloture {
+                if t.hasPrefix(c) { cloture = nil }
+            } else if t.hasPrefix("```") || t.hasPrefix("~~~") {
+                cloture = String(t.prefix(3))
+            } else if t.count >= 3, t.allSatisfy({ $0 == "-" }) {
+                if let h = tete { tetes.append(h) }
+                tete = nil
+                continue
+            }
+            if tete == nil, !t.isEmpty { tete = i }
+        }
+        if let h = tete { tetes.append(h) }
+        for (rang, h) in tetes.enumerated().reversed() where masquees.contains(rang) {
+            lignes.insert(marque, at: h)
+        }
+        return lignes.joined(separator: "\n")
     }
 }

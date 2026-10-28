@@ -90,6 +90,10 @@
     'Présenter sur un second écran': { en: 'Present on a second screen', de: 'Auf zweitem Bildschirm präsentieren',
                                        es: 'Presentar en una segunda pantalla', it: 'Presenta su un secondo schermo',
         ja: '2台目の画面で発表', ko: '보조 화면에서 발표', 'zh-Hans': '在第二个屏幕上演示', 'pt-BR': 'Apresentar em uma segunda tela', nl: 'Presenteer op een tweede scherm', ru: 'Показать на втором экране', uk: 'Показати на другому екрані', tr: 'İkinci ekranda sun', vi: 'Trình bày trên màn hình thứ hai', hi: 'दूसरी स्क्रीन पर प्रस्तुत करें' },
+    'Masquer la diapositive': { en: 'Hide slide', de: 'Folie ausblenden', es: 'Ocultar diapositiva', it: 'Nascondi diapositiva',
+        ja: 'スライドを非表示', ko: '슬라이드 가리기', 'zh-Hans': '隐藏幻灯片', 'pt-BR': 'Ocultar slide', nl: 'Verberg dia', ru: 'Скрыть слайд', uk: 'Приховати слайд', tr: 'Slaytı gizle', vi: 'Ẩn trang chiếu', hi: 'स्लाइड छिपाएँ' },
+    'Montrer la diapositive': { en: 'Show slide', de: 'Folie einblenden', es: 'Mostrar diapositiva', it: 'Mostra diapositiva',
+        ja: 'スライドを表示', ko: '슬라이드 보이기', 'zh-Hans': '显示幻灯片', 'pt-BR': 'Mostrar slide', nl: 'Toon dia', ru: 'Показать слайд', uk: 'Показати слайд', tr: 'Slaytı göster', vi: 'Hiện trang chiếu', hi: 'स्लाइड दिखाएँ' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
     'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta',
         ja: '書き出し', ko: '내보내기', 'zh-Hans': '导出', 'pt-BR': 'Exportar', nl: 'Exporteer', ru: 'Экспорт', uk: 'Експорт', tr: 'Dışa aktar', vi: 'Xuất', hi: 'एक्सपोर्ट करें' }
@@ -166,6 +170,11 @@
       return citees.length ? s + '\n\n' + citees.map(function (k) { return defs[k]; }).join('\n') : s;
     }).filter(function (s) { return s.length; });
   }
+
+  // Une diapositive masquée (1.4, Patrick, 28/10/2026 : « masquer les slides non désirées ») porte
+  // ce commentaire : elle reste dans le fichier, mais le diaporama ne la montre pas — ni à l'écran,
+  // ni au public, ni dans la vue d'ensemble, ni dans l'export PowerPoint.
+  var MASQUEE = /<!--\s*okia:masquee\s*-->/;
 
   /* ---- state -------------------------------------------------------------- */
 
@@ -1075,7 +1084,7 @@
     counter = el('counter');
     localizeChrome();
 
-    rawSlides = splitSlides(md || '');
+    rawSlides = splitSlides(md || '').filter(function (s) { return !MASQUEE.test(s); });
     if (!rawSlides.length) rawSlides = [' '];
     current = 0;
     build();
@@ -1260,6 +1269,31 @@
       for (var k = items.length - 1; k >= slides.length; k--) items[k].remove();
       chantierMd.length = Math.min(chantierMd.length, slides.length);
       caseEnAttente(slides.length + 1, !payload.fini && slides.length < (payload.prevues || 0));
+      poserMasquage(payload.fini, payload.masquees || []);
+    });
+  }
+
+  // La présentation finie : chaque vignette porte un bouton « Masquer » / « Montrer ». L'app tient
+  // la liste et la renvoie ; une vignette masquée est grisée et barrée.
+  var OEIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var OEIL_BARRE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
+  function poserMasquage(fini, masquees) {
+    var items = chantierEl.querySelectorAll('.chantier-item:not(.chantier-attente)');
+    Array.prototype.forEach.call(items, function (item, i) {
+      var frame = item.querySelector('.chantier-frame');
+      var bouton = frame.querySelector('.chantier-masquer');
+      if (!fini) { if (bouton) bouton.remove(); item.classList.remove('chantier-masquee'); return; }
+      var masquee = masquees.indexOf(i) !== -1;
+      item.classList.toggle('chantier-masquee', masquee);
+      if (!bouton) {
+        bouton = document.createElement('button');
+        bouton.className = 'chantier-masquer';
+        bouton.onclick = function (e) { e.stopPropagation(); post('masquerDiapo', { index: i }); };
+        frame.appendChild(bouton);
+      }
+      bouton.innerHTML = masquee ? OEIL_BARRE : OEIL;
+      bouton.setAttribute('aria-label', TXT(masquee ? 'Montrer la diapositive' : 'Masquer la diapositive'));
+      bouton.setAttribute('aria-pressed', masquee ? 'true' : 'false');
     });
   }
 

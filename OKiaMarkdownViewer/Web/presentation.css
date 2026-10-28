@@ -717,3 +717,38 @@ body.present-chantier { --chantier-fond: #EEEEF1; }
   .chantier-item { transition: none; }
   .chantier-lueur { animation: none; }
 }
+
+/* Masquer une diapositive de la présentation finie (1.4) : le bouton en haut à droite de la
+   vignette ; masquée, la vignette est grisée et barrée d'une croix. */
+.chantier-masquer {
+  position: absolute;
+  top: 8px; right: 8px;
+  z-index: 3;
+  width: 34px; height: 34px;
+  padding: 7px;
+  border: none;
+  border-radius: 17px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+.chantier-masquer svg {
+  width: 100%; height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chantier-masquee .chantier-masquer { background: #E8972E; }
+.chantier-masquee .chantier-frame .slide { opacity: 0.35; filter: grayscale(1); }
+.chantier-masquee .chantier-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1.5px), #E8972E calc(50% - 1.5px), #E8972E calc(50% + 1.5px), transparent calc(50% + 1.5px)),
+    linear-gradient(to bottom right, transparent calc(50% - 1.5px), #E8972E calc(50% - 1.5px), #E8972E calc(50% + 1.5px), transparent calc(50% + 1.5px));
+}
