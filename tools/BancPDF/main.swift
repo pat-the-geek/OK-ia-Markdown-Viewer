@@ -18,6 +18,15 @@ if let n = Int(ProcessInfo.processInfo.environment["BANC_PAGE"] ?? ""),
     }
     exit(0)
 }
+// BANC_CASES=9 : les cases de chaque ligne de la page 9.
+if let n = Int(ProcessInfo.processInfo.environment["BANC_CASES"] ?? ""),
+   let pdf = PDFDocument(data: donnees), let page = pdf.page(at: n - 1) {
+    let lignes = ImportPDF.lignes(page)
+    for (l, c) in zip(lignes, ImportPDF.cases(lignes, page: page)) {
+        print(l.texte.prefix(50), "→", c.map { "[\($0.texte)]" }.joined())
+    }
+    exit(0)
+}
 // BANC_FIGURES=8 : les cadres des figures de la page 8, et la page rendue avec ces cadres (page-8.png).
 if let n = Int(ProcessInfo.processInfo.environment["BANC_FIGURES"] ?? ""),
    let pdf = PDFDocument(data: donnees), let page = pdf.page(at: n - 1) {

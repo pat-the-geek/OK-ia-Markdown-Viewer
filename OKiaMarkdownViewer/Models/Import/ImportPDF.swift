@@ -21,6 +21,8 @@ import Vision
 /// - Les **figures** d'une page à texte (photos, graphiques, schémas) : ce que la page dessine hors de
 ///   ses lignes de texte, assez grand pour ne pas être un filet ou un logo, est repris en image à sa
 ///   place ; le texte posé dessus (les libellés d'un graphique) part avec elle (28/10/2026).
+/// - Les **tableaux** : des rangées de trois cases ou plus, l'une sous l'autre, deviennent un tableau
+///   Markdown ; une case sur plusieurs lignes reste une case (28/10/2026).
 enum ImportPDF {
 
     /// En dessous, une page passe pour scannée : un numéro de page ou un tampon ne fait pas un texte.
@@ -44,8 +46,9 @@ enum ImportPDF {
             let largeur = Double(page.bounds(for: .mediaBox).width)
             if lignes.reduce(0, { $0 + $1.texte.count }) >= seuilPageScannee {
                 lignes = Self.avecFigures(lignes, page: page, index: i, reservoir: reservoir)
+                lignes = Self.avecTableaux(lignes, page: page, index: i)
             }
-            if lignes.reduce(0, { $0 + $1.texte.count }) < seuilPageScannee, !lignes.contains(where: { $0.image != nil }) {
+            if lignes.reduce(0, { $0 + $1.texte.count }) < seuilPageScannee, !lignes.contains(where: { $0.bloc != nil }) {
                 await suivi?(AvancementImport(etape: tr("Reconnaissance du texte"), fait: i + 1, total: pdf.pageCount,
                                               dernier: tr("Page %d", i + 1)))
                 let lues = Self.reconnaitre(page, index: i)
@@ -102,7 +105,7 @@ enum ImportPDF {
             if let img = imagesDePage[i] { fermer(); blocs.append(img) }
             var precedente: Ligne?
             for l in lignes where !decor.contains(Self.cle(l)) {
-                if let image = l.image {
+                if let image = l.bloc {
                     if let fin = paragraphe.last, !finDePhrase(fin), let p = precedente {
                         if !legende.isEmpty { apres.append(MarkdownImport.debutDeLigne(Self.recoller(legende))); legende = [] }
                         apres.append(image)
@@ -217,8 +220,8 @@ enum ImportPDF {
         var estTitre = false
         /// Lue par la reconnaissance de texte : sa taille n'est qu'approchée.
         var reconnue = false
-        /// Une figure de la page, en Markdown : la « ligne » n'est que sa place.
-        var image: String?
+        /// Une figure ou un tableau de la page, en Markdown : la « ligne » n'est que sa place.
+        var bloc: String?
 
         func titre() -> Ligne { var l = self; l.estTitre = true; return l }
 
@@ -348,7 +351,7 @@ enum ImportPDF {
             }
             let total = max(l.droite - l.gauche, 1)
             guard let k = parts.indices.max(by: { parts[$0] < parts[$1] }) else { return nil }
-            if l.image != nil { return parts[k] >= total * 0.7 ? k : nil }
+            if l.bloc != nil { return parts[k] >= total * 0.7 ? k : nil }
             return couloirs.contains { l.gauche < $0 - 3 && l.droite > $0 + 3 } ? nil : k
         }
         // Une ligne de tableau (trois cases ou plus à la même hauteur) se lit d'une traite.
@@ -364,7 +367,7 @@ enum ImportPDF {
             for c in bande.indices { r += bande[c]; bande[c] = [] }
         }
         for l in triees {
-            if let k = colonne(l), l.image != nil || !rangee(l) {
+            if let k = colonne(l), l.bloc != nil || !rangee(l) {
                 bande[k].append(l)
             } else {
                 vider()
@@ -381,7 +384,7 @@ enum ImportPDF {
     /// courts d'un graphique ou les chiffres d'un tableau débordent dans le couloir.
     static func couloirs(_ lignes: [Ligne], largeur: Double) -> [Double] {
         let prose = lignes.filter { l in
-            l.image == nil && l.texte.count >= 20 && l.droite - l.gauche < largeur * 0.6
+            l.bloc == nil && l.texte.count >= 20 && l.droite - l.gauche < largeur * 0.6
                 && l.texte.filter(\.isLetter).count * 10 >= l.texte.count * 6
         }
         guard prose.count >= 10, largeur > 100 else { return [] }
@@ -409,6 +412,182 @@ enum ImportPDF {
         return r
     }
 
+    // MARK: Tableaux
+
+    /// Une case d'une rangée : son texte et sa place.
+    struct Case { var texte: String; var gauche: Double; var droite: Double }
+
+    /// Les tableaux d'une page, chacun en « ligne » à sa place, ses lignes retirées du texte.
+    /// Une ligne de PDFKit réunit souvent plusieurs cases (« 3,0% 2,3% 2,0% ») : on la redécoupe aux
+    /// grands blancs, d'après la place de chaque caractère. Une rangée de trois cases ou plus est
+    /// une rangée de tableau ; plusieurs, l'une sous l'autre, font un tableau. Les lignes serrées
+    /// entre elles ou juste dessous (la suite d'une case) en sont.
+    static func avecTableaux(_ lignes: [Ligne], page: PDFPage, index: Int) -> [Ligne] {
+        // Des rangées de trois lignes au moins, ou rien à chercher : le découpage par caractère coûte.
+        var parHauteur: [Int: Int] = [:]
+        for l in lignes where l.bloc == nil { parHauteur[Int(l.haut.rounded())] = (parHauteur[Int(l.haut.rounded())] ?? 0) + 1 }
+        guard parHauteur.keys.contains(where: { (parHauteur[$0] ?? 0) + (parHauteur[$0 + 1] ?? 0) + (parHauteur[$0 - 1] ?? 0) >= 3 }) else { return lignes }
+        let cases = Self.cases(lignes, page: page)
+
+        // Les rangées : les lignes à la même hauteur, de haut en bas.
+        let texte = lignes.indices.filter { lignes[$0].bloc == nil }.sorted { lignes[$0].haut < lignes[$1].haut }
+        var rangees: [[Int]] = []
+        for i in texte {
+            if let d = rangees.last?.first, abs(lignes[d].haut - lignes[i].haut) < 2 { rangees[rangees.count - 1].append(i) }
+            else { rangees.append([i]) }
+        }
+        func nombreDeCases(_ r: [Int]) -> Int { r.reduce(0) { $0 + max(1, cases[$1].count) } }
+
+        var r = lignes
+        var retirees = Set<Int>()
+        var k = 0
+        while k < rangees.count {
+            guard nombreDeCases(rangees[k]) >= 3 else { k += 1; continue }
+            // Le tableau s'étend tant que les rangées se suivent de près : une rangée de cases, ou
+            // la suite serrée d'une case, sous la précédente.
+            var fin = k
+            var j = k + 1
+            var corpsTableau = rangees[k].map { lignes[$0].taille }.max() ?? 0
+            while j < rangees.count {
+                let avant = rangees[j - 1], ici = rangees[j]
+                let h = avant.map { lignes[$0].bas - lignes[$0].haut }.max() ?? 10
+                let ecart = (ici.map { lignes[$0].haut }.min() ?? 0) - (avant.map { lignes[$0].bas }.max() ?? 0)
+                if nombreDeCases(ici) >= 3, ecart < h * 2.5 {
+                    fin = j; j += 1
+                    corpsTableau = max(corpsTableau, ici.map { lignes[$0].taille }.max() ?? 0)
+                    continue
+                }
+                if ecart < h * 0.6, ici.allSatisfy({ lignes[$0].taille <= corpsTableau }) { j += 1; continue }
+                break
+            }
+            // Les suites de case après la dernière rangée en sont aussi.
+            let derniere = j - 1
+            let tableau = Array(rangees[k...max(fin, derniere)])
+            k = j
+            let pleines = tableau.filter { nombreDeCases($0) >= 3 }
+            guard pleines.count >= 2 else { continue }
+            let toutes = pleines.flatMap { $0.flatMap { cases[$0] } }
+            // Trois colonnes de prose ne font pas un tableau.
+            let longueur = Double(toutes.reduce(0) { $0 + $1.texte.count }) / Double(max(toutes.count, 1))
+            guard pleines.map(nombreDeCases).max() ?? 0 >= 4 || longueur <= 30 else { continue }
+            guard let markdown = Self.tableau(tableau.map { rangee in
+                (haut: rangee.map { lignes[$0].haut }.min() ?? 0,
+                 hauteur: rangee.map { lignes[$0].bas - lignes[$0].haut }.max() ?? 10,
+                 cases: rangee.flatMap { i in cases[i].isEmpty ? [Case(texte: lignes[i].texte, gauche: lignes[i].gauche, droite: lignes[i].droite)] : cases[i] })
+            }) else { continue }
+            let membres = tableau.flatMap { $0 }
+            retirees.formUnion(membres)
+            var l = Ligne(texte: "", haut: membres.map { lignes[$0].haut }.min() ?? 0, bas: membres.map { lignes[$0].bas }.max() ?? 0,
+                          gauche: membres.map { lignes[$0].gauche }.min() ?? 0, droite: membres.map { lignes[$0].droite }.max() ?? 0,
+                          taille: 0, gras: false, italique: false, page: index)
+            l.bloc = markdown
+            r.append(l)
+        }
+        return r.enumerated().filter { !retirees.contains($0.offset) }.map(\.element)
+    }
+
+    /// Les cases de chaque ligne : la ligne est sondée point par point (`characterIndex(at:)`) ; un
+    /// blanc sans caractère plus large que les trois quarts du corps sépare deux cases, et le texte de
+    /// chaque case est relu sur son rectangle. (Les indices de `characterBounds` ne suivent pas ceux
+    /// du texte de la page — ligatures, accents décomposés — : on ne s'y fie pas.)
+    static func cases(_ lignes: [Ligne], page: PDFPage) -> [[Case]] {
+        let boite = page.bounds(for: .mediaBox)
+        return lignes.map { l in
+            guard l.bloc == nil, l.droite > l.gauche else { return [] }
+            let yMilieu = boite.maxY - CGFloat((l.haut + l.bas) / 2)
+            let h = CGFloat(l.bas - l.haut)
+            let seuil = Double(max(l.taille, 6)) * 0.75
+            // Le caractère sous chaque point. Une espace qui aligne un tableau est un seul caractère
+            // très large : un même caractère sur plus de 1,2 corps est un blanc.
+            var indices: [Int] = []
+            var x = l.gauche
+            while x <= l.droite {
+                indices.append(page.characterIndex(at: CGPoint(x: CGFloat(x), y: yMilieu)))
+                x += 1
+            }
+            var encre = indices.map { $0 >= 0 }
+            var a = 0
+            while a < indices.count {
+                var b = a
+                while b + 1 < indices.count, indices[b + 1] == indices[a] { b += 1 }
+                if indices[a] >= 0, Double(b - a + 1) > Double(max(l.taille, 6)) * 1.2 { for k in a...b { encre[k] = false } }
+                a = b + 1
+            }
+            var plages: [(Double, Double)] = []
+            var debut: Double?, dernier = l.gauche
+            for (k, e) in encre.enumerated() where e {
+                let x = l.gauche + Double(k)
+                if let d = debut, x - dernier > seuil { plages.append((d, dernier)); debut = nil }
+                if debut == nil { debut = x }
+                dernier = x
+            }
+            if let d = debut { plages.append((d, dernier)) }
+            guard plages.count >= 2 else { return [] }
+            let hauteur = h
+            return plages.compactMap { a, b in
+                let zone = CGRect(x: CGFloat(a) - 0.5, y: yMilieu - hauteur * 0.3, width: CGFloat(b - a) + 1.5, height: hauteur * 0.6)
+                guard let t = page.selection(for: zone)?.string?
+                    .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespaces), !t.isEmpty else { return nil }
+                return Case(texte: t, gauche: a, droite: b + 1)
+            }
+        }
+    }
+
+    /// Le tableau Markdown d'une suite de rangées. Les colonnes sont les bords gauches qui reviennent ;
+    /// une rangée serrée sous la précédente (la seconde ligne d'une case) la complète. La première
+    /// rangée fait l'en-tête. nil s'il ne reste pas deux colonnes et deux rangées.
+    static func tableau(_ rangees: [(haut: Double, hauteur: Double, cases: [Case])]) -> String? {
+        // Les colonnes : les bords gauches, regroupés à 8 points près, vus dans deux rangées au moins et
+        // dans un cinquième des rangées pleines (un grand blanc d'un texte justifié n'ouvre pas de
+        // colonne ; une case sur dix lignes ne compte qu'une fois dans sa première colonne).
+        var bords: [(x: Double, n: Int)] = []
+        for x in rangees.flatMap({ $0.cases.map(\.gauche) }).sorted() {
+            if let d = bords.last, x - d.x <= 8 { bords[bords.count - 1].n += 1 } else { bords.append((x, 1)) }
+        }
+        let pleines = rangees.filter { $0.cases.count >= 3 }.count
+        let colonnes = bords.filter { $0.n >= max(2, pleines / 5) }.map(\.x)
+        guard colonnes.count >= 2 else { return nil }
+        func colonne(_ c: Case) -> Int { max(0, (colonnes.lastIndex { $0 <= c.gauche + 8 }) ?? 0) }
+        // Les rangées logiques : une rangée qui suit la précédente à moins d'un interligne la complète.
+        var logiques: [[String]] = []
+        var precedente: (haut: Double, hauteur: Double)?
+        for rg in rangees {
+            var cellules = [String](repeating: "", count: colonnes.count)
+            for c in rg.cases.sorted(by: { $0.gauche < $1.gauche }) {
+                let k = colonne(c)
+                cellules[k] += (cellules[k].isEmpty ? "" : " ") + c.texte
+            }
+            if let p = precedente, rg.haut - p.haut < p.hauteur * 1.1, !logiques.isEmpty {
+                for k in cellules.indices where !cellules[k].isEmpty {
+                    logiques[logiques.count - 1][k] += (logiques[logiques.count - 1][k].isEmpty ? "" : " ") + cellules[k]
+                }
+            } else {
+                logiques.append(cellules)
+            }
+            precedente = (rg.haut, rg.hauteur)
+        }
+        guard logiques.count >= 2 else { return nil }
+        // Une colonne sans en-tête, après une colonne qui en a un, en est la suite (des cases qui
+        // commencent un peu plus loin) ; une colonne vide partout disparaît.
+        for k in stride(from: colonnes.count - 1, through: 1, by: -1)
+            where logiques[0][k].isEmpty && !logiques[0][k - 1].isEmpty {
+            for r in logiques.indices where !logiques[r][k].isEmpty {
+                logiques[r][k - 1] += (logiques[r][k - 1].isEmpty ? "" : " ") + logiques[r][k]
+            }
+            for r in logiques.indices { logiques[r].remove(at: k) }
+        }
+        for k in stride(from: logiques[0].count - 1, through: 0, by: -1) where logiques.allSatisfy({ $0[k].isEmpty }) {
+            for r in logiques.indices { logiques[r].remove(at: k) }
+        }
+        guard (logiques.first?.count ?? 0) >= 2 else { return nil }
+        func rangee(_ c: [String]) -> String {
+            "| " + c.map { MarkdownImport.echapper($0) }.joined(separator: " | ") + " |"
+        }
+        return ([rangee(logiques[0]), "|" + String(repeating: " --- |", count: logiques[0].count)] + logiques.dropFirst().map(rangee))
+            .joined(separator: "\n")
+    }
+
     // MARK: Figures
 
     /// Les figures d'une page à texte, chacune en « ligne » à sa place ; le texte posé sur une figure
@@ -433,7 +612,7 @@ enum ImportPDF {
                   let ref = reservoir.reference("page-\(index + 1)-figure-\(n + 1).jpg", donnees: { jpeg }) else { continue }
             var l = Ligne(texte: "", haut: c.minY, bas: c.maxY, gauche: c.minX, droite: c.maxX,
                           taille: 0, gras: false, italique: false, page: index)
-            l.image = "![\(tr("Page %d", index + 1))][\(ref)]"
+            l.bloc = "![\(tr("Page %d", index + 1))][\(ref)]"
             r.append(l)
         }
         return r
@@ -688,7 +867,7 @@ enum ImportPDF {
     /// et sa hauteur sur la page, à 10 points près.
     private static func cle(_ l: Ligne) -> String {
         // Une figure : sa place et sa taille — le logo qui revient sur chaque page.
-        if l.image != nil { return "img|\(Int(l.haut / 10))|\(Int(l.gauche / 10))|\(Int((l.droite - l.gauche) / 10))|\(Int((l.bas - l.haut) / 10))" }
+        if l.bloc != nil { return "img|\(Int(l.haut / 10))|\(Int(l.gauche / 10))|\(Int((l.droite - l.gauche) / 10))|\(Int((l.bas - l.haut) / 10))" }
         return "\(Int(l.haut / 10))|" + l.texte.filter { !$0.isNumber }.trimmingCharacters(in: .whitespaces)
     }
 
