@@ -49,14 +49,27 @@
 
   // Ce qui n'est pas l'article : navigation, partage, publicités, articles liés, commentaires.
   var DECOR = /(^|[\s_-])(nav|menu|footer|header|share|social|related|recommend|newsletter|subscribe|promo|advert|ads?|sponsor|comment|sidebar|breadcrumb|cookie|consent|paywall|signup|outbrain|taboola)([\s_-]|$)/i;
+  // Le bandeau des cookies, quel que soit son nom (« cookieConsentTitle », « onetrust-banner »).
+  var BANDEAU = /cookie|consent|gdpr|onetrust|didomi/i;
+
+  // Les noms qui disent le rôle d'un élément : ses classes et son id, sans les classes utilitaires à
+  // valeur (Tailwind : « [--sticky-top:var(--header-h)] », « pt-(--page-top-space) ») — une variable
+  // CSS n'est pas un rôle. Sur openai.com, « --header-h » faisait de tout l'article un en-tête, et
+  // seul le bandeau des cookies restait (Patrick, 28/10/2026).
+  function nomsDeRole(n) {
+    var c = typeof n.className === 'string' ? n.className : '';
+    return c.split(/\s+/).filter(function (t) {
+      return t && !/[\[\]():=]/.test(t) && t.indexOf('--') === -1;
+    }).join(' ') + ' ' + (n.id || '');
+  }
 
   function estDecor(el) {
     for (var n = el; n && n !== document.body; n = n.parentElement) {
       var tag = n.tagName;
       if (tag === 'NAV' || tag === 'ASIDE' || tag === 'FOOTER' || tag === 'FORM' || tag === 'BUTTON') return true;
       if (tag === 'HEADER' && !n.querySelector('h1 ~ p')) return true;
-      var nom = (n.className && n.className.baseVal === undefined ? n.className : '') + ' ' + (n.id || '');
-      if (DECOR.test(nom)) return true;
+      var nom = nomsDeRole(n);
+      if (DECOR.test(nom) || BANDEAU.test(nom)) return true;
       if (n.getAttribute && (n.getAttribute('aria-hidden') === 'true' || n.hidden)) return true;
     }
     return false;
