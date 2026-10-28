@@ -209,8 +209,8 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
   langue de l'app ; la fiche d'une page web est rédigée dans la langue de l'app (le russe,
   l'ukrainien et le hindi en anglais, `langueDeRedaction`), traduite vers le code entier (`zh-Hans`).
 Vérifié au simulateur (cache d'essai) : personnes décrites par le cache sans Wikidata, QID sur la
-fiche, lien vers fornews. **Pas vu** : les lieux (le simulateur ne les détecte pas), la fiche dans un
-fornews 1.7.4, le vrai cache du Mac mini. **Reste** : le rapport d'analyse d'un import suit la
+fiche, lien vers fornews. **Confirmé par Patrick sur appareil (B105, 28/10)** : descriptions et photos
+du cache de fornews sans Wikidata, « Ouvrir dans fornews » ouvre la fiche dans fornews 1.7.4. **Reste** : le rapport d'analyse d'un import suit la
 langue du document et n'en connaît que cinq (`MoteurRedaction.langue`).
 
 Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,
