@@ -148,6 +148,16 @@ final class ImportEnCours: ObservableObject, Identifiable {
         tache = Task { [weak self] in
             do {
                 var page = recue
+                // Une adresse qui mène à un PDF (Safari qui montre un PDF n'en partage que l'adresse) :
+                // le PDF est téléchargé, puis importé comme un fichier (Patrick, 28/10/2026).
+                if !page.aUnCorps {
+                    self?.avancement = AvancementImport(etape: tr("Téléchargement du PDF"), fait: 0, total: 1, dernier: page.url)
+                    if let pdf = try await Self.pdfDistant(page.url) {
+                        guard analyser else { throw ErreurImport.pdfSansOption }
+                        self?.lancer(pdf, fini: fini)
+                        return
+                    }
+                }
                 if !page.aUnCorps {
                     self?.avancement = AvancementImport(etape: tr("Chargement de la page"), fait: 0, total: 1, dernier: page.url)
                     let lue = try await LecteurPageWeb.lire(page.url)
@@ -177,6 +187,32 @@ final class ImportEnCours: ObservableObject, Identifiable {
 
     func annuler() { tache?.cancel() }
 
+    /// Le PDF qu'une adresse désigne, téléchargé dans un dossier temporaire sous son nom ; nil si
+    /// l'adresse mène à une page web. Une adresse en « .pdf » est téléchargée d'emblée ; une autre est
+    /// d'abord interrogée (son type annoncé). Ce qui arrive doit commencer par « %PDF ».
+    nonisolated static func pdfDistant(_ adresse: String) async throws -> URL? {
+        guard let url = URL(string: adresse), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
+        if url.pathExtension.lowercased() != "pdf" {
+            var tete = URLRequest(url: url, timeoutInterval: 15)
+            tete.httpMethod = "HEAD"
+            guard let (_, r) = try? await URLSession.shared.data(for: tete),
+                  r.mimeType?.lowercased() == "application/pdf" else { return nil }
+        }
+        let (fichier, reponse) = try await URLSession.shared.download(for: URLRequest(url: url, timeoutInterval: 60))
+        if let h = reponse as? HTTPURLResponse, !(200..<300).contains(h.statusCode) {
+            throw LecteurPageWeb.Erreur.chargement("HTTP \(h.statusCode)")
+        }
+        let tete = (try? FileHandle(forReadingFrom: fichier)).flatMap { try? $0.read(upToCount: 5) }
+        guard tete == Data("%PDF-".utf8) else { return nil }
+        var nom = reponse.suggestedFilename ?? url.lastPathComponent
+        if (nom as NSString).pathExtension.lowercased() != "pdf" { nom = (nom as NSString).deletingPathExtension + ".pdf" }
+        let dossier = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
+        let cible = dossier.appendingPathComponent(nom)
+        try FileManager.default.moveItem(at: fichier, to: cible)
+        return cible
+    }
+
     /// Écrit le Markdown à sa place (`RangementDocuments` : iCloud Drive, dossier du jour, nom
     /// lisible), sous le nom du document d'origine, sans écraser un import précédent.
     nonisolated static func ecrire(_ markdown: String, nomSource: String, analyse: Bool = true) throws -> URL {
@@ -186,9 +222,11 @@ final class ImportEnCours: ObservableObject, Identifiable {
 
 enum ErreurImport: LocalizedError {
     case formatInconnu(String)
+    case pdfSansOption
     var errorDescription: String? {
         switch self {
         case .formatInconnu(let nom): return tr("md Viewer n’importe pas « %@ » : Word, PDF ou PowerPoint seulement.", nom)
+        case .pdfSansOption:          return tr("Cette adresse mène à un PDF : son import fait partie de l’option Analytic.")
         }
     }
 }

@@ -1460,12 +1460,51 @@
     return renderDocument(md, filename);
   }
 
+  // Les images embarquées en définitions de référence (« [img3]: data:image/jpeg;base64,… », l'import
+  // d'un Word, d'un PDF ou d'un PowerPoint, 1.4) font l'essentiel d'un document illustré : 7 Mo sur
+  // 7,1 pour le bilan de législature de Fribourg (53 figures). Ni les transformations (entités,
+  // notes, surlignages, encadrés, liens) ni marked n'ont à les lire : sur l'appareil, sans
+  // compilation du JavaScript, le rendu y passait plus d'une minute. Les définitions sont retirées
+  // (par découpage de lignes, sans expression régulière), chaque image citée (« ![…][img3] ») reçoit
+  // une adresse provisoire, et l'image est posée dans le HTML une fois le texte rendu.
+  var ADRESSE_PROVISOIRE = 'okia-image-embarquee:';
+  function imagesEmbarquees(texte) {
+    var sans = { texte: texte, poser: function (html) { return html; } };
+    if (texte.indexOf(']: data:') === -1) return sans;
+    var gardees = [], donnees = {}, n = 0;
+    texte.split('\n').forEach(function (l) {
+      var d = l.indexOf(']: data:');
+      if (d > 0 && l.charAt(0) === '[' && l.indexOf(']') === d) {
+        donnees[l.slice(1, d).toLowerCase()] = l.slice(d + 2).trim();
+        n++;
+      } else {
+        gardees.push(l);
+      }
+    });
+    if (!n) return sans;
+    var corps = gardees.join('\n').replace(/(!\[[^\]\n]*\])\[([^\]\n]+)\]/g, function (tout, alt, cle) {
+      return donnees[cle.toLowerCase()] ? alt + '(' + ADRESSE_PROVISOIRE + encodeURIComponent(cle.toLowerCase()) + ')' : tout;
+    });
+    return {
+      texte: corps,
+      poser: function (html) {
+        return html.split(ADRESSE_PROVISOIRE).map(function (morceau, k) {
+          if (k === 0) return morceau;
+          var fin = morceau.indexOf('"');
+          var cle = decodeURIComponent(morceau.slice(0, fin));
+          return (donnees[cle] || '') + morceau.slice(fin);
+        }).join('');
+      }
+    };
+  }
+
   function renderDocument(md, filename) {
     var container = document.getElementById('content');
     try {
       var fm = parseFrontmatter(md);
       var meta = fm.meta;
-      var body = fm.body;
+      var images = imagesEmbarquees(fm.body);
+      var body = images.texte;
 
       var header = buildHeader(meta, body, filename);
       var ner = extractEntities(body);
@@ -1480,7 +1519,7 @@
       body = transformCallouts(body);                             // 3
       body = transformWikiLinks(body);                            // 4
 
-      var html = withLazyImages(marked.parse(body, { breaks: true, gfm: true }));
+      var html = images.poser(withLazyImages(marked.parse(body, { breaks: true, gfm: true })));
       container.innerHTML = header.headerHtml + legend + html;
 
       dedupeTitle(container, header.title);                       // remove duplicate H1

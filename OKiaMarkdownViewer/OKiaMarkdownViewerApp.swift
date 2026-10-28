@@ -380,6 +380,11 @@ final class DocumentStore: ObservableObject {
                 if !acces, case .success = issue {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.vitrineImport = true }
                 }
+                // Un lien vers un PDF, sans l'option : elle se présente, et l'import reprend une fois achetée.
+                if case .failure(ErreurImport.pdfSansOption) = issue {
+                    self.actionApresAchat = { [weak self] in self?.analyserPage(page.url) }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { self.vitrineImport = true }
+                }
                 self.pageSuivante()
                 self.fichierSuivant()
             }

@@ -40447,6 +40447,196 @@
           }
         }
       }
+    },
+    "Téléchargement du PDF": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargement du PDF"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading the PDF"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF wird geladen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando el PDF"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download del PDF"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDFをダウンロード中"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF 다운로드 중"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在下载 PDF"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baixando o PDF"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF downloaden"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка PDF"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантаження PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF indiriliyor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải PDF"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF डाउनलोड हो रहा है"
+          }
+        }
+      }
+    },
+    "Cette adresse mène à un PDF : son import fait partie de l’option Analytic.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette adresse mène à un PDF : son import fait partie de l’option Analytic."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This address leads to a PDF: importing it is part of the Analytic option."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Adresse führt zu einem PDF: Sein Import gehört zur Option Analytic."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta dirección lleva a un PDF: importarlo forma parte de la opción Analytic."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo indirizzo porta a un PDF: importarlo fa parte dell’opzione Analytic."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアドレスはPDFです。PDFの読み込みはAnalyticオプションの機能です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 주소는 PDF로 연결됩니다. PDF 가져오기는 Analytic 옵션에 포함됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此地址指向 PDF：导入 PDF 属于 Analytic 选项。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este endereço leva a um PDF: importá-lo faz parte da opção Analytic."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit adres leidt naar een pdf: importeren hoort bij de optie Analytic."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот адрес ведёт к PDF: его импорт входит в опцию Analytic."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ця адреса веде до PDF: його імпорт входить до опції Analytic."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adres bir PDF’ye gidiyor: içe aktarması Analytic seçeneğine dahildir."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa chỉ này dẫn đến một tệp PDF: việc nhập nó thuộc tùy chọn Analytic."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह पता एक PDF पर ले जाता है: इसका इम्पोर्ट Analytic विकल्प का हिस्सा है।"
+          }
+        }
+      }
     }
   }
 }
