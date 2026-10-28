@@ -111,6 +111,9 @@ struct FenetreDocument: View {
             .background(SondeFenetre { DocumentStore.actif = store })
             .task {
                 if let aOuvrir, store.document == nil { store.ouvrir(aOuvrir) }
+                // Les pages partagées avant le lancement : sur Mac, l'app démarre déjà au premier plan,
+                // sans le passage à `.active` qui les relève (Patrick, 28/10/2026).
+                if aOuvrir == nil { store.releverPages() }
                 await EntitesDeFornews.partage.actualiser()
                 #if DEBUG
                 // OKIA_FENETRE=<chemin> : la fenêtre de l'app en ouvre une seconde sur ce fichier.
