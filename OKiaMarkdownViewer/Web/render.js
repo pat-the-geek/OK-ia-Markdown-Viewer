@@ -834,6 +834,34 @@
     });
   }
 
+  // Un tableau plus large que la colonne (l'import d'un PDF : six colonnes de chiffres) défile
+  // seul en largeur. Sans cela, toute la page débordait : sur un écran étroit (iPhone, Duo
+  // replié), le doigt qui descend la faisait aussi glisser de côté, et le document tremblait
+  // (Patrick, 28/10/2026, bilan de législature : 783 points de large pour un écran de 466).
+  // Un tableau qui tient garde sa pleine largeur : seul celui qui déborde devient un bloc
+  // défilant. Remesuré quand la colonne ou le tableau change (pliage, taille du texte, traduction).
+  var observateurTableaux = null, attenteTableaux = 0;
+  function tableauxDefilants(container) {
+    if (observateurTableaux) { observateurTableaux.disconnect(); observateurTableaux = null; }
+    var tables = Array.prototype.slice.call(container.querySelectorAll('table'));
+    if (!tables.length) return;
+    var mesurer = function () {
+      attenteTableaux = 0;
+      // Tout retirer, puis tout mesurer : une seule mise en page pour l'ensemble.
+      tables.forEach(function (t) { t.classList.remove('okia-tableau-large'); });
+      tables.filter(function (t) {
+        return t.isConnected && t.parentElement && t.offsetWidth > t.parentElement.clientWidth + 1;
+      }).forEach(function (t) { t.classList.add('okia-tableau-large'); });
+    };
+    mesurer();
+    if (!window.ResizeObserver) return;
+    observateurTableaux = new ResizeObserver(function () {
+      if (!attenteTableaux) attenteTableaux = requestAnimationFrame(mesurer);
+    });
+    observateurTableaux.observe(container);
+    tables.forEach(function (t) { observateurTableaux.observe(t); });
+  }
+
   // L'export PowerPoint lit les blocs du rendu : il les retrouve tels que marked les a faits.
   function retirerBoutonsAgrandir(container) {
     Array.prototype.forEach.call(container.querySelectorAll('.okia-agrandir'), function (b) { b.remove(); });
@@ -1548,6 +1576,7 @@
       poserBoutonsAgrandir(container);                            // ⤢ sur chaque objet agrandissable
       clearSearch();
       applyFontScale();                                           // keep chosen size across renders
+      tableauxDefilants(container);                               // un tableau trop large défile seul
       buildTOC(container);                                        // headings -> ids + TOC
       renderLeafletMaps(container);                               // 2b interactive maps
 

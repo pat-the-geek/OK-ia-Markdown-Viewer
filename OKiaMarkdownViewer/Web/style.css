@@ -270,6 +270,9 @@ img.okia-zoomable { cursor: zoom-in; }
 table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 0.95em; }
 th, td { border: 1px solid var(--rule); padding: 8px 12px; text-align: left; }
 th { background: var(--th-bg); font-weight: 700; }
+/* Un tableau plus large que la colonne défile seul, et non toute la page (render.js,
+   tableauxDefilants). Le livre, lui, serre ses tableaux dans la page. */
+html:not(.okia-livre) table.okia-tableau-large { display: block; overflow-x: auto; }
 tr:nth-child(even) td { background: var(--zebra); }
 
 /* ---- Title + meta bar ---------------------------------------------------- */
