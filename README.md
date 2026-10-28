@@ -368,6 +368,39 @@ application désignée par son nom** — sur macOS, `NSWorkspace` le fait ; sur 
 > il faudrait des **Universal Links** (entitlement *Associated Domains* + fichier
 > `apple-app-site-association` hébergé sur le domaine) — non implémenté.
 
+#### md Viewer et fornews.ai : tout ce qui passe entre les deux applications
+
+Les deux apps sont signées par la même équipe (`PU9BSXN2V5`) et partagent le groupe
+`group.ai.fornews.native`, déclaré dans les quatre fichiers d'entitlements : l'app iOS, l'app Mac,
+et l'extension de partage sur chacune (`Partage/Partage-iOS.entitlements`,
+`Partage/Partage-macOS.entitlements`). Rien ne passe par le réseau : uniquement des fichiers dans le
+conteneur du groupe, des URL entre apps et un signal Darwin.
+
+| Sens | Quoi | Comment | Code |
+|---|---|---|---|
+| fornews → md Viewer | Un rapport à lire | fornews écrit le `.md` dans la boîte du groupe, puis ouvre `mdviewer://fichier?nom=<nom>` (le nom seul, jamais un chemin). Détails dans la section précédente. | `BoiteAuxLettres.swift` (le même fichier des deux côtés : ne pas le modifier ici) |
+| fornews → md Viewer | Les entités déjà résolues (option Analytic, fornews 1.7.4) | fornews réécrit `Entites/cache.json` d'un bloc (écriture atomique) dans le conteneur du groupe. md Viewer le relit au lancement et au retour au premier plan s'il a changé, hors du fil principal, et seulement avec l'option. Ce que fornews connaît n'est pas redemandé à Wikidata. | `Fornews/CacheEntitesFornews.swift` (format), `Models/Analytic/EntitesDeFornews.swift` (index) |
+| md Viewer → fornews | Ouvrir une entité dans fornews | Bouton « Ouvrir dans fornews » sur la fiche d'une entité qui a un QID : `fornews://entite?qid=Q…`. Le schéma `fornews` est déclaré dans `LSApplicationQueriesSchemes` (Info.plist) : le bouton n'apparaît que si fornews est installé. | `Views/FicheEntiteView.swift` |
+| Safari → md Viewer | Une page web à mettre en fiche (option Analytic) | L'extension de partage dépose la page extraite dans `mdviewer-pages/` (même groupe), puis émet la notification Darwin `ch.ok-ia.markdownviewer.page-deposee`. L'app l'écoute dès son lancement et relève aussi la boîte au lancement et à chaque retour au premier plan : une page déposée app fermée n'est pas perdue. | `PageWeb/PageWeb.swift` (`BoitePages` : `deposer`, `signaler`, `ecouter`, `relever`), `Partage/ShareViewController.swift` |
+
+**Le code de fornews dans md Viewer.** La détection d'entités, la résolution Wikidata, la fiche de
+lecture et le format du cache sont **copiés mot pour mot** dans `OKiaMarkdownViewer/Fornews/` par
+`scripts/copier-fornews.sh`. Chaque fichier indique en tête sa source et le commit de fornews. On ne
+les corrige jamais ici : on corrige fornews, puis on relance le script.
+
+**Le code de md Viewer dans fornews.** Le moteur de rendu (`Web/render.js`, `Web/style.css`) est
+l'**original** de md Viewer. `MoteurMdViewer` de fornews en est une copie du 4/10/2026 : fornews ne
+reprend que les différences, et md Viewer **signale** à fornews ce qui change, sans jamais modifier
+le dépôt fornews.ai depuis ici. Différences à signaler pour la 1.4 :
+- les images embarquées posées après le rendu (`imagesEmbarquees`) ;
+- le nom des entités sur les cartes (`cfg.etiquettes`) ;
+- les tableaux trop larges qui défilent seuls (`tableauxDefilants`).
+
+⚠️ **Pièges.** Un groupe ne se partage qu'entre apps de la même équipe de signature : signée par une
+autre équipe, une app voit des dossiers vides, sans aucune erreur. Le conteneur
+`~/Library/Group Containers/group.ai.fornews.native` est protégé par macOS : on ne force pas son
+accès depuis un terminal.
+
 ---
 
 ## Livraison TestFlight
