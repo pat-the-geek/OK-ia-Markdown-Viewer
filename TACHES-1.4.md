@@ -65,7 +65,7 @@ dans la langue de l'interface (④ ter, 26/10). Site à jour le 27/10 (feuille d
       3 et 5 CHF, partage familial, 175 territoires, capture et note de revue). Corrigé : acheté depuis la
       vitrine, ce qui était demandé (l'import d'un PowerPoint…) se fait, la vitrine refermée
       (`actionApresAchat`). **Pas vu** : un achat réel après ce changement (TestFlight). Textes des achats
-      (description iOS sans l'import, dix langues manquantes) : proposés à Patrick le 28/10.
+      (description iOS avec l'import, quinze langues pour les deux achats) : posés le 28/10, toujours READY_TO_SUBMIT.
 - [x] StoreKit 2 (`AchatAnalytic`) : droits relus au lancement, achat, « Demander à acheter »,
       restauration avec un message pour chaque issue, et **écoute de `Transaction.updates`** (achat
       approuvé plus tard ou fait sur un autre appareil, remboursement) — fornews ne l'écoutait pas.
