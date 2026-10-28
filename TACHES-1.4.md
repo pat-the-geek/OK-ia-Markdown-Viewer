@@ -94,16 +94,15 @@ verrouillé, ni bac à sable, produits absents), la restauration, le Mac, le par
       du rapport n'est contrôlé que par `estValide` — `filtrer` coupait « Union européenne » en
       « Union ». Les dates et montants balisés ne sont pas des fiches : pas montrés.
 - [x] Les formes courtes détectées (« Poutine ») sont absorbées par le nom complet du document.
-- [ ] **fornews d'abord, Wikidata ensuite** quand fornews est installé — ⚠️ attend fornews (voir
-      « Demandes à fornews » plus bas).
+- [x] **fornews d'abord, Wikidata ensuite** quand fornews est installé — son cache d'entités
+      (fornews 1.7.4), branché et confirmé sur appareil le 28/10 (B105).
 - [x] Résolution Wikidata (`ResolveurWikidata`), **proposée** : question à la première ouverture,
       réglage dans le menu « … » des entités. Les règles de choix de fornews, plus deux du 25/10 :
       un article en minuscules retiré pour chercher (« la CIA » → « CIA », jamais « Le Monde ») ;
       un genre de rapport fiable écarte un candidat de nature contraire (« CIA » → aéroport de
       Ciampino). Trois noms à la fois, arrêt net si Wikidata reste muet.
-- [ ] **Cache** : fait **sur l'appareil** (`CacheEntites`, Application Support, 30 jours, réponses
-      négatives comprises). Reste **le partage par iCloud** : il faut une capacité iCloud que l'app
-      n'a pas (clé-valeur, 1 Mo, ou CloudKit) — à décider avec Patrick.
+- [x] **Cache** : **sur l'appareil** (`CacheEntites`, Application Support, 30 jours, réponses
+      négatives comprises), **partagé par CloudKit** depuis le 27/10 (`SynchroICloud`, base privée).
 - [x] Liste des entités par genre (`EntitesView`) : seconde partie quand l'écran le permet
       (`PanneauDuo.entites`), feuille ailleurs ; bouton `person.2` dans la barre, entrée dans le menu
       « … » de l'iPhone. Toucher une entité la cherche dans le document.
@@ -728,7 +727,9 @@ Mac ») sauf mention contraire — à confirmer fonction par fonction.
       **À ajouter depuis le 26/10** (page web, ④ ter) : une page partagée depuis Safari est lue
       dans Safari même ; pour une adresse seule, md Viewer charge la page comme un navigateur. Les
       images de la fiche s'affichent depuis le site de la page ; ses lieux passent par Wikidata si
-      l'utilisateur l'a accepté. La
+      l'utilisateur l'a accepté. **Et depuis le 28/10** : quand fornews est installé, md Viewer lit
+      sur l'appareil les fiches d'entités que fornews a publiées pour lui (nom, QID, description,
+      photo, coordonnées venues de Wikidata) ; rien ne part sur le réseau. La
       fiche est composée sur l'appareil, et sa traduction aussi (le système peut demander de
       télécharger une langue, comme pour un document). À publier à la sortie, pas avant : la
       politique décrit ce que l'on télécharge sur l'App Store.
