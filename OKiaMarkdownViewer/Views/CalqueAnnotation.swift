@@ -252,59 +252,87 @@ struct PaletteAnnotation: View {
     var suivante: (() -> Void)?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
+    /// Trois mises en page, la première qui tient : en ligne ; en ligne resserrée ; sur deux
+    /// rangées (Patrick, 28/10/2026 : sur le Duo replié, la palette était coupée à gauche).
     var body: some View {
-        HStack(spacing: 6) {
-            if let precedente {
-                Button(action: precedente) {
-                    Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).frame(width: 36, height: 40)
-                }
-                .tint(.primary)
-                .accessibilityLabel(tr("Diapositive précédente"))
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) { flecheGauche(36); outils(40); separateur(4); couleurs(34, 24); flecheDroite(36); separateur(4); boutonTermine(40) }
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .glassEffect(.regular.interactive(), in: .capsule)
+            HStack(spacing: 2) { flecheGauche(30); outils(34); separateur(2); couleurs(28, 20); flecheDroite(30); separateur(2); boutonTermine(34) }
+                .padding(.horizontal, 6).padding(.vertical, 4)
+                .glassEffect(.regular.interactive(), in: .capsule)
+            VStack(spacing: 0) {
+                HStack(spacing: 2) { flecheGauche(30); outils(34); separateur(2); boutonTermine(34) }
+                HStack(spacing: 2) { couleurs(30, 22); flecheDroite(30) }
             }
-            ForEach(AnnotationsDocument.Outil.allCases) { o in
-                Button { annotations.outil = o } label: {
-                    Image(systemName: o.symbole)
-                        .font(.system(size: 18, weight: .medium))
-                        .frame(width: 40, height: 40)
-                        .background(Circle().fill(annotations.outil == o ? orange.opacity(0.22) : .clear))
-                }
-                .tint(annotations.outil == o ? orange : .primary)
-                .accessibilityLabel(o.libelle)
-                .accessibilityAddTraits(annotations.outil == o ? .isSelected : [])
-            }
-            Divider().frame(height: 26).padding(.horizontal, 4)
-            ForEach(Annotation.Couleur.allCases, id: \.self) { c in
-                Button { annotations.couleur = c } label: {
-                    Circle()
-                        .fill(Color(uiColor: CalqueAnnotation.encre(c)))
-                        .frame(width: 24, height: 24)
-                        .overlay(Circle().stroke(Color.primary, lineWidth: annotations.couleur == c ? 2.5 : 0).padding(-4))
-                        .frame(width: 34, height: 40)
-                }
-                .disabled(annotations.outil == .gomme)
-                .accessibilityLabel(nomCouleur(c))
-                .accessibilityAddTraits(annotations.couleur == c ? .isSelected : [])
-            }
-            if let suivante {
-                Divider().frame(height: 26).padding(.horizontal, 4)
-                Button(action: suivante) {
-                    Image(systemName: "chevron.right").font(.system(size: 17, weight: .semibold)).frame(width: 36, height: 40)
-                }
-                .tint(.primary)
-                .accessibilityLabel(tr("Diapositive suivante"))
-            }
-            Divider().frame(height: 26).padding(.horizontal, 4)
-            Button { if let terminer { terminer() } else { annotations.actif = false } } label: {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 17, weight: .bold))
-                    .frame(width: 40, height: 40)
-            }
-            .tint(orange)
-            .accessibilityLabel(tr("Terminé"))
+            .padding(.horizontal, 8).padding(.vertical, 4)
+            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .glassEffect(.regular.interactive(), in: .capsule)
+    }
+
+    @ViewBuilder private func flecheGauche(_ cote: CGFloat) -> some View {
+        if let precedente {
+            Button(action: precedente) {
+                Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).frame(width: cote, height: 40)
+            }
+            .tint(.primary)
+            .accessibilityLabel(tr("Diapositive précédente"))
+        }
+    }
+
+    @ViewBuilder private func flecheDroite(_ cote: CGFloat) -> some View {
+        if let suivante {
+            separateur(2)
+            Button(action: suivante) {
+                Image(systemName: "chevron.right").font(.system(size: 17, weight: .semibold)).frame(width: cote, height: 40)
+            }
+            .tint(.primary)
+            .accessibilityLabel(tr("Diapositive suivante"))
+        }
+    }
+
+    private func outils(_ cote: CGFloat) -> some View {
+        ForEach(AnnotationsDocument.Outil.allCases) { o in
+            Button { annotations.outil = o } label: {
+                Image(systemName: o.symbole)
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: cote, height: 40)
+                    .background(Circle().fill(annotations.outil == o ? orange.opacity(0.22) : .clear))
+            }
+            .tint(annotations.outil == o ? orange : .primary)
+            .accessibilityLabel(o.libelle)
+            .accessibilityAddTraits(annotations.outil == o ? .isSelected : [])
+        }
+    }
+
+    private func couleurs(_ cote: CGFloat, _ pastille: CGFloat) -> some View {
+        ForEach(Annotation.Couleur.allCases, id: \.self) { c in
+            Button { annotations.couleur = c } label: {
+                Circle()
+                    .fill(Color(uiColor: CalqueAnnotation.encre(c)))
+                    .frame(width: pastille, height: pastille)
+                    .overlay(Circle().stroke(Color.primary, lineWidth: annotations.couleur == c ? 2.5 : 0).padding(-4))
+                    .frame(width: cote, height: 40)
+            }
+            .disabled(annotations.outil == .gomme)
+            .accessibilityLabel(nomCouleur(c))
+            .accessibilityAddTraits(annotations.couleur == c ? .isSelected : [])
+        }
+    }
+
+    private func separateur(_ marge: CGFloat) -> some View {
+        Divider().frame(height: 26).padding(.horizontal, marge)
+    }
+
+    private func boutonTermine(_ cote: CGFloat) -> some View {
+        Button { if let terminer { terminer() } else { annotations.actif = false } } label: {
+            Image(systemName: "checkmark")
+                .font(.system(size: 17, weight: .bold))
+                .frame(width: cote, height: 40)
+        }
+        .tint(orange)
+        .accessibilityLabel(tr("Terminé"))
     }
 
     private func nomCouleur(_ c: Annotation.Couleur) -> String {

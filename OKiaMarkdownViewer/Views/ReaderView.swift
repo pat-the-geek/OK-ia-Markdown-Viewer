@@ -1157,7 +1157,11 @@ struct ReaderView: View {
             PaletteAnnotation(annotations: annotationsDoc)
                 // Sur iPhone, la recherche du système est en bas : la palette passe au-dessus.
                 .padding(.bottom, tailleHorizontale == .compact ? 78 : 20)
-                .frame(maxHeight: .infinity, alignment: .bottom)
+                // Hors de la colonne d'outils du Duo, et dans la largeur qui reste : la palette
+                // choisit sa mise en page d'après elle.
+                .padding(web.outilsAGauche ? .leading : .trailing, CGFloat(web.margeOutils))
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
     }
 
