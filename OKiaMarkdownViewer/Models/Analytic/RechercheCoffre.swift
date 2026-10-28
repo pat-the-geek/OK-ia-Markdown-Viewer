@@ -256,7 +256,7 @@ final class RechercheCoffre: ObservableObject {
                 guard !Task.isCancelled else { break }
                 let paquet = Array(aEnvoyer[debut..<min(debut + 50, aEnvoyer.count)])
                 let motsCles = Dictionary(uniqueKeysWithValues: paquet.map { f in
-                    (f.id, f.source == .coffre ? AnalyseCoffre.partage.motsCles(String(f.id.dropFirst("coffre:".count))) : [])
+                    (f.id, AnalyseCoffre.partage.motsCles(f.source == .coffre ? String(f.id.dropFirst("coffre:".count)) : f.id))
                 })
                 let elements = await Task.detached { () -> [CSSearchableItem] in
                     paquet.compactMap { f in

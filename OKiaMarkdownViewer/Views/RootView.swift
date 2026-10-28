@@ -116,6 +116,8 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: .okiaOuvrirRapport)) { note in
             guard note.estPour(store) else { return }
             guard let id = note.userInfo?["id"] as? String else { return }
+            // Un document analysé (importé, fiche d'une page web) : il n'est pas dans le coffre.
+            if id.hasPrefix("analyse:") { store.ouvrirTrouve(id); return }
             // La liste du coffre ne se charge qu'à l'accueil : ouvert directement sur un document,
             // elle est encore vide.
             if !store.vault.reports.contains(where: { $0.id == id }) { store.vault.refresh() }
@@ -143,7 +145,7 @@ struct RootView: View {
         .onChange(of: store.vault.reports) { _, _ in RechercheCoffre.partage.indexerSpotlight() }
         .onChange(of: achat.acces) { _, _ in RechercheCoffre.partage.indexerSpotlight() }
         .sheet(isPresented: $analyseCoffre) {
-            AnalyseCoffreView(vault: store.vault, ouvrir: { store.openVaultReport($0) })
+            AnalyseCoffreView(vault: store.vault, ouvrir: { store.ouvrirTrouve($0) })
                 // Une page entière sur iPad : la liste et la carte ont besoin de place.
                 .presentationSizing(.page)
         }
@@ -178,6 +180,7 @@ struct RootView: View {
             .frame(minWidth: 460, minHeight: 680)
             #endif
         }
+        .modifier(RepriseApresAchat(store: store, achat: achat))
         // macOS: auto-open new reports landing in the vault folder.
         .task {
             store.startVaultWatch()
@@ -228,5 +231,26 @@ struct RootView: View {
             }
         }
         #endif
+    }
+}
+
+/// L'option achetée depuis la vitrine : elle se referme, et ce qui était demandé se fait — une fois la
+/// feuille partie, sinon le sélecteur de fichiers ne s'ouvrirait pas. À part : le corps de `RootView`
+/// dépassait ce que le compilateur vérifie en un temps raisonnable.
+private struct RepriseApresAchat: ViewModifier {
+    @ObservedObject var store: DocumentStore
+    @ObservedObject var achat: AchatAnalytic
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: achat.acces) { _, ouverte in
+                guard ouverte, store.vitrineImport, let action = store.actionApresAchat else { return }
+                store.actionApresAchat = nil
+                store.vitrineImport = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { action() }
+            }
+            .onChange(of: store.vitrineImport) { _, ouverte in
+                if !ouverte { store.actionApresAchat = nil }
+            }
     }
 }

@@ -40,6 +40,13 @@ struct DocumentsAnalysesSection: View {
                                 }
                                 .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
                                 .accessibilityLabel(tr("Rechercher dans le coffre"))
+                                // L'analyse du coffre aussi (28/10) : sans coffre choisi, c'est d'ici
+                                // seulement qu'on l'ouvre sur iPhone et iPad.
+                                Button { NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: store) } label: {
+                                    Image(systemName: "chart.dots.scatter")
+                                }
+                                .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
+                                .accessibilityLabel(tr("Analyser le coffre"))
                             }
                         } else {
                             Text(groupe.titre)

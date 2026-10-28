@@ -1,7 +1,7 @@
 import Foundation
 
 /// Option Analytic (1.4) — l'analyse de tout le coffre (Patrick, 27/10/2026, fonction Mac n° 2) :
-/// les entités croisées entre tous les documents — qui apparaît où, depuis quand, avec qui — et une
+/// les entités croisées entre tous les documents — rapports du coffre et documents analysés — qui apparaît où, depuis quand, avec qui — et une
 /// carte de tout le coffre.
 ///
 /// Un index, document par document, des entités qu'on y trouve, par les mêmes moyens que l'analyse
@@ -75,41 +75,82 @@ final class AnalyseCoffre: ObservableObject {
 
     // MARK: L'index
 
-    /// Met l'index à jour pour les rapports du coffre : relit les documents nouveaux ou modifiés,
+    /// Un document à indexer : un rapport du coffre, ou un document analysé (importé, fiche d'une
+    /// page web). Ceux-ci ont l'identifiant de la recherche, « analyse:<chemin> » ; les rapports
+    /// gardent le leur (`VaultReport.id`), pour que l'index déjà écrit reste valable.
+    struct Source: Sendable {
+        let id: String
+        let nom: String
+        let date: Date
+        let modifie: Date
+        let url: URL
+        let duCoffre: Bool
+    }
+
+    /// Met l'index à jour pour les rapports du coffre et les documents analysés (Patrick, 28/10/2026 :
+    /// un PowerPoint importé se trouvait par la recherche, mais ses personnes et ses lieux n'étaient
+    /// ni dans les entités du coffre ni sur sa carte) : relit les documents nouveaux ou modifiés,
     /// oublie ceux qui ont disparu, puis rassemble.
     func analyser(_ vault: VaultStore) {
         tache?.cancel()
         let rapports = vault.reports
         let racine = vault.resolveFolder()
         nonTelecharges = rapports.filter { !$0.downloaded }.count
-        let presents = rapports.filter(\.downloaded)
-        let aLire = presents.filter { r in index[r.id].map { $0.modifie < r.modified } ?? true }
-        index = index.filter { cle, _ in presents.contains { $0.id == cle } }
-        guard !aLire.isEmpty, let racine else { rassembler(); etat = .fini; return }
-        etat = .lecture(fait: 0, total: aLire.count)
-        tache = Task { [weak self] in
-            let scoped = racine.startAccessingSecurityScopedResource()
-            defer { if scoped { racine.stopAccessingSecurityScopedResource() } }
-            for (n, r) in aLire.enumerated() {
-                guard !Task.isCancelled else { return }
-                let url = racine.appendingPathComponent(r.subfolder).appendingPathComponent(r.name)
-                if let texte = try? String(contentsOf: url, encoding: .utf8) {
-                    let doc = await Self.indexer(texte, rapport: r)
-                    self?.index[r.id] = doc
-                }
-                self?.etat = .lecture(fait: n + 1, total: aLire.count)
-                // Le résultat s'affiche au fil de l'eau, pas seulement à la fin.
-                if (n + 1) % 10 == 0 { self?.rassembler() }
+        let duCoffre: [Source] = racine.map { racine in
+            rapports.filter(\.downloaded).map { r in
+                Source(id: r.id, nom: (r.name as NSString).deletingPathExtension,
+                       date: Self.dateDuNom(r.name) ?? r.modified, modifie: r.modified,
+                       url: racine.appendingPathComponent(r.subfolder).appendingPathComponent(r.name), duCoffre: true)
             }
+        } ?? []
+        tache = Task { [weak self] in
+            // Le conteneur iCloud se lit hors du fil principal ; sans l'option, rien.
+            let analyses = await Self.documentsAnalyses()
             guard let self, !Task.isCancelled else { return }
+            let toutes = duCoffre + analyses
+            let ids = Set(toutes.map(\.id))
+            self.index = self.index.filter { ids.contains($0.key) }
+            let aLire = toutes.filter { s in self.index[s.id].map { $0.modifie < s.modifie } ?? true }
+            guard !aLire.isEmpty else { self.enregistrer(); self.rassembler(); self.etat = .fini; return }
+            self.etat = .lecture(fait: 0, total: aLire.count)
+            let scoped = racine?.startAccessingSecurityScopedResource() ?? false
+            defer { if scoped { racine?.stopAccessingSecurityScopedResource() } }
+            for (n, s) in aLire.enumerated() {
+                guard !Task.isCancelled else { return }
+                if let texte = try? String(contentsOf: s.url, encoding: .utf8) {
+                    self.index[s.id] = await Self.indexer(texte, source: s)
+                }
+                self.etat = .lecture(fait: n + 1, total: aLire.count)
+                // Le résultat s'affiche au fil de l'eau, pas seulement à la fin.
+                if (n + 1) % 10 == 0 { self.rassembler() }
+            }
+            guard !Task.isCancelled else { return }
             self.enregistrer()
             self.rassembler()
             self.etat = .fini
         }
     }
 
+    /// Les documents analysés, avec l'identifiant de la recherche (`RechercheCoffre`).
+    nonisolated static func documentsAnalyses() async -> [Source] {
+        guard await AchatAnalytic.partage.acces else { return [] }
+        return await Task.detached { () -> [Source] in
+            let racine = RangementDocuments.dossierAnalyses().path
+            return RangementDocuments.documents().map { d in
+                let modifie = (try? d.url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? d.date
+                let chemin = d.url.path.hasPrefix(racine) ? String(d.url.path.dropFirst(racine.count)) : d.url.lastPathComponent
+                return Source(id: "analyse:" + chemin, nom: d.nom, date: d.date, modifie: modifie, url: d.url, duCoffre: false)
+            }
+        }.value
+    }
+
+    /// L'identifiant qu'`ouvrirTrouve` attend pour un document de l'index.
+    nonisolated static func idTrouve(_ document: String) -> String {
+        document.hasPrefix("analyse:") ? document : "coffre:" + document
+    }
+
     /// Les entités d'un document, comme l'analyse d'un document les trouve (sans Wikidata).
-    nonisolated static func indexer(_ texte: String, rapport r: VaultReport) async -> DocumentIndexe {
+    nonisolated static func indexer(_ texte: String, source s: Source) async -> DocumentIndexe {
         let langue = TexteAnalysable.langue(texte) ?? "fr"
         let duRapport = LecteurRapportFornews.lire(texte)
         // Un rapport fornews nomme déjà ses entités : la détection ne relit que les autres documents.
@@ -120,8 +161,7 @@ final class AnalyseCoffre: ObservableObject {
         for i in toutes.indices where sources.contient(toutes[i]) { toutes[i].source = true }
         toutes = DetecteurEntites.absorberFormesCourtes(toutes)
             .filter { $0.mentions > 0 || $0.origine == .rapport }
-        return DocumentIndexe(id: r.id, nom: (r.name as NSString).deletingPathExtension,
-                              date: dateDuNom(r.name) ?? r.modified, modifie: r.modified,
+        return DocumentIndexe(id: s.id, nom: s.nom, date: s.date, modifie: s.modifie,
                               langue: langue, entites: toutes)
     }
 

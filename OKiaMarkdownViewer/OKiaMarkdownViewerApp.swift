@@ -32,12 +32,17 @@ final class DocumentStore: ObservableObject {
     @Published var importEnCours: ImportEnCours?
     /// Un import demandé sans l'option : la vitrine de l'option s'ouvre.
     @Published var vitrineImport = false
+    /// Ce qui était demandé quand la vitrine s'est ouverte : fait dès l'achat, la vitrine refermée
+    /// (Patrick, 28/10/2026 : acheté depuis un PowerPoint ouvert, l'import ne partait pas). Oublié
+    /// si la vitrine se ferme sans achat.
+    var actionApresAchat: (@MainActor () -> Void)?
 
     /// Fait `action` si l'option Analytic est achetée, montre sa vitrine sinon — une fois les achats
     /// lus (`AchatAnalytic.accesSur`), jamais sur l'ignorance du lancement.
     func avecOption(_ action: @escaping @MainActor () -> Void) {
         Task { @MainActor [weak self] in
-            if await AchatAnalytic.partage.accesSur() { action() } else { self?.vitrineImport = true }
+            if await AchatAnalytic.partage.accesSur() { action() }
+            else { self?.actionApresAchat = action; self?.vitrineImport = true }
         }
     }
     /// Ce que le document qui s'ouvre doit chercher : un document trouvé par la recherche du coffre.

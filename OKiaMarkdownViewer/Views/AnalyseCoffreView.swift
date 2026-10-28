@@ -5,8 +5,9 @@ import SwiftUI
 /// qui l'accompagnent le plus souvent.
 struct AnalyseCoffreView: View {
     @ObservedObject var vault: VaultStore
-    /// Ouvre un rapport du coffre (la feuille se ferme).
-    var ouvrir: (VaultReport) -> Void
+    /// Ouvre un document de l'index — rapport du coffre ou document analysé —, par l'identifiant
+    /// qu'`ouvrirTrouve` attend (`AnalyseCoffre.idTrouve`). La feuille se ferme.
+    var ouvrir: (String) -> Void
     @ObservedObject private var analyse = AnalyseCoffre.partage
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
@@ -35,7 +36,7 @@ struct AnalyseCoffreView: View {
             .toolbar { barre }
             .safeAreaInset(edge: .top, spacing: 0) { resume }
             .navigationDestination(for: AnalyseCoffre.EntiteCoffre.self) { e in
-                DetailEntiteCoffre(entite: e, vault: vault, ouvrir: { r in dismiss(); ouvrir(r) })
+                DetailEntiteCoffre(entite: e, ouvrir: { id in dismiss(); ouvrir(id) })
             }
         }
         .onAppear { analyse.analyser(vault) }
@@ -170,8 +171,7 @@ private struct LigneEntiteCoffre: View {
 /// l'accompagnent le plus souvent.
 private struct DetailEntiteCoffre: View {
     let entite: AnalyseCoffre.EntiteCoffre
-    @ObservedObject var vault: VaultStore
-    var ouvrir: (VaultReport) -> Void
+    var ouvrir: (String) -> Void
     @ObservedObject private var analyse = AnalyseCoffre.partage
 
     var body: some View {
@@ -194,7 +194,7 @@ private struct DetailEntiteCoffre: View {
             }
             Section(tr("Documents") + " · \(entite.presences.count)") {
                 ForEach(entite.presences) { p in
-                    Button { if let r = vault.reports.first(where: { $0.id == p.document }) { ouvrir(r) } } label: {
+                    Button { ouvrir(AnalyseCoffre.idTrouve(p.document)) } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(p.nom).lineLimit(2)
