@@ -64,9 +64,16 @@ final class CacheEntites {
         "\(langue)|\(type.rawValue)|\(EntiteDocument.cle(nom))"
     }
 
+    /// Ce que fornews a résolu d'abord (`EntitesDeFornews`, fornews 1.7.4) : il a choisi la fiche
+    /// avec le contexte de ses articles, nous avec le nom seul — « Andrei Vorobyov » y est le
+    /// politicien, pas le footballeur homonyme. Sa réponse n'est pas retenue ici : elle reste à
+    /// jour avec son cache.
     func resolution(_ nom: String, type: TypeEntite, langue: String) -> ResolutionEntite? {
-        guard let r = entrees[Self.cle(nom, type: type, langue: langue)], !r.perimee else { return nil }
-        return r
+        let r = entrees[Self.cle(nom, type: type, langue: langue)].flatMap { $0.perimee ? nil : $0 }
+        guard var f = EntitesDeFornews.partage.resolution(nom, type: type, langue: langue) else { return r }
+        // fornews écrit dans une autre langue : la description, s'il y en a une, vient de la nôtre.
+        if f.description == nil, r?.qid == f.qid { f.description = r?.description }
+        return f
     }
 
     func retenir(_ r: ResolutionEntite, nom: String, type: TypeEntite, langue: String) {

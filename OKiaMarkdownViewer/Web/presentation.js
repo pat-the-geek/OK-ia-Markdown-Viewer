@@ -16,9 +16,8 @@
   var CH = 720, PAD_H = 72, PAD_V = 48;
   var CW = 1280;   // current canvas logical width, recomputed per fit
 
-  // App language, injected by the host app. window.OKIA_LANG is what render.js (fornews) knows
-  // — five languages, English for the others ; window.OKIA_LANG_APP is the app's own language
-  // (fifteen since 1.4).
+  // App language, injected by the host app in window.OKIA_LANG_APP — fifteen since 1.4 — and,
+  // since fornews 1.7.4 taught render.js the same fifteen, in window.OKIA_LANG too.
   var LANGS = ['fr', 'en', 'de', 'es', 'it', 'ja', 'ko', 'zh-Hans', 'pt-BR', 'nl', 'ru', 'uk',
                'tr', 'vi', 'hi'];
   var DEMANDE = window.OKIA_LANG_APP || window.OKIA_LANG;

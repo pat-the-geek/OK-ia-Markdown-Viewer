@@ -105,10 +105,13 @@ struct FenetreDocument: View {
                 store.releverPages()
                 // Option Analytic (1.4) : annotations, corrections et cache des autres appareils.
                 Task { await SynchroICloud.partage.synchroniser() }
+                // Les entités que fornews a résolues, s'il a réécrit son cache entre-temps.
+                Task { await EntitesDeFornews.partage.actualiser() }
             }
             .background(SondeFenetre { DocumentStore.actif = store })
             .task {
                 if let aOuvrir, store.document == nil { store.ouvrir(aOuvrir) }
+                await EntitesDeFornews.partage.actualiser()
                 #if DEBUG
                 // OKIA_FENETRE=<chemin> : la fenêtre de l'app en ouvre une seconde sur ce fichier.
                 if store === DocumentStore.principal, let chemin = ProcessInfo.processInfo.environment["OKIA_FENETRE"] {

@@ -94,10 +94,6 @@ final class Localization: ObservableObject {
     /// and with `knownRegions` in project.yml.
     static let supported = AppLanguage.allCases.filter { $0 != .system }.map(\.rawValue)
     static let fallback = "en"
-    /// Les langues que `render.js` connaît. Il vient de fornews (copié tel quel, pas modifié
-    /// ici) et lit le français pour une langue inconnue : les autres langues lui passent
-    /// l'anglais.
-    static let langagesDuRendu = ["fr", "en", "de", "es", "it"]
 
     @Published var language: AppLanguage {
         didSet {
@@ -150,15 +146,12 @@ final class Localization: ObservableObject {
     /// Code handed to the summariser and the translator: « fr », « ja », « zh-Hans », « pt-BR »…
     var code: String { language == .system ? Self.systemCode : language.rawValue }
 
-    /// Ce qu'on pose dans `window.OKIA_LANG` pour `render.js` (voir `langagesDuRendu`), suivi de
-    /// la langue de l'app dans `window.OKIA_LANG_APP`, que le diaporama lit.
+    /// La langue des pages web : `render.js` et le diaporama lisent `window.OKIA_LANG_APP` d'abord.
+    /// Depuis fornews 1.7.4, `render.js` connaît les quinze langues de l'app ; `window.OKIA_LANG`
+    /// reçoit la même, pour qui ne lirait que lui.
     var scriptLangue: String {
-        "window.OKIA_LANG = '\(codeFornews)'; window.OKIA_LANG_APP = '\(code)';"
+        "window.OKIA_LANG = '\(code)'; window.OKIA_LANG_APP = '\(code)';"
     }
-
-    /// La langue pour le code venu de fornews (`render.js`, la fiche d'une page web, ses libellés
-    /// et ses consignes) : il ne connaît que cinq langues, et l'anglais sert les autres.
-    var codeFornews: String { Self.langagesDuRendu.contains(code) ? code : Self.fallback }
 
     /// La locale des dates affichées. Elle suit le réglage de l'app, pas l'appareil : un
     /// utilisateur qui a choisi l'italien lirait sinon « Giugno » sous un intitulé français.

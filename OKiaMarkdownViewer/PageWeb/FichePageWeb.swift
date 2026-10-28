@@ -61,7 +61,8 @@ enum FichePageWeb {
             let blocs = p.blocs ?? []
             let textes = [titreOriginal, p.description ?? ""] + blocs.map { $0.t == "img" ? "" : $0.x }
             let aTraduire = textes.enumerated().filter { !$0.element.isEmpty }
-            if let rendus = await traducteur.traduire(aTraduire.map(\.element), de: langueArticle, vers: String(langue.prefix(2)),
+            // Le code entier : « zh-Hans » et « pt-BR » ne se réduisent pas à deux lettres.
+            if let rendus = await traducteur.traduire(aTraduire.map(\.element), de: langueArticle, vers: langue,
                                                       progression: { fait, total in
                                                           Task { await suivi?(AvancementImport(etape: tr("Traduction"), fait: fait,
                                                                                                total: total, dernier: nil)) }
@@ -130,6 +131,9 @@ enum FichePageWeb {
     /// fidèle au texte (noms et nombres présents), sinon la fiche prend le chapeau de la page.
     private static func resumer(_ texte: String, langue: String, langueArticle: String) async -> String? {
         guard MoteurRedaction.disponible, texte.count > 400 else { return nil }
+        // Le russe, l'ukrainien et le hindi, qu'Apple Intelligence ne parle pas : le résumé en
+        // anglais, comme le reste de la prose de la fiche (`ConsignesAnalyste.consigne`).
+        let langue = ConsignesAnalyste.langueDeRedaction(langue)
         let consigne = """
             Tu résumes un article, en \(ConsignesAnalyste.nomLangue(langue)), en trois phrases au plus : ce qui se passe, et pourquoi c'est important.
             ⛔ Tout nom propre, chiffre et date doit figurer dans l'article : n'en invente aucun.

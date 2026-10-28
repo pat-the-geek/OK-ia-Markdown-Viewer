@@ -193,6 +193,26 @@ liste, mais `render.js` surligne encore chaque « 7 » de la prose.
 
 ### Demandes à fornews (à faire dans fornews.ai, pas d'ici) — prévues pour **fornews 1.7.4** (Patrick, 25/10)
 
+**Livrées le 28/10/2026** (fornews fda62384, 1.7.4 en TestFlight, build 834) et **branchées** :
+- ① le cache : `CacheEntitesFornews.swift` copié par `copier-fornews.sh` ; `EntitesDeFornews` l'indexe
+  (type + nom plié, alias compris, noms filtrés par `estNommable`, nom à deux QID = ignoré) et
+  `CacheEntites.resolution` le consulte **avant** notre cache — fornews choisit avec le contexte de ses
+  articles. Rien ne part sur le réseau ; jamais de libellé tiré du `nom` de fornews ; description
+  ignorée si fornews écrit dans une autre langue que le document. Lu au lancement et au retour au
+  premier plan, s'il a changé, hors du fil principal, seulement avec l'option.
+- ② « Ouvrir dans fornews » sur la fiche d'une entité qui a un QID, si fornews est installé
+  (`LSApplicationQueriesSchemes`).
+- ③ rien à faire ici : la fiche d'une page web passe par `RapportObsidian` (copie à jour), et la
+  lecture d'une section `## Entités` filtrait déjà par `estValide`.
+- ④ `render.js` : seul le changement des langues de fornews (a4abd59d) est repris — la copie de
+  fornews (`MoteurMdViewer`) date du 4/10 et n'a ni le livre ni le Duo. `window.OKIA_LANG` reçoit la
+  langue de l'app ; la fiche d'une page web est rédigée dans la langue de l'app (le russe,
+  l'ukrainien et le hindi en anglais, `langueDeRedaction`), traduite vers le code entier (`zh-Hans`).
+Vérifié au simulateur (cache d'essai) : personnes décrites par le cache sans Wikidata, QID sur la
+fiche, lien vers fornews. **Pas vu** : les lieux (le simulateur ne les détecte pas), la fiche dans un
+fornews 1.7.4, le vrai cache du Mac mini. **Reste** : le rapport d'analyse d'un import suit la
+langue du document et n'en connaît que cinq (`MoteurRedaction.langue`).
+
 Charge estimée le 25/10, d'après le code de fornews : route QID ~30 lignes (`DeepLinkModele.depuis`,
 plus l'aiguillage de `FornewsVisionApp`), `[[7]]` quelques lignes (`FiltreEntitesNER.estValide` à la
 composition de `## Entités`), cache ~100 lignes sur le patron de `CacheBulletinMontre` ; une
@@ -246,8 +266,8 @@ demi-journée tests compris. La lecture du cache côté md Viewer (~60 lignes) s
       Mercedes, Asha Sharma. **Doublons** : deux entités rattachées à la même fiche n'en font qu'une
       (mentions additionnées). « IA », « AI » écartés, noms de deux lettres jamais envoyés à Wikidata.
       Cache renommé `entites-v2.json` pour oublier les réponses de l'ancien choix.
-- [ ] **Ouvrir une entité dans fornews par son QID** — attend la route `fornews://entite?qid=Q…`
-      (« Demandes à fornews »).
+- [x] **Ouvrir une entité dans fornews par son QID** — `fornews://entite?qid=Q…` (fornews 1.7.4),
+      « Ouvrir dans fornews » sur la fiche, le 28/10.
 
 **Vérifié au simulateur le 25/10** : iPhone (feuille, galerie, carte, marqueur → fiche), iPad 13″ en
 paysage (galerie à trois colonnes, carte et fiche dans la partie de droite, plein écran). Hook

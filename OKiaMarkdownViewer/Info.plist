@@ -57,6 +57,12 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Option Analytic (1.4) : savoir si fornews est là avant de proposer d'y ouvrir une entité
+	     (fornews://entite?qid=Q…, fornews 1.7.4). -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fornews</string>
+	</array>
 	<!-- Option Analytic (1.4) : les Services macOS, fournis par le module AppKit ServicesMac
 	     (FournisseurServices). Libellés traduits dans ServicesMenu.xcstrings. iOS les ignore. -->
 	<key>NSServices</key>

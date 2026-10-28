@@ -126,6 +126,14 @@ struct FicheEntiteView: View {
                 }
                 .tint(orange)
             }
+            // fornews ouvre sa fiche s'il connaît l'entité, sinon il le dit et mène à Wikidata.
+            if let qid = entite.qid, let url = URL(string: "fornews://entite?qid=\(qid)"),
+               UIApplication.shared.canOpenURL(url) {
+                Link(destination: url) {
+                    Label(tr("Ouvrir dans fornews"), systemImage: "arrow.up.forward.app")
+                }
+                .tint(orange)
+            }
             if entite.image != nil { Text(tr("Photo : Wikimedia Commons.")) }
             if analyse.correction(entite) != nil { Text(tr("Corrigée par vous.")) }
         }

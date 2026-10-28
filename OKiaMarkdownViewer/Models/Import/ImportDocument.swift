@@ -161,7 +161,7 @@ final class ImportEnCours: ObservableObject, Identifiable {
                 guard page.aUnCorps else { throw LecteurPageWeb.Erreur.lecture }
                 let suivi: SuiviImport = { [weak self] a in self?.avancement = a }
                 let (titre, md) = analyser
-                    ? await FichePageWeb.produire(page, langue: Localization.shared.codeFornews, wikidata: wikidata,
+                    ? await FichePageWeb.produire(page, langue: Localization.shared.code, wikidata: wikidata,
                                                   traducteur: self?.traducteur, suivi: suivi)
                     : FichePageWeb.texteSeul(page)
                 try Task.checkCancellation()
