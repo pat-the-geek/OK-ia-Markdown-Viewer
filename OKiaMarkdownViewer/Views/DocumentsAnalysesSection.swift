@@ -14,6 +14,7 @@ struct DocumentsAnalysesSection: View {
     var supprimer: (DocumentAnalyse) -> Void = { _ in }
     @ObservedObject private var achat = AchatAnalytic.partage
     @ObservedObject private var loc = Localization.shared
+    @Environment(\.accueilEnGrille) private var enGrille
     /// Au-delà, la liste renvoie à Fichiers.
     private let plafond = 30
 
@@ -29,7 +30,11 @@ struct DocumentsAnalysesSection: View {
             if achat.acces, !documents.isEmpty {
                 ForEach(Array(groupes.enumerated()), id: \.element.id) { rang, groupe in
                     Section {
-                        ForEach(groupe.elements) { d in ligne(d) }
+                        if enGrille {
+                            GrilleCartes { ForEach(groupe.elements) { d in carte(d) } }
+                        } else {
+                            ForEach(groupe.elements) { d in ligne(d) }
+                        }
                     } header: {
                         // La recherche et l'analyse du coffre sont dans la barre de l'accueil.
                         if rang == 0 {
@@ -52,6 +57,13 @@ struct DocumentsAnalysesSection: View {
 
     private var groupes: [GroupeDate<DocumentAnalyse>] {
         DecoupageParDate.grouper(Array(documents.prefix(plafond)), date: \.date)
+    }
+
+    private func carte(_ d: DocumentAnalyse) -> some View {
+        CarteDocument(nom: d.nom, mention: DecoupageParDate.mention(pour: d.date),
+                      resoudre: { (d.url, nil) }, action: { ouvrir(d.url) }) {
+            Button(role: .destructive) { supprimer(d) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
     }
 
     private func ligne(_ d: DocumentAnalyse) -> some View {

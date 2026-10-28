@@ -144,10 +144,10 @@ struct RootView: View {
         // Spotlight suit le coffre et l'option : un rapport arrivé, l'option achetée ou perdue.
         .onChange(of: store.vault.reports) { _, _ in RechercheCoffre.partage.indexerSpotlight() }
         .onChange(of: achat.acces) { _, _ in RechercheCoffre.partage.indexerSpotlight() }
-        .sheet(isPresented: $analyseCoffre) {
+        // Sur Mac, toute la fenêtre, par-dessus l'accueil (Patrick, 28/10/2026 : « de la même taille que
+        // l'écran d'en dessous, et se superposer ») ; ailleurs, une page entière.
+        .feuilleOuFenetreEntiere(isPresented: $analyseCoffre) {
             AnalyseCoffreView(vault: store.vault, ouvrir: { store.ouvrirTrouve($0) })
-                // Une page entière sur iPad : la liste et la carte ont besoin de place.
-                .presentationSizing(.page)
         }
         // Le bilan d'un import par lot.
         .alert(tr("Import terminé"),
@@ -252,5 +252,18 @@ private struct RepriseApresAchat: ViewModifier {
             .onChange(of: store.vitrineImport) { _, ouverte in
                 if !ouverte { store.actionApresAchat = nil }
             }
+    }
+}
+
+extension View {
+    /// Sur Mac (l'app Mac comme l'app iPad sur Mac), une présentation qui couvre toute la fenêtre ;
+    /// ailleurs, une feuille au format page.
+    @ViewBuilder func feuilleOuFenetreEntiere<Contenu: View>(isPresented: Binding<Bool>,
+                                                            @ViewBuilder contenu: @escaping () -> Contenu) -> some View {
+        if AchatAnalytic.surMac || ProcessInfo.processInfo.isiOSAppOnMac {
+            fullScreenCover(isPresented: isPresented, content: contenu)
+        } else {
+            sheet(isPresented: isPresented) { contenu().presentationSizing(.page) }
+        }
     }
 }

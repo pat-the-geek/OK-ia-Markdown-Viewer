@@ -18,6 +18,8 @@ struct EmptyStateView: View {
     @ObservedObject private var achat = AchatAnalytic.partage
     @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
+    /// En grand format (Mac, iPad), l'accueil montre des cartes avec vignettes.
+    @Environment(\.horizontalSizeClass) private var tailleHorizontale
     /// Le document dont on demande la suppression, en attente de confirmation.
     @State private var aSupprimer: Suppression?
     @State private var erreurSuppression: String?
@@ -43,8 +45,12 @@ struct EmptyStateView: View {
                 }
                 ForEach(Array(groupesRecents.enumerated()), id: \.element.id) { rang, groupe in
                     Section {
-                        ForEach(groupe.elements) { item in ligneRecente(item) }
-                            .onDelete { positions in positions.map { groupe.elements[$0] }.forEach(recentsStore.remove) }
+                        if tailleHorizontale == .regular {
+                            GrilleCartes { ForEach(groupe.elements) { item in carteRecente(item) } }
+                        } else {
+                            ForEach(groupe.elements) { item in ligneRecente(item) }
+                                .onDelete { positions in positions.map { groupe.elements[$0] }.forEach(recentsStore.remove) }
+                        }
                     } header: {
                         Text(rang == 0 ? tr("Récents") + " · " + groupe.titre : groupe.titre)
                     }
@@ -69,6 +75,7 @@ struct EmptyStateView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .environment(\.accueilEnGrille, tailleHorizontale == .regular)
             .navigationTitle("md Viewer")
             .toolbar { barreAccueil }
         }
@@ -193,6 +200,21 @@ struct EmptyStateView: View {
     /// intitulés le disent, et la mention de chaque ligne n'a plus qu'à préciser l'heure.
     private var groupesRecents: [GroupeDate<RecentFile>] {
         DecoupageParDate.grouper(recents, date: \.openedAt)
+    }
+
+    /// Un récent en carte (grand format) : mêmes gestes que la ligne.
+    private func carteRecente(_ item: RecentFile) -> some View {
+        CarteDocument(nom: (item.name as NSString).deletingPathExtension,
+                      mention: DecoupageParDate.mention(pour: item.openedAt),
+                      resoudre: { recentsStore.resolve(item).map { ($0, $0) } },
+                      action: { onRecent(item) }) {
+            BoutonNouvelleFenetre {
+                DocumentAOuvrir(nom: item.name, signet: item.bookmark, adresse: item.remoteURLString)
+            }
+            Button(role: .destructive) { recentsStore.remove(item) } label: {
+                Label(tr("Retirer de la liste"), systemImage: "trash")
+            }
+        }
     }
 
     private func ligneRecente(_ item: RecentFile) -> some View {

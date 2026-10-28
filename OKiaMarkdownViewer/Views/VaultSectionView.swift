@@ -11,6 +11,7 @@ struct VaultSectionView: View {
     @State private var showSettings = false
     @State private var patternDraft = ""
     @ObservedObject private var loc = Localization.shared
+    @Environment(\.accueilEnGrille) private var enGrille
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -48,7 +49,11 @@ struct VaultSectionView: View {
         if vault.hasFolder {
             ForEach(groupes) { groupe in
                 Section(groupe.titre) {
-                    ForEach(groupe.elements) { report in ligne(report) }
+                    if enGrille {
+                        GrilleCartes { ForEach(groupe.elements) { report in carte(report) } }
+                    } else {
+                        ForEach(groupe.elements) { report in ligne(report) }
+                    }
                 }
             }
         }
@@ -59,6 +64,15 @@ struct VaultSectionView: View {
     /// de mai.
     private var groupes: [GroupeDate<VaultReport>] {
         DecoupageParDate.grouper(Array(vault.reports.prefix(15)), date: \.modified)
+    }
+
+    private func carte(_ report: VaultReport) -> some View {
+        CarteDocument(nom: (report.name as NSString).deletingPathExtension,
+                      mention: report.subfolder + " · " + DecoupageParDate.mention(pour: report.modified),
+                      resoudre: { report.downloaded ? vault.reportURL(report).map { ($0, vault.resolveFolder()) } : nil },
+                      action: { onOpen(report) }) {
+            Button(role: .destructive) { onDelete(report) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
     }
 
     private func ligne(_ report: VaultReport) -> some View {
