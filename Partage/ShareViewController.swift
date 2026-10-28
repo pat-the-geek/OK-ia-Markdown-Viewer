@@ -27,6 +27,8 @@ final class ShareViewController: UIViewController {
             etat.issue = .rien; return
         }
         do { try BoitePages.deposer(page) } catch { etat.issue = .rien; return }
+        // md Viewer déjà à l'écran (Duo déplié, iPad partagé, Mac) relève la boîte tout de suite.
+        BoitePages.signaler()
         etat.titre = page.titre ?? page.url
         // Ouvrir md Viewer, là où le système le permet ; il relève la boîte en passant au premier plan.
         let ouvert = await withCheckedContinuation { c in

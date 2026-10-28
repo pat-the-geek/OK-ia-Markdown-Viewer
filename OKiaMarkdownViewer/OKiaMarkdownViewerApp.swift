@@ -494,6 +494,9 @@ struct OKiaMarkdownViewerApp: App {
         AchatAnalytic.partage.demarrer()
         // La recherche dans le coffre et Spotlight lisent le coffre de l'app.
         RechercheCoffre.partage.brancher(store.vault)
+        // Une page partagée depuis Safari pendant que md Viewer est à l'écran : la fenêtre active la
+        // prend tout de suite (sinon, au prochain passage au premier plan).
+        BoitePages.ecouter { MainActor.assumeIsolated { (DocumentStore.actif ?? DocumentStore.principal)?.releverPages() } }
         #if targetEnvironment(macCatalyst)
         // Les Services macOS (1.4), une fois l'app lancée : `NSApplication` doit exister.
         DispatchQueue.main.async { store.brancherServices() }

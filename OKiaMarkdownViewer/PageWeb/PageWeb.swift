@@ -50,6 +50,27 @@ enum BoitePages {
         try JSONEncoder().encode(page).write(to: d.appendingPathComponent(nom), options: .atomic)
     }
 
+    /// Le signal qui prévient l'app qu'une page attend (une notification Darwin, d'un processus à
+    /// l'autre). Sans lui, md Viewer ne relevait la boîte qu'en revenant au premier plan : déjà à
+    /// l'écran (le Duo déplié, Safari d'un côté et md Viewer de l'autre ; l'iPad partagé ; le Mac),
+    /// il ne faisait rien (Patrick, 28/10/2026).
+    static let signal = "ch.ok-ia.markdownviewer.page-deposee"
+
+    /// L'extension, une fois la page déposée.
+    static func signaler() {
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                             CFNotificationName(signal as CFString), nil, nil, true)
+    }
+
+    /// L'app : `action` sur le fil principal à chaque page déposée, tant qu'elle tourne.
+    nonisolated(unsafe) private static var surSignal: (() -> Void)?
+    static func ecouter(_ action: @escaping () -> Void) {
+        surSignal = action
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
+            DispatchQueue.main.async { BoitePages.surSignal?() }
+        }, signal as CFString, nil, .deliverImmediately)
+    }
+
     /// Les pages en attente, des plus anciennes aux plus récentes ; chacune est retirée de la boîte.
     static func relever() -> [PageWeb] {
         guard let d = dossier,
