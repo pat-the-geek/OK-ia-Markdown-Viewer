@@ -30,6 +30,13 @@ final class VaultStore: ObservableObject {
     init() {
         bookmark = UserDefaults.standard.data(forKey: folderKey)
         pattern = UserDefaults.standard.string(forKey: patternKey) ?? VaultStore.defaultPattern
+        #if DEBUG
+        // Le coffre de démonstration des captures (OKIA_DEMO) : lu, jamais enregistré.
+        if let demo = ModeDemo.coffre {
+            bookmark = try? demo.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+            pattern = VaultStore.defaultPattern
+        }
+        #endif
         folderName = resolveFolder()?.lastPathComponent
     }
 

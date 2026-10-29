@@ -99,6 +99,9 @@ final class SynchroICloud {
 
     /// Relève les changements des autres appareils, puis envoie ce qui a changé ici.
     func synchroniser() async {
+        #if DEBUG
+        if ModeDemo.actif { return }   // les captures ne lisent ni n'écrivent l'iCloud de l'utilisateur
+        #endif
         guard !enCours else { return }
         enCours = true
         defer { enCours = false }

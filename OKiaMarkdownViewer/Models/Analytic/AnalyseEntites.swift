@@ -53,7 +53,12 @@ final class CacheEntites {
             ?? FileManager.default.temporaryDirectory
         // « v2 » : le choix de fiche a changé le 25/10/2026 (B90) — les réponses de l'ancien choix
         // (NASA → filiale de Saxe-Anhalt) seraient restées trente jours.
-        self.fichier = fichier ?? dossier.appendingPathComponent("Analytic/entites-v2.json")
+        var defaut = dossier.appendingPathComponent("Analytic/entites-v2.json")
+        #if DEBUG
+        // Les captures (OKIA_DEMO) ont leur propre cache : celui de l'utilisateur reste intact.
+        if let demo = ModeDemo.dossier { defaut = demo.appendingPathComponent("Analytic/entites-v2.json") }
+        #endif
+        self.fichier = fichier ?? defaut
         if let data = try? Data(contentsOf: self.fichier),
            let lues = try? JSONDecoder().decode([String: ResolutionEntite].self, from: data) {
             entrees = lues
@@ -210,7 +215,8 @@ final class AnalyseEntites: ObservableObject {
     /// iPad), pour que Patrick puisse le lire et le recopier : jamais dans l'App Store.
     static var diagnosticVisible: Bool {
         #if DEBUG
-        return true
+        // Pas sur les captures App Store (OKIA_CAPTURE, posé par scripts/screenshots.sh).
+        return ProcessInfo.processInfo.environment["OKIA_CAPTURE"] == nil
         #else
         return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
         #endif

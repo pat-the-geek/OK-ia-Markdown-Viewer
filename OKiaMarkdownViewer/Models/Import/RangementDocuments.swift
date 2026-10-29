@@ -42,7 +42,10 @@ enum RangementDocuments {
 
     /// iCloud Drive (« md Viewer »), sinon les documents de l'app.
     static func racine() -> URL {
-        FileManager.default.url(forUbiquityContainerIdentifier: SynchroICloud.conteneur)?
+        #if DEBUG
+        if let demo = ModeDemo.dossier { return demo }
+        #endif
+        return FileManager.default.url(forUbiquityContainerIdentifier: SynchroICloud.conteneur)?
             .appendingPathComponent("Documents", isDirectory: true)
             ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }

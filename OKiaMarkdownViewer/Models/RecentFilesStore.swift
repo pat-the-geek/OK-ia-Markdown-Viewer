@@ -88,12 +88,18 @@ final class RecentFilesStore: ObservableObject {
     }
 
     private func load() {
+        #if DEBUG
+        if ModeDemo.actif { return }   // l'accueil de démonstration n'a pas de récents
+        #endif
         guard let data = UserDefaults.standard.data(forKey: key),
               let decoded = try? JSONDecoder().decode([RecentFile].self, from: data) else { return }
         items = decoded
     }
 
     private func save() {
+        #if DEBUG
+        if ModeDemo.actif { return }
+        #endif
         if let data = try? JSONEncoder().encode(items) {
             UserDefaults.standard.set(data, forKey: key)
         }

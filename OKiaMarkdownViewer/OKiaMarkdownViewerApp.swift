@@ -513,6 +513,13 @@ struct OKiaMarkdownViewerApp: App {
             let name = env["OKIA_RENDER_NAME"] ?? "Demo.md"
             store.document = MarkdownDocument(filename: name, text: content)
         }
+        // OKIA_RENDER_FILE=<chemin> : de même pour un document trop gros pour l'environnement (un
+        // import aux images embarquées : 3 Mo, quand une variable n'en passe qu'un).
+        if let chemin = env["OKIA_RENDER_FILE"], !chemin.isEmpty,
+           let texte = try? String(contentsOfFile: chemin, encoding: .utf8) {
+            let name = env["OKIA_RENDER_NAME"] ?? (chemin as NSString).lastPathComponent
+            store.document = MarkdownDocument(filename: name, text: texte)
+        }
         // OKIA_COFFRE=<dossier> : le coffre, sans le sélecteur (un dossier du conteneur au simulateur) ;
         // OKIA_ANALYSE_COFFRE : ouvre l'analyse de tout le coffre au lancement.
         if let dossier = env["OKIA_COFFRE"], !dossier.isEmpty {
