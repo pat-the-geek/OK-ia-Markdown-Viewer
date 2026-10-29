@@ -12,8 +12,10 @@ struct AnalyseCoffreView: View {
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
     @State private var vue: Vue = .galerie
-    /// Le tri des entités dans chaque genre, retenu d'une ouverture à l'autre.
-    @AppStorage("okia.coffre.tri") private var tri: Tri = .mentions
+    /// Le tri des entités dans chaque genre, retenu d'une ouverture à l'autre. Alphabétique d'abord
+    /// (Patrick, 29/10/2026 : « il faut trier dans l'ordre alphabétique ») — clé nouvelle, pour que le
+    /// tri par mentions, l'ancien défaut, ne reste pas retenu chez ceux qui ne l'ont jamais choisi.
+    @AppStorage("okia.coffre.ordre") private var tri: Tri = .alphabetique
     @State private var recherche = ""
     @State private var genre: TypeEntite?
     @State private var chemin: [AnalyseCoffre.EntiteCoffre] = []
@@ -74,6 +76,15 @@ struct AnalyseCoffreView: View {
             }
             .pickerStyle(.segmented)
             .frame(maxWidth: 320)
+        }
+        // Le tri d'un toucher, à côté du filtre : dans le menu seul, on ne le trouvait pas.
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { tri = tri == .alphabetique ? .mentions : .alphabetique } label: {
+                Image(systemName: tri.symbole)
+            }
+            .tint(orange)
+            .accessibilityLabel(tr("Trier"))
+            .accessibilityValue(tri.libelle)
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
