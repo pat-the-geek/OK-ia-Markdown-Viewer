@@ -60,7 +60,7 @@ final class CacheImagesEntites: @unchecked Sendable {
             // Le cadrage avec le décodage, hors du fil principal : la vignette arrive bien cadrée.
             let t = Task.detached(priority: .userInitiated) { [self] in
                 let image = await self.charger(adresse)
-                if let image { Cadrage.calculer(image, cle: adresse) }
+                if let image { await Cadrage.calculer(image, cle: adresse) }
                 return image
             }
             enCours[adresse] = t

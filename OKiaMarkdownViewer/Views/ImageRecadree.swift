@@ -19,13 +19,44 @@ enum Cadrage {
         connus.object(forKey: cle as NSString)?.cgPointValue
     }
 
+    /// Vision travaille sur ses propres fils, jamais sur ceux de Swift Concurrency : son appel
+    /// synchrone attend un travail qu'il confie lui-même à ces fils. Vingt vignettes de l'analyse du
+    /// coffre (iPad, 29/10/2026) en occupaient tous les fils : Vision attendait à jamais, et avec lui
+    /// toutes les photos — plus aucune ne s'affichait. Quatre à la fois au plus.
+    private static let file: OperationQueue = {
+        let f = OperationQueue()
+        f.name = "Cadrage"
+        f.qualityOfService = .userInitiated
+        f.maxConcurrentOperationCount = 4
+        return f
+    }()
+
     /// Calcule et garde le point fort ; en coordonnées de l'image, de 0 à 1, depuis le haut à gauche.
+    /// Au-delà de trois secondes, la vignette n'attend plus : elle se centre par défaut, et le point
+    /// calculé ensuite servira à son prochain affichage.
     @discardableResult
-    static func calculer(_ image: UIImage, cle: String) -> CGPoint {
+    static func calculer(_ image: UIImage, cle: String) async -> CGPoint {
         if let p = connu(cle) { return p }
-        let p = image.cgImage.flatMap(pointFort) ?? parDefaut
-        connus.setObject(NSValue(cgPoint: p), forKey: cle as NSString)
-        return p
+        return await withCheckedContinuation { (suite: CheckedContinuation<CGPoint, Never>) in
+            let reponse = UneReponse(suite)
+            file.addOperation {
+                let p = connu(cle) ?? image.cgImage.flatMap(pointFort) ?? parDefaut
+                connus.setObject(NSValue(cgPoint: p), forKey: cle as NSString)
+                reponse.donner(p)
+            }
+            DispatchQueue.global().asyncAfter(deadline: .now() + 3) { reponse.donner(parDefaut) }
+        }
+    }
+
+    /// Reprend une attente une seule fois : du calcul ou du délai, le premier qui répond.
+    private final class UneReponse: @unchecked Sendable {
+        private var suite: CheckedContinuation<CGPoint, Never>?
+        private let verrou = NSLock()
+        init(_ suite: CheckedContinuation<CGPoint, Never>) { self.suite = suite }
+        func donner(_ p: CGPoint) {
+            verrou.lock(); let s = suite; suite = nil; verrou.unlock()
+            s?.resume(returning: p)
+        }
     }
 
     private static func pointFort(_ cg: CGImage) -> CGPoint? {

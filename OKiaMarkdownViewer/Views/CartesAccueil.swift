@@ -56,7 +56,7 @@ final class ApercusDocuments {
         // Le cadrage de la vignette avec elle, hors du fil principal (`Cadrage`).
         let a = await Task.detached(priority: .utility) {
             let a = Self.calculer(url, portee: portee)
-            if let i = a.image { Cadrage.calculer(i, cle: cle) }
+            if let i = a.image { await Cadrage.calculer(i, cle: cle) }
             return a
         }.value
         memoire[cle] = a
