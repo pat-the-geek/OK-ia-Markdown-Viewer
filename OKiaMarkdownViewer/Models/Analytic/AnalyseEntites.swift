@@ -312,7 +312,7 @@ final class AnalyseEntites: ObservableObject {
         tache = Task { [weak self] in
             let langue = TexteAnalysable.langue(texte) ?? Localization.shared.code
             let duRapport = LecteurRapportFornews.lire(texte)
-            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue)
+            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue, replis: duRapport.isEmpty)
             guard let self, !Task.isCancelled else { return }
             // Le document d'abord : une entité du rapport garde son genre et ses coordonnées ; la
             // détection n'ajoute que ce qu'il ne nommait pas.

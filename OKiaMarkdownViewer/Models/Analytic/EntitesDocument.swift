@@ -225,7 +225,11 @@ enum DetecteurEntites {
     /// 2. À défaut, Apple Intelligence, avec l'extraction de fornews (`NERFoundationModels`).
     /// 3. En dernier recours, les suites de mots à majuscule, passées au même filtre ; Wikidata,
     ///    s'il est accepté, leur donne ensuite leur genre.
-    static func detecter(_ markdown: String, langue: String?) async -> (entites: [EntiteDocument], methode: Methode) {
+    /// `replis` : faute de noms par NLTagger, redemander le modèle puis essayer Apple Intelligence —
+    /// des secondes, parfois des dizaines. Pas pour un rapport qui nomme déjà ses entités : la
+    /// détection n'y ajoute que ce qu'il ne nommait pas (Patrick, B125 : « l'affichage des entités
+    /// d'un document est trop lent »).
+    static func detecter(_ markdown: String, langue: String?, replis: Bool = true) async -> (entites: [EntiteDocument], methode: Methode) {
         let texte = TexteAnalysable.depuis(markdown)
         guard !texte.isEmpty else { return ([], .nlTagger) }
         // `NLTagger` d'abord, même quand il ne déclare pas son modèle de noms : au simulateur
@@ -234,7 +238,7 @@ enum DetecteurEntites {
         // fait des personnes de « Juni » ou « Sie ».
         var brutes = await parNLTagger(texte, langue: langue)
         var methode = Methode.nlTagger
-        if brutes.isEmpty {
+        if brutes.isEmpty, replis {
             // Rien trouvé : le modèle de noms est redemandé — même déclaré, il peut manquer sur
             // l'appareil (Duo, B122 : « Aucune entité », NLTagger, langue fr) —, puis réessayé ;
             // ensuite Apple Intelligence. Les majuscules seulement sans modèle déclaré : avec un
