@@ -216,26 +216,28 @@ enum DetecteurEntites {
     static func detecter(_ markdown: String, langue: String?) async -> (entites: [EntiteDocument], methode: Methode) {
         let texte = TexteAnalysable.depuis(markdown)
         guard !texte.isEmpty else { return ([], .nlTagger) }
-        let brutes: [EntiteDetectee]
-        let methode: Methode
         // `NLTagger` d'abord, même quand il ne déclare pas son modèle de noms : au simulateur
         // (iOS 26.5 et 27.1), `availableTagSchemes` ne le liste pas, et pourtant il trouve les noms
         // (29/10/2026). Sans ce premier essai, on passait au repli par majuscules, dont l'allemand
-        // fait des personnes de « Juni » ou « Sie ». Rien trouvé et pas de modèle : les replis.
-        let directes = await parNLTagger(texte, langue: langue)
-        let declare = NLTagger.availableTagSchemes(for: .word, language: NLLanguage(langue ?? "en")).contains(.nameType)
-        if !directes.isEmpty || declare {
-            brutes = directes
-            methode = .nlTagger
-        } else if await modeleDeNomsPret(langue) {
-            brutes = await parNLTagger(texte, langue: langue)
-            methode = .nlTagger
-        } else if let parIA = await parAppleIntelligence(texte, langue: langue) {
-            brutes = parIA
-            methode = .appleIntelligence
-        } else {
-            brutes = parMajuscules(texte)
-            methode = .majuscules
+        // fait des personnes de « Juni » ou « Sie ».
+        var brutes = await parNLTagger(texte, langue: langue)
+        var methode = Methode.nlTagger
+        if brutes.isEmpty {
+            // Rien trouvé : le modèle de noms est redemandé — même déclaré, il peut manquer sur
+            // l'appareil (Duo, B122 : « Aucune entité », NLTagger, langue fr) —, puis réessayé ;
+            // ensuite Apple Intelligence. Les majuscules seulement sans modèle déclaré : avec un
+            // modèle qui ne trouve rien, mieux vaut aucune entité que des mots courants.
+            let declare = NLTagger.availableTagSchemes(for: .word, language: NLLanguage(langue ?? "en")).contains(.nameType)
+            if await modeleDeNomsPret(langue, redemander: true) {
+                brutes = await parNLTagger(texte, langue: langue)
+            }
+            if brutes.isEmpty, let parIA = await parAppleIntelligence(texte, langue: langue) {
+                brutes = parIA
+                methode = .appleIntelligence
+            } else if brutes.isEmpty, !declare {
+                brutes = parMajuscules(texte)
+                methode = .majuscules
+            }
         }
         // « IA », « AI » : l'intelligence artificielle, un nom commun — que le repli par majuscules
         // comptait quatorze fois dans un briefing, et que Wikidata prenait pour Internet Archive.
@@ -247,10 +249,11 @@ enum DetecteurEntites {
     static let nomsCommunsEnSigle: Set<String> = ["IA", "AI", "KI"]
 
     /// Le modèle de noms de `NLTagger` est-il là, pour cette langue ? Sinon, on le demande.
-    static func modeleDeNomsPret(_ langue: String?) async -> Bool {
+    /// `redemander` : même déclaré, le modèle est demandé à nouveau (il peut manquer quand même).
+    static func modeleDeNomsPret(_ langue: String?, redemander: Bool = false) async -> Bool {
         let l = NLLanguage(langue ?? "en")
         func present() -> Bool { NLTagger.availableTagSchemes(for: .word, language: l).contains(.nameType) }
-        if present() { return true }
+        if present(), !redemander { return true }
         // Une demande par langue et par lancement : sans réponse, la suivante attendrait encore huit
         // secondes pour rien.
         guard await DemandesDeModele.partage.premiere(l) else { return false }
