@@ -87,6 +87,7 @@ enum ImportPDF {
         var paragraphe: [String] = []
         var liste: [String] = []
         var titre: String?
+        var blocDuTitre: Int?    // le bloc du premier titre : sa seconde ligne complète le titre du document
         // Une figure posée au milieu d'une phrase (la colonne continue plus loin) attend, avec sa
         // légende, que le paragraphe se termine : la phrase ne se coupe pas sur une photo.
         var apres: [String] = []
@@ -137,7 +138,8 @@ enum ImportPDF {
                 // Une entrée de sommaire reprend souvent un signet : elle reste une entrée, pas un titre.
                 if !l.sommaire, let n = signets[cle] ?? (signets.isEmpty && l.peutEtreTitre(corps: corps) ? parTaille : nil) {
                     fermer()
-                    if titre == nil { titre = l.texte }
+                    let premier = titre == nil
+                    if premier { titre = l.texte }
                     // Un titre sur deux lignes : la seconde rejoint la première.
                     // Lue sur une image, la hauteur varie d'une ligne à l'autre d'un même titre : le palier compte.
                     let memeTaille = precedente.map { p in
@@ -146,8 +148,12 @@ enum ImportPDF {
                     if let p = precedente, p.estTitre, memeTaille, l.haut - p.bas < Double(l.taille) * 0.8,
                        let derniere = blocs.popLast() {
                         blocs.append(derniere + " " + MarkdownImport.echapper(l.texte))
+                        // Le titre du document aussi : il s'arrêtait à la première ligne
+                        // (« Rapport annuel 2026 — Office régional du », 28/10/2026).
+                        if blocDuTitre == blocs.count - 1, let t = titre { titre = t + " " + l.texte }
                     } else {
                         blocs.append(String(repeating: "#", count: min(n, 6)) + " " + MarkdownImport.echapper(l.texte))
+                        if premier { blocDuTitre = blocs.count - 1 }
                     }
                     precedente = l.titre()
                     continue
