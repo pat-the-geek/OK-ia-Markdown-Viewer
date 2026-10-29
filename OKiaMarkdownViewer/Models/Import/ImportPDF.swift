@@ -313,16 +313,140 @@ enum ImportPDF {
     }
 
     /// Le texte sans caractères de commande ni caractères privés de police (ils s'affichaient en carrés).
-    static func nettoyer(_ t: String) -> String {
-        t.replacingOccurrences(of: #"[\x00-\x1F\x7F\x{E000}-\x{F8FF}]"#, with: " ", options: .regularExpression)
+    /// `devanagariVisuel` : la page entière lue dans l'ordre de l'œil (`ordreVisuel`) ; nil, on en
+    /// juge sur ce seul texte.
+    static func nettoyer(_ t: String, devanagariVisuel: Bool? = nil) -> String {
+        reparerEcritures(t, devanagariVisuel: devanagariVisuel)
+            .replacingOccurrences(of: #"[\x00-\x1F\x7F\x{E000}-\x{F8FF}]"#, with: " ", options: .regularExpression)
             .replacingOccurrences(of: #" {2,}"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Les glyphes qu'une police partage entre deux écritures, que le PDF étiquette du mauvais
+    /// caractère — constaté sur les PDF exportés par WebKit (l'export de l'app, celui de Safari), le
+    /// 29/10/2026 : le texte paraît juste, mais la recherche, les entités et la traduction le lisent
+    /// faux. Le cyrillique « к » sortait en « ĸ » (kra), le vietnamien « Đ » en « Ð » (eth), les
+    /// idéogrammes 人, 水… en radicaux Kangxi (⼈, ⽔…), et le hindi dans l'ordre visuel.
+    static func reparerEcritures(_ t: String, devanagariVisuel: Bool? = nil) -> String {
+        var s = t
+        if s.contains("ĸ") {
+            s = s.replacingOccurrences(of: #"(?<=[\x{0400}-\x{04FF}])ĸ|ĸ(?=[\x{0400}-\x{04FF}])"#, with: "к",
+                                       options: .regularExpression)
+        }
+        // Un texte vietnamien : ses voyelles à crochet ou à corne ne se trouvent dans aucune autre langue.
+        if s.contains(where: { $0 == "Ð" || $0 == "ð" }),
+           s.range(of: #"[ơưƠƯạảấầẩẫậắằẳẵặẹẻẽếềểễệịỉọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]"#, options: .regularExpression) != nil {
+            s = s.replacingOccurrences(of: "Ð", with: "Đ").replacingOccurrences(of: "ð", with: "đ")
+        }
+        if s.unicodeScalars.contains(where: { (0x2E80...0x2FDF).contains($0.value) }) {
+            var r = String.UnicodeScalarView()
+            for u in s.unicodeScalars {
+                if (0x2F00...0x2FD5).contains(u.value) {
+                    // Les radicaux Kangxi ont leur idéogramme pour décomposition de compatibilité.
+                    r.append(contentsOf: String(u).precomposedStringWithCompatibilityMapping.unicodeScalars)
+                } else if let i = radicauxSupplementaires[u.value], let v = Unicode.Scalar(i) {
+                    r.append(v)
+                } else {
+                    r.append(u)
+                }
+            }
+            s = String(r)
+        }
+        if s.unicodeScalars.contains(where: { (0x0900...0x097F).contains($0.value) }), devanagariVisuel ?? ordreVisuel(s) {
+            s = devanagariLogique(s)
+        }
+        return s
+    }
+
+    /// Les radicaux du bloc supplémentaire (U+2E80…) que les polices chinoises dessinent comme des
+    /// idéogrammes, sans décomposition Unicode : leur équivalent, tiré de EquivalentUnifiedIdeograph.txt
+    /// (Unicode 18).
+    static let radicauxSupplementaires: [UInt32: UInt32] = [
+        0x2E81: 0x5382, 0x2E82: 0x4E5B, 0x2E83: 0x4E5A, 0x2E84: 0x4E59, 0x2E85: 0x4EBB, 0x2E86: 0x5182,
+        0x2E87: 0x20628, 0x2E88: 0x5200, 0x2E89: 0x5202, 0x2E8A: 0x535C, 0x2E8B: 0x353E, 0x2E8C: 0x5C0F,
+        0x2E8D: 0x5C0F, 0x2E8E: 0x5140, 0x2E8F: 0x5C23, 0x2E90: 0x5C22, 0x2E91: 0x21BC2, 0x2E92: 0x5DF3,
+        0x2E93: 0x5E7A, 0x2E94: 0x5F51, 0x2E95: 0x2B739, 0x2E96: 0x5FC4, 0x2E97: 0x5FC3, 0x2E98: 0x624C,
+        0x2E99: 0x6535, 0x2E9B: 0x65E1, 0x2E9C: 0x65E5, 0x2E9D: 0x6708, 0x2E9E: 0x6B7A, 0x2E9F: 0x6BCD,
+        0x2EA0: 0x6C11, 0x2EA1: 0x6C35, 0x2EA2: 0x6C3A, 0x2EA3: 0x706C, 0x2EA4: 0x722B, 0x2EA5: 0x722B,
+        0x2EA6: 0x4E2C, 0x2EA7: 0x725B, 0x2EA8: 0x72AD, 0x2EA9: 0x738B, 0x2EAA: 0x24D14, 0x2EAB: 0x76EE,
+        0x2EAC: 0x793A, 0x2EAD: 0x793B, 0x2EAE: 0x25AD7, 0x2EAF: 0x7CF9, 0x2EB0: 0x7E9F, 0x2EB1: 0x7F53,
+        0x2EB2: 0x7F52, 0x2EB3: 0x34C1, 0x2EB4: 0x5197, 0x2EB5: 0x2626B, 0x2EB6: 0x7F8A, 0x2EB7: 0x2634C,
+        0x2EB8: 0x2634B, 0x2EB9: 0x8002, 0x2EBA: 0x8080, 0x2EBB: 0x807F, 0x2EBC: 0x8089, 0x2EBD: 0x26951,
+        0x2EBE: 0x8279, 0x2EBF: 0x8279, 0x2EC0: 0x8279, 0x2EC1: 0x864E, 0x2EC2: 0x8864, 0x2EC3: 0x8980,
+        0x2EC4: 0x897F, 0x2EC5: 0x89C1, 0x2EC6: 0x89D2, 0x2EC7: 0x278B2, 0x2EC8: 0x8BA0, 0x2EC9: 0x8D1D,
+        0x2ECA: 0x27FB7, 0x2ECB: 0x8F66, 0x2ECC: 0x8FB6, 0x2ECD: 0x8FB6, 0x2ECE: 0x8FB6, 0x2ECF: 0x9091,
+        0x2ED0: 0x9485, 0x2ED1: 0x9577, 0x2ED2: 0x9578, 0x2ED3: 0x957F, 0x2ED4: 0x95E8, 0x2ED5: 0x28E0F,
+        0x2ED6: 0x961D, 0x2ED7: 0x96E8, 0x2ED8: 0x9752, 0x2ED9: 0x97E6, 0x2EDA: 0x9875, 0x2EDB: 0x98CE,
+        0x2EDC: 0x98DE, 0x2EDD: 0x98DF, 0x2EDE: 0x2967F, 0x2EDF: 0x98E0, 0x2EE0: 0x9963, 0x2EE1: 0x29810,
+        0x2EE2: 0x9A6C, 0x2EE3: 0x9AA8, 0x2EE4: 0x9B3C, 0x2EE5: 0x9C7C, 0x2EE6: 0x9E1F, 0x2EE7: 0x5364,
+        0x2EE8: 0x9EA6, 0x2EE9: 0x9EC4, 0x2EEA: 0x9EFE, 0x2EEB: 0x6589, 0x2EEC: 0x9F50, 0x2EED: 0x6B6F,
+        0x2EEE: 0x9F7F, 0x2EEF: 0x7ADC, 0x2EF0: 0x9F99, 0x2EF1: 0x9F9C, 0x2EF2: 0x4E80, 0x2EF3: 0x9F9F,
+    ]
+
+    /// Le texte trahit-il l'ordre de l'œil ? En ordre logique, « ि » suit toujours une consonne et
+    /// « र् » précède toujours une consonne. Jugé sur la page entière : une ligne seule peut n'en rien
+    /// montrer (« पयर्टकों » sur une ligne sans « ि »).
+    static func ordreVisuel(_ t: String) -> Bool {
+        let c = Array(t.unicodeScalars)
+        func consonne(_ i: Int) -> Bool { i >= 0 && i < c.count && ((0x0915...0x0939).contains(c[i].value) || (0x0958...0x095F).contains(c[i].value)) }
+        return c.indices.contains { k in c[k].value == 0x093F && !consonne(k - 1) && !(k > 0 && c[k - 1].value == 0x093C) }
+            || c.indices.contains { k in c[k].value == 0x0930 && k + 1 < c.count && c[k + 1].value == 0x094D
+                                         && !(k > 0 && c[k - 1].value == 0x094D) && !consonne(k + 2) }
+    }
+
+    /// Le devanagari d'un PDF lu dans l'ordre de l'œil, remis dans l'ordre logique : la voyelle « ि »,
+    /// dessinée devant sa consonne, repasse après elle ; le « र् » en exposant (reph), dessiné après
+    /// la syllabe, repasse devant elle (« वािषर्क » → « वार्षिक »). Seulement pour un texte dans l'ordre
+    /// visuel (`ordreVisuel`) : un texte déjà juste reste intact. Les espaces que le PDF glisse dans
+    /// un mot (« वार्षि क ») restent : rien ne les distingue d'une fin de mot.
+    static func devanagariLogique(_ t: String) -> String {
+        var c = Array(t.unicodeScalars)
+        func consonne(_ i: Int) -> Bool { i >= 0 && i < c.count && ((0x0915...0x0939).contains(c[i].value) || (0x0958...0x095F).contains(c[i].value)) }
+        func nukta(_ i: Int) -> Bool { i < c.count && c[i].value == 0x093C }
+        func virama(_ i: Int) -> Bool { i >= 0 && i < c.count && c[i].value == 0x094D }
+        func signe(_ i: Int) -> Bool { i >= 0 && i < c.count && ((0x093E...0x094C).contains(c[i].value) || (0x0900...0x0903).contains(c[i].value) || (0x0962...0x0963).contains(c[i].value)) }
+        let iMatra: UInt32 = 0x093F, ra: UInt32 = 0x0930
+        // La fin d'un groupe de consonnes commencé en i : consonne (nukta) (virama consonne (nukta))*.
+        func finGroupe(_ i: Int) -> Int {
+            var j = i + 1
+            if nukta(j) { j += 1 }
+            while virama(j), consonne(j + 1) { j += 2; if nukta(j) { j += 1 } }
+            return j
+        }
+        // 1. « ि » devant son groupe de consonnes.
+        var k = 0
+        while k < c.count {
+            if c[k].value == iMatra, consonne(k + 1) {
+                let fin = finGroupe(k + 1)
+                let groupe = Array(c[(k + 1)..<fin])
+                c.replaceSubrange(k..<fin, with: groupe + [c[k]])
+                k = fin
+            } else { k += 1 }
+        }
+        // 2. Le reph après sa syllabe : il repasse devant le groupe de consonnes qui la commence.
+        k = 0
+        while k < c.count {
+            if c[k].value == ra, virama(k + 1), !virama(k - 1), k > 0, consonne(k - 1) || signe(k - 1) || nukta(k - 1) {
+                var debut = k - 1
+                while debut >= 0, signe(debut) || nukta(debut) { debut -= 1 }
+                guard debut >= 0, consonne(debut) else { k += 1; continue }
+                while debut >= 2, virama(debut - 1), consonne(debut - 2) { debut -= 2 }
+                let reph = [c[k], c[k + 1]]
+                c.removeSubrange(k...(k + 1))
+                c.insert(contentsOf: reph, at: debut)
+                k += 2
+            } else { k += 1 }
+        }
+        var r = String.UnicodeScalarView()
+        r.append(contentsOf: c)
+        return String(r)
     }
 
     static func lignes(_ page: PDFPage) -> [Ligne] {
         let boite = page.bounds(for: .mediaBox)
         guard let tout = page.selection(for: boite) else { return [] }
         let index = page.document.map { $0.index(for: page) } ?? 0
+        let visuel = ordreVisuel(page.string ?? "")
         var r: [Ligne] = []
         for s in tout.selectionsByLine() {
             guard let attr = s.attributedString else { continue }
@@ -333,7 +457,8 @@ enum ImportPDF {
             let sommaire = brut.range(of: #"[\x00-\x08\x0B-\x1F\t]\s*\d{0,4}$"#, options: .regularExpression) != nil
                 && brut.range(of: #"^[\x00-\x1F\s\d]*$"#, options: .regularExpression) == nil
             let texte = Self.nettoyer(brut.replacingOccurrences(of: #"[\x00-\x08\x0B-\x1F\t]+\s*(\d{1,4})$"#,
-                                                                with: " … $1", options: .regularExpression))
+                                                                with: " … $1", options: .regularExpression),
+                                      devanagariVisuel: visuel)
             guard !texte.isEmpty else { continue }
             let b = s.bounds(for: page)
             var tailles: [Int: Int] = [:]
@@ -520,6 +645,7 @@ enum ImportPDF {
     /// du texte de la page — ligatures, accents décomposés — : on ne s'y fie pas.)
     static func cases(_ lignes: [Ligne], page: PDFPage) -> [[Case]] {
         let boite = page.bounds(for: .mediaBox)
+        let visuel = ordreVisuel(page.string ?? "")
         return lignes.map { l in
             guard l.bloc == nil, l.droite > l.gauche else { return [] }
             let yMilieu = boite.maxY - CGFloat((l.haut + l.bas) / 2)
@@ -554,7 +680,7 @@ enum ImportPDF {
             let hauteur = h
             return plages.compactMap { a, b in
                 let zone = CGRect(x: CGFloat(a) - 0.5, y: yMilieu - hauteur * 0.3, width: CGFloat(b - a) + 1.5, height: hauteur * 0.6)
-                guard let t = page.selection(for: zone)?.string.map(Self.nettoyer)?
+                guard let t = page.selection(for: zone)?.string.map({ Self.nettoyer($0, devanagariVisuel: visuel) })?
                     .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression), !t.isEmpty else { return nil }
                 return Case(texte: t, gauche: a, droite: b + 1)
             }
