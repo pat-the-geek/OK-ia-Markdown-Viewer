@@ -218,7 +218,16 @@ enum DetecteurEntites {
         guard !texte.isEmpty else { return ([], .nlTagger) }
         let brutes: [EntiteDetectee]
         let methode: Methode
-        if await modeleDeNomsPret(langue) {
+        // `NLTagger` d'abord, même quand il ne déclare pas son modèle de noms : au simulateur
+        // (iOS 26.5 et 27.1), `availableTagSchemes` ne le liste pas, et pourtant il trouve les noms
+        // (29/10/2026). Sans ce premier essai, on passait au repli par majuscules, dont l'allemand
+        // fait des personnes de « Juni » ou « Sie ». Rien trouvé et pas de modèle : les replis.
+        let directes = await parNLTagger(texte, langue: langue)
+        let declare = NLTagger.availableTagSchemes(for: .word, language: NLLanguage(langue ?? "en")).contains(.nameType)
+        if !directes.isEmpty || declare {
+            brutes = directes
+            methode = .nlTagger
+        } else if await modeleDeNomsPret(langue) {
             brutes = await parNLTagger(texte, langue: langue)
             methode = .nlTagger
         } else if let parIA = await parAppleIntelligence(texte, langue: langue) {
