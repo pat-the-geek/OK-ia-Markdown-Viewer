@@ -11,19 +11,17 @@ enum ModeDemo {
         .flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0, isDirectory: true) }
 
     static var actif: Bool { dossier != nil }
-    /// Le coffre : le dossier de la démonstration qui n'est ni celui des documents analysés ni le
-    /// cache (« Tourisme suisse », traduit) — son nom est celui que l'accueil affiche.
+    /// Le coffre : le dossier de la démonstration qui contient des rapports (`rapports-*`, comme le
+    /// coffre réel) — « Tourisme suisse », traduit ; son nom est celui que l'accueil affiche. Plus le
+    /// nom des documents analysés à écarter : il est écrit dans quinze langues.
     static var coffre: URL? {
         guard let dossier,
               let noms = try? FileManager.default.contentsOfDirectory(atPath: dossier.path) else { return nil }
         return noms.sorted()
             .map { dossier.appendingPathComponent($0, isDirectory: true) }
             .first { u in
-                var rep: ObjCBool = false
-                let n = u.lastPathComponent.lowercased()
-                // « analiz » : « Documentos analizados », « Documenti analizzati ».
-                return FileManager.default.fileExists(atPath: u.path, isDirectory: &rep) && rep.boolValue
-                    && !n.contains("analy") && !n.contains("analiz") && !n.hasPrefix(".")
+                let dedans = (try? FileManager.default.contentsOfDirectory(atPath: u.path)) ?? []
+                return dedans.contains { $0.hasPrefix("rapports-") }
             }
     }
 }
