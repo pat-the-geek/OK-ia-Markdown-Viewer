@@ -304,6 +304,7 @@ struct ReaderView: View {
             }
             #endif
             paletteAnnotations
+            rechercheDuo
             .onChange(of: appareilPliable) { _, _ in poserCoinLibre() }
             .onChange(of: colonneAGauche) { _, _ in poserCoinLibre() }
             // Tout de suite, puis une fois la rotation posée : la vue web n'a pas encore sa
@@ -453,6 +454,10 @@ struct ReaderView: View {
             if let vue = ProcessInfo.processInfo.environment["OKIA_ANALYTIC"] {
                 if let v = EntitesView.Vue(rawValue: vue) { UserDefaults.standard.set(v.rawValue, forKey: "okia.analytic.vue") }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) { ouvrir(.entites) }
+            }
+            // OKIA_CHERCHER=<texte> cherche dans le document, comme « Voir dans le document ».
+            if let q = ProcessInfo.processInfo.environment["OKIA_CHERCHER"], !q.isEmpty {
+                chercher(q, apres: 2)
             }
         }
         // Harnais de capture (Debug uniquement, absent du binaire livré) : OKIA_OPEN_SLIDES
@@ -1042,8 +1047,7 @@ struct ReaderView: View {
         if isSearching {
             // Pendant une recherche : le compte et les flèches, rien d'autre.
             ToolbarItemGroup(placement: .primaryAction) {
-                Text(web.searchResult.count > 0 ? "\(web.searchResult.index)/\(web.searchResult.count)"
-                                                : (searchText.isEmpty ? "" : "0"))
+                Text(compteRecherche)
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(.secondary)
                 Button { web.searchPrev() } label: { Image(systemName: "chevron.up") }
@@ -1149,6 +1153,52 @@ struct ReaderView: View {
         }
             .teinteBarre()
             .accessibilityLabel(tr("Entités"))
+    }
+
+    /// « 3/12 » pendant une recherche ; « 0 » quand rien n'est trouvé.
+    private var compteRecherche: String {
+        web.searchResult.count > 0 ? "\(web.searchResult.index)/\(web.searchResult.count)"
+                                   : (searchText.isEmpty ? "" : "0")
+    }
+
+    /// Le Duo plié, pendant une recherche : le système vide sa colonne de commandes (le compte et
+    /// les flèches de la barre n'y paraissent pas), et l'on restait sur la première mention d'une
+    /// entité (Patrick, B123). Les mêmes, dans la colonne, juste au-dessus du bouton qui ferme la
+    /// recherche.
+    @ViewBuilder private var rechercheDuo: some View {
+        if appareilPliable && !charniereOuverte && isSearching {
+            // La largeur de la colonne : ce que la vue web a dessous, plus les 16 points retirés par
+            // `largeurSousColonne` (la zone sûre d'un calque plein écran vaut zéro).
+            let colonne = CGFloat(web.margeOutils) + 16
+            VStack(spacing: 2) {
+                Button { web.searchPrev() } label: {
+                    Image(systemName: "chevron.up").font(.title3.weight(.semibold)).frame(width: 48, height: 44)
+                }
+                .disabled(web.searchResult.count == 0)
+                .accessibilityLabel(tr("Précédent"))
+                Text(compteRecherche)
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: 44)
+                Button { web.searchNext() } label: {
+                    Image(systemName: "chevron.down").font(.title3.weight(.semibold)).frame(width: 48, height: 44)
+                }
+                .disabled(web.searchResult.count == 0)
+                .accessibilityLabel(tr("Suivant"))
+            }
+            .teinteBarre()
+            .padding(.vertical, 4)
+            .glassEffect(.regular.interactive(), in: .capsule)
+            // Au-dessus du bouton de fermeture du système, en bas, sur le même axe : il est centré
+            // 7 points plus près du texte que la colonne (simulateur du Duo).
+            .frame(width: max(colonne + 14, 56))
+            .padding(.bottom, 96)
+            .frame(maxWidth: .infinity, maxHeight: .infinity,
+                   alignment: colonneAGauche ? .bottomLeading : .bottomTrailing)
+            .ignoresSafeArea(.container)
+        }
     }
 
     /// La palette du mode « Annoter », en bas du lecteur. À part du corps du lecteur, que le
