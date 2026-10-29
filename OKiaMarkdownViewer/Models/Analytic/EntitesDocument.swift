@@ -127,21 +127,33 @@ enum LecteurRapportFornews {
     /// fermée que `isEntityHeading` dans render.js : « Sources » ou « Entités clés » ne comptent pas.
     static func estTitreEntites(_ titre: String) -> Bool {
         let a = plier(titre)
+        if titresEntitesAutres.contains(a) { return true }
         return a.range(of: #"^(?:entit(?:es?|y|ies|a|at(?:en)?|aet(?:en)?)|entidad(?:es)?)$"#,
                        options: .regularExpression) != nil
     }
 
+    /// Les titres des dix autres langues de fornews (`RapportObsidian.labels`), comme
+    /// `ENTITY_HEADINGS_LANG` dans render.js ; pliés comme le titre qu'on leur compare.
+    static let titresEntitesAutres: Set<String> = Set(["エンティティ", "개체", "实体", "Сущности", "Сутності",
+                                                        "इकाइयाँ", "Thực thể", "Varlıklar", "Entiteiten"].map(plier))
+
     /// Le type d'un genre de la section, d'après les libellés de fornews (`LibellesAnalyste`), dans
-    /// ses cinq langues. Un genre inconnu (document écrit à la main) range ses entités en « Autres ».
+    /// ses cinq langues, et ceux des dix autres langues de l'app (fornews écrit encore ses genres en
+    /// français pour celles-ci ; un rapport écrit ou traduit à la main les a dans sa langue). Un
+    /// genre inconnu range ses entités en « Autres ».
     static func typeDuGenre(_ genre: String) -> TypeEntite {
         let g = plier(genre)
-        func commence(_ prefixes: [String]) -> Bool { prefixes.contains { g.hasPrefix($0) } }
-        if commence(["personnalit", "personne", "people", "person", "personalidad"]) { return .person }
-        if commence(["organi"]) { return .org }
-        if commence(["lieu", "place", "orte", "ort ", "lugar", "luogh", "luogo", "pays", "countr", "ville", "cit"]) { return .gpe }
-        if commence(["produ", "oeuvre", "work"]) { return .product }
-        if commence(["evenement", "event", "ereignis", "acontecimiento", "evento"]) { return .event }
-        if commence(["sante", "health", "gesundheit", "salud", "salute", "maladie", "disease"]) { return .maladie }
+        func commence(_ prefixes: [String]) -> Bool { prefixes.contains { g.hasPrefix(plier($0)) } }
+        if commence(["personnalit", "personne", "people", "person", "personalidad", "pessoa", "人物", "인물",
+                     "персон", "люди", "особ", "kişi", "nhân vật", "người", "व्यक्ति"]) { return .person }
+        if commence(["organi", "組織", "组织", "机构", "조직", "организ", "організ", "kuruluş", "tổ chức", "संगठन"]) { return .org }
+        if commence(["lieu", "place", "orte", "ort ", "lugar", "luogh", "luogo", "pays", "countr", "ville", "cit",
+                     "plaats", "local", "場所", "地名", "地点", "장소", "мест", "місц", "yer", "địa điểm", "स्थान"]) { return .gpe }
+        if commence(["produ", "oeuvre", "work", "製品", "产品", "제품", "продукт", "ürün", "sản phẩm", "उत्पाद"]) { return .product }
+        if commence(["evenement", "event", "ereignis", "acontecimiento", "evento", "gebeurtenis", "出来事", "イベント",
+                     "事件", "사건", "이벤트", "событи", "поді", "olay", "sự kiện", "घटना"]) { return .event }
+        if commence(["sante", "health", "gesundheit", "salud", "salute", "maladie", "disease", "gezondheid", "saúde",
+                     "健康", "건강", "здоров", "sağlık", "sức khỏe", "स्वास्थ्य"]) { return .maladie }
         return .autre
     }
 
