@@ -127,7 +127,11 @@ struct FicheEntiteView: View {
                 .tint(orange)
             }
             // fornews ouvre sa fiche s'il connaît l'entité, sinon il le dit et mène à Wikidata.
+            // Seul fornews 1.7.4 sait ouvrir une entité ; 1.7.3 connaît le schéma mais restait sur
+            // son accueil. La 1.7.4 publie son cache d'entités dès son premier lancement : sa
+            // présence dit que le lien mènera quelque part (la 1.4 sort avant fornews 1.7.4).
             if let qid = entite.qid, let url = URL(string: "fornews://entite?qid=\(qid)"),
+               let cache = CacheEntitesFornews.url, FileManager.default.fileExists(atPath: cache.path),
                UIApplication.shared.canOpenURL(url) {
                 Link(destination: url) {
                     Label(tr("Ouvrir dans fornews"), systemImage: "arrow.up.forward.app")
