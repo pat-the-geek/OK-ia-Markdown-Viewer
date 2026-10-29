@@ -11,6 +11,10 @@
      lequel elle a été tracée, en proportion de sa largeur — en pourcentages, que le navigateur
      recalcule seul : la page de l'écran, celle du livre et la feuille du PDF n'ont pas la même
      largeur.
+     Un diagramme, une image ou une carte n'ont pas de texte où s'accrocher : la note s'y ancre
+     par son rang dans la page (le 3e diagramme, la 2e image, l'adresse de l'image en plus), et
+     sa place se mesure sur le dessin lui-même (Patrick, 29/10/2026 : « peut-on annoter les
+     diagrammes et images ? » — le trait disparaissait).
 
    Le fichier .md n'est jamais modifié : Swift garde les annotations et les repose ici. Fichier à
    part de render.js, que fornews copie mot pour mot.
@@ -19,7 +23,7 @@
   'use strict';
 
   var CONTEXTE = 32;           // caractères de part et d'autre de la citation
-  var BLOCS = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, td, th, figure, .callout, .okia-map, img';
+  var BLOCS = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, td, th, figure, .callout, .okia-map, img:not(.okia-encre)';
   var annotations = [];        // l'état courant, tel que Swift l'a posé
   var occupe = false;          // nos propres retouches ne relancent pas l'observateur
 
@@ -146,6 +150,8 @@
 
   // Un tracé (rectangle, coordonnées de la page) → son bloc et sa place, en largeurs de bloc.
   function ancrerEncre(x, y, l, h) {
+    var m = mediaSous(x + l / 2, y + h / 2);
+    if (m) return ancrerMedia(m, x, y, l);
     var bloc = blocSous(x + l / 2, y + h / 2);
     if (!bloc) return null;
     var r = bloc.getBoundingClientRect(), bx = r.left + window.scrollX, by = r.top + window.scrollY;
@@ -153,6 +159,95 @@
     var a = ancreBloc(bloc);
     a.fx = (x - bx) / w; a.fy = (y - by) / w; a.fl = l / w;
     return a;
+  }
+
+  /* ---- Les blocs sans texte : diagrammes, images, cartes ------------------------------- */
+
+  // Le diagramme, la carte ou l'image sous un élément, ou null. Une tuile de la carte ou une
+  // image dans un diagramme comptent pour leur cadre.
+  function media(el) {
+    var m = el.closest('.okia-map') || el.closest('pre.mermaid');
+    if (m) return m;
+    return el.nodeName === 'IMG' && !el.classList.contains('okia-encre') ? el : null;
+  }
+  function genre(m) {
+    return m.classList.contains('okia-map') ? 'carte' : (m.nodeName === 'PRE' ? 'diagramme' : 'image');
+  }
+  // Le média sous un point de la page, par sa géométrie : le bouton d'agrandissement posé sur une
+  // image, ou une note déjà là, ne le cachent pas.
+  function mediaSous(x, y) {
+    var cx = x - window.scrollX, cy = y - window.scrollY;
+    var tous = zone().querySelectorAll('.okia-map, pre.mermaid, img:not(.okia-encre)');
+    for (var i = 0; i < tous.length; i++) {
+      var m = media(tous[i]), r = m.getBoundingClientRect();
+      if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) return m;
+    }
+    return null;
+  }
+  // Ceux d'un genre, dans l'ordre de la page.
+  function medias(g) {
+    var sel = g === 'carte' ? '.okia-map' : (g === 'diagramme' ? 'pre.mermaid' : 'img:not(.okia-encre)');
+    return Array.prototype.filter.call(contenu().querySelectorAll(sel), function (m) {
+      return g !== 'image' || !m.closest('.okia-map, pre.mermaid');
+    });
+  }
+  // Le dessin lui-même, sur lequel la place d'une note se mesure : le diagramme est centré dans
+  // son cadre, plus étroit que lui sur un grand écran.
+  function dessin(m) { return (m.nodeName === 'PRE' && m.querySelector('svg')) || m; }
+  // Où poser l'image de la note : une image n'a pas d'enfant, elle va dans son enveloppe
+  // (render.js, à la taille de l'image) ou, à défaut, dans son parent.
+  function hote(m) { return m.nodeName === 'IMG' ? m.parentElement : m; }
+  // Une adresse d'image, raccourcie : une image importée est une URL data: de plusieurs centaines
+  // de kilo-octets, dont la fin suffit à la reconnaître.
+  function adresse(m) {
+    var s = m.getAttribute('src') || '';
+    return s.length > 200 ? s.slice(-120) : s;
+  }
+
+  function ancrerMedia(m, x, y, l) {
+    var g = genre(m), rang = medias(g).indexOf(m);
+    if (rang < 0) return null;
+    // Le texte qui précède, pour l'export Word : il y retrouve l'image qui suit.
+    var t = noeudsTexte(contenu()), pos = t.texte.length;
+    for (var i = 0; i < t.noeuds.length; i++) {
+      if (m.compareDocumentPosition(t.noeuds[i].n) & Node.DOCUMENT_POSITION_FOLLOWING) { pos = t.noeuds[i].debut; break; }
+    }
+    var r = dessin(m).getBoundingClientRect(), w = r.width || 1;
+    // Une carte garde sa hauteur quand la page s'élargit : sa hauteur se mesure en hauteurs.
+    var v = g === 'carte' ? (r.height || 1) : w;
+    var a = { exact: '', prefix: t.texte.slice(Math.max(0, pos - CONTEXTE), pos), suffix: '',
+              balise: m.nodeName, media: g, rang: rang,
+              fx: (x - r.left - window.scrollX) / w, fy: (y - r.top - window.scrollY) / v, fl: l / w };
+    if (g === 'image') a.src = adresse(m);
+    return a;
+  }
+
+  function retrouverMedia(ancre) {
+    var liste = medias(ancre.media), m = liste[ancre.rang];
+    // Une image se reconnaît aussi à son adresse : une image ajoutée plus haut décale les rangs.
+    if (ancre.src && (!m || adresse(m) !== ancre.src)) {
+      m = liste.find(function (x) { return adresse(x) === ancre.src; }) || m;
+    }
+    return m || null;
+  }
+
+  // La note d'un média, en pourcentages de la largeur de son hôte : la place mesurée sur le
+  // dessin, reportée dans l'hôte tel qu'il est maintenant.
+  function placerSurMedia(img, m, hote, a) {
+    // Les pourcentages d'une position absolue se prennent sur la boîte intérieure de l'hôte,
+    // bordure exclue (le cadre d'un diagramme en a une).
+    var r = hote.getBoundingClientRect(), d = dessin(m).getBoundingClientRect();
+    var h = { left: r.left + hote.clientLeft, top: r.top + hote.clientTop, width: hote.clientWidth };
+    if (h.width < 1 || d.width < 1) {   // une diapositive cachée : on reprend la place telle quelle
+      img.style.left = (a.fx * 100) + '%';
+      img.style.setProperty('margin-top', (a.fy * 100) + '%', 'important');
+      img.style.width = (a.fl * 100) + '%';
+      return;
+    }
+    img.style.left = ((d.left - h.left + a.fx * d.width) / h.width * 100) + '%';
+    var v = a.media === 'carte' ? d.height : d.width;
+    img.style.setProperty('margin-top', ((d.top - h.top + a.fy * v) / h.width * 100) + '%', 'important');
+    img.style.width = (a.fl * d.width / h.width * 100) + '%';
   }
 
   function retrouverBloc(t, ancre) {
@@ -175,7 +270,8 @@
     var groupes = {}, orphelines = [];
     annotations.forEach(function (a) {
       if (a.type === 'encre') {
-        var bloc = retrouverBloc(t, a.ancre);
+        var m = a.ancre.media ? retrouverMedia(a.ancre) : null;
+        var bloc = a.ancre.media ? (m && hote(m)) : retrouverBloc(t, a.ancre);
         if (!bloc) { orphelines.push(a.id); return; }
         if (getComputedStyle(bloc).position === 'static') bloc.style.position = 'relative';
         var img = document.createElement('img');
@@ -188,10 +284,14 @@
         // marge du haut, dont le pourcentage se prend lui aussi sur la largeur (un `top` en % se
         // prendrait sur la hauteur). Mesurée en pixels d'écran, la note sortait de sa place à
         // l'impression, sur une feuille plus étroite.
-        img.style.left = (a.ancre.fx * 100) + '%';
         img.style.top = '0';
-        img.style.setProperty('margin-top', (a.ancre.fy * 100) + '%', 'important');
-        img.style.width = (a.ancre.fl * 100) + '%';
+        if (m) {
+          placerSurMedia(img, m, bloc, a.ancre);
+        } else {
+          img.style.left = (a.ancre.fx * 100) + '%';
+          img.style.setProperty('margin-top', (a.ancre.fy * 100) + '%', 'important');
+          img.style.width = (a.ancre.fl * 100) + '%';
+        }
         bloc.appendChild(img);
         return;
       }
@@ -297,9 +397,22 @@
     clearTimeout(minuterie);
     minuterie = setTimeout(poser, 250);
   });
+  // La note d'un média se mesure sur son dessin, qui ne suit pas toujours la largeur de la page (un
+  // diagramme garde sa taille sur un grand écran) : quand la page change de largeur (pliage du Duo,
+  // rotation, fenêtre du Mac), on la repose.
+  var largeur = 0;
+  var redimension = window.ResizeObserver ? new ResizeObserver(function (e) {
+    var w = Math.round(e[0].contentRect.width);
+    if (w === largeur) return;
+    largeur = w;
+    if (occupe || !annotations.some(function (a) { return a.ancre && a.ancre.media; })) return;
+    clearTimeout(minuterie);
+    minuterie = setTimeout(poser, 250);
+  }) : null;
   function observer() {
     var c = contenu();
     if (c) observateur.observe(c, { childList: true, subtree: true, characterData: true });
+    if (c && redimension) redimension.observe(c);
   }
   observer();
 

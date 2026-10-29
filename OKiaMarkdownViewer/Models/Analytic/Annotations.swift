@@ -8,6 +8,11 @@ import WebKit
 /// Ce qui retrouve une annotation dans le texte, quelle que soit la mise en page : la citation
 /// exacte et ce qui l'entoure. Pour une note manuscrite, la citation est le début de son bloc, et
 /// `fx`, `fy`, `fl` sa place et sa largeur, en largeurs de bloc.
+///
+/// Une note posée sur un diagramme, une image ou une carte, qui n'ont pas de texte, s'ancre à
+/// `media` (« diagramme », « image », « carte ») et à son `rang` parmi ceux de son genre, plus
+/// `src` pour une image ; `fx`, `fy`, `fl` se mesurent alors en largeurs du dessin, et `prefix`
+/// est le texte qui le précède.
 struct AncreAnnotation: Codable, Equatable {
     var exact: String
     var prefix: String
@@ -16,6 +21,9 @@ struct AncreAnnotation: Codable, Equatable {
     var fx: Double?
     var fy: Double?
     var fl: Double?
+    var media: String?
+    var rang: Int?
+    var src: String?
 }
 
 struct Annotation: Codable, Identifiable, Equatable {

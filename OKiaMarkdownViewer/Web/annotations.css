@@ -27,6 +27,8 @@
   user-select: none;
   -webkit-user-select: none;
 }
+/* Sur une carte, au-dessus des tuiles et des boutons de Leaflet (z-index jusqu'à 1000). */
+.okia-map > .okia-encre { z-index: 1001; }
 
 /* L'impression et le PDF gardent les annotations : c'est le document annoté qu'on exporte. Le
    moteur d'impression ne peint pas les surlignages natifs : annotations.js les change le temps de

@@ -39,7 +39,8 @@ enum AnnotationsWord {
         for a in annotations {
             switch a.type {
             case .encre:
-                guard let bloc = blocDeNote(a.ancre, segments) else { continue }
+                guard let bloc = a.ancre.media != nil ? blocDeMedia(a.ancre, blocs, segments) : blocDeNote(a.ancre, segments)
+                else { continue }
                 let image = a.image.flatMap { Data(base64Encoded: $0) }.flatMap(imagePNG)
                 commentaires.append(OOXMLCommentaire(bloc: bloc, texte: texteNote, image: image))
             case .surligne, .souligne:
@@ -177,6 +178,22 @@ enum AnnotationsWord {
         }?.bloc ?? segments.first { seg in
             String(reduire(seg.runs.map(\.text).joined())).contains(tete)
         }?.bloc
+    }
+
+    /// Le bloc d'une note posée sur un diagramme, une image ou une carte : la première image de
+    /// l'export qui suit le texte d'avant (l'export fait une image de chacun, quand il le peut).
+    private static func blocDeMedia(_ ancre: AncreAnnotation, _ blocs: [OOXMLBlock], _ segments: [Segment]) -> Int? {
+        func image(_ i: Int) -> Bool { if case .image = blocs[i] { return true }; return false }
+        let fin = String(reduire(ancre.prefix)).trimmingCharacters(in: .whitespaces)
+        var depuis = 0
+        if !fin.isEmpty {
+            let queue = String(fin.suffix(30))
+            guard let seg = segments.first(where: { String(reduire($0.runs.map(\.text).joined())).contains(queue) })
+            else { return nil }
+            // La légende d'une image précédente est à elle : notre image vient après.
+            depuis = seg.bloc + 1
+        }
+        return (depuis..<blocs.count).first(where: image)
     }
 
     /// L'image d'une note (PNG tracé à l'échelle 3) et sa taille, lue dans l'en-tête du PNG.
