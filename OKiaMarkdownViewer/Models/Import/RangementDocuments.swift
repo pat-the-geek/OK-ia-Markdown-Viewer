@@ -63,15 +63,34 @@ enum RangementDocuments {
     }
 
     /// Les documents analysés, du plus récent au plus ancien (date de création).
+    /// Un document créé sur un autre appareil n'est d'abord, sur iPhone et iPad, qu'un espace réservé
+    /// iCloud caché, `.Nom.md.icloud` : il compte aussi, sous son vrai nom, et son téléchargement est
+    /// demandé (Patrick, 29/10/2026 : « j'ai analysé un document sur Mac, je ne le vois pas apparaître
+    /// dans les documents analysés sur mon iPhone »). L'ouvrir passe par un coordinateur, qui attend
+    /// le fichier.
     static func documents() -> [(url: URL, nom: String, date: Date)] {
         let dossier = dossierAnalyses()
         guard let e = FileManager.default.enumerator(at: dossier, includingPropertiesForKeys: [.creationDateKey],
-                                                     options: [.skipsHiddenFiles]) else { return [] }
-        return e.compactMap { $0 as? URL }.filter { $0.pathExtension.lowercased() == "md" }.map { u in
-            let d = (try? u.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
-            return (u, u.deletingPathExtension().lastPathComponent, d)
+                                                     options: []) else { return [] }
+        var vus = Set<String>()
+        var resultat: [(url: URL, nom: String, date: Date)] = []
+        for case let u as URL in e {
+            let nom = u.lastPathComponent
+            var reel = u
+            if nom.hasPrefix(".") {
+                // Les autres fichiers et dossiers cachés restent à l'écart, comme avant.
+                guard nom.hasSuffix(".icloud") else { e.skipDescendants(); continue }
+                reel = u.deletingLastPathComponent()
+                    .appendingPathComponent(String(nom.dropFirst().dropLast(".icloud".count)))
+                guard reel.pathExtension.lowercased() == "md" else { continue }
+                try? FileManager.default.startDownloadingUbiquitousItem(at: reel)
+            }
+            guard reel.pathExtension.lowercased() == "md", vus.insert(reel.path).inserted else { continue }
+            let d = (try? reel.resourceValues(forKeys: [.creationDateKey]).creationDate)
+                ?? (try? u.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+            resultat.append((reel, reel.deletingPathExtension().lastPathComponent, d))
         }
-        .sorted { $0.date > $1.date }
+        return resultat.sorted { $0.date > $1.date }
     }
 
     /// Le nom lisible d'un document, sans extension : « Apple : la keynote / résumé » → « Apple - la
