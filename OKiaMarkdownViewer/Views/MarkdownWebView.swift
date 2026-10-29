@@ -54,6 +54,10 @@ struct MarkdownWebView: UIViewRepresentable {
         // tour pendant que WebKit remettait la page en forme — la page changeait de largeur dix
         // fois par seconde et tremblait (Duo, conversion ouverte à côté du rapport).
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        // Pas de rebond de côté non plus (voir `VueWebLecteur`).
+        webView.scrollView.alwaysBounceHorizontal = false
+        webView.scrollView.bouncesHorizontally = false
+        webView.scrollView.showsHorizontalScrollIndicator = false
         #if !targetEnvironment(macCatalyst)
         // Sous la barre, le flou progressif du Liquid Glass. Sur le Duo, grand écran, le système
         // choisissait le bord dur — une barre opaque coupée d'un filet, comme sur iPad (Patrick).
@@ -267,6 +271,12 @@ final class VueWebLecteur: WKWebView {
         guard suiviDefilement == nil else { return }
         suiviDefilement = scrollView.observe(\.contentOffset) { [weak self] defilement, _ in
             MainActor.assumeIsolated {
+                // La page ne se tire jamais de côté : un élément un peu trop large suffisait pour
+                // qu'un doigt en biais emmène tout le texte hors de ses marges (Patrick, Duo plié,
+                // B124). Les tableaux larges défilent dans leur propre cadre, pas ici.
+                if defilement.contentOffset.x != 0, defilement.zoomScale <= defilement.minimumZoomScale + 0.01 {
+                    defilement.contentOffset.x = 0
+                }
                 guard let self, Date() > self.transitionJusqua else { return }
                 self.enHaut = defilement.contentOffset.y <= -defilement.adjustedContentInset.top + 1
             }
