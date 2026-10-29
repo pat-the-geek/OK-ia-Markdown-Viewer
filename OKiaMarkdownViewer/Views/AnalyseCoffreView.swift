@@ -11,6 +11,7 @@ struct AnalyseCoffreView: View {
     @ObservedObject private var analyse = AnalyseCoffre.partage
     @ObservedObject private var loc = Localization.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var tailleHorizontale
     @State private var vue: Vue = .galerie
     /// Le tri des entités dans chaque genre, retenu d'une ouverture à l'autre. Alphabétique d'abord
     /// (Patrick, 29/10/2026 : « il faut trier dans l'ordre alphabétique ») — clé nouvelle, pour que le
@@ -190,8 +191,13 @@ struct AnalyseCoffreView: View {
         }
     }
 
-    /// Des cartes de 170 à 240 points, la photo en grand.
-    private let colonnes = [GridItem(.adaptive(minimum: 170, maximum: 240), spacing: 16, alignment: .top)]
+    /// Des cartes de 170 à 240 points, la photo en grand. En largeur compacte, dès 150 points : le
+    /// Duo replié en portrait n'en logeait qu'une par rangée, avec un vide à côté (Patrick,
+    /// 29/10/2026 : « diminuer la taille pour en mettre 2 sur une ligne »).
+    private var colonnes: [GridItem] {
+        let etroit = tailleHorizontale == .compact
+        return [GridItem(.adaptive(minimum: etroit ? 150 : 170, maximum: 240), spacing: etroit ? 14 : 16, alignment: .top)]
+    }
 
     @ViewBuilder private var galerie: some View {
         if analyse.entites.isEmpty, analyse.etat == .fini {
