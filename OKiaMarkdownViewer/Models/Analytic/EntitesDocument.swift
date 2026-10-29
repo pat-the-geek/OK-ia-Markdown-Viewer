@@ -106,7 +106,7 @@ enum LecteurRapportFornews {
         // terme générique. ⛔ Pas `filtrer` : il rectifie un extrait de texte brut, et coupait la
         // fin en minuscules d'un nom déjà propre — « Union européenne » devenait « Union », que
         // Wikidata rattachait ensuite à une ville de Caroline du Sud (essai du 25/10/2026).
-        var resultat = entites.filter { FiltreEntitesNER.estValide(EntiteDetectee(valeur: $0.nom, type: $0.type)) }
+        var resultat = entites.filter { DetecteurEntites.valide(EntiteDetectee(valeur: $0.nom, type: $0.type)) }
         // Un lieu de la carte absent de la section reste un lieu du document.
         let nomsCarte = nomsDesMarqueurs(markdown)
         for (cle, _) in coordonnees where !resultat.contains(where: { $0.id == cle }) {
@@ -257,12 +257,31 @@ enum DetecteurEntites {
         }
         // « IA », « AI » : l'intelligence artificielle, un nom commun — que le repli par majuscules
         // comptait quatorze fois dans un briefing, et que Wikidata prenait pour Internet Archive.
-        let filtrees = FiltreEntitesNER.filtrer(brutes, texteSource: texte)
+        // Les noms d'une écriture sans casse passent à côté du filtre de fornews (voir `valide`).
+        let sansCasse = brutes.filter { Self.ecritureSansCasse($0.valeur) && Self.valide($0) }
+        let filtrees = (FiltreEntitesNER.filtrer(brutes.filter { !Self.ecritureSansCasse($0.valeur) }, texteSource: texte) + sansCasse)
             .filter { !Self.nomsCommunsEnSigle.contains($0.valeur) }
         return (filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }, methode)
     }
 
     static let nomsCommunsEnSigle: Set<String> = ["IA", "AI", "KI"]
+
+    /// Un nom écrit sans majuscule possible : japonais, chinois, coréen, devanagari… Le filtre de
+    /// fornews exige une majuscule dans le nom d'une personne, d'une organisation ou d'un lieu : dans
+    /// ces écritures, il les rejetait tous — « Aucune entité » pour tout document japonais (29/10/2026,
+    /// captures des quinze langues). Signalé à fornews ; ici, ces noms gardent les seuls contrôles
+    /// qui valent pour toutes les écritures.
+    static func ecritureSansCasse(_ nom: String) -> Bool {
+        nom.contains(where: \.isLetter) && !nom.contains(where: { $0.isUppercase || $0.isLowercase })
+    }
+
+    /// Le contrôle de validité de fornews, sauf pour une écriture sans casse : au moins deux
+    /// caractères, au moins une lettre, pas un nombre.
+    static func valide(_ e: EntiteDetectee) -> Bool {
+        guard ecritureSansCasse(e.valeur) else { return FiltreEntitesNER.estValide(e) }
+        let v = e.valeur.trimmingCharacters(in: .whitespacesAndNewlines)
+        return v.count >= 2 && v.contains(where: \.isLetter)
+    }
 
     /// Le modèle de noms de `NLTagger` est-il là, pour cette langue ? Sinon, on le demande.
     /// `redemander` : même déclaré, le modèle est demandé à nouveau (il peut manquer quand même).
