@@ -53,7 +53,12 @@ final class ApercusDocuments {
     func apercu(_ url: URL, portee: URL?) async -> ApercuDocument {
         let cle = url.path
         if let a = memoire[cle] { return a }
-        let a = await Task.detached(priority: .utility) { Self.calculer(url, portee: portee) }.value
+        // Le cadrage de la vignette avec elle, hors du fil principal (`Cadrage`).
+        let a = await Task.detached(priority: .utility) {
+            let a = Self.calculer(url, portee: portee)
+            if let i = a.image { Cadrage.calculer(i, cle: cle) }
+            return a
+        }.value
         memoire[cle] = a
         return a
     }
@@ -229,6 +234,8 @@ struct CarteDocument<Menu: View>: View {
     @ViewBuilder var menu: () -> Menu
 
     @State private var apercu: ApercuDocument?
+    /// La clé du cadrage de la vignette : le chemin du document.
+    @State private var cleCadrage = ""
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
@@ -256,13 +263,14 @@ struct CarteDocument<Menu: View>: View {
         .contextMenu(menuItems: menu)
         .task {
             guard apercu == nil, let (url, portee) = resoudre() else { return }
+            cleCadrage = url.path
             apercu = await ApercusDocuments.partage.apercu(url, portee: portee)
         }
     }
 
     @ViewBuilder private var vignette: some View {
         if let image = apercu?.image {
-            Color.clear.overlay(Image(uiImage: image).resizable().scaledToFill())
+            Color.clear.overlay(ImageRecadree(image: image, cle: cleCadrage))
         } else {
             // Sans image : le document lui-même, son titre et ses premières lignes, sur papier.
             ZStack(alignment: .topLeading) {

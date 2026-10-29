@@ -57,7 +57,12 @@ final class CacheImagesEntites: @unchecked Sendable {
         if let i = memoire.object(forKey: adresse as NSString) { return i }
         let tache: Task<UIImage?, Never> = verrou.withLock {
             if let t = enCours[adresse] { return t }
-            let t = Task.detached(priority: .userInitiated) { [self] in await self.charger(adresse) }
+            // Le cadrage avec le décodage, hors du fil principal : la vignette arrive bien cadrée.
+            let t = Task.detached(priority: .userInitiated) { [self] in
+                let image = await self.charger(adresse)
+                if let image { Cadrage.calculer(image, cle: adresse) }
+                return image
+            }
             enCours[adresse] = t
             return t
         }

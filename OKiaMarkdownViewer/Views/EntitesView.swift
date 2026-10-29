@@ -384,8 +384,8 @@ struct VignetteEntite: View {
             .frame(maxWidth: rond ? nil : .infinity)
             .overlay {
                 // L'image OU le symbole : sous un logo transparent, le symbole transparaissait.
-                if let image = photo ?? entite.image.flatMap(CacheImagesEntites.partage.immediate) {
-                    Image(uiImage: image).resizable().scaledToFill().background(Color.white)
+                if let s = entite.image, let image = photo ?? CacheImagesEntites.partage.immediate(s) {
+                    ImageRecadree(image: image, cle: s).background(Color.white)
                 } else {
                     symbole
                 }
