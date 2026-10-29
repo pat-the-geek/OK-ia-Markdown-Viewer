@@ -24,6 +24,8 @@ struct EmptyStateView: View {
     @State private var aSupprimer: Suppression?
     @State private var erreurSuppression: String?
     @ObservedObject private var loc = Localization.shared
+    /// Sur Mac, la taille des cartes et de leur texte (`TailleAccueil`).
+    @AppStorage(TailleAccueil.cle) private var taille = 1.0
 
     struct Suppression: Identifiable {
         let nom: String
@@ -75,6 +77,7 @@ struct EmptyStateView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .modifier(TexteAccueil(taille: taille))
             .environment(\.accueilEnGrille, enGrille)
             .navigationTitle("md Viewer")
             .toolbar { barreAccueil }
@@ -117,6 +120,26 @@ struct EmptyStateView: View {
             }
             .teinteBarre()
             .accessibilityLabel(tr("Réglages"))
+        }
+        // Sur Mac : réduire et agrandir l'accueil, comme la taille des icônes du Finder.
+        if TailleAccueil.surMac {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button { taille = TailleAccueil.voisin(de: taille, plus: false) } label: {
+                    Image(systemName: "minus.magnifyingglass")
+                }
+                .teinteBarre()
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(taille <= TailleAccueil.crans.first!)
+                .accessibilityLabel(tr("Réduire l’affichage"))
+                Button { taille = TailleAccueil.voisin(de: taille, plus: true) } label: {
+                    Image(systemName: "plus.magnifyingglass")
+                }
+                .teinteBarre()
+                .keyboardShortcut("+", modifiers: .command)
+                .disabled(taille >= TailleAccueil.crans.last!)
+                .accessibilityLabel(tr("Agrandir l’affichage"))
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
         }
         // Option Analytic (1.4) : la recherche et l'analyse de tout le coffre, en vue dans la barre
         // plutôt que dans les en-têtes des listes (Patrick, 28/10/2026 : « les mettre en valeur »).
@@ -403,6 +426,19 @@ struct AboutLibrariesView: View {
         case .offline: return .green
         case .network: return orange
         case .system:  return .secondary
+        }
+    }
+}
+
+/// Sur Mac, le texte de l'accueil suit la taille choisie ; ailleurs, celle du système.
+private struct TexteAccueil: ViewModifier {
+    let taille: Double
+
+    func body(content: Content) -> some View {
+        if TailleAccueil.surMac {
+            content.dynamicTypeSize(TailleAccueil.texte(taille))
+        } else {
+            content
         }
     }
 }

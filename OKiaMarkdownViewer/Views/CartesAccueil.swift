@@ -205,18 +205,57 @@ final class ApercusDocuments {
     }
 }
 
+/// La taille de l'accueil sur Mac, réglée par les boutons − et + de la barre, ou ⌘− et ⌘+
+/// (Patrick, 29/10/2026 : « sur Mac, des boutons + − pour agrandir l'affichage ou le rétrécir ») :
+/// les cartes et leur texte. Sur iPhone et iPad, la taille du texte du système suffit.
+enum TailleAccueil {
+    static let cle = "okia.accueil.taille"
+    /// Les crans, de 70 % à 200 % ; 1 est la taille d'origine.
+    static let crans: [Double] = [0.7, 0.85, 1, 1.2, 1.45, 1.7, 2]
+
+    static var surMac: Bool {
+        #if targetEnvironment(macCatalyst)
+        return true
+        #else
+        return ProcessInfo.processInfo.isiOSAppOnMac
+        #endif
+    }
+
+    /// Le cran voisin, plus grand ou plus petit ; le même au bout de l'échelle.
+    static func voisin(de t: Double, plus: Bool) -> Double {
+        let i = crans.indices.min { abs(crans[$0] - t) < abs(crans[$1] - t) } ?? 2
+        return crans[min(max(i + (plus ? 1 : -1), 0), crans.count - 1)]
+    }
+
+    /// Le texte suit les cartes, sans aller jusqu'aux tailles d'accessibilité : l'accueil y passe
+    /// en liste.
+    static func texte(_ t: Double) -> DynamicTypeSize {
+        switch t {
+        case ..<0.8:  return .small
+        case ..<0.95: return .medium
+        case ..<1.1:  return .large
+        case ..<1.3:  return .xLarge
+        case ..<1.6:  return .xxLarge
+        default:      return .xxxLarge
+        }
+    }
+}
+
 /// La grille d'une section de l'accueil : des cartes de 190 à 260 points, autant que la largeur
-/// en admet ; sur iPhone (et le Duo replié), de 140 à 220 points, deux par rangée au moins.
+/// en admet ; sur iPhone (et le Duo replié), de 140 à 220 points, deux par rangée au moins. Sur
+/// Mac, à la taille choisie (`TailleAccueil`).
 /// Dans la liste, sur le fond de la liste.
 struct GrilleCartes<Contenu: View>: View {
     @Environment(\.horizontalSizeClass) private var tailleHorizontale
+    @AppStorage(TailleAccueil.cle) private var taille = 1.0
     @ViewBuilder var contenu: () -> Contenu
 
     var body: some View {
         let etroit = tailleHorizontale == .compact
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: etroit ? 140 : 190, maximum: etroit ? 220 : 260),
-                                     spacing: etroit ? 14 : 20, alignment: .top)],
-                  alignment: .leading, spacing: etroit ? 18 : 24, content: contenu)
+        let k = TailleAccueil.surMac ? taille : 1
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: (etroit ? 140 : 190) * k, maximum: (etroit ? 220 : 260) * k),
+                                     spacing: (etroit ? 14 : 20) * k, alignment: .top)],
+                  alignment: .leading, spacing: (etroit ? 18 : 24) * k, content: contenu)
             .padding(.vertical, 6)
             .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 12, trailing: 4))
             .listRowBackground(Color.clear)
