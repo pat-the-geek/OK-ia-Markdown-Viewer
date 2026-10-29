@@ -196,6 +196,8 @@ final class AnalyseEntites: ObservableObject {
     enum Etat: Equatable {
         case inactif
         case lecture
+        /// La détection, morceau par morceau : la liste montre déjà ce qu'elle a trouvé.
+        case detection(fait: Int, total: Int)
         /// La résolution Wikidata : combien de noms sont faits, sur combien.
         case resolution(fait: Int, total: Int)
         case fini
@@ -230,6 +232,19 @@ final class AnalyseEntites: ObservableObject {
 
     private var documentAnalyse: UUID?
     private var tache: Task<Void, Never>?
+    /// Une analyse par document ouvert : une liste partielle d'une analyse remplacée est ignorée.
+    private var generation = 0
+    /// La dernière liste partielle reçue, pas encore montrée, et si une préparation tourne.
+    private var partielEnAttente: Partiel?
+    private var partielEnCours = false
+
+    private struct Partiel {
+        let generation: Int
+        let rapport: [EntiteDocument]
+        let detectees: [EntiteDocument]
+        let texte: String
+        let langue: String
+    }
     /// Les entités telles que le document et la détection les donnent, avant les corrections de
     /// l'utilisateur et le cache : une correction se rejoue à partir d'elles, sans relire le texte.
     private var brutes: [EntiteDocument] = []
@@ -275,9 +290,15 @@ final class AnalyseEntites: ObservableObject {
         return data.base64EncodedString()
     }
 
+    /// La détection lit encore le document (la liste peut déjà montrer ses premières entités).
+    var enDetection: Bool {
+        if case .detection = etat { return true }
+        return false
+    }
+
     var enCours: Bool {
         switch etat {
-        case .lecture, .resolution: return true
+        case .lecture, .detection, .resolution: return true
         default: return false
         }
     }
@@ -307,25 +328,29 @@ final class AnalyseEntites: ObservableObject {
         documentAnalyse = document.id
         self.wikidata = wikidata
         brutes = []
+        entites = []
         etat = .lecture
+        generation += 1
+        let generation = self.generation
         let texte = document.text
         tache = Task { [weak self] in
             let langue = TexteAnalysable.langue(texte) ?? Localization.shared.code
             let duRapport = LecteurRapportFornews.lire(texte)
-            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue, replis: duRapport.isEmpty)
+            // La liste se remplit au fur et à mesure (Patrick, 29/10/2026 : « très lente ») : les
+            // entités d'un rapport tout de suite, puis celles de chaque morceau détecté.
+            if !duRapport.isEmpty {
+                self?.recevoir(Partiel(generation: generation, rapport: duRapport, detectees: [], texte: texte, langue: langue),
+                               fait: 0, total: 1)
+            }
+            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue, replis: duRapport.isEmpty) { [weak self] partielles, fait, total in
+                await self?.recevoir(Partiel(generation: generation, rapport: duRapport, detectees: partielles, texte: texte, langue: langue),
+                                     fait: fait, total: total)
+            }
             guard let self, !Task.isCancelled else { return }
-            // Le document d'abord : une entité du rapport garde son genre et ses coordonnées ; la
-            // détection n'ajoute que ce qu'il ne nommait pas.
-            // Une entité par nom : la détection rend parfois le même nom sous deux genres (« United
-            // States » lieu et organisation) ou avec son article (« l'Iran », « Iran »). Deux lignes
-            // au même identifiant, SwiftUI en perdait à l'affichage. Le premier lu l'emporte.
-            var toutes = LecteurRapportFornews.dedoublonner(duRapport + detectees)
-            DetecteurEntites.compterMentions(&toutes, dans: texte)
-            let sources = SourcesDocument.lire(texte)
-            for i in toutes.indices where sources.contient(toutes[i]) { toutes[i].source = true }
-            toutes = DetecteurEntites.absorberFormesCourtes(toutes)
-            toutes = toutes.filter { $0.mentions > 0 || $0.origine == .rapport }
-            toutes.sort { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) }
+            let toutes = await Task.detached(priority: .userInitiated) {
+                Self.preparer(duRapport, detectees, texte: texte)
+            }.value
+            guard !Task.isCancelled, self.generation == generation else { return }
             self.langue = langue
             self.methode = methode
             self.depuisRapport = !duRapport.isEmpty
@@ -333,6 +358,55 @@ final class AnalyseEntites: ObservableObject {
             self.assembler()
             if wikidata == .accepte { self.completerParWikidata() } else { self.etat = .fini }
         }
+    }
+
+    /// Le document d'abord : une entité du rapport garde son genre et ses coordonnées ; la
+    /// détection n'ajoute que ce qu'il ne nommait pas. Les mentions, les sources, les formes
+    /// courtes : une demi-seconde sur un long document, hors du fil principal.
+    nonisolated static func preparer(_ duRapport: [EntiteDocument], _ detectees: [EntiteDocument], texte: String) -> [EntiteDocument] {
+        // Une entité par nom : la détection rend parfois le même nom sous deux genres (« United
+        // States » lieu et organisation) ou avec son article (« l'Iran », « Iran »). Deux lignes
+        // au même identifiant, SwiftUI en perdait à l'affichage. Le premier lu l'emporte.
+        var toutes = LecteurRapportFornews.dedoublonner(duRapport + detectees)
+        DetecteurEntites.compterMentions(&toutes, dans: texte)
+        let sources = SourcesDocument.lire(texte)
+        for i in toutes.indices where sources.contient(toutes[i]) { toutes[i].source = true }
+        toutes = DetecteurEntites.absorberFormesCourtes(toutes)
+        toutes = toutes.filter { $0.mentions > 0 || $0.origine == .rapport }
+        toutes.sort { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) }
+        return toutes
+    }
+
+    /// Une liste partielle de la détection. La plus récente seulement est préparée, au plus deux
+    /// fois et demie par seconde : la détection, elle, n'attend pas.
+    private func recevoir(_ p: Partiel, fait: Int, total: Int) {
+        guard p.generation == generation else { return }
+        switch etat {
+        case .lecture, .detection: etat = .detection(fait: fait, total: total)
+        default: return
+        }
+        partielEnAttente = p
+        guard !partielEnCours else { return }
+        partielEnCours = true
+        Task { await montrerPartiels() }
+    }
+
+    private func montrerPartiels() async {
+        while let p = partielEnAttente {
+            partielEnAttente = nil
+            let toutes = await Task.detached(priority: .userInitiated) {
+                Self.preparer(p.rapport, p.detectees, texte: p.texte)
+            }.value
+            // La liste finale a pu arriver entre-temps : elle ne se fait pas remplacer.
+            if p.generation == generation, case .detection = etat {
+                langue = p.langue
+                depuisRapport = !p.rapport.isEmpty
+                brutes = toutes
+                assembler()
+            }
+            try? await Task.sleep(for: .milliseconds(400))
+        }
+        partielEnCours = false
     }
 
     /// La liste montrée : les entités brutes, corrigées par l'utilisateur, complétées par le cache,

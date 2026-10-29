@@ -229,14 +229,20 @@ enum DetecteurEntites {
     /// des secondes, parfois des dizaines. Pas pour un rapport qui nomme déjà ses entités : la
     /// détection n'y ajoute que ce qu'il ne nommait pas (Patrick, B125 : « l'affichage des entités
     /// d'un document est trop lent »).
-    static func detecter(_ markdown: String, langue: String?, replis: Bool = true) async -> (entites: [EntiteDocument], methode: Methode) {
+    /// `partiel` : appelé après chaque morceau lu, avec les entités retenues jusque-là et le nombre
+    /// de morceaux faits sur le total — la liste s'affiche au fur et à mesure (Patrick, 29/10/2026).
+    static func detecter(_ markdown: String, langue: String?, replis: Bool = true,
+                         partiel: Partiel? = nil) async -> (entites: [EntiteDocument], methode: Methode) {
         let texte = TexteAnalysable.depuis(markdown)
         guard !texte.isEmpty else { return ([], .nlTagger) }
+        let total = morceaux(texte).count
         // `NLTagger` d'abord, même quand il ne déclare pas son modèle de noms : au simulateur
         // (iOS 26.5 et 27.1), `availableTagSchemes` ne le liste pas, et pourtant il trouve les noms
         // (29/10/2026). Sans ce premier essai, on passait au repli par majuscules, dont l'allemand
         // fait des personnes de « Juni » ou « Sie ».
-        var brutes = await parNLTagger(texte, langue: langue)
+        var brutes = await parNLTagger(texte, langue: langue) { cumul, fait in
+            await partiel?(retenues(cumul, texte: nil), fait, total)
+        }
         var methode = Methode.nlTagger
         if brutes.isEmpty, replis {
             // Rien trouvé : le modèle de noms est redemandé — même déclaré, il peut manquer sur
@@ -245,9 +251,14 @@ enum DetecteurEntites {
             // modèle qui ne trouve rien, mieux vaut aucune entité que des mots courants.
             let declare = NLTagger.availableTagSchemes(for: .word, language: NLLanguage(langue ?? "en")).contains(.nameType)
             if await modeleDeNomsPret(langue, redemander: true) {
-                brutes = await parNLTagger(texte, langue: langue)
+                brutes = await parNLTagger(texte, langue: langue) { cumul, fait in
+                    await partiel?(retenues(cumul, texte: nil), fait, total)
+                }
             }
-            if brutes.isEmpty, let parIA = await parAppleIntelligence(texte, langue: langue) {
+            let totalIA = min(morceaux(texte, taille: 6_000).count, 6)
+            if brutes.isEmpty, let parIA = await parAppleIntelligence(texte, langue: langue, apresMorceau: { cumul, fait in
+                await partiel?(retenues(cumul, texte: nil), fait, totalIA)
+            }) {
                 brutes = parIA
                 methode = .appleIntelligence
             } else if brutes.isEmpty, !declare {
@@ -255,13 +266,23 @@ enum DetecteurEntites {
                 methode = .majuscules
             }
         }
+        return (retenues(brutes, texte: texte), methode)
+    }
+
+    /// Ce que la détection rend à la liste, morceau par morceau.
+    typealias Partiel = @Sendable (_ entites: [EntiteDocument], _ fait: Int, _ total: Int) async -> Void
+
+    /// Les noms détectés qui passent les filtres, en entités du document. `texte` : l'ancrage dans
+    /// le texte et les sigles d'organisations, qui relisent tout le document — pas pour une liste
+    /// partielle, où ils coûtaient plus que la détection elle-même.
+    static func retenues(_ brutes: [EntiteDetectee], texte: String?) -> [EntiteDocument] {
         // « IA », « AI » : l'intelligence artificielle, un nom commun — que le repli par majuscules
         // comptait quatorze fois dans un briefing, et que Wikidata prenait pour Internet Archive.
         // Les noms d'une écriture sans casse passent à côté du filtre de fornews (voir `valide`).
         let sansCasse = brutes.filter { Self.ecritureSansCasse($0.valeur) && Self.valide($0) }
         let filtrees = (FiltreEntitesNER.filtrer(brutes.filter { !Self.ecritureSansCasse($0.valeur) }, texteSource: texte) + sansCasse)
             .filter { !Self.nomsCommunsEnSigle.contains($0.valeur) }
-        return (filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }, methode)
+        return filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }
     }
 
     static let nomsCommunsEnSigle: Set<String> = ["IA", "AI", "KI"]
@@ -321,11 +342,14 @@ enum DetecteurEntites {
         func premiere(_ l: NLLanguage) -> Bool { faites.insert(l.rawValue).inserted }
     }
 
-    static func parNLTagger(_ texte: String, langue: String?) async -> [EntiteDetectee] {
+    /// `apresMorceau` : les noms trouvés jusque-là, et le nombre de morceaux faits.
+    static func parNLTagger(_ texte: String, langue: String?,
+                            apresMorceau: (@Sendable ([EntiteDetectee], Int) async -> Void)? = nil) async -> [EntiteDetectee] {
         await Task.detached(priority: .utility) {
             var vues = Set<String>()
             var resultat: [EntiteDetectee] = []
-            for morceau in morceaux(texte) {
+            for (i, morceau) in morceaux(texte).enumerated() {
+                if Task.isCancelled { break }
                 let tagger = NLTagger(tagSchemes: [.nameType])
                 tagger.string = morceau
                 if let langue { tagger.setLanguage(NLLanguage(langue), range: morceau.startIndex..<morceau.endIndex) }
@@ -339,6 +363,7 @@ enum DetecteurEntites {
                     }
                     return true
                 }
+                await apresMorceau?(resultat, i + 1)
             }
             return resultat
         }.value
@@ -347,13 +372,16 @@ enum DetecteurEntites {
     /// Apple Intelligence lit le document par morceaux (sa fenêtre est petite) : six au plus, soit
     /// les ~36 000 premiers caractères — au-delà, l'attente ne vaut plus ce qu'elle rapporte. nil
     /// quand le modèle de l'appareil n'est pas disponible.
-    static func parAppleIntelligence(_ texte: String, langue: String?) async -> [EntiteDetectee]? {
+    static func parAppleIntelligence(_ texte: String, langue: String?,
+                                     apresMorceau: (@Sendable ([EntiteDetectee], Int) async -> Void)? = nil) async -> [EntiteDetectee]? {
         #if canImport(FoundationModels)
         guard case .available = SystemLanguageModel.default.availability else { return nil }
         let ner = NERFoundationModels()
         var resultat: [EntiteDetectee] = []
-        for morceau in morceaux(texte, taille: 6_000).prefix(6) {
+        for (i, morceau) in morceaux(texte, taille: 6_000).prefix(6).enumerated() {
+            if Task.isCancelled { break }
             if let trouvees = try? await ner.detecter(morceau, langue: langue) { resultat += trouvees }
+            await apresMorceau?(resultat, i + 1)
         }
         // Rien de rendu (refus, délai, fenêtre dépassée) : l'étage suivant prend la main, plutôt
         // qu'une liste vide — c'est ce qu'on voyait au simulateur, qui emprunte le modèle du Mac.
@@ -612,6 +640,11 @@ enum TexteAnalysable {
         }
         var prose = lignes.joined(separator: "\n")
         let remplacements: [(String, String)] = [
+            // Les définitions de référence, `[img1]: data:image/jpeg;base64,…` : les images d'un
+            // document importé (Word, PDF), des mégaoctets que NLTagger lisait comme du texte —
+            // la détection prenait des secondes pour rien (Patrick, 29/10/2026 : « très lente »).
+            (#"(?m)^[ \t]{0,3}\[(?!\^)[^\]]+\]:[ \t]*\S+.*$"#, " "),   // pas les notes [^1]:
+            (#"data:[a-z]+/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+"#, " "),
             (#"<!--[\s\S]*?-->"#, " "),
             (#"<[^>]+>"#, " "),
             (#"!\[[^\]]*\]\([^)]*\)"#, " "),                // images

@@ -11,8 +11,12 @@ for chemin in CommandLine.arguments.dropFirst() {
     let texte = (try? String(contentsOfFile: chemin, encoding: .utf8)) ?? ""
     let sem = DispatchSemaphore(value: 0)
     Task {
+        // Les temps de chaque étape, pour savoir ce qui fait attendre l'écran des entités.
+        var t0 = Date()
+        func chrono(_ etape: String) { print(String(format: "   ⏱ %@ %.2f s", etape, Date().timeIntervalSince(t0))); t0 = Date() }
         let langue = TexteAnalysable.langue(texte) ?? "fr"
         let duRapport = LecteurRapportFornews.lire(texte)
+        chrono("langue et rapport")
         // FORCE=majuscules : le dernier recours seul, celui d'un appareil sans modèle de noms.
         let (detectees, methode): ([EntiteDocument], DetecteurEntites.Methode)
         if ProcessInfo.processInfo.environment["FORCE"] == "majuscules" {
@@ -24,9 +28,12 @@ for chemin in CommandLine.arguments.dropFirst() {
         } else {
             (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue)
         }
+        chrono("détection")
         var toutes = LecteurRapportFornews.dedoublonner(duRapport + detectees)
         DetecteurEntites.compterMentions(&toutes, dans: texte)
+        chrono("mentions")
         toutes = DetecteurEntites.absorberFormesCourtes(toutes)
+        chrono("formes courtes")
         let finales = toutes.filter { $0.mentions > 0 || $0.origine == .rapport }
         let cherche = (ProcessInfo.processInfo.environment["CHERCHE"] ?? "trump,musk")
             .split(separator: ",").map { String($0).lowercased() }

@@ -110,7 +110,7 @@ struct EntitesView: View {
     @ViewBuilder private var contenu: some View {
         if !achat.acces {
             ApercuAnalyticView(analyse: analyse)
-        } else if analyse.etat == .lecture || analyse.etat == .inactif {
+        } else if analyse.etat == .lecture || analyse.etat == .inactif || (analyse.entites.isEmpty && analyse.enDetection) {
             VStack(spacing: 12) {
                 ProgressView()
                 Text(tr("Lecture du document…")).foregroundStyle(.secondary)
@@ -313,6 +313,12 @@ struct EntitesView: View {
     @ViewBuilder private var bandeauEtat: some View {
         let n = analyse.entites.count
         switch analyse.etat {
+        case .detection(let fait, let total):
+            // Les premières entités sont là ; le reste du document se lit encore.
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("Lecture du document…")).font(.footnote).foregroundStyle(.secondary)
+                ProgressView(value: Double(fait), total: Double(max(total, 1))).tint(orange)
+            }
         case .resolution(let fait, let total):
             VStack(alignment: .leading, spacing: 6) {
                 Text(tr("Wikidata complète %d sur %d…", fait, total)).font(.footnote).foregroundStyle(.secondary)
