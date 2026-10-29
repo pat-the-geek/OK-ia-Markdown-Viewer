@@ -21,8 +21,9 @@ enum ModeDemo {
             .first { u in
                 var rep: ObjCBool = false
                 let n = u.lastPathComponent.lowercased()
+                // « analiz » : « Documentos analizados », « Documenti analizzati ».
                 return FileManager.default.fileExists(atPath: u.path, isDirectory: &rep) && rep.boolValue
-                    && !n.contains("analy") && !n.hasPrefix(".")
+                    && !n.contains("analy") && !n.contains("analiz") && !n.hasPrefix(".")
             }
     }
 }
