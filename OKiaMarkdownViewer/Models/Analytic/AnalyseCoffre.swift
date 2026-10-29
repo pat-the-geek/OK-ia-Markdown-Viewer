@@ -60,6 +60,11 @@ final class AnalyseCoffre: ObservableObject {
         let dossier = (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                      appropriateFor: nil, create: true))
             ?? FileManager.default.temporaryDirectory
+        #if DEBUG
+        // Les captures (OKIA_DEMO) gardent leur index à part : ni l'index réel ne déteint sur elles,
+        // ni elles sur l'index réel (le Mac partage le conteneur de l'utilisateur).
+        if let demo = ModeDemo.dossier { return demo.appendingPathComponent("Analytic/coffre.json") }
+        #endif
         return dossier.appendingPathComponent("Analytic/coffre.json")
     }()
 

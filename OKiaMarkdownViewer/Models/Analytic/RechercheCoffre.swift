@@ -229,6 +229,10 @@ final class RechercheCoffre: ObservableObject {
     /// Envoie à Spotlight les documents nouveaux ou modifiés, retire ceux qui ont disparu. Sans
     /// l'option, vide l'index. Peu après l'appel : un lot d'imports n'envoie qu'une fois.
     func indexerSpotlight() {
+        #if DEBUG
+        // Les documents de démonstration des captures n'ont rien à faire dans Spotlight.
+        if ModeDemo.actif { return }
+        #endif
         spotlight?.cancel()
         spotlight = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3))
