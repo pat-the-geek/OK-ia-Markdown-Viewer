@@ -71,12 +71,10 @@ struct AnalyseCoffreView: View {
         ToolbarItem(placement: .topBarLeading) {
             Button(tr("Fermer")) { dismiss() }
         }
-        ToolbarItem(placement: .principal) {
-            Picker(tr("Affichage"), selection: $vue) {
-                ForEach(Vue.allCases) { v in Text(v.libelle).tag(v) }
-            }
-            .pickerStyle(.segmented)
-            .frame(maxWidth: 320)
+        // Sur Mac, la barre n'affiche pas l'élément central : le sélecteur passe dans le résumé
+        // (Patrick, 30/10/2026 : « sur mac, je ne vois pas l'option liste, galerie, carte »).
+        if !TailleAccueil.surMac {
+            ToolbarItem(placement: .principal) { selecteur }
         }
         // Le tri d'un toucher, à côté du filtre : dans le menu seul, on ne le trouvait pas.
         ToolbarItem(placement: .topBarTrailing) {
@@ -110,9 +108,18 @@ struct AnalyseCoffreView: View {
         }
     }
 
+    private var selecteur: some View {
+        Picker(tr("Affichage"), selection: $vue) {
+            ForEach(Vue.allCases) { v in Text(v.libelle).tag(v) }
+        }
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 320)
+    }
+
     /// Ce que l'analyse couvre, et où elle en est.
     private var resume: some View {
         VStack(spacing: 6) {
+            if TailleAccueil.surMac { selecteur }
             if case .lecture(let fait, let total) = analyse.etat {
                 ProgressView(value: Double(fait), total: Double(max(total, 1))) {
                     Text(tr("Lecture des documents… %d sur %d", fait, total)).font(.caption)

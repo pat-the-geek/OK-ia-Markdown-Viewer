@@ -45,6 +45,16 @@ final class DocumentStore: ObservableObject {
             else { self?.actionApresAchat = action; self?.vitrineImport = true }
         }
     }
+
+    /// La vitrine partie : ce qui était demandé se fait si l'option est maintenant ouverte. Pas avant
+    /// la fin de son départ — l'analyse du coffre, ouverte 0,6 s après l'achat, se dessinait par-dessus
+    /// l'écran d'avant (Patrick, 30/10/2026, sur Mac), et le sélecteur de fichiers ne s'ouvrait pas.
+    func repriseApresVitrine() {
+        let action = actionApresAchat
+        actionApresAchat = nil
+        guard AchatAnalytic.partage.acces, let action else { return }
+        DispatchQueue.main.async { action() }
+    }
     /// Ce que le document qui s'ouvre doit chercher : un document trouvé par la recherche du coffre.
     @Published var rechercheDemandee: String?
     /// Une action de Raccourcis (1.4) demande au lecteur d'ouvrir les entités du document.

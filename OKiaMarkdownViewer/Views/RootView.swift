@@ -160,7 +160,7 @@ struct RootView: View {
             ImportView(import_: i, annuler: { store.annulerImport() })
                 .interactiveDismissDisabled()
         }
-        .sheet(isPresented: $store.vitrineImport) {
+        .sheet(isPresented: $store.vitrineImport, onDismiss: { store.repriseApresVitrine() }) {
             // Un bouton pour la refermer (Patrick, 27/10/2026, sur l'iPhone : « je ne peux pas
             // quitter ») : glisser vers le bas s'y confondait avec le défilement, et le Mac n'a pas
             // ce geste. La barre de navigation la décolle aussi du haut de l'écran.
@@ -234,9 +234,9 @@ struct RootView: View {
     }
 }
 
-/// L'option achetée depuis la vitrine : elle se referme, et ce qui était demandé se fait — une fois la
-/// feuille partie, sinon le sélecteur de fichiers ne s'ouvrirait pas. À part : le corps de `RootView`
-/// dépassait ce que le compilateur vérifie en un temps raisonnable.
+/// L'option achetée depuis la vitrine : elle se referme, et ce qui était demandé se fait une fois la
+/// feuille partie (`DocumentStore.repriseApresVitrine`). À part : le corps de `RootView` dépassait ce
+/// que le compilateur vérifie en un temps raisonnable.
 private struct RepriseApresAchat: ViewModifier {
     @ObservedObject var store: DocumentStore
     @ObservedObject var achat: AchatAnalytic
@@ -244,13 +244,8 @@ private struct RepriseApresAchat: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onChange(of: achat.acces) { _, ouverte in
-                guard ouverte, store.vitrineImport, let action = store.actionApresAchat else { return }
-                store.actionApresAchat = nil
+                guard ouverte, store.vitrineImport, store.actionApresAchat != nil else { return }
                 store.vitrineImport = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { action() }
-            }
-            .onChange(of: store.vitrineImport) { _, ouverte in
-                if !ouverte { store.actionApresAchat = nil }
             }
     }
 }
