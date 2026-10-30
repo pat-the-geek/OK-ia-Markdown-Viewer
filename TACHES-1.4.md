@@ -570,6 +570,20 @@ le Mac (souris), le Duo.
       `DocumentsAnnotes` liste les fichiers d'annotations, relus à chaque écriture et à chaque arrivée
       d'iCloud. Exacte : un autre texte sous le même nom n'est pas marqué. « Annoté » en 15 langues
       (VoiceOver). Vérifié au simulateur (coffre d'essai, un rapport annoté, un vierge).
+- [x] **Annotations et conversion en présentation** (30/10, Patrick : « comment a-t-on géré les annotations
+      lors de la génération de présentations ? », puis « fais les 2 »).
+      - Les passages surlignés ou soulignés d'une section sont signalés au modèle, à garder en priorité,
+        recopiés mot pour mot quand une puce le permet (`ConvertisseurPresentation.marquesDe`, huit au plus,
+        comptés dans la place réservée). **Pas vérifié** : le simulateur n'a pas Apple Intelligence.
+      - Ceux que la présentation cite mot pour mot y sont reportés, de la même couleur
+        (`ConversionEnCours.reporterMarques`). Les notes manuscrites restent au rapport. Vérifié au
+        simulateur, conversion factice (`OKIA_FAKE_AI`) : trois marques reportées, la quatrième (absente)
+        laissée, affichées dans le diaporama.
+      - **Masquer une diapositive** réécrivait le fichier, et ses annotations s'y perdaient : l'identité
+        d'un document se calcule désormais sans les marques `<!-- okia:masquee -->`
+        (`IdentiteDocument.sansMarques`). Vérifié par un script : texte identique une fois les marques
+        retirées, quelles que soient les diapositives masquées. **Pas vu** dans l'app : le toucher sur l'œil
+        des vignettes ne passe pas au simulateur.
 
 
 ## ⑦ Donner de la valeur au Mac — décidé par Patrick le 27/10 (« on fera toutes tes idées de 1 à 7 »)

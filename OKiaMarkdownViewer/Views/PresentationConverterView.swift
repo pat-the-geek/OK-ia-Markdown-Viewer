@@ -6,6 +6,13 @@ import WebKit
 /// Le moteur est `ConvertisseurPresentation` ; cet écran ne fait que le piloter et le montrer.
 struct PresentationConverterView: View {
     let document: MarkdownDocument
+    /// Les surlignages et soulignements du rapport (option Analytic, 1.4) : la conversion les
+    /// privilégie, et la présentation reprend ceux qu'elle cite mot pour mot.
+    private var marquesDuRapport: [Annotation] {
+        guard AchatAnalytic.partage.acces else { return [] }
+        return AnnotationsStore.lire(IdentiteDocument(document), document: document)
+            .filter { $0.type != .encre && !$0.ancre.exact.isEmpty }
+    }
     let titreAffiche: String
     /// Reçoit la présentation à ouvrir au diaporama. Le lecteur l'ouvre une fois cette feuille
     /// refermée : deux présentations modales ne se chevauchent pas.
@@ -71,7 +78,8 @@ struct PresentationConverterView: View {
         // Le rejeu des captures démarre seul : aucun geste à scripter.
         .task {
             if ProcessInfo.processInfo.environment["OKIA_CONVERSION_REJEU"] != nil, case .reglage = conversion.etat {
-                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande)
+                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande,
+                                 marques: marquesDuRapport)
             }
         }
         #endif
@@ -116,7 +124,8 @@ struct PresentationConverterView: View {
         }
         Section {
             Button {
-                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande)
+                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande,
+                                 marques: marquesDuRapport)
             } label: {
                 Label(tr("Convertir"), systemImage: "sparkles")
             }
@@ -213,7 +222,8 @@ struct PresentationConverterView: View {
         Section {
             Text(message).foregroundStyle(.secondary)
             Button(tr("Réessayer")) {
-                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande)
+                conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande,
+                                 marques: marquesDuRapport)
             }
         }
     }
@@ -246,9 +256,12 @@ final class ConversionEnCours: ObservableObject {
     /// Les diapositives que l'utilisateur a masquées, par leur rang dans la présentation finie.
     @Published private(set) var masquees: Set<Int> = []
     private var tache: Task<Void, Never>?
+    /// Les surlignages et soulignements du rapport converti.
+    private var marques: [Annotation] = []
 
-    func lancer(markdown: String, titre: String, diapositives: Int) {
+    func lancer(markdown: String, titre: String, diapositives: Int, marques: [Annotation] = []) {
         tache?.cancel()
+        self.marques = marques
         self.diapositives = []
         markdownFinal = nil
         masquees = []
@@ -281,8 +294,10 @@ final class ConversionEnCours: ObservableObject {
         tache = Task { [weak self] in
             do {
                 let r = try await ConvertisseurPresentation().convertir(
-                    markdown: markdown, titreParDefaut: titre, diapositives: diapositives, avancement: suivi)
+                    markdown: markdown, titreParDefaut: titre, diapositives: diapositives,
+                    marques: marques.map(\.ancre.exact), avancement: suivi)
                 let document = Self.enregistrer(r)
+                self?.reporterMarques(sur: document)
                 self?.markdownFinal = r.markdown
                 self?.etat = .fini(Fini(document: document, diapositives: r.diapositives,
                                         omissions: r.omissions.map(Self.texte), ecartees: r.pucesEcartees.count))
@@ -357,12 +372,28 @@ final class ConversionEnCours: ObservableObject {
             }
             guard let self, !Task.isCancelled else { return }
             let md = diapos.joined(separator: "\n\n---\n\n")
+            let document = MarkdownDocument(filename: "factice.md", text: md)
+            self.reporterMarques(sur: document)
             self.markdownFinal = md
-            self.etat = .fini(Fini(document: MarkdownDocument(filename: "factice.md", text: md),
-                                   diapositives: total, omissions: [], ecartees: 0))
+            self.etat = .fini(Fini(document: document, diapositives: total, omissions: [], ecartees: 0))
         }
     }
     #endif
+
+    /// Les surlignages et soulignements du rapport que la présentation cite mot pour mot y sont
+    /// reportés, de la même couleur (Patrick, 30/10/2026 : « fais les 2 »). Ancrés à leur seule
+    /// citation : la page les pose sur sa première occurrence. Les notes manuscrites restent au
+    /// rapport, faute d'un dessin qui leur corresponde.
+    private func reporterMarques(sur d: MarkdownDocument) {
+        guard !marques.isEmpty else { return }
+        let lu = DiapositivesMasquees.sansEmphase(d.text)
+        let reprises = marques.filter { lu.contains($0.ancre.exact) }.map {
+            Annotation(type: $0.type, couleur: $0.couleur,
+                       ancre: AncreAnnotation(exact: $0.ancre.exact, prefix: "", suffix: ""))
+        }
+        guard !reprises.isEmpty else { return }
+        AnnotationsStore.ecrire(reprises, pour: IdentiteDocument(d))
+    }
 
     /// Le titre d'une diapositive : sa première ligne, sans les dièses du Markdown.
     nonisolated static func titreDe(_ diapo: String) -> String {
@@ -506,6 +537,14 @@ struct ChantierWebView: UIViewRepresentable {
 /// diapositives vides ignorées —, sinon le rang ne désignerait pas la même diapositive.
 enum DiapositivesMasquees {
     static let marque = "<!-- okia:masquee -->"
+
+    /// Un texte Markdown tel qu'il se lit, pour y chercher un passage surligné : sans les astérisques
+    /// ni les accents graves de l'emphase, ni les marques des diapositives masquées.
+    static func sansEmphase(_ t: String) -> String {
+        t.replacingOccurrences(of: marque + "\n", with: "")
+            .replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
+            .replacingOccurrences(of: "*", with: "").replacingOccurrences(of: "`", with: "")
+    }
 
     static func marquer(_ markdown: String, masquees: Set<Int>) -> String {
         var lignes = markdown.components(separatedBy: "\n")

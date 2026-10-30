@@ -73,7 +73,7 @@ struct IdentiteDocument: Codable, Equatable {
     var chemin: String?
 
     init(_ document: MarkdownDocument) {
-        let octets = Data(document.text.utf8)
+        let octets = Data(Self.sansMarques(document.text).utf8)
         nom = document.filename
         taille = octets.count
         empreinte = Self.hex(SHA256.hash(data: octets))
@@ -90,7 +90,15 @@ struct IdentiteDocument: Codable, Equatable {
     /// La même clé, d'après le fichier lui-même (le nom, puis le texte tel que le lecteur le
     /// décode) : celle que cherche la marque « annoté » de l'accueil.
     nonisolated static func cle(fichier url: URL, octets: Data) -> String {
-        cle(nom: url.lastPathComponent, empreinte: hex(SHA256.hash(data: Data(MarkdownLoader.decode(octets).utf8))))
+        cle(nom: url.lastPathComponent,
+            empreinte: hex(SHA256.hash(data: Data(sansMarques(MarkdownLoader.decode(octets)).utf8))))
+    }
+
+    /// Le texte qui fait l'identité : sans les marques des diapositives masquées d'une présentation
+    /// (`DiapositivesMasquees`). Masquer une diapositive réécrit le fichier ; ses annotations s'y
+    /// perdaient (Patrick, 30/10/2026 : « fais les 2 »).
+    nonisolated static func sansMarques(_ texte: String) -> String {
+        texte.replacingOccurrences(of: DiapositivesMasquees.marque + "\n", with: "")
     }
 
     private nonisolated static func cle(nom: String, empreinte: String) -> String {

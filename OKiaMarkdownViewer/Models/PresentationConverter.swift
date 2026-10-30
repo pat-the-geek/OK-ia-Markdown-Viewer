@@ -499,7 +499,9 @@ final class ConvertisseurPresentation {
             || bas.hasPrefix("keine information") || bas.hasPrefix("nessuna informazione")
     }
 
-    func convertir(markdown: String, titreParDefaut: String, diapositives demande: Int,
+    /// `marques` : les passages que le lecteur a surlignés ou soulignés (option Analytic, 1.4). Chaque
+    /// section signale au modèle ceux qu'elle contient, à garder en priorité.
+    func convertir(markdown: String, titreParDefaut: String, diapositives demande: Int, marques: [String] = [],
                    avancement: @escaping @Sendable (Avancement) -> Void) async throws -> Resultat {
         guard Self.disponible else { throw Echec.modeleIndisponible }
         let rapport = RapportDecoupe(markdown: markdown, titreParDefaut: titreParDefaut)
@@ -557,7 +559,8 @@ final class ConvertisseurPresentation {
                 avancement(Avancement(etape: etape, total: etapes, section: s.titre,
                                       diapositives: pretes(), prevues: prevues))
                 do {
-                    let (lot, omis) = try await genererSection(s, nombre: k, fenetre: fenetre, regle: regle)
+                    let (lot, omis) = try await genererSection(s, nombre: k, fenetre: fenetre, regle: regle,
+                                                               marques: Self.marquesDe(s, parmi: marques))
                     let source = VerificationsPresentation.nombres(s.texte + "\n" + s.blocs.map(\.texte).joined(separator: "\n"))
                     for d in lot {
                         var gardees: [String] = []
@@ -634,11 +637,24 @@ final class ConvertisseurPresentation {
 
     private struct DiapoGeneree { var titre: String; var puces: [String] }
 
+    /// Les passages marqués que contient une section, huit au plus, chacun raccourci : le texte de
+    /// la section est lu sans gras ni italique, comme la page les affiche.
+    static func marquesDe(_ s: RapportDecoupe.Section, parmi marques: [String]) -> [String] {
+        guard !marques.isEmpty else { return [] }
+        let lu = DiapositivesMasquees.sansEmphase(s.texte)
+        return Array(marques.filter { lu.contains($0) }.map { String($0.prefix(200)) }.prefix(8))
+    }
+
     private func genererSection(_ s: RapportDecoupe.Section, nombre k: Int, fenetre: Int,
-                                regle: String) async throws -> ([DiapoGeneree], String) {
+                                regle: String, marques: [String] = []) async throws -> ([DiapoGeneree], String) {
         // Le texte doit tenir dans la fenêtre, avec la place des consignes, du schéma et de la réponse.
         var texte = s.texte
-        let reserve = try await modele.tokenCount(for: Instructions(Self.consignes)) + 900 + k * 120
+        // Ce que le lecteur a surligné passe d'abord — la langue de rédaction reste en dernière ligne.
+        let priorites = marques.isEmpty ? "" :
+            "Passages que le lecteur a surlignés dans cette partie : garde-les en priorité, recopiés mot pour mot quand une puce le permet.\n"
+            + marques.map { "« \($0) »" }.joined(separator: "\n") + "\n\n"
+        let place = priorites.isEmpty ? 0 : try await modele.tokenCount(for: Prompt(priorites))
+        let reserve = try await modele.tokenCount(for: Instructions(Self.consignes)) + 900 + k * 120 + place
         var jetons = try await modele.tokenCount(for: Prompt(texte))
         while jetons + reserve > fenetre && texte.count > 2000 {
             texte = String(texte.prefix(texte.count * 3 / 4))
@@ -646,7 +662,7 @@ final class ConvertisseurPresentation {
         }
         let session = LanguageModelSession(model: modele, instructions: Self.consignes)
         let reponse = try await session.respond(
-            to: "Fais exactement \(k) diapositive(s) de cette partie, intitulée « \(s.titre) » :\n\n\(texte)\n\n\(regle)",
+            to: "Fais exactement \(k) diapositive(s) de cette partie, intitulée « \(s.titre) » :\n\n\(texte)\n\n\(priorites)\(regle)",
             schema: Self.schemaSection(k))
         let liste = try reponse.content.value([GeneratedContent].self, forProperty: "diapositives")
         let lot = try liste.map { d in
