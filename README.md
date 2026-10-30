@@ -1476,15 +1476,24 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    `ppt/media/`, leurs notes dans `ppt/notesSlides/`. Pendant l'import, **un compte à rebours inspiré de celui de fornews**
    (`CompteReboursDemandeView`), qui montre les éléments au fur et à mesure qu'ils sont détectés.
 4. **Annoter un document à l'Apple Pencil** (ajouté par Patrick le 2026-10-25). PencilKit sur le
-   lecteur, au crayon sur iPad, au doigt sur iPhone une fois le mode « Annoter » ouvert. ⚠️ Le
-   texte d'un document se recompose (taille du texte, thème, rotation, livre, Duo) : un trait posé
-   sur l'écran ne retomberait plus au bon endroit. Proposition : **ancrer chaque annotation au
-   texte, jamais à l'écran** — un surlignage ou un soulignement devient une plage de texte (qui
-   survit à la recomposition), une note manuscrite s'accroche à un paragraphe et se dessine dans
-   sa marge. **Le fichier `.md` n'est jamais modifié** : les annotations vivent à côté, liées au
-   document, et passent d'un appareil à l'autre par l'iCloud privé, comme le cache d'entités. Elles
-   s'affichent sur Mac et partent dans l'export PDF. Pendant l'annotation, les gestes du livre
-   (tour de page) sont suspendus. À voir aussi : annoter une diapositive pendant le diaporama.
+   lecteur, au crayon sur iPad, au doigt sur iPhone, à la souris ou au trackpad sur Mac, une fois le
+   mode « Annoter » ouvert. Sa palette : **Surligner, Souligner, Écrire, Gomme**, quatre couleurs.
+   Le texte d'un document se recompose (taille du texte, thème, rotation, livre, Duo) : un trait posé
+   sur l'écran ne retomberait plus au bon endroit. D'où **chaque annotation ancrée au contenu,
+   jamais à l'écran** :
+   - un surlignage ou un soulignement est une plage de texte, qui survit à la recomposition ;
+   - une note manuscrite s'accroche à son paragraphe ;
+   - sur un **diagramme**, une **image** ou une **carte**, qui n'ont pas de texte, le stylo comme le
+     stabilo laissent une note ancrée au dessin (B131, B135) ;
+   - sur une carte, la note tient à la **géographie** : elle suit la carte qu'on déplace ou qu'on
+     zoome (B135).
+
+   **Le fichier `.md` n'est jamais modifié** : les annotations vivent à côté, liées au document (son
+   nom et l'empreinte de son contenu), et passent d'un appareil à l'autre par l'iCloud privé
+   (CloudKit). On annote dans le lecteur, **le livre** et **le diaporama** ; les annotations partent
+   dans l'**export PDF** et dans l'**export Word** (surlignages de Word, notes en commentaires).
+   Sur l'accueil, **un stabilo orange marque les documents annotés** (B135). Détail et vérifications :
+   `TACHES-1.4.md`, lot ④ bis.
 5. ~~**Des modèles plus poussés** (Private Cloud Compute)~~ — **écarté le 2026-10-25**, voir les
    décisions ci-dessous.
 6. **Le lien avec fornews** (base d'entités, ouverture par QID).

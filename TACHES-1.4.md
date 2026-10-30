@@ -544,6 +544,32 @@ le Mac (souris), le Duo.
 - [x] **La palette tient dans la largeur** (B112, 28/10, Patrick : coupée sur le Duo replié) : en ligne, en
       ligne resserrée ou sur deux rangées (`ViewThatFits`), hors de la colonne d'outils du Duo. **Pas vu** :
       le vrai Duo replié.
+- [x] **Écrire sur un diagramme, une image ou une carte** (B131, 29/10, Patrick : « peut-on annoter les
+      diagrammes et images ? » — le trait disparaissait, faute de texte où s'accrocher). La note s'ancre au
+      média : son genre, son rang dans la page (l'adresse en plus pour une image), sa place mesurée sur le
+      dessin lui-même ; un `ResizeObserver` la repose quand la page change de largeur (Duo, rotation,
+      fenêtre du Mac). Export Word : une note sur une image devient un commentaire sur cette image.
+      Vérifié au simulateur (diagramme) et dans le navigateur (diagramme, image, carte).
+- [x] **Le stabilo sur un diagramme, une image ou une carte** (B135, 30/10, Patrick : « le dessin sur
+      diagramme fonctionne mais pas le stabilo »). Il n'y a pas de texte à surligner : le trait du stabilo
+      (ou du soulignement) y devient une note, ancrée au média comme l'écriture
+      (`CalqueAnnotation.poserSurMedia`). Sur une image, chercher le texte d'abord l'aurait accroché au
+      paragraphe voisin. Vérifié au simulateur : une case Mermaid surlignée, retrouvée après relance.
+- [x] **Les notes d'une carte suivent la carte** (B135, 30/10, Patrick : « il faut tenir compte du
+      déplacement et du zoom »). La note tient à la géographie : son coin en latitude et longitude, le
+      zoom et la largeur du tracé (`lat`, `lng`, `zoom`, `px` dans `AncreAnnotation`). Elle se replace à
+      chaque mouvement de la carte (`placerSurCarte`, carte Leaflet de `el._leafletMap`), sa largeur
+      double à chaque cran de zoom, la carte la coupe à ses bords ; elle se cache pendant l'animation
+      d'un zoom par les boutons. Les notes d'avant B135 gardent leur place dans le cadre. Vérifié au
+      simulateur : un cercle autour de Zürich, après zooms et déplacement. **Pas vu** : le zoom à deux
+      doigts sur l'appareil.
+- [x] **La marque « annoté » sur l'accueil** (B135, 30/10, Patrick : « on devrait pouvoir savoir si des
+      annotations ont été effectuées sur le fichier »). Un stabilo orange en bas à droite de la carte
+      d'un document annoté (au bout de la ligne aux grandes tailles de texte). L'aperçu calcule la clé
+      d'annotations du document (`IdentiteDocument.cle(fichier:octets:)`, gardée dans son cache) ;
+      `DocumentsAnnotes` liste les fichiers d'annotations, relus à chaque écriture et à chaque arrivée
+      d'iCloud. Exacte : un autre texte sous le même nom n'est pas marqué. « Annoté » en 15 langues
+      (VoiceOver). Vérifié au simulateur (coffre d'essai, un rapport annoté, un vierge).
 
 
 ## ⑦ Donner de la valeur au Mac — décidé par Patrick le 27/10 (« on fera toutes tes idées de 1 à 7 »)
