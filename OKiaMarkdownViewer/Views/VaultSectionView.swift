@@ -32,6 +32,10 @@ struct VaultSectionView: View {
             }
         } header: {
             HStack(spacing: 12) {
+                if vault.hasFolder {
+                    BoutonDossier { [vault] in await vault.resolveFolder() }
+                        .padding(.trailing, -4)
+                }
                 Text(tr("Coffre") + (vault.folderName.map { " · \($0)" } ?? ""))
                 Spacer()
                 Button { patternDraft = vault.pattern; showSettings = true } label: {

@@ -38,7 +38,11 @@ struct DocumentsAnalysesSection: View {
                     } header: {
                         // La recherche et l'analyse du coffre sont dans la barre de l'accueil.
                         if rang == 0 {
-                            Text(tr("Documents analysés") + " · " + groupe.titre)
+                            HStack(spacing: 8) {
+                                BoutonDossier { await Task.detached { RangementDocuments.dossierAnalyses() }.value }
+                                    .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
+                                Text(tr("Documents analysés") + " · " + groupe.titre)
+                            }
                         } else {
                             Text(groupe.titre)
                         }
