@@ -2119,9 +2119,26 @@
   function carteSeule(b64) {
     var c = document.getElementById('content');
     if (!c) return;
+    // La carte des entités se redessine chaque fois que Wikidata situe un lieu de plus : la vue
+    // choisie à la main (zoom, déplacement) est gardée. Sans quoi le cadrage sur tous les
+    // marqueurs la reprenait quelques secondes plus tard (Patrick, 30/10/2026).
+    var avant = c.querySelector('.okia-map'), vue = null;
+    if (avant && avant._okiaVueChoisie && avant._leafletMap) {
+      try { vue = { centre: avant._leafletMap.getCenter(), zoom: avant._leafletMap.getZoom() }; } catch (e) {}
+    }
     document.documentElement.classList.add('okia-carte-seule');
     c.innerHTML = '<div class="okia-map" data-okia-map="' + b64 + '"></div>';
     renderLeafletMaps(c);
+    var el = c.querySelector('.okia-map');
+    if (!el) return;
+    if (vue && el._leafletMap) {
+      el._leafletMap.setView(vue.centre, vue.zoom, { animate: false });
+      el._okiaVueChoisie = true;
+    }
+    // Un geste sur la carte (pincement, molette, glisser, boutons + et −) : la vue est à l'utilisateur.
+    ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach(function (t) {
+      el.addEventListener(t, function () { el._okiaVueChoisie = true; }, { passive: true });
+    });
   }
 
   function setTheme(key) {

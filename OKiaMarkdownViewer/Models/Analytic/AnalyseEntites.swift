@@ -286,7 +286,10 @@ final class AnalyseEntites: ObservableObject {
                                   "minZoom": 1, "maxZoom": 18, "height": "420px", "defaultTiles": NSNull(),
                                   // Le nom à côté de chaque marqueur (render.js).
                                   "etiquettes": true]
-        let data = (try? JSONSerialization.data(withJSONObject: cfg)) ?? Data()
+        // Les clés dans un ordre fixe : un dictionnaire Swift ne garde pas le sien d'une fois à
+        // l'autre, la même carte donnait un autre texte à chaque rendu de la vue, et `CarteWebView`
+        // la redessinait — recadrée, le zoom choisi perdu (Patrick, 30/10/2026).
+        let data = (try? JSONSerialization.data(withJSONObject: cfg, options: [.sortedKeys])) ?? Data()
         return data.base64EncodedString()
     }
 
