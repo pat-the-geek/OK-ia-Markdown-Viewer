@@ -15,6 +15,9 @@ struct EmptyStateView: View {
 
     @State private var showAbout = false
     @State private var analyses: [DocumentsAnalysesSection.DocumentAnalyse] = []
+    /// La lecture des documents analysés en cours : seule la dernière demandée remplit la liste.
+    @State private var lectureAnalyses = 0
+    @Environment(\.scenePhase) private var phase
     @ObservedObject private var achat = AchatAnalytic.partage
     @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
@@ -84,8 +87,10 @@ struct EmptyStateView: View {
         }
         .onAppear { vault.refresh() }
         // Les documents analysés, relus à chaque retour à l'accueil (un import vient peut-être d'y entrer).
-        .task(id: achat.acces) { analyses = await DocumentsAnalysesSection.charger() }
-        .onAppear { Task { analyses = await DocumentsAnalysesSection.charger() } }
+        .task(id: achat.acces) { rechargerAnalyses() }
+        .onAppear { rechargerAnalyses() }
+        // Revenir à l'app (sur Mac, à sa fenêtre) relit aussi : un document a pu arriver d'ailleurs.
+        .onChange(of: phase) { _, p in if p == .active { rechargerAnalyses() } }
         .confirmationDialog(tr("Supprimer « %@ » ?", aSupprimer?.nom ?? ""),
                             isPresented: Binding(get: { aSupprimer != nil }, set: { if !$0 { aSupprimer = nil } }),
                             titleVisibility: .visible, presenting: aSupprimer) { s in
@@ -242,6 +247,28 @@ struct EmptyStateView: View {
             Button(role: .destructive) { recentsStore.remove(item) } label: {
                 Label(tr("Retirer de la liste"), systemImage: "trash")
             }
+        }
+    }
+
+    /// Relit les documents analysés. Au lancement, la liste restait vide sur Mac alors que la
+    /// recherche les trouvait (Patrick, 30/10/2026 : pas de section « Documents analysés ») : une
+    /// lecture partie avant les droits ou avant le conteneur iCloud ne trouvait rien, et rien ne la
+    /// refaisait. Désormais la dernière lecture demandée l'emporte, et une liste vide alors qu'iCloud
+    /// est là est relue un peu plus tard, le temps que le conteneur réponde.
+    private func rechargerAnalyses() {
+        lectureAnalyses += 1
+        let lecture = lectureAnalyses
+        Task {
+            var lus = await DocumentsAnalysesSection.charger()
+            var essai = 0
+            while lus.isEmpty, essai < 3, achat.acces, FileManager.default.ubiquityIdentityToken != nil {
+                essai += 1
+                try? await Task.sleep(for: .seconds(2 * essai))
+                guard lecture == lectureAnalyses else { return }
+                lus = await DocumentsAnalysesSection.charger()
+            }
+            guard lecture == lectureAnalyses else { return }
+            analyses = lus
         }
     }
 
