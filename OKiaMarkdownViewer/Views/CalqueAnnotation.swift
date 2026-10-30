@@ -202,19 +202,43 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
         canvas.drawing = PKDrawing()
         traitsConnus = 0
         retouche = false
+        // Le calque suit le défilement : sa place dans la vue web se prend maintenant, pas après
+        // les questions à la page.
+        let decalage = canvas.convert(CGPoint.zero, to: vue)
+        let couleur = annotations.couleur
+        Task {
+            // Des traits tracés d'affilée sur des médias différents (un tableau puis une carte)
+            // font des notes distinctes : réunis, la note s'accrochait au média sous leur centre, et
+            // la carte coupait le reste (30/10/2026). Sur le texte, ils restent ensemble.
+            var groupes: [String: [PKStroke]] = [:], ordre: [String] = []
+            for trait in dessin.strokes {
+                let b = trait.renderBounds
+                let centre = CGPoint(x: b.midX + decalage.x, y: b.midY + decalage.y)
+                let cle = await PontAnnotations.mediaNomme(vue, centre) ?? "texte"
+                if groupes[cle] == nil { ordre.append(cle) }
+                groupes[cle, default: []].append(trait)
+            }
+            for cle in ordre {
+                await poserEcriture(PKDrawing(strokes: groupes[cle] ?? []), decalage: decalage,
+                                    vue: vue, couleur: couleur)
+            }
+        }
+    }
+
+    /// Une note manuscrite : l'image de ses traits, et son ancre.
+    private func poserEcriture(_ dessin: PKDrawing, decalage: CGPoint, vue: WKWebView,
+                               couleur: Annotation.Couleur) async {
+        guard !dessin.strokes.isEmpty else { return }
         let cadre = dessin.bounds.insetBy(dx: -6, dy: -6)
         var image = UIImage()
         UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
             image = dessin.image(from: cadre, scale: 3)
         }
-        guard let png = image.pngData() else { return }
-        let dansLaVue = canvas.convert(cadre, to: vue)
-        let couleur = annotations.couleur
-        Task {
-            guard let ancre = await PontAnnotations.ancrerEncre(vue, dansLaVue) else { return }
-            annotations.ajouter(Annotation(type: .encre, couleur: couleur, ancre: ancre,
-                                           image: png.base64EncodedString(), trace: dessin.dataRepresentation()))
-        }
+        guard let png = image.pngData(),
+              let ancre = await PontAnnotations.ancrerEncre(vue, cadre.offsetBy(dx: decalage.x, dy: decalage.y))
+        else { return }
+        annotations.ajouter(Annotation(type: .encre, couleur: couleur, ancre: ancre,
+                                       image: png.base64EncodedString(), trace: dessin.dataRepresentation()))
     }
 }
 
@@ -252,6 +276,14 @@ enum PontAnnotations {
         let o = pointPage(vue, r.origin), c = pointPage(vue, CGPoint(x: r.maxX, y: r.maxY))
         return await objet(vue, "JSON.stringify(window.OKIA_ANNOT ? window.OKIA_ANNOT.ancrerEncre(\(o.x), \(o.y), \(c.x - o.x), \(c.y - o.y)) : null)",
                            AncreAnnotation.self)
+    }
+
+    /// Le média sous un point de la vue web (« carte:0 »), ou nil sur le texte.
+    static func mediaNomme(_ vue: WKWebView, _ p: CGPoint) async -> String? {
+        let q = pointPage(vue, p)
+        struct Reponse: Decodable { let nom: String? }
+        return await objet(vue, "JSON.stringify({ nom: window.OKIA_ANNOT && window.OKIA_ANNOT.mediaNomme ? window.OKIA_ANNOT.mediaNomme(\(q.x), \(q.y)) : null })",
+                           Reponse.self)?.nom
     }
 
     /// L'annotation sous un point de la vue web (la gomme).

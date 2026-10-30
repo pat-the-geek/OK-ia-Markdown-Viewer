@@ -261,6 +261,16 @@
     carte.on('zoomend', function () { replacer(); voir(true); });
   }
 
+  // Le média sous un point de la page, nommé par son genre et son rang (« carte:0 »), ou null sur
+  // le texte : Swift sépare en notes distinctes des traits tracés d'affilée sur des médias
+  // différents — réunis, la note prenait la place de leur centre, et une carte coupait le reste.
+  function mediaNomme(x, y) {
+    var m = mediaSous(x, y);
+    if (!m) return null;
+    var g = genre(m);
+    return g + ':' + medias(g).indexOf(m);
+  }
+
   function retrouverMedia(ancre) {
     var liste = medias(ancre.media), m = liste[ancre.rang];
     // Une image se reconnaît aussi à son adresse : une image ajoutée plus haut décale les rangs.
@@ -464,6 +474,7 @@
     ancrerTexte: ancrerTexte,
     ancrerEncre: ancrerEncre,
     sousLePoint: sousLePoint,
+    mediaNomme: mediaNomme,
     figer: figer,
     sansEncre: sansEncre,
     defiger: defiger
