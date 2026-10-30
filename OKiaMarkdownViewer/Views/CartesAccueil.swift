@@ -40,6 +40,8 @@ struct ApercuDocument {
     var titre: String
     var extrait: String
     var origine: Origine?
+    /// La clé de ses annotations (`IdentiteDocument.cle`) : la marque « annoté » la cherche.
+    var cleAnnotations: String?
 }
 
 /// Les aperçus, calculés hors du fil principal et gardés : en mémoire, et sur le disque (le dossier
@@ -63,7 +65,11 @@ final class ApercusDocuments {
         return a
     }
 
-    private struct Fiche: Codable { var titre: String; var extrait: String; var origine: ApercuDocument.Origine?; var image: Bool }
+    private struct Fiche: Codable {
+        var titre: String; var extrait: String; var origine: ApercuDocument.Origine?; var image: Bool
+        /// Absente des fiches d'avant la marque « annoté » (B135) : calculée une fois, puis gardée.
+        var cle: String?
+    }
 
     nonisolated private static var dossierCache: URL? {
         guard let d = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
@@ -81,21 +87,26 @@ final class ApercusDocuments {
             .map { String(format: "%02x", $0) }.joined()
         let fiche = dossierCache?.appendingPathComponent(empreinte + ".json")
         let vignette = dossierCache?.appendingPathComponent(empreinte + ".jpg")
-        if let fiche, let d = try? Data(contentsOf: fiche), let f = try? JSONDecoder().decode(Fiche.self, from: d) {
+        if let fiche, let d = try? Data(contentsOf: fiche), var f = try? JSONDecoder().decode(Fiche.self, from: d) {
             let image = f.image ? vignette.flatMap { UIImage(contentsOfFile: $0.path) } : nil
-            return ApercuDocument(image: image, titre: f.titre, extrait: f.extrait, origine: f.origine)
+            if f.cle == nil, let donnees = try? Data(contentsOf: url) {
+                f.cle = IdentiteDocument.cle(fichier: url, octets: donnees)
+                if let d = try? JSONEncoder().encode(f) { try? d.write(to: fiche) }
+            }
+            return ApercuDocument(image: image, titre: f.titre, extrait: f.extrait, origine: f.origine, cleAnnotations: f.cle)
         }
         // Un document encore dans iCloud (pas téléchargé) : son nom seul.
         guard let donnees = try? Data(contentsOf: url), let texte = String(data: donnees, encoding: .utf8) else {
             return ApercuDocument(image: nil, titre: nom, extrait: "", origine: nil)
         }
         var a = lire(texte, nom: nom)
+        a.cleAnnotations = IdentiteDocument.cle(fichier: url, octets: donnees)
         if let source = premiereImage(texte, dossier: url.deletingLastPathComponent()),
            let image = charger(source).flatMap(reduire) {
             a.image = image
             if let vignette, let jpeg = image.jpegData(compressionQuality: 0.78) { try? jpeg.write(to: vignette) }
         }
-        if let fiche, let d = try? JSONEncoder().encode(Fiche(titre: a.titre, extrait: a.extrait, origine: a.origine, image: a.image != nil)) {
+        if let fiche, let d = try? JSONEncoder().encode(Fiche(titre: a.titre, extrait: a.extrait, origine: a.origine, image: a.image != nil, cle: a.cleAnnotations)) {
             try? d.write(to: fiche)
         }
         return a
@@ -286,6 +297,7 @@ struct CarteDocument<Menu: View>: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.primary.opacity(0.08)))
                     .overlay(alignment: .topLeading) { badge }
+                    .overlay(alignment: .bottomTrailing) { MarqueAnnotee(cle: apercu?.cleAnnotations, surVignette: true) }
                     .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
                 Text(nom)
                     .font(.subheadline.weight(.semibold))
@@ -347,5 +359,43 @@ struct CarteDocument<Menu: View>: View {
                 .background(.ultraThinMaterial, in: Capsule())
                 .padding(8)
         }
+    }
+}
+
+/// La marque « annoté » : le document porte des surlignages, des soulignements ou des notes
+/// (Patrick, 30/10/2026 : « on devrait pouvoir savoir si des annotations ont été effectuées sur le
+/// fichier »). Sur la vignette d'une carte, dans une pastille ; au bout d'une ligne, seule.
+struct MarqueAnnotee: View {
+    let cle: String?
+    var surVignette = false
+    @ObservedObject private var annotes = DocumentsAnnotes.partage
+    @ObservedObject private var loc = Localization.shared
+    private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
+
+    var body: some View {
+        if let cle, annotes.cles.contains(cle) {
+            Image(systemName: "highlighter")
+                .font(surVignette ? .caption.weight(.semibold) : .footnote)
+                .foregroundStyle(orange)
+                .padding(surVignette ? 7 : 0)
+                .background { if surVignette { Circle().fill(.ultraThinMaterial) } }
+                .padding(surVignette ? 8 : 0)
+                .accessibilityLabel(tr("Annoté"))
+        }
+    }
+}
+
+/// La même marque au bout d'une ligne de l'accueil : la ligne ne calcule pas d'aperçu, la marque
+/// le demande (il est gardé, la carte le retrouve).
+struct MarqueAnnoteeLigne: View {
+    var resoudre: () -> (url: URL, portee: URL?)?
+    @State private var cle: String?
+
+    var body: some View {
+        MarqueAnnotee(cle: cle)
+            .task {
+                guard cle == nil, let (url, portee) = resoudre() else { return }
+                cle = await ApercusDocuments.partage.apercu(url, portee: portee).cleAnnotations
+            }
     }
 }

@@ -248,13 +248,17 @@ struct EmptyStateView: View {
     private func ligneRecente(_ item: RecentFile) -> some View {
         Button { onRecent(item) } label: {
             Label {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.name)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(DecoupageParDate.mention(pour: item.openedAt))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.name)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(DecoupageParDate.mention(pour: item.openedAt))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 4)
+                    MarqueAnnoteeLigne(resoudre: { recentsStore.resolve(item).map { ($0, $0) } })
                 }
             } icon: {
                 Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")

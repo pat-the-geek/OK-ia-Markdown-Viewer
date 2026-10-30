@@ -73,9 +73,13 @@ struct DocumentsAnalysesSection: View {
     private func ligne(_ d: DocumentAnalyse) -> some View {
         Button { ouvrir(d.url) } label: {
             Label {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(d.nom).foregroundStyle(.primary).lineLimit(1)
-                    Text(DecoupageParDate.mention(pour: d.date)).font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(d.nom).foregroundStyle(.primary).lineLimit(1)
+                        Text(DecoupageParDate.mention(pour: d.date)).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 4)
+                    MarqueAnnoteeLigne(resoudre: { (d.url, nil) })
                 }
             } icon: {
                 Image(systemName: "doc.text.magnifyingglass")

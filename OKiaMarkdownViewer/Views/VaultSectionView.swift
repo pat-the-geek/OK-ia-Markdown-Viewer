@@ -82,14 +82,18 @@ struct VaultSectionView: View {
     private func ligne(_ report: VaultReport) -> some View {
         Button { onOpen(report) } label: {
             Label {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(report.name)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text("\(report.subfolder) · \(DecoupageParDate.mention(pour: report.modified))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(report.name)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text("\(report.subfolder) · \(DecoupageParDate.mention(pour: report.modified))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 4)
+                    MarqueAnnoteeLigne(resoudre: { report.downloaded ? vault.reportURL(report).map { ($0, vault.resolveFolder()) } : nil })
                 }
             } icon: {
                 Image(systemName: report.downloaded ? "doc.text" : "arrow.down.doc")

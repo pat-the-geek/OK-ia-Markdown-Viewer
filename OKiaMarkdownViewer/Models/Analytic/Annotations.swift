@@ -85,11 +85,41 @@ struct IdentiteDocument: Codable, Equatable {
 
     /// La clé des annotations : le nom et le contenu, ensemble. C'est le nom du fichier
     /// d'annotations, et celui de son enregistrement dans iCloud.
-    var cle: String {
-        String(Self.hex(SHA256.hash(data: Data((nom + "\u{0}" + empreinte).utf8))).prefix(32))
+    var cle: String { Self.cle(nom: nom, empreinte: empreinte) }
+
+    /// La même clé, d'après le fichier lui-même (le nom, puis le texte tel que le lecteur le
+    /// décode) : celle que cherche la marque « annoté » de l'accueil.
+    nonisolated static func cle(fichier url: URL, octets: Data) -> String {
+        cle(nom: url.lastPathComponent, empreinte: hex(SHA256.hash(data: Data(MarkdownLoader.decode(octets).utf8))))
     }
 
-    private static func hex(_ d: SHA256.Digest) -> String { d.map { String(format: "%02x", $0) }.joined() }
+    private nonisolated static func cle(nom: String, empreinte: String) -> String {
+        String(hex(SHA256.hash(data: Data((nom + "\u{0}" + empreinte).utf8))).prefix(32))
+    }
+
+    private nonisolated static func hex(_ d: SHA256.Digest) -> String { d.map { String(format: "%02x", $0) }.joined() }
+}
+
+/// Les documents annotés, pour la marque de l'accueil (Patrick, 30/10/2026 : « on devrait pouvoir
+/// savoir si des annotations ont été effectuées sur le fichier ») : les clés des fichiers
+/// d'annotations présents. Relu quand des annotations s'écrivent, s'effacent ou arrivent d'iCloud.
+@MainActor
+final class DocumentsAnnotes: ObservableObject {
+    static let partage = DocumentsAnnotes()
+    @Published private(set) var cles: Set<String> = []
+
+    private init() {
+        rafraichir()
+        NotificationCenter.default.addObserver(forName: SynchroICloud.recu, object: nil, queue: .main) { [weak self] note in
+            guard note.userInfo?["genre"] as? String == SynchroICloud.Genre.annotations.rawValue else { return }
+            MainActor.assumeIsolated { self?.rafraichir() }
+        }
+    }
+
+    func rafraichir() {
+        let presentes = Set(SynchroICloud.Genre.annotations.fichiers())
+        if presentes != cles { cles = presentes }
+    }
 }
 
 /// Les annotations, une liste par document, dans Application Support (`Annotations/<clé>.json`),
@@ -130,7 +160,7 @@ enum AnnotationsStore {
 
     static func ecrire(_ annotations: [Annotation], pour identite: IdentiteDocument) {
         let u = url(identite.cle)
-        defer { SynchroICloud.partage.signaler() }
+        defer { SynchroICloud.partage.signaler(); DocumentsAnnotes.partage.rafraichir() }
         if annotations.isEmpty { try? FileManager.default.removeItem(at: u); return }
         try? FileManager.default.createDirectory(at: u.deletingLastPathComponent(), withIntermediateDirectories: true)
         if let data = try? JSONEncoder().encode(Fichier(document: identite, annotations: annotations)) {
