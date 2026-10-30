@@ -219,7 +219,46 @@
               balise: m.nodeName, media: g, rang: rang,
               fx: (x - r.left - window.scrollX) / w, fy: (y - r.top - window.scrollY) / v, fl: l / w };
     if (g === 'image') a.src = adresse(m);
+    // Sur une carte, la note tient à la géographie : son coin en latitude et longitude, sa largeur
+    // au zoom du tracé. Elle suit la carte qu'on déplace ou qu'on zoome (Patrick, 30/10/2026 : « il
+    // faut tenir compte du déplacement et du zoom »).
+    var carte = g === 'carte' ? m._leafletMap : null;
+    if (carte) {
+      var ll = carte.containerPointToLatLng([x - window.scrollX - r.left - m.clientLeft,
+                                             y - window.scrollY - r.top - m.clientTop]);
+      a.lat = ll.lat; a.lng = ll.lng; a.zoom = carte.getZoom(); a.px = l;
+    }
     return a;
+  }
+
+  // La note d'une carte, en pixels de la carte telle qu'elle est maintenant : la largeur double à
+  // chaque cran de zoom. Ce qui sort du cadre, la carte le coupe.
+  function placerSurCarte(img, m, a) {
+    var carte = m._leafletMap, p = carte.latLngToContainerPoint([a.lat, a.lng]);
+    img.style.left = p.x + 'px';
+    img.style.setProperty('margin-top', p.y + 'px', 'important');
+    img.style.width = (a.px * Math.pow(2, carte.getZoom() - a.zoom)) + 'px';
+  }
+  function surCarte(a) { return a.media === 'carte' && a.lat != null && a.zoom != null; }
+
+  // Les notes d'une carte suivent ses mouvements. Pendant l'animation d'un zoom (bouton, double
+  // toucher), Leaflet agrandit les tuiles d'un coup : la note se cache, et revient à la fin.
+  function suivreCarte(m) {
+    var carte = m._leafletMap;
+    if (!carte || m._okiaNotesSuivies) return;
+    m._okiaNotesSuivies = true;
+    function replacer() {
+      m.querySelectorAll(':scope > .okia-encre').forEach(function (img) {
+        var a = annotations.find(function (x) { return x.id === img.getAttribute('data-id'); });
+        if (a && surCarte(a.ancre)) placerSurCarte(img, m, a.ancre);
+      });
+    }
+    function voir(oui) {
+      m.querySelectorAll(':scope > .okia-encre').forEach(function (img) { img.style.visibility = oui ? '' : 'hidden'; });
+    }
+    carte.on('move zoom resize viewreset', replacer);
+    carte.on('zoomanim', function () { voir(false); });
+    carte.on('zoomend', function () { replacer(); voir(true); });
   }
 
   function retrouverMedia(ancre) {
@@ -285,7 +324,10 @@
         // prendrait sur la hauteur). Mesurée en pixels d'écran, la note sortait de sa place à
         // l'impression, sur une feuille plus étroite.
         img.style.top = '0';
-        if (m) {
+        if (m && m._leafletMap && surCarte(a.ancre)) {
+          placerSurCarte(img, m, a.ancre);
+          suivreCarte(m);
+        } else if (m) {
           placerSurMedia(img, m, bloc, a.ancre);
         } else {
           img.style.left = (a.ancre.fx * 100) + '%';

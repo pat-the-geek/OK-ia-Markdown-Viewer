@@ -24,6 +24,12 @@ struct AncreAnnotation: Codable, Equatable {
     var media: String?
     var rang: Int?
     var src: String?
+    /// Sur une carte : le coin de la note en latitude et longitude, le zoom et la largeur (en
+    /// pixels) du tracé. La note suit la carte qu'on déplace ou qu'on zoome.
+    var lat: Double?
+    var lng: Double?
+    var zoom: Double?
+    var px: Double?
 }
 
 struct Annotation: Codable, Identifiable, Equatable {

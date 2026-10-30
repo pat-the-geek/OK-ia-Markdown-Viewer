@@ -151,6 +151,7 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
     }
 
     private func ancrerTexte(_ trait: PKStroke) async {
+        if await poserSurMedia(trait) { return }
         var pts = points(trait)
         guard let premier = pts.first, let dernier = pts.last else { return }
         // On souligne SOUS la ligne : le texte visé est juste au-dessus du trait.
@@ -159,6 +160,27 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
         guard let vue = webView, let ancre = await PontAnnotations.ancrerTexte(vue, de: pts[0], a: pts[1]) else { return }
         let genre: Annotation.Genre = annotations.outil == .souligner ? .souligne : .surligne
         annotations.ajouter(Annotation(type: genre, couleur: annotations.couleur, ancre: ancre))
+    }
+
+    /// Un diagramme, une image ou une carte n'ont pas de texte à surligner : le trait du stabilo (ou
+    /// du soulignement) y devient une note, ancrée au dessin comme l'écriture (Patrick, 30/10/2026 :
+    /// « le dessin sur diagramme fonctionne mais pas le stabilo »). Sur une image, chercher le texte
+    /// d'abord l'aurait accroché au paragraphe voisin.
+    private func poserSurMedia(_ trait: PKStroke) async -> Bool {
+        guard let vue = webView else { return false }
+        let dessin = PKDrawing(strokes: [trait])
+        let cadre = dessin.bounds.insetBy(dx: -6, dy: -6)
+        let dansLaVue = canvas.convert(cadre, to: vue)
+        let couleur = annotations.couleur
+        guard let ancre = await PontAnnotations.ancrerEncre(vue, dansLaVue), ancre.media != nil else { return false }
+        var image = UIImage()
+        UITraitCollection(userInterfaceStyle: .light).performAsCurrent {
+            image = dessin.image(from: cadre, scale: 3)
+        }
+        guard let png = image.pngData() else { return false }
+        annotations.ajouter(Annotation(type: .encre, couleur: couleur, ancre: ancre,
+                                       image: png.base64EncodedString(), trace: dessin.dataRepresentation()))
+        return true
     }
 
     private func gommer(_ trait: PKStroke) async {
