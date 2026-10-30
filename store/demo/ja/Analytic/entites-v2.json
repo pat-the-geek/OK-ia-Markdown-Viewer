@@ -1,0 +1,254 @@
+{
+  "ja|gpe|トゥーン湖": {
+    "libelle": "トゥーン湖",
+    "longitude": 7.7166666666667,
+    "qid": "Q14426",
+    "latitude": 46.683333333333,
+    "description": "トゥーン湖（トゥーンこ、トゥーナーゼー、Thunersee）はスイスのベルン州にある湖。アルプス山脈の北側に位置する。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20image%20of%20Lake%20Thun%20(view%20from%20the%20east).jpg?width=320",
+    "date": 814971111.736979
+  },
+  "ja|gpe|ヴェヴェイ": {
+    "description": "ヴヴェイ(Vevey)は、スイス西部のヴォー州、レマン湖地方にある基礎自治体で、モントルーの西約7kmのレマン湖畔に位置する。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Vevey,%20Switzerland.jpg?width=320",
+    "latitude": 46.466666666667,
+    "qid": "Q68160",
+    "libelle": "ヴェヴェイ",
+    "date": 814971204.183007,
+    "longitude": 6.85,
+    "type": "gpe"
+  },
+  "ja|gpe|モントルー": {
+    "description": "モントルー は、スイス、ヴォー州、リヴィエラ・ペイダンオー地区にある基礎自治体（コミューン）で、レマン湖の東端に位置している。レマン湖畔のリゾート地であり、スイス有数のコンベンションシティーでもある。人口は約26,000人（2018年末現在）。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Champ%20de%20narcisses%20-.jpg?width=320",
+    "latitude": 46.435,
+    "qid": "Q69354",
+    "libelle": "モントルー",
+    "date": 814971201.137732,
+    "longitude": 6.9125,
+    "type": "gpe"
+  },
+  "ja|gpe|ロカルノ": {
+    "type": "gpe",
+    "longitude": 8.7997222222222,
+    "latitude": 46.166388888889,
+    "libelle": "ロカルノ",
+    "date": 814971155.488831,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Locarno%20-%20panoramio.jpg?width=320",
+    "qid": "Q11935",
+    "description": "ロカルノ（Locarno）は、スイス南部ティチーノ州のマッジョーレ湖の北に位置する基礎自治体（コムーニ）。イタリア語圏のティチーノ州は、南部でイタリアと境を接する。"
+  },
+  "ja|gpe|ジュネーヴ": {
+    "date": 814971201.254474,
+    "description": "ジュネーヴ は、スイス西部、レマン湖の南西岸に位置する都市（コミューヌ）。フランス語圏に属し、ヨーロッパ有数の世界都市で、ジュネーヴ州の州都である。",
+    "latitude": 46.2,
+    "longitude": 6.15,
+    "libelle": "ジュネーヴ",
+    "qid": "Q71",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Geneva%20from%20Mount%20Sal%C3%A8ve.jpg?width=320",
+    "type": "gpe"
+  },
+  "ja|gpe|サンモリッツ": {
+    "date": 814971065.092856,
+    "description": "サンモリッツ は、スイスのグラウビュンデン州にある基礎自治体 （ポリティッシェ・ゲマインデ）。公用語はドイツ語とロマンシュ語で、日本ではスイスドイツ語やフランス語での名称であるサンモリッツの呼称が定着している。世界有数の観光・保養地。",
+    "latitude": 46.49722222222222,
+    "longitude": 9.837777777777777,
+    "libelle": "サンモリッツ",
+    "qid": "Q68986",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/StMoritz.jpg?width=320",
+    "type": "gpe"
+  },
+  "ja|gpe|ルツェルン湖": {
+    "description": "ルツェルン湖（Vierwaldstättersee、フィアヴァルトシュテッテ湖）は、スイスの中央に位置する湖で、同国で4番目に大きい。湖岸にはルツェルン、ブオッシュ、エネットビュルゲン、フィッツナウ、ヴェッギス、キュスナハトなどの都市や町がある。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Vierwaldst%C3%A4ttersee.jpg?width=320",
+    "latitude": 47.0194,
+    "qid": "Q14381",
+    "libelle": "ルツェルン湖",
+    "date": 814971202.816988,
+    "longitude": 8.4011
+  },
+  "ja|gpe|シオン": {
+    "description": "シオン（Sion）は、スイス南部、ヴァレー州の基礎自治体（コミューン・ミュニシパル）で同州の州都。ローヌ川左岸に位置している。スイス有数のワインの産地で、ヴァレー産ワインの集散地となっている。ドイツ語名はジッテン（Sitten）、ラテン語名はセドゥヌム（Sedunum）。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Sion%20depuis%20Nax%20-%202022.jpg?width=320",
+    "latitude": 46.23045,
+    "qid": "Q68136",
+    "libelle": "シオン",
+    "date": 814971065.419727,
+    "longitude": 7.36606,
+    "type": "gpe"
+  },
+  "ja|gpe|ティトリス": {
+    "description": "ティトリス は、スイスのオプヴァルデン準州にあるアルプス山脈の山である。標高3238m。オプヴァルデン準州の町エンゲルベルクを見下ろす位置にある。そのエンゲルベルクから山頂直下の展望地まで登山鉄道とロープウェーで結ばれる。氷河をくり抜いた洞窟や雪原につくられた公園がある。ティトリスの、世界初の回転するロープウェーで有名である。このロープウェーは、途中4つの主要な駅 を通過し、エンゲルベルク-ティトリス山頂間を接続している。ロープウェイ「ティトリス・エクスプレス」と回転する空中ロープウェイ「ロッテール」がクライン・ティトリス山頂へ結ぶ。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/TitlisVonSchoneggGesehen.jpg?width=320",
+    "latitude": 46.771944444444,
+    "qid": "Q15138",
+    "libelle": "ティトリス",
+    "date": 814971066.378054,
+    "longitude": 8.4377777777778
+  },
+  "ja|gpe|ヌーシャテル湖": {
+    "description": "ヌーシャテル湖 は、スイス西部にある湖。大部分はヌーシャテル州に属するが、ヴォー州・フリブール州・ベルン州にも属する。",
+    "date": 814971109.966382,
+    "libelle": "ヌーシャテル湖",
+    "latitude": 46.9,
+    "qid": "Q14375",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lac%20de%20neuch%C3%A2tel%20et%20montagne%20de%20boudry.jpg?width=320",
+    "longitude": 6.85
+  },
+  "ja|gpe|ルガーノ湖": {
+    "longitude": 9,
+    "latitude": 46,
+    "libelle": "ルガーノ湖",
+    "date": 814971159.110995,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake%20Lugano%20Panorama.jpg?width=320",
+    "qid": "Q14418",
+    "description": "ルガーノ湖 は、スイス・ティチーノ州からイタリア・ロンバルディア州にかけてのアルプス山間部に広がる湖である。湖の中央部西岸に同名の町ルガーノ（スイス領）がある。"
+  },
+  "ja|gpe|ルツェルン": {
+    "date": 814971112.609782,
+    "description": "ルツェルン は、スイス中部のルツェルン州に属する基礎自治体（アインヴォーナーゲマインデ）で、同州の州都。ルツェルン湖（Vierwaldstättersee）の湖畔に位置し、ピラトゥス山とリギ山を臨む場所に位置する。",
+    "latitude": 47.0523,
+    "longitude": 8.3059,
+    "libelle": "ルツェルン",
+    "qid": "Q4191",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/00%200055%20Buildings%20in%20Lucerne.jpg?width=320",
+    "type": "gpe"
+  },
+  "ja|gpe|バーゼル": {
+    "type": "gpe",
+    "longitude": 7.587777777777777,
+    "latitude": 47.558055555555555,
+    "libelle": "バーゼル",
+    "date": 814972764.242699,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Rhine%20Rhein%20Basel%202006%20871.JPG?width=320",
+    "qid": "Q78",
+    "description": "バーゼル は、スイスの都市。バーゼル＝シュタット準州の州都。"
+  },
+  "ja|gpe|グリンデルヴァルト": {
+    "latitude": 46.625555555556,
+    "longitude": 8.0333333333333,
+    "date": 814971201.126384,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/05%20Grindelwald%20(CH)%20-%20Blick%20auf%20das%20Wetterhorn.jpg?width=320",
+    "description": "グリンデルヴァルト(Grindelwald)は、スイス・アルプスにあるベルン州山岳地方（ベルナー・オーバーラント）のインターラーケン区に属する村でかつ基礎自治体であり、インターラーケンとともにベルナーオーバーラント地方の観光の拠点となっている。",
+    "type": "gpe",
+    "libelle": "グリンデルヴァルト",
+    "qid": "Q64004"
+  },
+  "ja|gpe|チューリッヒ": {
+    "latitude": 47.37444444444444,
+    "longitude": 8.54111111111111,
+    "date": 814971110.642892,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Zuerich%20Fraumuenster%20St%20Peter.jpg?width=320",
+    "description": "チューリッヒ は、スイス最大の都市でチューリッヒ州の州都である。スイス高原の東部にあり 、リマト川の流出口があるチューリッヒ湖の北端に位置している。2025年12月末現在の人口は452,421人で、チューリッヒ都市圏地域には約210万人が居住している。チューリッヒは鉄道、道路、航空など交通の要衝で、チューリッヒ空港やチューリッヒ中央駅ともにスイス最大規模である。",
+    "type": "gpe",
+    "libelle": "チューリッヒ",
+    "qid": "Q72"
+  },
+  "ja|gpe|ローザンヌ": {
+    "description": "ローザンヌ は、スイスのヴォー州に属する基礎自治体（コミューン） で、同州の州都。フランス語圏に属する。",
+    "date": 814971204.253188,
+    "libelle": "ローザンヌ",
+    "latitude": 46.533333333333,
+    "qid": "Q807",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lausanne%20img%200585.jpg?width=320",
+    "type": "gpe",
+    "longitude": 6.6333333333333
+  },
+  "ja|gpe|アスコナ": {
+    "type": "gpe",
+    "libelle": "アスコナ",
+    "longitude": 8.7666666666667,
+    "qid": "Q63992",
+    "latitude": 46.15,
+    "description": "アスコナは、スイス・ティチーノ州のマッジョーレ湖の汀にある南スイスの中世風の基礎自治体 である。イタリア語圏に属する。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Ascona%20IMG%201646.jpg?width=320",
+    "date": 814971155.851387
+  },
+  "ja|gpe|ルガーノ": {
+    "latitude": 46.010277777778,
+    "longitude": 8.9625,
+    "date": 814971156.706305,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lugano%20from%20Sighignola.jpg?width=320",
+    "description": "ルガーノ（Lugano）は、スイス連邦の都市。イタリア語圏であるティチーノ州最大のコムーネである。",
+    "type": "gpe",
+    "libelle": "ルガーノ",
+    "qid": "Q7024"
+  },
+  "ja|gpe|ダボス": {
+    "latitude": 46.809055555556,
+    "longitude": 9.8398333333333,
+    "date": 814971065.564935,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Davos2.jpg?width=320",
+    "description": "ダボス は、スイス・グラウビュンデン州にある基礎自治体である。",
+    "type": "gpe",
+    "libelle": "ダボス",
+    "qid": "Q68097"
+  },
+  "ja|gpe|ツェルマット": {
+    "date": 814971202.575485,
+    "description": "ツェルマット は、スイス、ヴァレー州のマッターホルン山麓にある基礎自治体（アインヴォーナー・ゲマインデ）。",
+    "latitude": 46.0193,
+    "longitude": 7.7461,
+    "libelle": "ツェルマット",
+    "qid": "Q27494",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/1%20zermatt%20night%202012.jpg?width=320",
+    "type": "gpe"
+  },
+  "ja|gpe|チューリッヒ湖": {
+    "latitude": 47.2475,
+    "longitude": 8.6775,
+    "date": 814971110.302493,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Zuerichsee.jpg?width=320",
+    "description": "チューリッヒ湖（チューリッヒこ）はスイスにある湖で、チューリッヒ市から南東に向かって延びる細長い三日月形の湖である。幅は最大3.85km、長さ約42km。北西部および中央部はチューリッヒ州に含まれ、東部はシュヴィーツ州およびザンクト・ガレン州に含まれる。",
+    "libelle": "チューリッヒ湖",
+    "qid": "Q14407"
+  },
+  "ja|gpe|ベルン": {
+    "latitude": 46.94798,
+    "longitude": 7.44743,
+    "date": 814971111.615715,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Bern%20luftaufnahme.png?width=320",
+    "description": "ベルン は、スイス連邦の首都。",
+    "type": "gpe",
+    "libelle": "ベルン",
+    "qid": "Q70"
+  },
+  "ja|gpe|ベッリンツォーナ": {
+    "description": "ベッリンツォーナ(Bellinzona)は、スイス南部のティチーノ州の基礎自治体（コムーネ） で同州の州都。イタリア語圏。フランス語ではベリンゾン（Bellinzone）と表記される。\n旧市街にある3つの城は「ベッリンツォーナ旧市街の3つの城と防壁・城壁群」の名で、世界遺産に登録されている。",
+    "date": 814971157.553322,
+    "libelle": "ベッリンツォーナ",
+    "latitude": 46.195555,
+    "qid": "Q64044",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Tre%20Castelli.jpg?width=320",
+    "type": "gpe",
+    "longitude": 9.023809
+  },
+  "ja|gpe|ユングフラウ": {
+    "description": "ユングフラウ は、スイスベルン州のベルナー・オーバーラント地方にあるアルプス山脈の山で、ユングフラウ山地の最高峰である。",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Jungfrau.jpg?width=320",
+    "latitude": 46.536944444444,
+    "qid": "Q15312",
+    "libelle": "ユングフラウ",
+    "date": 814971202.612869,
+    "longitude": 7.9625
+  },
+  "ja|gpe|インターラーケン": {
+    "latitude": 46.68715,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Interlaken01.JPG?width=320",
+    "libelle": "インターラーケン",
+    "description": "インターラーケン（Interlaken）は、スイスのベルン州にある基礎自治体。ベルン州の行政区であるインターラーケン＝オーバーハスリ区の区都。",
+    "type": "gpe",
+    "qid": "Q68103",
+    "date": 814949728.185503,
+    "longitude": 7.86487
+  },
+  "ja|gpe|ゼンティス山": {
+    "longitude": 9.343333,
+    "date": 814949729.244299,
+    "libelle": "ゼンティス山",
+    "qid": "Q15224",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/S%C3%A4ntis%20-%20Batzberg%20IMG%209803.JPG?width=320",
+    "description": "At 2,501.9 metres (8,208 ft) above sea level, Säntis is the highest mountain in the Alpstein massif of northeastern Switzerland. It is also the culminating point of the whole Appenzell Alps, between Lake Walen and Lake Constance. Shared by three cantons, the mountain is a highly visible landmark thanks to its exposed northerly position within the Alpstein massif. As a consequence, houses called Säntisblick can be found in regions as far away as the Black Forest in Germany. Säntis is among the most prominent summits in the Alps and the most prominent summit in Europe with an observation deck on the top. The panorama from the summit is spectacular. Six countries can be seen if the weather allows: Switzerland, Germany, Austria, Liechtenstein, France, and Italy.",
+    "latitude": 47.249167
+  }
+}

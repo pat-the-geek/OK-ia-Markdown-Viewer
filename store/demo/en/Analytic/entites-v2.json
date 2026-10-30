@@ -1,0 +1,274 @@
+{
+  "en|gpe|lucerne": {
+    "description": "Lucerne or Luzern is a city and a municipality in central Switzerland, in the German-speaking portion of the country. Lucerne is the capital of the canton of Lucerne and part of the district of the same name. With a population of approximately 86,700 people, Lucerne is the most populous city in Central Switzerland, and a nexus of economics, transport, culture, and media in the region. The city's urban area consists of 19 municipalities and towns with an overall population of about 247,400 people.",
+    "libelle": "Lucerne",
+    "date": 814949958.893721,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/00%200055%20Buildings%20in%20Lucerne.jpg?width=320",
+    "qid": "Q4191",
+    "longitude": 8.3059,
+    "latitude": 47.0523,
+    "type": "gpe"
+  },
+  "en|gpe|basel": {
+    "description": "Basel or Basle is a city in northwestern Switzerland on the river Rhine, at the transition from the High Rhine to the Upper Rhine. Basel is Switzerland's third most populous city, with 177,595 inhabitants within the city municipality limits.",
+    "libelle": "Basel",
+    "date": 814949956.584684,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Rhine%20Rhein%20Basel%202006%20871.JPG?width=320",
+    "qid": "Q78",
+    "longitude": 7.587777777777777,
+    "latitude": 47.558055555555555,
+    "type": "gpe"
+  },
+  "en|gpe|geneva": {
+    "description": "Geneva is the second-most populous city in Switzerland and the most populous in French-speaking Romandy. Situated in the southwest of the country, where the Rhône leaves Lake Geneva, it is the capital of the Republic and Canton of Geneva. Geneva is a global city, an international financial centre, and a worldwide centre for diplomacy, which has led to it being called the \"Peace Capital\".",
+    "type": "gpe",
+    "latitude": 46.2,
+    "qid": "Q71",
+    "longitude": 6.15,
+    "libelle": "Geneva",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Geneva%20from%20Mount%20Sal%C3%A8ve.jpg?width=320",
+    "date": 814950047.494653
+  },
+  "en|gpe|sion": {
+    "latitude": 46.23045,
+    "type": "gpe",
+    "libelle": "Sion",
+    "description": "Sion is a Swiss town situated in the Rhône valley, a municipality, and the capital of the canton of Valais and of the district of Sion. As of December 2020 it had a population of 34,978.",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Sion%20depuis%20Nax%20-%202022.jpg?width=320",
+    "date": 814950001.670953,
+    "longitude": 7.36606,
+    "qid": "Q68136"
+  },
+  "en|gpe|lake lucerne": {
+    "latitude": 47.0194,
+    "libelle": "Lake Lucerne",
+    "description": "Lake Lucerne is a lake in central Switzerland and the fourth largest in the country.",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Vierwaldst%C3%A4ttersee.jpg?width=320",
+    "date": 814950049.693493,
+    "longitude": 8.4011,
+    "qid": "Q14381"
+  },
+  "en|gpe|locarno": {
+    "libelle": "Locarno",
+    "qid": "Q11935",
+    "latitude": 46.166388888889,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Locarno%20-%20panoramio.jpg?width=320",
+    "type": "gpe",
+    "date": 814950093.795385,
+    "description": "Locarno is a southern Swiss town and municipality in the district Locarno, located on the northern shore of Lake Maggiore at its northeastern tip in the canton of Ticino at the southern foot of the Swiss Alps. It has a population of about 16,000 (proper), and about 56,000 for the agglomeration of the same name including Ascona besides other municipalities.",
+    "longitude": 8.7997222222222
+  },
+  "en|gpe|davos": {
+    "libelle": "Davos",
+    "qid": "Q68097",
+    "latitude": 46.809055555556,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Davos2.jpg?width=320",
+    "type": "gpe",
+    "date": 814950001.542241,
+    "description": "Davos is an Alpine resort town and municipality in the Prättigau/Davos Region in the canton of the Grisons, Switzerland. It has a permanent population of 10,832 (2020). Davos is located on the Landwasser river, in the Rhaetian Alps, between the Plessur and Albula Ranges.",
+    "longitude": 9.8398333333333
+  },
+  "en|gpe|jungfrau": {
+    "latitude": 46.536944444444,
+    "libelle": "Jungfrau",
+    "description": "The Jungfrau, at 4,158 m (13,642 ft) is one of the main summits of the Bernese Alps, located between the southern canton of Bern and the northern canton of Valais, halfway between Interlaken and Fiesch. Together with the Eiger and Mönch, the Jungfrau forms a massive wall of mountains overlooking the Bernese Oberland and the Swiss Plateau, one of the most distinctive sights of the Swiss Alps.",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Jungfrau.jpg?width=320",
+    "date": 814950047.556523,
+    "longitude": 7.9625,
+    "qid": "Q15312"
+  },
+  "en|gpe|lake thun": {
+    "description": "Lake Thun is an Alpine lake in the Bernese Oberland in Switzerland named after the city of Thun, on its northern shore. At 48.3 km2 (18.6 sq mi) in surface area, it is the largest Swiss lake entirely within a single canton.",
+    "libelle": "Lake Thun",
+    "date": 814949957.895065,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20image%20of%20Lake%20Thun%20(view%20from%20the%20east).jpg?width=320",
+    "qid": "Q14426",
+    "longitude": 7.7166666666667,
+    "latitude": 46.683333333333
+  },
+  "en|gpe|zermatt": {
+    "latitude": 46.0193,
+    "type": "gpe",
+    "libelle": "Zermatt",
+    "description": "Zermatt is a municipality in the district of Visp in the German-speaking section of the canton of Valais in Switzerland. It has a year-round population of about 5,800 and is classified as a town by the Swiss Federal Statistical Office (FSO).",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/1%20zermatt%20night%202012.jpg?width=320",
+    "date": 814950049.705243,
+    "longitude": 7.7461,
+    "qid": "Q27494"
+  },
+  "en|autre|lake geneva": {
+    "description": "Lake Geneva is a deep lake on the north side of the Alps, shared between Switzerland and France. It is one of the largest lakes in Western Europe and the largest on the course of the Rhône. Sixty percent of the lake belongs to Switzerland and forty percent to France.",
+    "libelle": "Lake Geneva",
+    "date": 814950138.134848,
+    "qid": "Q6403",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake%20Geneva%20aerial.jpg?width=320"
+  },
+  "en|gpe|bellinzona": {
+    "libelle": "Bellinzona",
+    "qid": "Q64044",
+    "latitude": 46.195555,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Tre%20Castelli.jpg?width=320",
+    "type": "gpe",
+    "date": 814950092.665041,
+    "description": "Bellinzona is a municipality, a historic Swiss town, and the capital of the canton of Ticino in Switzerland. The town is famous for its three castles that have been UNESCO World Heritage Sites since 2000.",
+    "longitude": 9.023809
+  },
+  "en|gpe|titlis": {
+    "description": "Titlis is a mountain of the Uri Alps, located on the border between the cantons of Obwalden and Bern. At 3,238 metres (10,623 ft) above sea level, it is the highest summit of the range north of the Susten Pass, between the Bernese Oberland and Central Switzerland. It is mainly accessed from Engelberg (OW) on the north side and is famous as the site of the world's first rotating cable car. The cable car system connects Engelberg to the summit of Klein Titlis through the three stages of Gerschnialp, Trübsee and Stand. In 2016, a direct route was created that bypassed Geraschnialp, going directly to Trübsee.",
+    "libelle": "Titlis",
+    "date": 814950002.870017,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/TitlisVonSchoneggGesehen.jpg?width=320",
+    "qid": "Q15138",
+    "longitude": 8.4377777777778,
+    "latitude": 46.771944444444
+  },
+  "en|gpe|st. moritz": {
+    "description": "St. Moritz is a municipality and a high Alpine resort town in the Engadine in Switzerland, at an elevation of about 1,800 metres (5,910 ft) above sea level. It is Upper Engadine's major town and a municipality in the administrative region of Maloja in the Swiss canton of the Grisons.",
+    "type": "gpe",
+    "latitude": 46.49722222222222,
+    "qid": "Q68986",
+    "longitude": 9.837777777777777,
+    "libelle": "St. Moritz",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/StMoritz.jpg?width=320",
+    "date": 814950002.668403
+  },
+  "en|gpe|zurich": {
+    "libelle": "Zurich",
+    "qid": "Q72",
+    "latitude": 47.37444444444444,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Zuerich%20Fraumuenster%20St%20Peter.jpg?width=320",
+    "type": "gpe",
+    "date": 814949956.960751,
+    "description": "Zurich is the largest city in Switzerland and the capital of the canton of Zurich. It is in north-central Switzerland, at the northwestern tip of Lake Zurich. As of the end of 2025, the municipality had a population of 440,935, while the urban area was home to 1.45 million people (2020), and the Zurich metropolitan area had a total population of 2.1 million (2020). Zurich is a hub for railways, roads, and air traffic. Both Zurich Airport and Zurich's main railway station are the largest and busiest in the country.",
+    "longitude": 8.54111111111111
+  },
+  "en|gpe|lake lugano": {
+    "latitude": 46,
+    "libelle": "Lake Lugano",
+    "description": "Lake Lugano is a glacial lake which is situated on the border between southern Switzerland and northern Italy. The lake, named after the city of Lugano, is situated between Lake Como and Lago Maggiore. It was cited for the first time by Gregory of Tours in 590 with the name Ceresio, a name which is said to have derived from the Latin word cerasus, meaning cherry, and refers to the abundance of cherry trees which at one time adorned the shores of the lake. The lake appears in documents in 804 under the name Laco Luanasco.",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake%20Lugano%20Panorama.jpg?width=320",
+    "date": 814950093.63256,
+    "longitude": 9,
+    "qid": "Q14418"
+  },
+  "en|autre|central switzerland": {
+    "description": "Central Switzerland is a subdivision of Switzerland as defined by the Federal Statistical Office for statistical purposes. It is classified as a NUTS-2 statistical region of Switzerland, and encompasses the cantons of Uri, Schwyz, Obwalden, Nidwalden, Lucerne and Zug. It incorporates the highlands in the central portion of the country.",
+    "libelle": "Central Switzerland",
+    "date": 814950138.015838,
+    "qid": "Q30978",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Gulf%20of%20Buochs%20Lake%20Lucerne.jpg?width=320"
+  },
+  "en|gpe|ascona": {
+    "description": "Ascona is a municipality in the district of Locarno in the canton of Ticino in Switzerland.",
+    "libelle": "Ascona",
+    "date": 814950092.671506,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Ascona%20IMG%201646.jpg?width=320",
+    "qid": "Q63992",
+    "longitude": 8.7666666666667,
+    "latitude": 46.15,
+    "type": "gpe"
+  },
+  "en|gpe|vevey": {
+    "libelle": "Vevey",
+    "qid": "Q68160",
+    "latitude": 46.466666666667,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Vevey,%20Switzerland.jpg?width=320",
+    "type": "gpe",
+    "date": 814950048.68186,
+    "description": "Vevey is a municipality and a town in Switzerland in the canton of Vaud, on the north shore of Lake Geneva, near Lausanne. The German name Vivis is no longer commonly used.",
+    "longitude": 6.85
+  },
+  "en|gpe|grindelwald": {
+    "latitude": 46.625555555556,
+    "type": "gpe",
+    "libelle": "Grindelwald",
+    "description": "Grindelwald is a village and municipality in the Interlaken-Oberhasli administrative district in the canton of Berne. In addition to the village of Grindelwald, the municipality also includes the settlements of Alpiglen, Burglauenen, Grund, Itramen, Mühlebach, Schwendi, Tschingelberg and Wargistal.",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/05%20Grindelwald%20(CH)%20-%20Blick%20auf%20das%20Wetterhorn.jpg?width=320",
+    "date": 814950047.415163,
+    "longitude": 8.0333333333333,
+    "qid": "Q64004"
+  },
+  "en|gpe|montreux": {
+    "description": "Montreux is a Swiss municipality and town on the shoreline of Lake Geneva at the foot of the Alps. It belongs to the Riviera-Pays-d'Enhaut district in the canton of Vaud, having a population of nearly 27,000 with about 85,000 in the Vevey-Montreux agglomeration as of 2019.",
+    "libelle": "Montreux",
+    "date": 814950048.659592,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Champ%20de%20narcisses%20-.jpg?width=320",
+    "qid": "Q69354",
+    "longitude": 6.9125,
+    "latitude": 46.435,
+    "type": "gpe"
+  },
+  "en|gpe|lake zurich": {
+    "description": "Lake Zurich is a lake in Switzerland, that extends southeast of the city of Zurich. Depending on the context, Lake Zurich or Zürichsee may refer to the entire lake or specifically to the section downstream of the Hurden peninsula and Seedamm causeway. In the latter case, the upstream part of the lake is called Obersee, while the lower part is sometimes also referred to as the Lower Lake, respectively.",
+    "latitude": 47.2475,
+    "qid": "Q14407",
+    "longitude": 8.6775,
+    "libelle": "Lake Zurich",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Zuerichsee.jpg?width=320",
+    "date": 814949958.320437
+  },
+  "en|gpe|lausanne": {
+    "libelle": "Lausanne",
+    "qid": "Q807",
+    "latitude": 46.533333333333,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lausanne%20img%200585.jpg?width=320",
+    "type": "gpe",
+    "date": 814950048.539389,
+    "description": "Lausanne is the capital and largest city of the Swiss French-speaking canton of Vaud, in Switzerland. The Olympic capital, it is a hilly city situated on the shores of Lake Geneva, about halfway between the Jura Mountains and the Alps, and facing the French town of Évian-les-Bains across the lake. Lausanne is 51.7 kilometres northeast of Geneva, the nearest major city. The Federal Supreme Court of Switzerland convenes in Lausanne, although it is not the de jure capital of the nation.",
+    "longitude": 6.6333333333333
+  },
+  "en|gpe|lake neuchatel": {
+    "libelle": "Lake Neuchâtel",
+    "qid": "Q14375",
+    "latitude": 46.9,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lac%20de%20neuch%C3%A2tel%20et%20montagne%20de%20boudry.jpg?width=320",
+    "date": 814949957.452148,
+    "description": "Lake Neuchâtel lies primarily in Romandy, the French-speaking part of Switzerland. The lake lies mainly in the canton of Neuchâtel, but is also shared by the cantons of Vaud, Fribourg, and Bern. It comprises one of the lakes in the Three Lakes Region, along with lakes Biel/Bienne and Morat/Murten.",
+    "longitude": 6.85
+  },
+  "en|gpe|lugano": {
+    "libelle": "Lugano",
+    "qid": "Q7024",
+    "latitude": 46.010277777778,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lugano%20from%20Sighignola.jpg?width=320",
+    "type": "gpe",
+    "date": 814950093.306217,
+    "description": "Lugano is a city and municipality within the Lugano District in the canton of Ticino, Switzerland. It is the largest city in both Ticino and the Italian-speaking region of southern Switzerland. Lugano is the ninth largest Swiss city proper, with a population of 63,691 as of 2025, and an urban agglomeration of over 150,000.",
+    "longitude": 8.9625
+  },
+  "en|autre|lake": {
+    "date": 814949956.282959,
+    "qid": "Q23397",
+    "description": "A lake is often a naturally occurring, relatively large and fixed body of water on or near the Earth's surface. It is localized in a basin or interconnected basins surrounded by dry land. Lakes lie completely on land and are separate from the ocean, although they may be connected with the ocean by outflowing rivers. Lakes, like other bodies of water, are part of the water cycle, the processes by which water moves around the Earth. Most lakes are fresh water and account for almost all the world's surface freshwater, but some are salt lakes with salinities even higher than that of seawater. Lakes vary significantly in surface area and volume of water, but in total cover approximately 2.5 × 106 km2 (less than 2%) of the Earth's surface.",
+    "libelle": "lake",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Gentau%20Pic%20du%20Midi%20Ossau.jpg?width=320"
+  },
+  "en|gpe|bern": {
+    "description": "Bern, or Berne, is the de facto capital of Switzerland, referred to as the \"federal city\". With a population of about 146,000, Bern is the fifth-most populous city in Switzerland, behind Zurich, Geneva, Basel and Lausanne. The Bern agglomeration, which includes 36 municipalities, had a population of 406,900 in 2014. The metropolitan area had a population of 660,000 in 2000.",
+    "type": "gpe",
+    "latitude": 46.94798,
+    "qid": "Q70",
+    "longitude": 7.44743,
+    "libelle": "Bern",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Bern%20luftaufnahme.png?width=320",
+    "date": 814949957.69152
+  },
+  "en|gpe|interlaken": {
+    "longitude": 7.86487,
+    "qid": "Q68103",
+    "type": "gpe",
+    "date": 814950001.684828,
+    "description": "Interlaken is a Swiss town and municipality in the Interlaken-Oberhasli administrative district in the canton of Bern. It is a tourist destination in the Bernese Oberland region of the Swiss Alps, and the main transport gateway to the mountains and lakes of that region.",
+    "latitude": 46.68715,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Interlaken01.JPG?width=320",
+    "libelle": "Interlaken"
+  },
+  "en|gpe|santis": {
+    "longitude": 9.343333,
+    "date": 814949729.244299,
+    "libelle": "Säntis",
+    "qid": "Q15224",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/S%C3%A4ntis%20-%20Batzberg%20IMG%209803.JPG?width=320",
+    "latitude": 47.249167
+  }
+}

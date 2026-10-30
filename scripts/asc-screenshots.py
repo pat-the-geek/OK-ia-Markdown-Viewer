@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Téléverse le jeu de captures dans les fiches App Store Connect.
 
+⚠️ Captures brutes, deux langues : l'outil d'avant la 1.3. Les jeux légendés (1.3, 1.4, quinze
+langues, Duo et 6,3") partent par scripts/asc/captures.py.
+
 `asc.py` parle JSON ; les captures, elles, sont des octets — trois appels par image, dont
 un PUT hors API. D'où ce script, qui fait la boucle complète : réserver l'image, envoyer
 les octets, confirmer avec la somme de contrôle, puis vérifier ce qu'Apple en a fait.

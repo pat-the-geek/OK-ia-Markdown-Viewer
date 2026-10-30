@@ -1,5 +1,63 @@
 # Captures d'écran — App Store
 
+## Jeu de la 1.4 (29 octobre 2026)
+
+Dix scènes, quinze langues, numérotées sur deux chiffres (« 10 » ne passe plus avant « 2 ») :
+
+```
+scripts/demo-cache.sh <langue>                       cache d'entités de la démonstration (une fois)
+scripts/screenshots.sh <langue> [iphone|ipad|mac|duo|deplie|moyen]
+scripts/legender.py [langue …]                       habillage → store/captures-legendees-1.4/
+python3 scripts/asc/captures.py [emplacement …] --essai   ce qui partirait (lecture seule)
+python3 scripts/asc/captures.py [emplacement …]      envoi, avec l'accord de Patrick
+```
+
+L'envoi (après `set -a; . scripts/deploy.env; set +a`) prend `store/captures-legendees-1.4/` :
+tous les emplacements si aucun n'est nommé, `APP_DESKTOP` vers la fiche macOS, les autres vers
+la fiche iOS, et remplace les captures des emplacements visés. Une langue absente de la fiche
+est ignorée : les dix langues ajoutées le 29/10 demandent d'abord leur fiche (textes à rédiger).
+
+**État au 30/10/2026** : iPhone 6,9", iPhone 6,3", Duo (déplié et plié) et iPad légendés dans les
+quinze langues. **Mac à faire** (MacBook déverrouillé) : `store/screenshots/mac/` ne garde que
+les captures de la 1.3 (de, en, es, it), sans légende dans le jeu 1.4 : `legender.py` les ignore.
+
+| Scène | Écran | Légende (fr) |
+|---|---|---|
+| `01-accueil` | l'accueil en cartes (démonstration) | Vos documents, d'un coup d'œil. |
+| `02-lecteur` | le lecteur | Vos fichiers Markdown, enfin lisibles. |
+| `03-entites` | les entités du document, en galerie | Les lieux du document, en images. |
+| `04-carte-entites` | les mêmes, sur la carte | Chaque lieu, sur la carte. |
+| `05-import` | un PDF importé (rapport, photos, tableau) | Un PDF ou un Word devient un rapport. |
+| `06-coffre` | l'analyse du coffre, en galerie | Tout votre coffre, analysé. |
+| `07-conversion` | la présentation qui se construit | Un rapport devient une présentation. |
+| `08-diaporama` | le diaporama | Présentez-la en plein écran. |
+| `09-resume` | le résumé (Mac seulement) | L'essentiel du document, en quelques lignes. |
+| `10-discussion` | la discussion | Posez vos questions au document. |
+
+Sortis du jeu de la 1.3 (Patrick, 28/10/2026) : thèmes, Mermaid, carte d'une adresse.
+
+**La démonstration** (`store/demo/<langue>/`) : un coffre de quatre rapports touristiques fictifs
+sur des lieux réels de Suisse, sans personne ni marque (« Tourisme suisse », traduit), deux
+documents analysés, et le cache d'entités. Le harnais `OKIA_DEMO=<dossier>` (Debug) la montre à la
+place des vrais récents, coffre, documents analysés et cache, et coupe la synchro iCloud : sur le
+Mac, où le build Debug partage le conteneur et l'iCloud de l'utilisateur, rien n'est lu ni écrit.
+Les dates du coffre sont rejouées à partir du jour de la capture (« Hier », « 7 derniers jours »).
+
+- **Photos et descriptions** : celles de Wikidata et de Wikimedia Commons (licences libres). Les
+  vignettes du coffre sont les photos Commons des lieux.
+- **Lieux choisis pour se résoudre juste** : « Lac Léman » partait au Canada, le Château de
+  Chillon et le Glacier d'Aletsch ne se résolvaient pas (défauts de la résolution par le nom,
+  notés) — écartés. Les noms sont ceux de chaque langue (`Genf`, `Ginebra`, `Ginevra`…).
+- **Le cache d'entités** (`store/demo/<langue>/Analytic/entites-v2.json`) vient de
+  `scripts/demo-cache.sh`, qui ouvre les entités de chaque rapport au simulateur : l'analyse du
+  coffre n'interroge pas Wikidata, elle reprend ce que la lecture a trouvé.
+- **L'import est un vrai import** : les sources (`store/demo-sources/<langue>/*.md`) sont
+  exportées en PDF par l'app (`OKIA_EXPORT_PDF`), puis relues par l'import PDF
+  (`tools/BancPDF`). Le document importé (3 Mo d'images) passe par `OKIA_RENDER_FILE`.
+- **Sans document** : `01-accueil` et `06-coffre` ne rendent rien, ils montrent la démonstration.
+- `OKIA_CAPTURE` masque la ligne de diagnostic des entités (montrée en Debug et en TestFlight).
+- **Duo** : dix captures au plus par emplacement — les neuf scènes dépliées, puis le lecteur plié.
+
 ## Jeu de la 1.3 (9 octobre 2026)
 
 Huit scènes, cinq langues, puis un habillage légendé :

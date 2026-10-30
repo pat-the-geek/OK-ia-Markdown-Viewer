@@ -36,9 +36,13 @@ CIBLE="${2:-tout}"
 
 # Certaines scènes ne sont pas de simples documents : elles ouvrent un écran que seul un
 # geste atteindrait. La règle vit ici, une fois, pour les deux plateformes.
-#   2-conversion → la conversion en présentation, rejouée (voir rejeu_de)
-#   3-diaporama  → le diaporama            4-themes     → le panneau « Aa », thème Lecture longue
-#   7-resume     → le résumé IA            8-discussion → la discussion IA, une question posée
+#   01-accueil     → l'accueil en cartes, sur la démonstration (store/demo/<langue>, OKIA_DEMO)
+#   03-entites     → les entités du document, en galerie   04-carte-entites → en carte
+#   06-coffre      → l'analyse du coffre de démonstration
+#   07-conversion  → la conversion en présentation, rejouée (voir rejeu_de)
+#   08-diaporama   → le diaporama
+#   09-resume      → le résumé IA          10-discussion → la discussion IA, une question posée
+# Jeu de la 1.4 (28/10/2026) : dix scènes ; thèmes, Mermaid et carte d'une adresse sont sortis.
 # Sur grand écran (Mac, iPad en paysage), la conversion, le résumé et la discussion s'ouvrent à
 # côté du document ; sur l'iPhone, dans une feuille — l'app en décide, comme pour un lecteur.
 # Une variable par ligne — une valeur peut contenir des espaces. Deuxième argument : la
@@ -46,29 +50,45 @@ CIBLE="${2:-tout}"
 harnais_de() {
   local question plateforme="${2:-mac}"
   echo "OKIA_UI_LANG=$LANGUE"
+  # Ni diagnostic de test ni réglage de l'utilisateur : la démonstration a son coffre, ses
+  # documents analysés et son cache d'entités (OKIA_DEMO, posé par l'appelant).
+  echo "OKIA_CAPTURE=1"
   # Le Mac garde l'apparence de son réglage (Patrick est en sombre) : l'app se met en clair
   # elle-même le temps de la capture, comme les simulateurs.
   [ "$plateforme" = mac ] && echo "OKIA_CLAIR=1"
   # Le thème est retenu d'un lancement à l'autre : chaque scène dit le sien, sans quoi celle des
   # thèmes déteindrait sur les suivantes.
-  [ "$1" = 4-themes ] || echo "OKIA_THEME=okia"
+  echo "OKIA_THEME=okia"
   case "$LANGUE" in
     en) question="Which fields have the most initiatives?" ;;
     de) question="Welche Bereiche haben die meisten Initiativen?" ;;
     es) question="¿Qué ámbitos tienen más iniciativas?" ;;
     it) question="Quali ambiti hanno più iniziative?" ;;
+    nl) question="Welke domeinen hebben de meeste initiatieven?" ;;
+    pt-BR) question="Quais áreas têm mais iniciativas?" ;;
+    tr) question="En çok girişim hangi alanlarda?" ;;
+    vi) question="Lĩnh vực nào có nhiều sáng kiến nhất?" ;;
+    ru) question="В каких сферах больше всего инициатив?" ;;
+    uk) question="У яких сферах найбільше ініціатив?" ;;
+    ja) question="取り組みが最も多いのはどの分野ですか？" ;;
+    zh-Hans) question="哪些领域的举措最多？" ;;
+    ko) question="이니셔티브가 가장 많은 분야는 어디인가요?" ;;
+    hi) question="किन क्षेत्रों में सबसे अधिक पहलें हैं?" ;;
     *)  question="Quels domaines comptent le plus d'initiatives ?" ;;
   esac
   case "$1" in
-    2-conversion)
+    01-accueil)     echo "OKIA_ACHAT=achete" ;;
+    03-entites)     echo "OKIA_ACHAT=achete"; echo "OKIA_WIKIDATA=oui"; echo "OKIA_ANALYTIC=galerie" ;;
+    04-carte-entites) echo "OKIA_ACHAT=achete"; echo "OKIA_WIKIDATA=oui"; echo "OKIA_ANALYTIC=carte" ;;
+    06-coffre)      echo "OKIA_ACHAT=achete"; echo "OKIA_WIKIDATA=oui"; echo "OKIA_ANALYSE_COFFRE=1" ;;
+    07-conversion)
       echo "OKIA_AI=convert"; echo "OKIA_AI_DELAY=2"
       # Figée à 7 diapositives sur 10 : la présentation est en train de se construire.
       echo "OKIA_CONVERSION_ARRET=7"
       ;;
-    3-diaporama)    echo "OKIA_OPEN_SLIDES=1" ;;
-    4-themes)       echo "OKIA_THEME=lecture"; echo "OKIA_APPARENCE=1" ;;
-    7-resume)       echo "OKIA_AI=summary"; echo "OKIA_AI_DELAY=1" ;;
-    8-discussion)
+    08-diaporama)   echo "OKIA_OPEN_SLIDES=1" ;;
+    09-resume)      echo "OKIA_AI=summary"; echo "OKIA_AI_DELAY=1" ;;
+    10-discussion)
       echo "OKIA_AI=chat"; echo "OKIA_AI_DELAY=1"
       # La question n'a de sens que là où le modèle répond. En simulateur la génération
       # échoue (GenerationError -1) : on s'en tient au premier écran de la discussion, dont
@@ -81,28 +101,54 @@ harnais_de() {
 
 # Une réponse du modèle met plus longtemps à venir qu'une page à se dessiner ; le rejeu de la
 # conversion, lui, livre une diapositive toutes les 0,8 s après l'ouverture.
-attente_de() { case "$1" in 7-resume|8-discussion) echo 30 ;; 2-conversion) echo 18 ;; 4-themes) echo 12 ;; *) echo "$ATTENTE" ;; esac; }
+# Les photos et descriptions des entités viennent de Wikidata, les vignettes de l'accueil de
+# Wikimedia Commons : le réseau décide, on leur laisse le temps.
+attente_de() { case "$1" in 09-resume|10-discussion) echo 30 ;; 07-conversion) echo 18 ;; 03-entites|04-carte-entites) echo 45 ;; 06-coffre) echo 60 ;; 01-accueil) echo 20 ;; *) echo "$ATTENTE" ;; esac; }
+
+# Un document aux images embarquées (un import) dépasse ce qu'une variable d'environnement
+# transmet : il passe par un fichier de la démonstration (OKIA_RENDER_FILE).
+trop_gros() { [ "$(wc -c < "$1")" -gt 200000 ]; }
+
+# Les scènes sans document : l'accueil et l'analyse du coffre, sur la démonstration.
+sans_document() { case "$1" in 01-accueil|06-coffre) return 0 ;; *) return 1 ;; esac; }
+
+# Le titre d'une scène : son premier titre, ou le `title:` de son en-tête YAML (un import).
+titre_de() {
+  if [ "$(head -1 "$1")" = "---" ]; then
+    sed -n 's/^title: *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' "$1" | head -1
+  else
+    head -1 "$1" | sed 's/^# *//'
+  fi
+}
 
 # La conversion ne se capture pas en direct : le simulateur ne génère pas, et le modèle du Mac
 # met un temps variable. Elle rejoue la présentation que le vrai modèle a écrite pour cette
 # langue (tools/ConversionBench, sur le Mac) et qui sert aussi la scène du diaporama. Le contenu
 # vient du modèle ; seul le rythme est simulé. Une valeur sur plusieurs lignes : elle ne passe
 # pas par harnais_de.
-rejeu_de() { case "$1" in 2-conversion) cat "store/scenes/$LANGUE/3-diaporama.md" ;; *) ;; esac; }
+rejeu_de() { case "$1" in 07-conversion) cat "store/scenes/$LANGUE/08-diaporama.md" ;; *) ;; esac; }
 
 # Le résumé demande une génération, et le simulateur en est incapable : Apple Intelligence
 # s'y annonce disponible (il emprunte le modèle du Mac hôte) mais la génération échoue.
 # Cette scène-là reste au Mac.
-scene_reservee_au_mac() { case "$1" in 7-resume) return 0 ;; *) return 1 ;; esac; }
+scene_reservee_au_mac() { case "$1" in 09-resume) return 0 ;; *) return 1 ;; esac; }
 
 # L'iPad couché ouvre le mode livre : bon pour ce qui s'ouvre à côté du document, mais un
 # document court y laisse la page de droite vide, et le livre cache la barre. Lecteur, thèmes,
 # Mermaid et carte se prennent donc en portrait ; conversion, diaporama et discussion en paysage
 # (Patrick, 09/10/2026). Une passe par orientation : IPAD_PAYSAGE=1 ne prend que les secondes.
-ipad_en_paysage() { case "$1" in 2-conversion|3-diaporama|8-discussion) return 0 ;; *) return 1 ;; esac; }
+ipad_en_paysage() { case "$1" in 07-conversion|08-diaporama|10-discussion) return 0 ;; *) return 1 ;; esac; }
 
 # Région du simulateur : le format de date suit la locale, pas seulement la langue.
-locale_systeme() { case "$LANGUE" in en) echo en_US ;; es) echo es_ES ;; *) echo "${LANGUE}_CH" ;; esac; }  # es_CH n'existe pas
+locale_systeme() {
+  case "$LANGUE" in
+    en) echo en_US ;; es) echo es_ES ;;   # es_CH n'existe pas
+    fr|de|it) echo "${LANGUE}_CH" ;;
+    ja) echo ja_JP ;; ko) echo ko_KR ;; zh-Hans) echo zh_CN ;; pt-BR) echo pt_BR ;; nl) echo nl_NL ;;
+    ru) echo ru_RU ;; uk) echo uk_UA ;; tr) echo tr_TR ;; vi) echo vi_VN ;; hi) echo hi_IN ;;
+    *) echo "${LANGUE}" ;;
+  esac
+}
 
 # Apple accepte 2880×1800, 2560×1600, 1440×900 ou 1280×800 pour le Mac. On recadre au
 # format 16:10 — quelques pixels au plus — puis on va chercher la taille acceptée la plus
@@ -133,6 +179,27 @@ if im.mode in ("RGBA", "LA", "P"):
     fond = Image.new("RGB", im.size, (0xFA, 0xFA, 0xF8))
     fond.paste(im, mask=im.getchannel("A"))
     fond.save(chemin)
+PYTHON
+}
+
+# Les rapports du coffre de démonstration portent une date d'en-tête, comptée depuis le
+# 28/10/2026 : la veille, une semaine avant… Leur fichier prend le même écart depuis le jour de la
+# capture, pour que l'accueil les range toujours sous les mêmes intitulés (« Hier », « 7 derniers
+# jours »). Les documents analysés, copiés à l'instant, sont « d'aujourd'hui ».
+dater_demo() {
+  python3 - "$1" <<'PYTHON'
+import datetime, os, pathlib, re, sys, time
+reference = datetime.date(2026, 10, 28)
+for f in pathlib.Path(sys.argv[1]).rglob("*.md"):
+    # Seuls les rapports du coffre : le dossier des documents analysés change de nom avec la langue.
+    if "/rapports-" not in "/" + str(f.relative_to(sys.argv[1])):
+        continue
+    m = re.search(r"^date: *(\d{4})-(\d{2})-(\d{2})", f.read_text(encoding="utf-8"), re.M)
+    if not m:
+        continue
+    ecart = (reference - datetime.date(*map(int, m.groups()))).days
+    jour = datetime.datetime.combine(datetime.date.today() - datetime.timedelta(days=ecart), datetime.time(10))
+    os.utime(f, (time.mktime(jour.timetuple()),) * 2)
 PYTHON
 }
 
@@ -173,6 +240,12 @@ capture_appareil() {
   fi
 
   xcrun simctl install "$dev" "$APP" >/dev/null
+  # La démonstration (coffre, documents analysés) dans le conteneur de l'app, neuve à chaque
+  # passe : son cache d'entités repart de zéro, comme chez un nouvel utilisateur.
+  local demo
+  demo="$(xcrun simctl get_app_container "$dev" "$BUNDLE" data)/tmp/okia-demo"
+  rm -rf "$demo"; cp -R "store/demo/$LANGUE" "$demo"
+  dater_demo "$demo"
   # Les captures sont en clair, quel que soit l'état où un essai a laissé le simulateur.
   xcrun simctl ui "$dev" appearance light >/dev/null 2>&1 || true
 
@@ -191,7 +264,7 @@ capture_appareil() {
   for scene in store/scenes/"$LANGUE"/*.md; do
     local base titre
     base="$(basename "$scene" .md)"
-    titre="$(head -1 "$scene" | sed 's/^# *//')"
+    titre="$(titre_de "$scene")"
     if scene_reservee_au_mac "$base"; then continue; fi
     if [ "$dossier" = "ipad-13" ]; then
       if [ -n "${IPAD_PAYSAGE:-}" ]; then ipad_en_paysage "$base" || continue
@@ -210,12 +283,17 @@ capture_appareil() {
     fi
     local rejeu; rejeu="$(rejeu_de "$base")"
     [ -n "$rejeu" ] && sim_extra+=("SIMCTL_CHILD_OKIA_CONVERSION_REJEU=$rejeu")
+    sim_extra+=("SIMCTL_CHILD_OKIA_DEMO=$demo")
+    if sans_document "$base"; then :
+    elif trop_gros "$scene"; then
+      cp "$scene" "$demo/scene.md"
+      sim_extra+=("SIMCTL_CHILD_OKIA_RENDER_FILE=$demo/scene.md" "SIMCTL_CHILD_OKIA_RENDER_NAME=$titre.md")
+    else
+      sim_extra+=("SIMCTL_CHILD_OKIA_RENDER_CONTENT=$(cat "$scene")" "SIMCTL_CHILD_OKIA_RENDER_NAME=$titre.md")
+    fi
     xcrun simctl terminate "$dev" "$BUNDLE" >/dev/null 2>&1 || true
     # (l'expansion protégée : un tableau vide fait échouer set -u en bash 3.2)
-    env ${sim_extra[@]+"${sim_extra[@]}"} \
-      SIMCTL_CHILD_OKIA_RENDER_CONTENT="$(cat "$scene")" \
-      SIMCTL_CHILD_OKIA_RENDER_NAME="$titre.md" \
-      xcrun simctl launch "$dev" "$BUNDLE" >/dev/null
+    env ${sim_extra[@]+"${sim_extra[@]}"} xcrun simctl launch "$dev" "$BUNDLE" >/dev/null
     sleep "$(attente_de "$base")"
     # Le Duo plié n'allume que son écran extérieur ; la capture par défaut prend l'intérieur,
     # noir. « --display=1 » vise l'extérieur, borné : un écran éteint fait attendre sans fin.
@@ -341,22 +419,37 @@ capture_mac() {
   # SOLO=<scène> ne refait que celle-là (une réponse du modèle à reprendre) : les autres restent.
   [ -n "${SOLO:-}" ] || rm -f "store/screenshots/$dossier/$LANGUE"/*.png
   mkdir -p "store/screenshots/$dossier/$LANGUE"
+  # La démonstration, copiée hors du dépôt : l'app de capture n'est pas signée, donc hors du bac
+  # à sable, et lit ce dossier directement ; neuve à chaque passe, comme au simulateur.
+  local demo_mac="${TMPDIR:-/tmp}okia-demo-$LANGUE"
+  rm -rf "$demo_mac"; cp -R "store/demo/$LANGUE" "$demo_mac"
+  dater_demo "$demo_mac"
 
   for scene in store/scenes/"$LANGUE"/*.md; do
     local base titre extra
     base="$(basename "$scene" .md)"
     if [ -n "${SOLO:-}" ] && [ "$base" != "$SOLO" ]; then continue; fi
-    titre="$(head -1 "$scene" | sed 's/^# *//')"
+    titre="$(titre_de "$scene")"
     pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
     sleep 1
-    launchctl setenv OKIA_RENDER_CONTENT "$(cat "$scene")"
-    launchctl setenv OKIA_RENDER_NAME "$titre.md"
+    launchctl unsetenv OKIA_RENDER_CONTENT; launchctl unsetenv OKIA_RENDER_FILE; launchctl unsetenv OKIA_RENDER_NAME
+    if sans_document "$base"; then :
+    elif trop_gros "$scene"; then
+      cp "$scene" "$demo_mac/scene.md"
+      launchctl setenv OKIA_RENDER_FILE "$demo_mac/scene.md"
+      launchctl setenv OKIA_RENDER_NAME "$titre.md"
+    else
+      launchctl setenv OKIA_RENDER_CONTENT "$(cat "$scene")"
+      launchctl setenv OKIA_RENDER_NAME "$titre.md"
+    fi
+    launchctl setenv OKIA_DEMO "$demo_mac"
     launchctl setenv OKIA_SHOT_SIZE "$FENETRE"
     launchctl setenv OKIA_FONT_SCALE 1.0
     # Le harnais éventuel de la scène : sans lui il faudrait cliquer, ce qu'une capture
     # headless ne sait pas faire.
     for v in OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION OKIA_UI_LANG OKIA_AI_DELAY OKIA_THEME \
-             OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET OKIA_CLAIR; do launchctl unsetenv "$v"; done
+             OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET OKIA_CLAIR OKIA_CAPTURE \
+             OKIA_ACHAT OKIA_WIKIDATA OKIA_ANALYTIC OKIA_ANALYSE_COFFRE; do launchctl unsetenv "$v"; done
     while IFS= read -r paire; do
       [ -n "$paire" ] && launchctl setenv "${paire%%=*}" "${paire#*=}"
     done < <(harnais_de "$base" mac)
@@ -391,7 +484,8 @@ capture_mac() {
   pkill -f "Debug-maccatalyst/$SCHEME.app" 2>/dev/null || true
   # La taille de texte de l'utilisateur lui est rendue par l'app elle-même (OKIA_FONT_SCALE).
   for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_OPEN_SLIDES OKIA_AI OKIA_AI_QUESTION \
-           OKIA_AI_DELAY OKIA_THEME OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET; do
+           OKIA_AI_DELAY OKIA_THEME OKIA_APPARENCE OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET \
+           OKIA_CAPTURE OKIA_ACHAT OKIA_WIKIDATA OKIA_ANALYTIC OKIA_ANALYSE_COFFRE OKIA_DEMO OKIA_RENDER_FILE; do
     launchctl unsetenv "$v"
   done
   launchctl setenv OKIA_FONT_SCALE restaurer
@@ -401,7 +495,8 @@ capture_mac() {
   kill "$veille" 2>/dev/null || true
   for v in OKIA_RENDER_CONTENT OKIA_RENDER_NAME OKIA_SHOT_SIZE OKIA_OPEN_SLIDES OKIA_AI \
            OKIA_AI_QUESTION OKIA_UI_LANG OKIA_AI_DELAY OKIA_THEME OKIA_APPARENCE \
-           OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET OKIA_CLAIR; do launchctl unsetenv "$v"; done
+           OKIA_CONVERSION_REJEU OKIA_CONVERSION_ARRET OKIA_CLAIR OKIA_CAPTURE OKIA_ACHAT \
+           OKIA_WIKIDATA OKIA_ANALYTIC OKIA_ANALYSE_COFFRE OKIA_DEMO OKIA_RENDER_FILE; do launchctl unsetenv "$v"; done
   # On rend la machine dans l'état où on l'a trouvée.
   [ -n "$ancien_scale" ] && { defaults write "$BUNDLE" okia.fontScale -float "$ancien_scale" 2>/dev/null || true; }
   [ -n "$ancien_cadre" ] && { defaults write "$BUNDLE" "NSWindow Frame MainSceneWindow" "$ancien_cadre" 2>/dev/null || true; }

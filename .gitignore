@@ -28,3 +28,6 @@ scripts/deploy-site.env
 # Caches Python (scripts/asc.py importé par un utilitaire)
 __pycache__/
 *.pyc
+
+# PDF de démonstration des captures 1.4 : refaits par l’app (OKIA_EXPORT_PDF) depuis leur source .md
+store/demo-sources/*/*.pdf

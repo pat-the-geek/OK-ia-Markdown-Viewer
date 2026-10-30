@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Pose des captures habillées dans un emplacement de la fiche iOS en préparation.
+"""Pose des captures habillées dans les emplacements des fiches en préparation.
 
 Usage (après `set -a; . scripts/deploy.env; set +a`) :
-  python3 scripts/asc/captures.py APP_IPHONE_61 APP_IPHONE_DUO [--essai]
+  python3 scripts/asc/captures.py [emplacement …] [--essai] [--jeu 1.3]
 
-Source : store/captures-legendees-1.3/<emplacement>/<langue>/*.png (scripts/legender.py).
-Seuls les emplacements nommés sont touchés : leurs anciennes captures sont remplacées, les
-autres emplacements (6,9", iPad, Mac) restent tels quels.
+Source : store/captures-legendees-<jeu>/<emplacement>/<langue>/*.png (scripts/legender.py),
+jeu 1.4 par défaut. Sans emplacement nommé : tous ceux du jeu. APP_DESKTOP va à la fiche
+macOS, les autres à la fiche iOS. Seuls les emplacements visés sont touchés : leurs anciennes
+captures sont remplacées, les autres restent tels quels. Une langue absente de la fiche est
+ignorée (la fiche doit d'abord exister dans cette langue).
 """
 import hashlib
 import pathlib
@@ -19,16 +21,22 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from asc import req, APP  # noqa: E402
 
 RACINE = pathlib.Path(__file__).resolve().parents[2]
-SOURCE = RACINE / "store" / "captures-legendees-1.3"
-LANGUES = {"fr": "fr-FR", "en": "en-US", "de": "de-DE", "es": "es-ES", "it": "it"}
+# Les quinze langues de la 1.4 (29/10/2026) et leurs codes dans App Store Connect.
+LANGUES = {"fr": "fr-FR", "en": "en-US", "de": "de-DE", "es": "es-ES", "it": "it",
+           "nl": "nl-NL", "pt-BR": "pt-BR", "tr": "tr", "vi": "vi", "ru": "ru", "uk": "uk",
+           "ja": "ja", "zh-Hans": "zh-Hans", "ko": "ko", "hi": "hi"}
 
 
-def version_ios():
+def plateforme(emplacement):
+    return "MAC_OS" if emplacement == "APP_DESKTOP" else "IOS"
+
+
+def version(plateforme_visee):
     for v in req("GET", f"/v1/apps/{APP}/appStoreVersions?limit=20")["data"]:
         a = v["attributes"]
-        if a["platform"] == "IOS" and a["appStoreState"] == "PREPARE_FOR_SUBMISSION":
+        if a["platform"] == plateforme_visee and a["appStoreState"] == "PREPARE_FOR_SUBMISSION":
             return v["id"], a["versionString"]
-    sys.exit("aucune version iOS en préparation")
+    return None
 
 
 def televerser(jeu_id, fichier):
@@ -50,10 +58,32 @@ def televerser(jeu_id, fichier):
 
 
 def main():
-    essai = "--essai" in sys.argv
-    emplacements = [a for a in sys.argv[1:] if not a.startswith("--")]
-    version_id, numero = version_ios()
-    print(f"iOS {numero}")
+    args = sys.argv[1:]
+    essai = "--essai" in args
+    jeu = args[args.index("--jeu") + 1] if "--jeu" in args else "1.4"
+    source = RACINE / "store" / f"captures-legendees-{jeu}"
+    if not source.is_dir():
+        sys.exit(f"{source} n'existe pas")
+    nommes = [a for a in args if not a.startswith("--") and a != jeu]
+    emplacements = nommes or sorted(d.name for d in source.iterdir() if d.is_dir())
+    envoyees = []
+    for pf in ("IOS", "MAC_OS"):
+        visees = [e for e in emplacements if plateforme(e) == pf]
+        if not visees:
+            continue
+        v = version(pf)
+        if not v:
+            print(f"{pf} : aucune version en préparation — {', '.join(visees)} ignoré(s)")
+            continue
+        envoyees += envoyer(pf, v, visees, source, essai)
+    if essai or not envoyees:
+        return
+    attendre(envoyees)
+
+
+def envoyer(pf, v, emplacements, source, essai):
+    version_id, numero = v
+    print(f"{pf} {numero}")
     locs = {l["attributes"]["locale"]: l["id"] for l in
             req("GET", f"/v1/appStoreVersions/{version_id}/appStoreVersionLocalizations?limit=50")["data"]}
     envoyees = []
@@ -65,7 +95,7 @@ def main():
         jeux = {j["attributes"]["screenshotDisplayType"]: j["id"] for j in
                 req("GET", f"/v1/appStoreVersionLocalizations/{loc_id}/appScreenshotSets?limit=50")["data"]}
         for emplacement in emplacements:
-            fichiers = sorted((SOURCE / emplacement / langue).glob("*.png"))
+            fichiers = sorted((source / emplacement / langue).glob("*.png"))
             if not fichiers:
                 print(f"  {locale} : {emplacement} — aucun fichier, ignoré")
                 continue
@@ -84,9 +114,12 @@ def main():
                         "data": {"type": "appStoreVersionLocalizations", "id": loc_id}}}}})["data"]["id"]
             for f in fichiers:
                 envoyees.append((f"{locale}/{emplacement}/{f.name}", televerser(jeu_id, f)))
-    if essai or not envoyees:
-        return
+    return envoyees
+
+
+def attendre(envoyees):
     # Apple traite les images après coup : on attend qu'elles soient toutes acceptées.
+    etats = {}
     for _ in range(30):
         etats = {}
         for nom, cid in envoyees:

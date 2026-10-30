@@ -1,0 +1,236 @@
+{
+  "hi|gpe|नॉशाटेल झील": {
+    "date": 814971752.851416,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lac%20de%20neuch%C3%A2tel%20et%20montagne%20de%20boudry.jpg?width=320",
+    "libelle": "नॉशाटेल झील",
+    "qid": "Q14375",
+    "longitude": 6.85,
+    "latitude": 46.9
+  },
+  "hi|gpe|लुगानो": {
+    "latitude": 46.010277777778,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lugano%20from%20Sighignola.jpg?width=320",
+    "libelle": "लुगानो",
+    "longitude": 8.9625,
+    "qid": "Q7024",
+    "type": "gpe",
+    "date": 814972580.780261
+  },
+  "hi|gpe|ज़्यूरिख़ झील": {
+    "qid": "Q14407",
+    "libelle": "ज़्यूरिख़ झील",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Zuerichsee.jpg?width=320",
+    "longitude": 8.6775,
+    "latitude": 47.2475,
+    "date": 814971752.751482
+  },
+  "hi|gpe|सेंट मोरित्ज़": {
+    "latitude": 46.49722222222222,
+    "type": "gpe",
+    "date": 814971798.656366,
+    "qid": "Q68986",
+    "libelle": "सेंट मोरित्ज़",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/StMoritz.jpg?width=320",
+    "longitude": 9.837777777777777
+  },
+  "hi|gpe|इंटरलाकेन": {
+    "latitude": 46.68715,
+    "type": "gpe",
+    "date": 814971798.577706,
+    "qid": "Q68103",
+    "libelle": "इंटरलाकेन",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Interlaken01.JPG?width=320",
+    "longitude": 7.86487
+  },
+  "hi|gpe|लोकार्नो": {
+    "qid": "Q11935",
+    "type": "gpe",
+    "longitude": 8.7997222222222,
+    "libelle": "लोकार्नो",
+    "latitude": 46.166388888889,
+    "date": 814971843.884942,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Locarno%20-%20panoramio.jpg?width=320"
+  },
+  "hi|gpe|बेल्लित्सोना": {
+    "longitude": 9.023809,
+    "type": "gpe",
+    "date": 814972580.289118,
+    "libelle": "बेल्लित्सोना",
+    "latitude": 46.195555,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Tre%20Castelli.jpg?width=320",
+    "qid": "Q64044"
+  },
+  "hi|gpe|बाज़ल": {
+    "latitude": 47.558055555555555,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Rhine%20Rhein%20Basel%202006%20871.JPG?width=320",
+    "libelle": "बाज़ल",
+    "longitude": 7.587777777777777,
+    "qid": "Q78",
+    "type": "gpe",
+    "date": 814971754.291911
+  },
+  "hi|gpe|ग्रिंडेलवाल्ड": {
+    "qid": "Q64004",
+    "type": "gpe",
+    "longitude": 8.0333333333333,
+    "libelle": "ग्रिंडेलवाल्ड",
+    "latitude": 46.625555555556,
+    "date": 814971889.508065,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/05%20Grindelwald%20(CH)%20-%20Blick%20auf%20das%20Wetterhorn.jpg?width=320"
+  },
+  "hi|gpe|ज़रमैट": {
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/1%20zermatt%20night%202012.jpg?width=320",
+    "longitude": 7.7461,
+    "latitude": 46.0193,
+    "date": 814971890.882967,
+    "qid": "Q27494",
+    "type": "gpe",
+    "libelle": "ज़रमैट"
+  },
+  "hi|gpe|लुसेर्न": {
+    "latitude": 47.0523,
+    "description": "ल्यूसर्न या लूसर्न या लुज़र्न देश के जर्मन भाषी हिस्से में मध्य स्विट्जरलैंड का एक शहर है। ल्यूसर्न ल्यूसर्न के कैंटन की राजधानी है और इसी नाम के जिले का हिस्सा है। लगभग 82,000 लोगों की आबादी के साथ, ल्यूसर्न मध्य स्विट्जरलैंड में सबसे अधिक आबादी वाला शहर है, और इस क्षेत्र में अर्थशास्त्र, परिवहन, संस्कृति और मीडिया का एक केंद्र है। शहर के शहरी क्षेत्र में लगभग 220,000 लोगों की कुल आबादी के साथ 19 नगर पालिकाओं और कस्बों का समावेश है।",
+    "type": "gpe",
+    "date": 814971754.383149,
+    "qid": "Q4191",
+    "libelle": "लुसेर्न",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/00%200055%20Buildings%20in%20Lucerne.jpg?width=320",
+    "longitude": 8.3059
+  },
+  "hi|gpe|युंगफ़्राउ": {
+    "date": 814971889.232136,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Jungfrau.jpg?width=320",
+    "libelle": "युंगफ़्राउ",
+    "qid": "Q15312",
+    "longitude": 7.9625,
+    "latitude": 46.536944444444
+  },
+  "hi|gpe|आस्कोना": {
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Ascona%20IMG%201646.jpg?width=320",
+    "longitude": 8.7666666666667,
+    "latitude": 46.15,
+    "date": 814971843.708996,
+    "qid": "Q63992",
+    "type": "gpe",
+    "libelle": "आस्कोना"
+  },
+  "hi|gpe|ज़्यूरिख़": {
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Zuerich%20Fraumuenster%20St%20Peter.jpg?width=320",
+    "type": "gpe",
+    "latitude": 47.37444444444444,
+    "date": 814971755.112226,
+    "libelle": "ज़्यूरिख़",
+    "longitude": 8.54111111111111,
+    "qid": "Q72",
+    "description": "ज़्यूरिख़ स्विट्ज़रलैण्ड का सबसे बड़ा शहर है। साथ ही यह शहर ज़्यूरिख़ कैन्टन की राजधानी भी है। यह शहर स्विट्ज़रलैंड का व्यवसाय एवं संस्कृति का मुख्य केन्द्र है और इसे दुनिया के ग्लोबल शहरों में से एक माना जाता है। २००६ एवं २००७ में हुए कईं सर्वे के अनुसार इसे बेहतरीन जीवन गुणवत्ता का शहर माना गया है।"
+  },
+  "hi|gpe|लोज़ान": {
+    "latitude": 46.533333333333,
+    "type": "gpe",
+    "date": 814971891.221127,
+    "qid": "Q807",
+    "libelle": "लोज़ान",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lausanne%20img%200585.jpg?width=320",
+    "longitude": 6.6333333333333
+  },
+  "hi|gpe|थून झील": {
+    "date": 814971752.795045,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20image%20of%20Lake%20Thun%20(view%20from%20the%20east).jpg?width=320",
+    "libelle": "थून झील",
+    "qid": "Q14426",
+    "longitude": 7.7166666666667,
+    "latitude": 46.683333333333
+  },
+  "hi|gpe|मॉन्ट्रो": {
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Champ%20de%20narcisses%20-.jpg?width=320",
+    "type": "gpe",
+    "latitude": 46.435,
+    "date": 814971890.863119,
+    "libelle": "मॉन्ट्रो",
+    "longitude": 6.9125,
+    "qid": "Q69354"
+  },
+  "hi|gpe|लुसेर्न झील": {
+    "qid": "Q14381",
+    "libelle": "लुसेर्न झील",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Vierwaldst%C3%A4ttersee.jpg?width=320",
+    "longitude": 8.4011,
+    "latitude": 47.0194,
+    "date": 814971892.308915
+  },
+  "hi|gpe|लुगानो झील": {
+    "date": 814971843.749548,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Lake%20Lugano%20Panorama.jpg?width=320",
+    "libelle": "लुगानो झील",
+    "qid": "Q14418",
+    "longitude": 9,
+    "latitude": 46
+  },
+  "hi|gpe|टिटलिस": {
+    "date": 814971798.744719,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/TitlisVonSchoneggGesehen.jpg?width=320",
+    "libelle": "टिटलिस",
+    "qid": "Q15138",
+    "longitude": 8.4377777777778,
+    "latitude": 46.771944444444
+  },
+  "hi|gpe|जिनेवा": {
+    "latitude": 46.2,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Geneva%20from%20Mount%20Sal%C3%A8ve.jpg?width=320",
+    "libelle": "जिनेवा",
+    "description": "जिनीवा, स्विट्ज़रलैंड का ज़्यूरिख़ के बाद दूसरा सबसे बड़ा शहर है। यह फ़्रांस से सटा हुआ है और इसकी राजभाषा फ़्रांसीसी है। यह शहर \"जिनीवा सरोवर\" के किनारे बसा है। यहाँ संयुक्त राष्ट्र संघ के कई निकायों के कार्यालय स्थित हैं।",
+    "longitude": 6.15,
+    "qid": "Q71",
+    "type": "gpe",
+    "date": 814971889.634916
+  },
+  "hi|gpe|सेंटिस": {
+    "longitude": 9.343333,
+    "date": 814949729.244299,
+    "libelle": "सेंटिस",
+    "qid": "Q15224",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/S%C3%A4ntis%20-%20Batzberg%20IMG%209803.JPG?width=320",
+    "description": "At 2,501.9 metres (8,208 ft) above sea level, Säntis is the highest mountain in the Alpstein massif of northeastern Switzerland. It is also the culminating point of the whole Appenzell Alps, between Lake Walen and Lake Constance. Shared by three cantons, the mountain is a highly visible landmark thanks to its exposed northerly position within the Alpstein massif. As a consequence, houses called Säntisblick can be found in regions as far away as the Black Forest in Germany. Säntis is among the most prominent summits in the Alps and the most prominent summit in Europe with an observation deck on the top. The panorama from the summit is spectacular. Six countries can be seen if the weather allows: Switzerland, Germany, Austria, Liechtenstein, France, and Italy.",
+    "latitude": 47.249167
+  },
+  "hi|gpe|दावोस": {
+    "type": "gpe",
+    "date": 814949727.855125,
+    "latitude": 46.809055555556,
+    "longitude": 9.8398333333333,
+    "qid": "Q68097",
+    "description": "दावोस स्विट्ज़रलैंड की एक तहसील है। यह प्राटिगाउ जिले में स्थित है। इस कस्बे की स्थिति लैंड वासर नदी के तट पर, स्विस आल्प्स पर्वत के प्लेसूर शृंखला और अल्बूला शृंखला के बीच स्थित है।1,560 मीटर (5,118 फी॰) की ऊंचाई पर, ये यूरोप का सबसे ऊंचा शहर है।",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Davos2.jpg?width=320",
+    "libelle": "दावोस"
+  },
+  "hi|gpe|बर्न": {
+    "type": "gpe",
+    "date": 814949771.973292,
+    "latitude": 46.94798,
+    "longitude": 7.44743,
+    "qid": "Q70",
+    "description": "बर्न शहर स्विट्ज़रलैंड देश की राजधानी है। इसकी दो राजभाषाएँ हैं : जर्मन और फ़्रांसिसी।",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Bern%20luftaufnahme.png?width=320",
+    "libelle": "बर्न"
+  },
+  "hi|gpe|ववे": {
+    "type": "gpe",
+    "longitude": 6.85,
+    "date": 814949818.125278,
+    "description": "वेवे स्विटज़रलैंड का एक शहर है। यहां पर विश्व की सबसे बड़ी खाद्य कम्पनी नेस्ले का मुख्यालय स्थित है।",
+    "qid": "Q68160",
+    "latitude": 46.466666666667,
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Vevey,%20Switzerland.jpg?width=320",
+    "libelle": "ववे"
+  },
+  "hi|gpe|सियों": {
+    "longitude": 7.36606,
+    "date": 814949729.392564,
+    "libelle": "सियों",
+    "qid": "Q68136",
+    "type": "gpe",
+    "image": "https://commons.wikimedia.org/wiki/Special:FilePath/Sion%20depuis%20Nax%20-%202022.jpg?width=320",
+    "description": "Sion is a Swiss town situated in the Rhône valley, a municipality, and the capital of the canton of Valais and of the district of Sion. As of December 2020 it had a population of 34,978.",
+    "latitude": 46.23045
+  }
+}

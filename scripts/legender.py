@@ -3,7 +3,7 @@
 au-dessous, coins arrondis et ombre douce, sur le fond crème de la charte.
 
 Entrée : store/screenshots/<appareil>/<langue>/<scène>.png (scripts/screenshots.sh).
-Sortie : store/captures-legendees-1.3/<emplacement App Store Connect>/<langue>/<scène>.png,
+Sortie : store/captures-legendees-1.4/<emplacement App Store Connect>/<langue>/<scène>.png,
 à la taille exacte de l'emplacement. Légendes : store/legendes.json.
 
 Usage : scripts/legender.py [langue …]      toutes les langues si aucune n'est donnée
@@ -15,13 +15,14 @@ fontTools et brotli sont nécessaires (python3 -m pip install --user fonttools b
 import json
 import os
 import pathlib
+import subprocess
 import sys
 import tempfile
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 RACINE = pathlib.Path(__file__).resolve().parent.parent
-SORTIE = RACINE / "store" / "captures-legendees-1.3"
+SORTIE = RACINE / "store" / "captures-legendees-1.4"
 FOND = (250, 247, 241)
 ENCRE = (28, 25, 23)
 ORANGE = (232, 151, 46)
@@ -39,11 +40,15 @@ APPAREILS = {
     # prend un peu moins de place.
     "iphone-duo": dict(emplacement="APP_IPHONE_DUO", marge=96, corps=92, interligne=104,
                        trait=(118, 10, 34), haut=470, bas=90, rayon=34,
-                       prefixe="b-", scenes={"1-lecteur", "4-themes", "6-carte"}),
+                       prefixe="b-", scenes={"02-lecteur"}),
     # Le Duo déplié, écran intérieur 2007 × 2853 : le même emplacement, en tête. Dix captures au
-    # plus par emplacement : les sept scènes dépliées, puis trois pliées.
+    # plus par emplacement : les neuf scènes dépliées (le résumé reste au Mac), puis le lecteur plié.
     "iphone-duo-deplie": dict(emplacement="APP_IPHONE_DUO", marge=138, corps=132, interligne=150,
                               trait=(170, 13, 50), haut=660, bas=130, rayon=40, prefixe="a-"),
+    # Le Duo déplié couché (2853 × 2007, jeu de la 1.4) : comme l'iPad en paysage, la légende
+    # tient sur une ligne et la capture prend la place.
+    "iphone-duo-deplie-paysage": dict(emplacement="APP_IPHONE_DUO", marge=150, corps=124, interligne=136,
+                                      trait=(210, 9, 22), haut=350, bas=80, rayon=40, prefixe="a-"),
     "ipad-13": dict(emplacement="APP_IPAD_PRO_3GEN_129", marge=146, corps=152, interligne=172,
                     trait=(184, 9, 48), haut=630, bas=110, rayon=26),
     # L'iPad couché (conversion, discussion à côté du document) : la légende tient sur une ligne,
@@ -61,7 +66,37 @@ def police():
     f.flavor = None
     chemin = pathlib.Path(tempfile.gettempdir()) / "okia-Nunito-Black.ttf"
     f.save(chemin)
+    global COUVERTS
+    COUVERTS = set(f.getBestCmap())
     return str(chemin)
+
+
+# Les caractères de la Nunito de l'app (un sous-ensemble latin). Une légende qui en sort — cyrillique,
+# vietnamien, turc, japonais, chinois, coréen, hindi — passe par CoreText (scripts/legende-texte.swift) :
+# la police arrondie du système, et la police de repli de l'écriture, composée comme il faut.
+COUVERTS = set()
+DESSINATEUR = RACINE / "build" / "legende-texte"
+
+
+def hors_nunito(texte):
+    return any(ord(c) not in COUVERTS for c in texte if not c.isspace())
+
+
+def dessinateur():
+    source = RACINE / "scripts" / "legende-texte.swift"
+    if not DESSINATEUR.exists() or DESSINATEUR.stat().st_mtime < source.stat().st_mtime:
+        DESSINATEUR.parent.mkdir(exist_ok=True)
+        subprocess.run(["swiftc", "-O", str(source), "-o", str(DESSINATEUR)], check=True)
+    return DESSINATEUR
+
+
+def texte_coretext(legende, corps, largeur, interligne):
+    """La légende en image transparente, et son nombre de lignes."""
+    sortie = pathlib.Path(tempfile.gettempdir()) / "okia-legende.png"
+    r = subprocess.run([str(dessinateur()), legende, str(corps), str(largeur), str(interligne), str(sortie)],
+                       check=True, capture_output=True, text=True)
+    nombre = int(r.stdout.split()[0])
+    return Image.open(sortie).convert("RGBA").copy(), nombre
 
 
 def lignes(texte, fonte, largeur, dessin):
@@ -85,22 +120,37 @@ def habiller(capture, legende, p, ttf):
     toile = Image.new("RGB", (W, H), FOND)
     d = ImageDraw.Draw(toile)
     corps = p["corps"]
-    fonte = ImageFont.truetype(ttf, corps)
-    texte = lignes(legende, fonte, W - 2 * p["marge"], d)
-    # Une légende trop longue pour deux lignes réduit son corps plutôt que de manger la capture.
-    while len(texte) > 2 and corps > 60:
-        corps -= 6
+    largeur = W - 2 * p["marge"]
+    if hors_nunito(legende):
+        interligne = p["interligne"]
+        image_texte, nombre = texte_coretext(legende, corps, largeur, interligne)
+        while nombre > 2 and corps > 60:
+            corps -= 6
+            interligne = round(p["interligne"] * corps / p["corps"])
+            image_texte, nombre = texte_coretext(legende, corps, largeur, interligne)
+        y = p["haut"] - 60 - nombre * interligne - p["trait"][2] - p["trait"][1]
+        y = max(y, round(p["marge"] * 0.9))
+        toile.paste(image_texte, (p["marge"], y), image_texte)
+        # Le bas réel de l'encre, jambages compris.
+        boite = image_texte.getchannel("A").getbbox()
+        bas_texte = y + (boite[3] if boite else image_texte.height)
+    else:
         fonte = ImageFont.truetype(ttf, corps)
-        texte = lignes(legende, fonte, W - 2 * p["marge"], d)
-    interligne = round(p["interligne"] * corps / p["corps"])
-    y = p["haut"] - 60 - len(texte) * interligne - p["trait"][2] - p["trait"][1]
-    y = max(y, round(p["marge"] * 0.9))
-    bas_texte = y
-    for l in texte:
-        d.text((p["marge"], y), l, font=fonte, fill=ENCRE)
-        # Le bas réel de la ligne, jambages compris : le trait se pose dessous, sans le toucher.
-        bas_texte = d.textbbox((p["marge"], y), l, font=fonte)[3]
-        y += interligne
+        texte = lignes(legende, fonte, largeur, d)
+        # Une légende trop longue pour deux lignes réduit son corps plutôt que de manger la capture.
+        while len(texte) > 2 and corps > 60:
+            corps -= 6
+            fonte = ImageFont.truetype(ttf, corps)
+            texte = lignes(legende, fonte, largeur, d)
+        interligne = round(p["interligne"] * corps / p["corps"])
+        y = p["haut"] - 60 - len(texte) * interligne - p["trait"][2] - p["trait"][1]
+        y = max(y, round(p["marge"] * 0.9))
+        bas_texte = y
+        for l in texte:
+            d.text((p["marge"], y), l, font=fonte, fill=ENCRE)
+            # Le bas réel de la ligne, jambages compris : le trait se pose dessous, sans le toucher.
+            bas_texte = d.textbbox((p["marge"], y), l, font=fonte)[3]
+            y += interligne
     l_trait, e_trait, ecart = p["trait"]
     y_trait = bas_texte + ecart
     d.rectangle([p["marge"], y_trait, p["marge"] + l_trait, y_trait + e_trait], fill=ORANGE)
@@ -156,8 +206,8 @@ def main():
                     continue
                 q = p
                 with Image.open(capture) as brute:
-                    if appareil == "ipad-13" and brute.width > brute.height:
-                        q = APPAREILS["ipad-13-paysage"]
+                    if brute.width > brute.height and appareil + "-paysage" in APPAREILS:
+                        q = APPAREILS[appareil + "-paysage"]
                 nom = p.get("prefixe", "") + capture.name
                 habiller(capture, legende, q, ttf).save(cible / nom)
                 print(f"  ✓ {p['emplacement']}/{langue}/{nom}")
