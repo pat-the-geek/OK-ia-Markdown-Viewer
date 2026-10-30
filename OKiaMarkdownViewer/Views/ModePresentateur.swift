@@ -241,7 +241,7 @@ final class EcranExterneDelegate: NSObject, UIWindowSceneDelegate {
         MainActor.assumeIsolated {
             let seance = SeancePresentation.partage
             let w = UIWindow(windowScene: ws)
-            w.rootViewController = UIHostingController(rootView: VuePublic(seance: seance))
+            w.rootViewController = UIHostingController(rootView: VuePublic(seance: seance).modifier(LangueDeLApp()))
             w.isHidden = !seance.publicActif
             window = w
             seance.ecranExterne = true

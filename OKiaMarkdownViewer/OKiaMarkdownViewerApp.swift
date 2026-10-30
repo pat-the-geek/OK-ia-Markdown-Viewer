@@ -580,6 +580,7 @@ struct OKiaMarkdownViewerApp: App {
         WindowGroup(id: "principal", for: DocumentAOuvrir.self) { $aOuvrir in
             FenetreDocument(aOuvrir: aOuvrir, principal: store)
                 .modifier(ApparenceDeCapture())
+                .modifier(LangueDeLApp())
         }
         .commands {
             // macOS: replace the default "New" with "Ouvrir…" / "Open…" (⌘O).
@@ -613,6 +614,7 @@ struct OKiaMarkdownViewerApp: App {
         // Le mode présentateur (1.4) : la fenêtre du public, à poser sur le projecteur (Mac). Elle ne reçoit jamais de fichier ni de lien : tout va à la fenêtre principale.
         WindowGroup(id: "public") {
             FenetrePublique()
+                .modifier(LangueDeLApp())
         }
         .handlesExternalEvents(matching: [])
     }
@@ -620,6 +622,15 @@ struct OKiaMarkdownViewerApp: App {
 
 /// Captures App Store (Debug) : OKIA_CLAIR force l'apparence claire de l'app, sans toucher au
 /// réglage du Mac — les simulateurs se mettent en clair d'eux-mêmes, le Mac non.
+/// Les vues suivent la langue choisie dans l'app, pas celle de l'appareil : les symboles localisés
+/// (« AA » de la taille du texte, la lettre du livre, l'alphabet du tri) et les formats de SwiftUI
+/// avec elles (30/10/2026 : en français sur un appareil en hindi, la barre montrait « कक »).
+/// Sans choix dans l'app, c'est la langue de l'appareil, comme avant.
+struct LangueDeLApp: ViewModifier {
+    @ObservedObject private var loc = Localization.shared
+    func body(content: Content) -> some View { content.environment(\.locale, loc.locale) }
+}
+
 private struct ApparenceDeCapture: ViewModifier {
     func body(content: Content) -> some View {
         #if DEBUG
