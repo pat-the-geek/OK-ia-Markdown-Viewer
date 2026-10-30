@@ -70,7 +70,7 @@ enum RangementDocuments {
     /// le fichier.
     static func documents() -> [(url: URL, nom: String, date: Date)] {
         let dossier = dossierAnalyses()
-        guard let e = FileManager.default.enumerator(at: dossier, includingPropertiesForKeys: [.creationDateKey],
+        guard let e = FileManager.default.enumerator(at: dossier, includingPropertiesForKeys: [.creationDateKey, .isDirectoryKey],
                                                      options: []) else { return [] }
         var vus = Set<String>()
         var resultat: [(url: URL, nom: String, date: Date)] = []
@@ -78,8 +78,14 @@ enum RangementDocuments {
             let nom = u.lastPathComponent
             var reel = u
             if nom.hasPrefix(".") {
-                // Les autres fichiers et dossiers cachés restent à l'écart, comme avant.
-                guard nom.hasSuffix(".icloud") else { e.skipDescendants(); continue }
+                // Les autres fichiers et dossiers cachés restent à l'écart, comme avant. Ne sauter que
+                // l'intérieur d'un dossier : appelé sur un fichier — le `.DS_Store` que le Finder pose
+                // dès qu'on ouvre le dossier —, `skipDescendants` sautait le dossier suivant, « 2026 »,
+                // et l'accueil du Mac n'avait plus aucun document analysé (Patrick, 30/10/2026).
+                guard nom.hasSuffix(".icloud") else {
+                    if (try? u.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true { e.skipDescendants() }
+                    continue
+                }
                 reel = u.deletingLastPathComponent()
                     .appendingPathComponent(String(nom.dropFirst().dropLast(".icloud".count)))
                 guard reel.pathExtension.lowercased() == "md" else { continue }
