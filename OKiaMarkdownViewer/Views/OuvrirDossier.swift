@@ -7,15 +7,19 @@ import UIKit
 enum OuvrirDossier {
 
     /// Fichiers s'ouvre sur un dossier par son adresse `shareddocuments://` ; le Finder, sur Mac,
-    /// par l'adresse du dossier elle-même.
+    /// par l'adresse du dossier elle-même. Le Mac ouvre depuis l'app : l'accès au dossier choisi
+    /// (le coffre) doit durer jusqu'à la réponse. Refermé plus tôt, le Finder refusait (erreur -54,
+    /// B132) ; le dossier des documents analysés, dans le conteneur de l'app, n'en a pas besoin.
     @MainActor
     static func ouvrir(_ dossier: URL) {
         let acces = dossier.startAccessingSecurityScopedResource()
-        defer { if acces { dossier.stopAccessingSecurityScopedResource() } }
         if TailleAccueil.surMac {
-            UIApplication.shared.open(dossier) { ok in if !ok { dansFichiers(dossier) } }
+            UIApplication.shared.open(dossier) { _ in
+                if acces { dossier.stopAccessingSecurityScopedResource() }
+            }
         } else {
             dansFichiers(dossier)
+            if acces { dossier.stopAccessingSecurityScopedResource() }
         }
     }
 
