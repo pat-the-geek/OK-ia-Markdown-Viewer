@@ -902,7 +902,8 @@
     }
 
     var chain = Promise.resolve();
-    rawSlides.forEach(function (md) {
+    // Les diapositives du document, sans le découpage des longs tableaux propre à cet écran.
+    rawSlidesOrigine.forEach(function (md) {
       chain = chain.then(function () {
         return window.OKIA.renderFragment(tmp, md).then(function () {
           // Le modèle d'export se lit dans le DOM : on y repose la traduction avant de
@@ -1075,6 +1076,86 @@
     }
   }
 
+  /* ---- un long tableau sur plusieurs pages --------------------------------- */
+  // Un tableau trop long pour sa diapositive était réduit jusqu'à l'illisible : la liste des
+  // chansons, sur le Duo replié, en colonne de timbres (Patrick, 31/10/2026). Une diapositive faite
+  // d'un tableau (avec son titre, un texte court, ses notes ; sans image ni diagramme) est mesurée
+  // hors écran, sur une toile de référence ; si elle ne tient pas, ses rangées vont sur
+  // plusieurs pages, chacune avec le titre et l'en-tête du tableau. Les notes restent à la
+  // première. L'export PowerPoint garde la diapositive entière (`rawSlidesOrigine`).
+  var rawSlidesOrigine = [];
+
+  // La diapositive en trois parts autour de son tableau, ou null.
+  function autourDuTableau(md) {
+    if (/!\[|```|~~~|<(img|svg|iframe)/i.test(md)) return null;
+    var lignes = md.split('\n'), debut = -1, fin = -1;
+    for (var i = 0; i < lignes.length; i++) {
+      var tableau = /^\s*\|.*\|\s*$/.test(lignes[i]);
+      if (tableau && debut < 0) debut = i;
+      if (!tableau && debut >= 0 && fin < 0) fin = i;
+      if (tableau && fin >= 0) return null;                     // deux tableaux : on laisse
+    }
+    if (debut < 0) return null;
+    if (fin < 0) fin = lignes.length;
+    if (fin - debut < 4 || !/^\s*\|[\s:|-]+\|\s*$/.test(lignes[debut + 1])) return null;
+    return { avant: lignes.slice(0, debut).join('\n'), entete: lignes.slice(debut, debut + 2),
+             rangees: lignes.slice(debut + 2, fin), apres: lignes.slice(fin).join('\n') };
+  }
+
+  function decouperTableaux() {
+    if (!deck || !window.marked) return false;
+    // Une toile de référence, debout, la plus étroite : le même découpage sur tous les écrans d'une
+    // séance (le présentateur, le public, l'aperçu suivent la même diapositive par son numéro). En
+    // paysage, chaque page tient d'autant mieux, le texte y étant plus large.
+    var cw = 640, ch = 960;
+    var place = (ch - PAD_V * 2) * 0.92;                       // une marge : les polices, les arrondis
+    var mesure = document.createElement('section');
+    mesure.className = 'slide';
+    mesure.style.visibility = 'hidden';
+    var toile = document.createElement('div');
+    toile.className = 'slide-canvas';
+    toile.style.width = cw + 'px';
+    toile.style.height = ch + 'px';
+    var inner = document.createElement('div');
+    inner.className = 'slide-inner markdown-body';
+    toile.appendChild(inner);
+    mesure.appendChild(toile);
+    deck.appendChild(mesure);
+    var parse = window.marked.parse || window.marked;
+    var change = false, resultat = [];
+    rawSlides.forEach(function (md) {
+      var t = autourDuTableau(md);
+      if (!t) { resultat.push(md); return; }
+      inner.innerHTML = parse(md, { gfm: true, breaks: true });
+      if (inner.scrollHeight <= place) { resultat.push(md); return; }
+      var trs = inner.querySelectorAll('tbody > tr');
+      if (trs.length !== t.rangees.length) { resultat.push(md); return; }
+      var hauteurs = Array.prototype.map.call(trs, function (tr) { return tr.getBoundingClientRect().height; });
+      var fixe = inner.scrollHeight - hauteurs.reduce(function (a, b) { return a + b; }, 0);
+      // Des pages remplies tour à tour, une rangée au moins chacune.
+      var pages = [[]], h = fixe;
+      t.rangees.forEach(function (r, i) {
+        if (pages[pages.length - 1].length && h + hauteurs[i] > place) { pages.push([]); h = fixe; }
+        pages[pages.length - 1].push(r);
+        h += hauteurs[i];
+      });
+      if (pages.length < 2) { resultat.push(md); return; }
+      // Les notes (commentaires HTML) restent à la première page ; le texte d'après, à la dernière.
+      var notes = (t.apres.match(/<!--[\s\S]*?-->/g) || []).join('\n\n');
+      var reste = t.apres.replace(/<!--[\s\S]*?-->/g, '').trim();
+      pages.forEach(function (rangees, i) {
+        var bloc = [t.avant.trim(), t.entete.concat(rangees).join('\n')];
+        if (i === pages.length - 1 && reste) bloc.push(reste);
+        if (i === 0 && notes) bloc.push(notes);
+        resultat.push(bloc.filter(function (b) { return b; }).join('\n\n'));
+      });
+      change = true;
+    });
+    deck.removeChild(mesure);
+    if (change) rawSlides = resultat;
+    return change;
+  }
+
   /* ---- lifecycle ---------------------------------------------------------- */
 
   function build() {
@@ -1127,6 +1208,7 @@
 
     rawSlides = splitSlides(md || '').filter(function (s) { return !MASQUEE.test(s); });
     if (!rawSlides.length) rawSlides = [' '];
+    rawSlidesOrigine = rawSlides.slice();
     current = 0;
     build();
 
@@ -1141,6 +1223,8 @@
     if (demandee) transition = demandee;
     buildMenu();
     setTheme(theme);   // apply the theme class to <body>
+    // Les longs tableaux sur plusieurs pages, mesurés avec le thème choisi.
+    if (decouperTableaux()) build();
 
     sections[0].classList.add('active');
     updateChrome();
