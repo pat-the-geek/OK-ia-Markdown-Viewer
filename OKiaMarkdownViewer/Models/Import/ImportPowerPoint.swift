@@ -83,6 +83,8 @@ enum ImportPowerPoint {
         let page: (Double, Double)
         var lignes: [String] = []
         var titre: String?
+        /// Les titres déjà placés en tête de la diapositive.
+        var titresEnTete = 0
 
         mutating func parcourir(_ arbre: NoeudXML, premiere: Bool) {
             for forme in arbre.enfants {
@@ -107,7 +109,12 @@ enum ImportPowerPoint {
             if genre == "title" || genre == "ctrTitle" {
                 let t = paragraphes.map(\.0).joined(separator: " ")
                 if titre == nil { titre = t }
-                lignes.append((genre == "ctrTitle" || premiere ? "# " : "## ") + MarkdownImport.echapper(t))
+                // Le titre en tête de sa diapositive, quel que soit l'ordre des formes : ajouté en
+                // dernier dans PowerPoint, il tombait sous le contenu, et se lisait comme le titre
+                // de la diapositive suivante (Patrick, 31/10/2026, « Discographie (2/2) »).
+                lignes.insert((genre == "ctrTitle" || premiere ? "# " : "## ") + MarkdownImport.echapper(t),
+                              at: titresEnTete)
+                titresEnTete += 1
                 return
             }
             // Le corps d'un espace réservé est en puces, sauf avis contraire du paragraphe ; une zone
