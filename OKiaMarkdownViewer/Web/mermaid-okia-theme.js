@@ -80,7 +80,92 @@
     scope.querySelectorAll('foreignObject span, foreignObject p, foreignObject div, foreignObject label')
       .forEach(function(t){t.style.setProperty('color',textColor,'important');});}
 
+  /*
+   * Quadrants : écarte les étiquettes qui se chevauchent. Mermaid pose toujours le nom d'un point
+   * juste sous lui ; deux points proches superposent leurs noms. Chaque étiquette essaie, dans
+   * l'ordre, dessous, dessus, à droite, à gauche puis les diagonales, et garde la première place
+   * qui ne touche ni une autre étiquette, ni un point, ni le nom d'un quadrant, sans sortir du
+   * cadre. Faute de place libre, la moins gênante : un texte sur un texte pèse plus qu'un texte
+   * sur un point, et une étiquette ne sort jamais du dessin (elle y serait coupée). Repart toujours de la position du point :
+   * on peut l'appeler plusieurs fois (changement de langue, diagramme d'abord masqué).
+   */
+  window.separerEtiquettesQuadrant = function (container) {
+    var svgs = container.matches && container.matches('svg[aria-roledescription="quadrantChart"]')
+      ? [container] : container.querySelectorAll('svg[aria-roledescription="quadrantChart"]');
+    Array.prototype.forEach.call(svgs, function (svg) {
+      var points = svg.querySelectorAll('g.data-point');
+      if (!points.length) return;
+      var ecart = 3;
+      function boite(el, tx, ty) {
+        var b = el.getBBox();
+        return { x: b.x + tx, y: b.y + ty, w: b.width, h: b.height };
+      }
+      function touche(a, b) {
+        return a.x < b.x + b.w + ecart && b.x < a.x + a.w + ecart &&
+               a.y < b.y + b.h + ecart && b.y < a.y + a.h + ecart;
+      }
+      // Le cadre : l'union des quatre rectangles des quadrants.
+      var cadre = null;
+      svg.querySelectorAll('g.quadrants rect').forEach(function (r) {
+        var b = r.getBBox();
+        if (!cadre) { cadre = { x0: b.x, y0: b.y, x1: b.x + b.width, y1: b.y + b.height }; return; }
+        cadre.x0 = Math.min(cadre.x0, b.x); cadre.y0 = Math.min(cadre.y0, b.y);
+        cadre.x1 = Math.max(cadre.x1, b.x + b.width); cadre.y1 = Math.max(cadre.y1, b.y + b.height);
+      });
+      if (!cadre || cadre.x1 - cadre.x0 <= 0) return;   // pas encore mis en page (masqué)
+      var vb = svg.viewBox && svg.viewBox.baseVal;
+      var dessin = vb && vb.width ? { x0: vb.x, y0: vb.y, x1: vb.x + vb.width, y1: vb.y + vb.height } : cadre;
+      function dehors(b, z) { return b.x < z.x0 || b.x + b.w > z.x1 || b.y < z.y0 || b.y + b.h > z.y1; }
+      // Obstacles fixes : les noms des quadrants et tous les points.
+      var obstacles = [];
+      svg.querySelectorAll('g.quadrants text').forEach(function (t) {
+        var m = /translate\(\s*([-\d.]+)[ ,]+([-\d.]+)/.exec(t.getAttribute('transform') || '');
+        var o = boite(t, m ? +m[1] : 0, m ? +m[2] : 0); o.poids = 2; obstacles.push(o);
+      });
+      var etiquettes = [];
+      Array.prototype.forEach.call(points, function (p) {
+        var c = p.querySelector('circle'), t = p.querySelector('text');
+        if (!c || !t) return;
+        var cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy'), r = +c.getAttribute('r') || 5;
+        obstacles.push({ x: cx - r, y: cy - r, w: 2 * r, h: 2 * r, poids: 1, cx: cx, cy: cy });
+        etiquettes.push({ t: t, cx: cx, cy: cy, r: r });
+      });
+      var places = [];
+      etiquettes.forEach(function (e) {
+        var d = e.r + 2;
+        var essais = [
+          [0, d, 'middle', 'hanging'], [0, -d, 'middle', 'auto'],
+          [d + 2, 0, 'start', 'middle'], [-d - 2, 0, 'end', 'middle'],
+          [d, d, 'start', 'hanging'], [-d, d, 'end', 'hanging'],
+          [d, -d, 'start', 'auto'], [-d, -d, 'end', 'auto']
+        ];
+        var meilleur = null;
+        for (var i = 0; i < essais.length; i++) {
+          var s = essais[i], tx = e.cx + s[0], ty = e.cy + s[1];
+          e.t.setAttribute('text-anchor', s[2]);
+          e.t.setAttribute('dominant-baseline', s[3]);
+          var b = boite(e.t, tx, ty);
+          if (!b.w) return;                                // pas mesurable : on laisse Mermaid
+          var gene = 0;
+          obstacles.concat(places).forEach(function (o) {
+            if (o.w && touche(b, o) && !(o.cx === e.cx && o.cy === e.cy)) gene += o.poids;
+          });
+          if (dehors(b, dessin)) gene += 100;
+          else if (dehors(b, cadre)) gene += 0.5;
+          if (!meilleur || gene < meilleur.gene) meilleur = { gene: gene, s: s, tx: tx, ty: ty, b: b };
+          if (gene === 0) break;
+        }
+        e.t.setAttribute('text-anchor', meilleur.s[2]);
+        e.t.setAttribute('dominant-baseline', meilleur.s[3]);
+        e.t.setAttribute('transform', 'translate(' + meilleur.tx + ', ' + meilleur.ty + ') rotate(0)');
+        meilleur.b.poids = 2;
+        places.push(meilleur.b);
+      });
+    });
+  };
+
   window.applyMermaidTextColors=function(container,source){
+    try{window.separerEtiquettesQuadrant(container);}catch(e){}
     if(!source)return;var m;
     var classDefRegex=/^\s*classDef\s+(\S+)\s+([^\n]+)/gm;
     while((m=classDefRegex.exec(source))!==null){
