@@ -255,7 +255,7 @@ enum TailleAccueil {
 /// La grille d'une section de l'accueil : des cartes de 190 à 260 points, autant que la largeur
 /// en admet ; sur iPhone (et le Duo replié), de 140 à 220 points, deux par rangée au moins. Sur
 /// Mac, à la taille choisie (`TailleAccueil`).
-/// Dans la liste, sur le fond de la liste.
+/// Hors d'une `List` (voir `EmptyStateView.body`), sur le fond groupé de l'accueil.
 struct GrilleCartes<Contenu: View>: View {
     @Environment(\.horizontalSizeClass) private var tailleHorizontale
     @AppStorage(TailleAccueil.cle) private var taille = 1.0
@@ -267,9 +267,54 @@ struct GrilleCartes<Contenu: View>: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: (etroit ? 140 : 190) * k, maximum: (etroit ? 220 : 260) * k),
                                      spacing: (etroit ? 14 : 20) * k, alignment: .top)],
                   alignment: .leading, spacing: (etroit ? 18 : 24) * k, content: contenu)
-            .padding(.vertical, 6)
-            .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 12, trailing: 4))
-            .listRowBackground(Color.clear)
+            .padding(EdgeInsets(top: 14, leading: 4, bottom: 18, trailing: 4))
+    }
+}
+
+extension View {
+    /// L'en-tête d'une section de l'accueil. En cartes, l'accueil n'est plus une `List`, qui
+    /// mettait ses en-têtes en forme : on reprend sa forme, en retrait des cartes.
+    func enTeteAccueil() -> some View { modifier(EnTeteAccueil()) }
+
+    /// Une ligne de l'accueil qui n'est pas une carte (choisir le coffre, coffre vide) : en cartes,
+    /// le fond arrondi qu'elle avait dans la liste.
+    func ligneAccueil() -> some View { modifier(LigneAccueil()) }
+}
+
+private struct EnTeteAccueil: ViewModifier {
+    @Environment(\.accueilEnGrille) private var enGrille
+
+    func body(content: Content) -> some View {
+        if enGrille {
+            // Pas de `foregroundStyle` ici : il ôterait aux boutons de l'en-tête (dossier, réglages du
+            // coffre) la couleur de l'app ; chaque texte d'en-tête porte le sien.
+            content
+                .font(.headline)
+                .padding(.horizontal, 17)
+                .padding(.top, 28)
+                .padding(.bottom, 11)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            content
+        }
+    }
+}
+
+private struct LigneAccueil: ViewModifier {
+    @Environment(\.accueilEnGrille) private var enGrille
+
+    func body(content: Content) -> some View {
+        if enGrille {
+            content
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(uiColor: .secondarySystemGroupedBackground),
+                            in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .padding(.top, 8)
+        } else {
+            content
+        }
     }
 }
 

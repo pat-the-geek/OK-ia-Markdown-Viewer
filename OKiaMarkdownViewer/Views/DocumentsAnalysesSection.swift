@@ -42,9 +42,11 @@ struct DocumentsAnalysesSection: View {
                                 BoutonDossier { await Task.detached { RangementDocuments.dossierAnalyses() }.value }
                                     .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
                                 Text(tr("Documents analysés") + " · " + groupe.titre)
+                                    .foregroundStyle(.secondary)
                             }
+                            .enTeteAccueil()
                         } else {
-                            Text(groupe.titre)
+                            Text(groupe.titre).foregroundStyle(.secondary).enTeteAccueil()
                         }
                     } footer: {
                         if rang == groupes.count - 1, documents.count > plafond {
@@ -52,6 +54,9 @@ struct DocumentsAnalysesSection: View {
                             Text(AchatAnalytic.surMac
                                  ? tr("Les plus anciens sont dans le Finder : iCloud Drive, dossier « md Viewer ».")
                                  : tr("Les plus anciens sont dans Fichiers, dossier « md Viewer »."))
+                                .font(enGrille ? .footnote : nil)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, enGrille ? 17 : 0)
                         }
                     }
                 }

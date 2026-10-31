@@ -24,11 +24,13 @@ struct VaultSectionView: View {
                     Label(tr("Choisir le dossier du coffre…"), systemImage: "folder.badge.gearshape")
                 }
                 .tint(orange)
+                .ligneAccueil()
             } else if vault.reports.isEmpty {
                 Text(tr("Aucun rapport trouvé dans les dossiers « %@ » de « %@ ».",
                         vault.pattern, vault.folderName ?? ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .ligneAccueil()
             }
         } header: {
             HStack(spacing: 12) {
@@ -37,6 +39,7 @@ struct VaultSectionView: View {
                         .padding(.trailing, -4)
                 }
                 Text(tr("Coffre") + (vault.folderName.map { " · \($0)" } ?? ""))
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Button { patternDraft = vault.pattern; showSettings = true } label: {
                     Image(systemName: "slider.horizontal.3")
@@ -46,18 +49,22 @@ struct VaultSectionView: View {
                     settingsControls.presentationCompactAdaptation(.popover)
                 }
                 Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
+                    .fontWeight(.regular)
             }
             .tint(orange)
             .textCase(nil)
+            .enTeteAccueil()
         }
         if vault.hasFolder {
             ForEach(groupes) { groupe in
-                Section(groupe.titre) {
+                Section {
                     if enGrille {
                         GrilleCartes { ForEach(groupe.elements) { report in carte(report) } }
                     } else {
                         ForEach(groupe.elements) { report in ligne(report) }
                     }
+                } header: {
+                    Text(groupe.titre).foregroundStyle(.secondary).enTeteAccueil()
                 }
             }
         }

@@ -32,9 +32,11 @@ struct EmptyStateView: View {
 
     struct Suppression: Identifiable {
         let nom: String
+        /// Ce qui distingue deux documents du même nom : sa date (et, au coffre, son dossier).
+        let precision: String
         let duCoffre: Bool
         let action: () throws -> Void
-        var id: String { nom }
+        let id = UUID()
     }
 
     private var recents: [RecentFile] { recentsStore.items }
@@ -44,42 +46,24 @@ struct EmptyStateView: View {
         // L'allure d'une app, pas d'une page : la barre du système porte les actions, et les
         // fichiers sont des listes groupées — la maison du Mac, de l'iPad et de l'iPhone.
         NavigationStack {
-            List {
-                if recents.isEmpty && !vault.hasFolder {
-                    accueilVide
-                }
-                ForEach(Array(groupesRecents.enumerated()), id: \.element.id) { rang, groupe in
-                    Section {
-                        if enGrille {
-                            GrilleCartes { ForEach(groupe.elements) { item in carteRecente(item) } }
-                        } else {
-                            ForEach(groupe.elements) { item in ligneRecente(item) }
-                                .onDelete { positions in positions.map { groupe.elements[$0] }.forEach(recentsStore.remove) }
-                        }
-                    } header: {
-                        Text(rang == 0 ? tr("Récents") + " · " + groupe.titre : groupe.titre)
+            // Les cartes hors d'une `List` : une rangée de cartes y est UNE ligne, et la liste ne
+            // gardait qu'un menu contextuel pour toute la ligne, celui d'une seule carte — « Supprimer »
+            // sur une carte supprimait sa voisine (Patrick, 31/10/2026, deux documents du même nom).
+            Group {
+                if enGrille {
+                    ScrollView {
+                        // Le premier en-tête, plus près du titre, comme dans la liste.
+                        LazyVStack(alignment: .leading, spacing: 0) { sections }
+                            .padding(.horizontal, 16)
+                            .padding(.top, -19)
+                            .padding(.bottom, 20)
                     }
-                }
-                DocumentsAnalysesSection(documents: analyses, ouvrir: onOpenAnalyse, supprimer: { d in
-                    aSupprimer = Suppression(nom: d.nom, duCoffre: false) {
-                        RecentFilesStore.partage.retirer(url: d.url)
-                        try SuppressionDocument.supprimer(d.url)
-                        analyses.removeAll { $0.url == d.url }
-                        RechercheCoffre.partage.indexerSpotlight()
-                    }
-                })
-                VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault, onDelete: { r in
-                    aSupprimer = Suppression(nom: (r.name as NSString).deletingPathExtension, duCoffre: true) {
-                        try vault.supprimer(r)
-                    }
-                })
-                Section {
-                    EmptyView()
-                } footer: {
-                    signature
+                    .background(Color(uiColor: .systemGroupedBackground))
+                } else {
+                    List { sections }
+                        .listStyle(.insetGrouped)
                 }
             }
-            .listStyle(.insetGrouped)
             .modifier(TexteAccueil(taille: taille))
             .environment(\.accueilEnGrille, enGrille)
             .navigationTitle("md Viewer")
@@ -99,9 +83,9 @@ struct EmptyStateView: View {
             }
             Button(tr("Annuler"), role: .cancel) {}
         } message: { s in
-            Text(s.duCoffre
+            Text(s.precision + "\n" + (s.duCoffre
                  ? tr("Le rapport est retiré du coffre « %@ », sur tous vos appareils.", vault.folderName ?? "")
-                 : tr("Le document est retiré du dossier « Documents analysés », sur tous vos appareils."))
+                 : tr("Le document est retiré du dossier « Documents analysés », sur tous vos appareils.")))
         }
         .alert(tr("Impossible de supprimer le document."),
                isPresented: Binding(get: { erreurSuppression != nil }, set: { if !$0 { erreurSuppression = nil } })) {
@@ -111,6 +95,52 @@ struct EmptyStateView: View {
         }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
+    }
+
+    /// La date entière d'un document, dans la confirmation de sa suppression.
+    private func dateComplete(_ date: Date) -> String {
+        date.formatted(.dateTime.locale(Localization.shared.locale).day().month(.abbreviated).year().hour().minute())
+    }
+
+    /// Les sections de l'accueil, les mêmes en cartes et en liste.
+    @ViewBuilder private var sections: some View {
+        if recents.isEmpty && !vault.hasFolder {
+            accueilVide
+        }
+        ForEach(Array(groupesRecents.enumerated()), id: \.element.id) { rang, groupe in
+            Section {
+                if enGrille {
+                    GrilleCartes { ForEach(groupe.elements) { item in carteRecente(item) } }
+                } else {
+                    ForEach(groupe.elements) { item in ligneRecente(item) }
+                        .onDelete { positions in positions.map { groupe.elements[$0] }.forEach(recentsStore.remove) }
+                }
+            } header: {
+                Text(rang == 0 ? tr("Récents") + " · " + groupe.titre : groupe.titre)
+                    .foregroundStyle(.secondary)
+                    .enTeteAccueil()
+            }
+        }
+        DocumentsAnalysesSection(documents: analyses, ouvrir: onOpenAnalyse, supprimer: { d in
+            aSupprimer = Suppression(nom: d.nom, precision: dateComplete(d.date), duCoffre: false) {
+                RecentFilesStore.partage.retirer(url: d.url)
+                try SuppressionDocument.supprimer(d.url)
+                analyses.removeAll { $0.url == d.url }
+                RechercheCoffre.partage.indexerSpotlight()
+            }
+        })
+        VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault, onDelete: { r in
+            aSupprimer = Suppression(nom: (r.name as NSString).deletingPathExtension,
+                                     precision: r.subfolder + " · " + dateComplete(r.modified),
+                                     duCoffre: true) {
+                try vault.supprimer(r)
+            }
+        })
+        Section {
+            EmptyView()
+        } footer: {
+            signature
+        }
     }
 
     @ToolbarContentBuilder private var barreAccueil: some ToolbarContent {
