@@ -32,7 +32,10 @@ enum ImportPowerPoint {
             if titre == nil { titre = lu.titre }
             if let t = Self.transition(diapo) { transitions[t, default: 0] += 1 }
 
-            var bloc = lu.lignes.joined(separator: "\n\n")
+            // Une zone de texte libre donne ses paragraphes d'un bloc : on les reprend un à un pour
+            // y chercher les tableaux (nom, date…).
+            var bloc = MarkdownImport.tableauxDeParagraphes(lu.lignes.flatMap { $0.components(separatedBy: "\n\n") })
+                .joined(separator: "\n\n")
             let comms = Self.commentaires(partie: partie, rels: relsDiapo, zip: zip, auteurs: auteurs)
             // Chaque commentaire, une consigne possible : sa marque suit le contenu de la diapositive.
             for c in comms {

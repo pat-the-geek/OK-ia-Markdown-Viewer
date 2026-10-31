@@ -41,7 +41,7 @@ enum ImportWord {
 
         let titre = Self.titreDuDocument(zip) ?? lu.titre ?? (nom as NSString).deletingPathExtension
         var md = MarkdownImport.entete(titre: titre, source: nom, genre: "document")
-        md += "\n\n" + lu.lignes.joined(separator: "\n\n") + "\n"
+        md += "\n\n" + MarkdownImport.tableauxDeParagraphes(lu.lignes).joined(separator: "\n\n") + "\n"
         if !lu.definitionsDeNotes.isEmpty { md += "\n" + lu.definitionsDeNotes.joined(separator: "\n") + "\n" }
         if !lu.reservoir.definitions.isEmpty { md += "\n" + lu.reservoir.definitions.joined(separator: "\n") + "\n" }
         var parts = [tr("%d paragraphes", lu.paragraphes)]

@@ -192,6 +192,59 @@ enum MarkdownImport {
         return r.joined(separator: "\n")
     }
 
+    /// Des paragraphes courts qui répètent un même motif deviennent un tableau. Une discographie
+    /// de PowerPoint, une zone de texte par information — « Please Please Me », « 22 mars 1963 »,
+    /// « With the Beatles »… —, tombait en une longue colonne de paragraphes (Patrick, 31/10/2026).
+    /// Le motif se lit au genre de chaque paragraphe (date, nombre, texte) : de deux à cinq
+    /// colonnes, au moins trois rangées, du texte et au moins une colonne de dates ou de nombres —
+    /// sans eux, rien ne dit où commence une rangée. Le tableau n'a pas d'en-tête : sa ligne de
+    /// titres reste vide, et la page ne la montre pas (style.css).
+    static func tableauxDeParagraphes(_ blocs: [String]) -> [String] {
+        var r: [String] = []
+        var i = 0
+        while i < blocs.count {
+            var suite: [String] = []
+            var j = i
+            while j < blocs.count, paragrapheCourt(blocs[j]) { suite.append(blocs[j]); j += 1 }
+            let genres = suite.map { genreDeParagraphe($0) }
+            var meilleur: (k: Int, rangees: Int)?
+            for k in 2...5 {
+                var n = 0
+                while n < genres.count, genres[n] == genres[n % k] { n += 1 }
+                let rangees = n / k, motif = Array(genres.prefix(k))
+                guard rangees >= 3, motif.contains("t"), motif.contains(where: { $0 != "t" }) else { continue }
+                if meilleur == nil || rangees * k > meilleur!.rangees * meilleur!.k { meilleur = (k, rangees) }
+            }
+            guard let m = meilleur else { r.append(blocs[i]); i += 1; continue }
+            var lignes = ["| " + Array(repeating: " ", count: m.k).joined(separator: " | ") + " |",
+                          "| " + Array(repeating: "---", count: m.k).joined(separator: " | ") + " |"]
+            for rang in 0..<m.rangees {
+                lignes.append("| " + suite[rang * m.k ..< (rang + 1) * m.k].joined(separator: " | ") + " |")
+            }
+            r.append(lignes.joined(separator: "\n"))
+            i += m.rangees * m.k
+        }
+        return r
+    }
+
+    /// Un paragraphe simple et court : ni titre, ni liste, ni image, ni tableau, ni bloc HTML.
+    private static func paragrapheCourt(_ b: String) -> Bool {
+        let t = b.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty, t.count <= 90, !t.contains("\n") else { return false }
+        if let c = t.first, "#-*+!|<>`".contains(c) { return false }
+        return t.range(of: #"^\d+[.)]\s"#, options: .regularExpression) == nil
+    }
+
+    /// « d » une date, « n » un nombre (montant, pourcentage, mesure), « t » du texte.
+    private static func genreDeParagraphe(_ b: String) -> String {
+        let t = b.replacingOccurrences(of: "\\", with: "").trimmingCharacters(in: .whitespaces)
+        let date = #"^(\d{1,2}(er)?\.?\s+)?(\p{L}[\p{L}.]*\s+)?(1[0-9]{3}|20[0-9]{2})$|^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$"#
+        if t.count <= 32, t.range(of: date, options: .regularExpression) != nil { return "d" }
+        let nombre = #"^(CHF|Fr\.?|€|\$|£)?\s?[-+−]?\d[\d\s'’.,]*\s?(%|‰|CHF|Fr\.?|€|\$|£|k|M|Mio|Mrd|kg|g|t|km|m|cm|h|min|s|ans?|jours?|pts?|points?)?$"#
+        if t.count <= 24, t.range(of: nombre, options: [.regularExpression, .caseInsensitive]) != nil { return "n" }
+        return "t"
+    }
+
     /// L'en-tête YAML d'un document importé.
     static func entete(titre: String, source: String, genre: String, extra: [String: String] = [:]) -> String {
         let jour = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
