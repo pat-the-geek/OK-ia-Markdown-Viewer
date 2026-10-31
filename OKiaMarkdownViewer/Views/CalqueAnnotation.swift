@@ -44,6 +44,7 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
 
     func installer(sur vue: WKWebView) {
         webView = vue
+        JournalAnnotations.noter("calque posé sur \(JournalAnnotations.vue(vue)) pour #\(JournalAnnotations.nom(annotations)) (diaporama \(JournalAnnotations.nom(annotations.diaporama)))")
         let defilement = vue.scrollView
         canvas.backgroundColor = .clear
         canvas.isOpaque = false
@@ -157,7 +158,10 @@ final class CalqueAnnotation: NSObject, PKCanvasViewDelegate {
         // On souligne SOUS la ligne : le texte visé est juste au-dessus du trait.
         if annotations.outil == .souligner { pts = [premier, dernier].map { CGPoint(x: $0.x, y: $0.y - 9) } }
         else { pts = [premier, dernier] }
-        guard let vue = webView, let ancre = await PontAnnotations.ancrerTexte(vue, de: pts[0], a: pts[1]) else { return }
+        guard let vue = webView else { return }
+        let ancreTrouvee = await PontAnnotations.ancrerTexte(vue, de: pts[0], a: pts[1])
+        JournalAnnotations.noter("trait \(annotations.outil.rawValue) sur \(JournalAnnotations.vue(vue)) → " + (ancreTrouvee.map { "« \($0.exact.prefix(30)) »" } ?? "aucun texte"))
+        guard let ancre = ancreTrouvee else { return }
         let genre: Annotation.Genre = annotations.outil == .souligner ? .souligne : .surligne
         annotations.ajouter(Annotation(type: genre, couleur: annotations.couleur, ancre: ancre))
     }
@@ -379,14 +383,24 @@ struct PaletteAnnotation: View {
         Divider().frame(height: 26).padding(.horizontal, marge)
     }
 
-    private func boutonTermine(_ cote: CGFloat) -> some View {
-        Button { if let terminer { terminer() } else { annotations.actif = false } } label: {
+    @ViewBuilder private func boutonTermine(_ cote: CGFloat) -> some View {
+        let bouton = Button { if let terminer { terminer() } else { annotations.actif = false } } label: {
             Image(systemName: "checkmark")
                 .font(.system(size: 17, weight: .bold))
                 .frame(width: cote, height: 40)
         }
         .tint(orange)
         .accessibilityLabel(tr("Terminé"))
+        // Builds de test : un appui long copie le journal des annotations (`JournalAnnotations`).
+        if JournalAnnotations.actif {
+            bouton.contextMenu {
+                Button { UIPasteboard.general.string = JournalAnnotations.texte } label: {
+                    Label("Copier le diagnostic des annotations", systemImage: "stethoscope")
+                }
+            }
+        } else {
+            bouton
+        }
     }
 
     private func nomCouleur(_ c: Annotation.Couleur) -> String {

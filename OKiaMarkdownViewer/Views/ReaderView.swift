@@ -503,7 +503,10 @@ struct ReaderView: View {
                              sourceMarkdown: document.text)
         }
         .sheet(isPresented: $showConverter, onDismiss: {
-            if let d = presentationEnAttente { presentationEnAttente = nil; presentationConvertie = d }
+            if let d = presentationEnAttente {
+                JournalAnnotations.noter("conversion → diaporama (feuille) « \(d.filename) »")
+                presentationEnAttente = nil; presentationConvertie = d
+            }
         }) {
             PresentationConverterView(document: document,
                                       titreAffiche: title.isEmpty ? document.filename : title,
@@ -1007,7 +1010,10 @@ struct ReaderView: View {
                 // La présentation se construit à côté du rapport, qu'on continue de lire.
                 PresentationConverterView(document: document,
                                           titreAffiche: title.isEmpty ? document.filename : title,
-                                          onPresenter: { d in presentationConvertie = d },
+                                          onPresenter: { d in
+                                              JournalAnnotations.noter("conversion → diaporama (seconde partie) « \(d.filename) »")
+                                              presentationConvertie = d
+                                          },
                                           conversion: conversion)
             case .entites:
                 EntitesView(document: document, analyse: analyseEntites, surChoix: chercherEntite)
@@ -1100,7 +1106,7 @@ struct ReaderView: View {
 
     private var boutonDiaporama: some View {
         // Diaporama — present the document as full-screen slides (split on "---").
-        Button { presenting = true } label: { Image(systemName: "play.rectangle") }
+        Button { presenting = true } label: { Label(tr("Diaporama"), systemImage: "play.rectangle") }
             .teinteBarre()
             .accessibilityLabel(tr("Diaporama"))
     }
@@ -1121,7 +1127,7 @@ struct ReaderView: View {
                     Label(tr("Convertir en présentation"), systemImage: "rectangle.on.rectangle.angled")
                 }
             } label: {
-                Image(systemName: "apple.intelligence")
+                Label("Apple Intelligence", systemImage: "apple.intelligence")
             }
             .teinteBarre()
             .accessibilityLabel("Apple Intelligence")
@@ -1129,7 +1135,7 @@ struct ReaderView: View {
     }
 
     private var boutonApparence: some View {
-        Button { showTextSize = true } label: { Image(systemName: "textformat.size") }
+        Button { showTextSize = true } label: { Label(tr("Apparence"), systemImage: "textformat.size") }
             .teinteBarre()
             .accessibilityLabel(tr("Apparence"))
             .popover(isPresented: $showTextSize) {
@@ -1139,7 +1145,7 @@ struct ReaderView: View {
     }
 
     private var boutonSommaire: some View {
-        Button { ouvrir(.sommaire) } label: { Image(systemName: "list.bullet") }
+        Button { ouvrir(.sommaire) } label: { Label(tr("Sommaire"), systemImage: "list.bullet") }
             .teinteBarre()
             .disabled(web.toc.isEmpty)
             .accessibilityLabel(tr("Sommaire (accessibilité)"))
@@ -1149,7 +1155,7 @@ struct ReaderView: View {
     private var boutonEntites: some View {
         // Ouvertes à côté du document, un second toucher les referme.
         Button { if panneauDuo == .entites { panneauDuo = nil } else { ouvrir(.entites) } } label: {
-            Image(systemName: panneauDuo == .entites ? "person.2.fill" : "person.2")
+            Label(tr("Entités"), systemImage: panneauDuo == .entites ? "person.2.fill" : "person.2")
         }
             .teinteBarre()
             .accessibilityLabel(tr("Entités"))
@@ -1217,9 +1223,12 @@ struct ReaderView: View {
     }
 
     /// Option Analytic (1.4) : le mode « Annoter », dans le livre aussi — sur ses deux pages.
+    /// Les boutons de la colonne ont un titre, que la barre n'affiche pas : sur le Duo replié, ceux
+    /// qui ne tiennent pas passent dans le menu « … » du système, qui laissait de côté un bouton
+    /// sans titre — Annoter n'y était plus (Patrick, 31/10/2026).
     private var boutonAnnoter: some View {
         Button { annoter() } label: {
-            Image(systemName: annotationsDoc.actif ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
+            Label(tr("Annoter"), systemImage: annotationsDoc.actif ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
         }
         .teinteBarre()
         .accessibilityLabel(tr("Annoter"))
@@ -1277,7 +1286,7 @@ struct ReaderView: View {
     /// Partager — un menu, d'un seul toucher. Le dialogue d'avant ne s'affichait pas sur iPad ni
     /// sur le Duo (Patrick) : sans ancre, sa bulle n'avait nulle part où se poser.
     private var boutonPartage: some View {
-        Menu { elementsPartage } label: { Image(systemName: "square.and.arrow.up") }
+        Menu { elementsPartage } label: { Label(tr("Partager"), systemImage: "square.and.arrow.up") }
             .teinteBarre()
             .accessibilityLabel(tr("Partager"))
     }
@@ -1304,7 +1313,7 @@ struct ReaderView: View {
             // Pour comparer (1.4, iPad) : ce document dans une autre fenêtre, où en ouvrir un autre.
             BoutonNouvelleFenetre { store.reference() }
         } label: {
-            Image(systemName: "folder")
+            Label(tr("Ouvrir un fichier"), systemImage: "folder")
         } primaryAction: {
             onOpen()
         }
@@ -1320,7 +1329,7 @@ struct ReaderView: View {
             Menu {
                 elementsTraduction(source)
             } label: {
-                Image(systemName: "character.book.closed")
+                Label(tr("Traduire"), systemImage: "character.book.closed")
             }
             .teinteBarre()
             .accessibilityLabel(tr("Traduire"))
@@ -2021,6 +2030,7 @@ struct PresentationView: View {
             .fullScreenCover(item: $tappedImage) { ImageZoomView(image: $0) }
             .sheet(item: $sharePayload) { payload in ShareSheet(items: [payload.url]) }
             .onAppear {
+                JournalAnnotations.noter("diaporama ouvert « \(document.filename) » #\(JournalAnnotations.nom(annotations))")
                 requestLandscapeIfPhone()
                 trad.absorber(memoireHeritee)
                 barreDeFenetre(visible: false)
@@ -2040,6 +2050,7 @@ struct PresentationView: View {
                 #endif
             }
             .onDisappear {
+                JournalAnnotations.noter("diaporama fermé « \(document.filename) » #\(JournalAnnotations.nom(annotations))")
                 barreDeFenetre(visible: true)
                 calque?.retirer()
                 calque = nil
@@ -2196,6 +2207,7 @@ struct PresentationWebView: UIViewRepresentable {
         }
 
         context.coordinator.webView = webView
+        JournalAnnotations.noter("diaporama créé \(JournalAnnotations.nom(webView)) (\(mode.rawValue)) « \(document.filename) » pour #\(JournalAnnotations.nom(annotations))")
         loadRenderer(into: webView)
         return webView
     }
@@ -2275,6 +2287,7 @@ struct PresentationWebView: UIViewRepresentable {
                 self.envoyerTraduction(self.parent.translator.memoire, actif: true)
             }
             startPresentation()
+            JournalAnnotations.noter("diaporama chargé \(JournalAnnotations.vue(webView)) pour #\(JournalAnnotations.nom(parent.annotations))")
             // Les annotations du document sur ses diapositives ; le bouton « Annoter », avec l'option.
             parent.annotations.diaporama = webView
             parent.annotations.charger(parent.document)

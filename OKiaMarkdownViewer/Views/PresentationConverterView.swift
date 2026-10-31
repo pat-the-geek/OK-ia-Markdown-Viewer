@@ -372,7 +372,12 @@ final class ConversionEnCours: ObservableObject {
             }
             guard let self, !Task.isCancelled else { return }
             let md = diapos.joined(separator: "\n\n---\n\n")
-            let document = MarkdownDocument(filename: "factice.md", text: md)
+            // Un vrai fichier, comme la conversion de l'appareil (`enregistrer`) : le diaporama
+            // l'ouvre de la même façon.
+            let nom = titre + " — " + tr("présentation") + ".md"
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(nom)
+            try? md.write(to: url, atomically: true, encoding: .utf8)
+            let document = MarkdownDocument(filename: nom, text: md, sourceURL: url)
             self.reporterMarques(sur: document)
             self.markdownFinal = md
             self.etat = .fini(Fini(document: document, diapositives: total, omissions: [], ecartees: 0))

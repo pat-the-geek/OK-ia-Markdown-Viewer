@@ -1,6 +1,7 @@
 import Foundation
 import CryptoKit
 import WebKit
+import UIKit
 
 // Option Analytic (1.4) — les annotations d'un document. Le fichier .md n'est jamais modifié :
 // elles vivent à côté, liées au document, et la page les repose à chaque rendu (Web/annotations.js).
@@ -177,6 +178,48 @@ enum AnnotationsStore {
     }
 }
 
+/// Diagnostic des builds de test (TestFlight, Debug), jamais sur l'App Store : ce qui arrive à une
+/// annotation, du trait à la page. Sur le Duo, une présentation convertie enregistrait ses
+/// annotations sans les afficher avant la relance du diaporama, ce que le simulateur ne reproduit
+/// pas (Patrick, 31/10/2026). Copié par un appui long sur ✓ de la palette.
+@MainActor
+enum JournalAnnotations {
+    static let actif: Bool = {
+        #if DEBUG
+        return true
+        #else
+        return Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+        #endif
+    }()
+    private static var lignes: [String] = []
+
+    static func noter(_ s: @autoclosure () -> String) {
+        guard actif else { return }
+        lignes.append(Date().formatted(.dateTime.hour().minute().second()) + " " + s())
+        if lignes.count > 400 { lignes.removeFirst(lignes.count - 400) }
+    }
+
+    static var texte: String {
+        var u = utsname(); uname(&u)
+        let modele = withUnsafeBytes(of: &u.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return (["md Viewer build \(build) · iOS \(UIDevice.current.systemVersion) · \(modele)"] + lignes)
+            .joined(separator: "\n")
+    }
+
+    /// Un nom court pour un objet (une vue web, un jeu d'annotations) : le même d'une ligne à l'autre.
+    static func nom(_ o: AnyObject?) -> String {
+        guard let o else { return "aucun" }
+        return String(format: "%04x", UInt(bitPattern: ObjectIdentifier(o).hashValue) & 0xFFFF)
+    }
+
+    /// Une vue web : son nom, si elle est dans une fenêtre, sa taille.
+    static func vue(_ v: WKWebView?) -> String {
+        guard let v else { return "aucune" }
+        return "\(nom(v)) fenêtre:\(v.window != nil ? "oui" : "non") \(Int(v.bounds.width))×\(Int(v.bounds.height))"
+    }
+}
+
 /// Les annotations du document ouvert, et l'état du mode « Annoter ». Tenu par le lecteur.
 @MainActor
 final class AnnotationsDocument: ObservableObject {
@@ -222,6 +265,7 @@ final class AnnotationsDocument: ObservableObject {
 
     func suivre(_ vue: WKWebView) {
         autresPages.add(vue)
+        JournalAnnotations.noter("suivre #\(JournalAnnotations.nom(self)) vue \(JournalAnnotations.vue(vue))")
         vue.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(json))")
     }
 
@@ -231,6 +275,7 @@ final class AnnotationsDocument: ObservableObject {
         self.identite = identite
         annotations = AnnotationsStore.lire(identite, document: document)
         orphelines = []
+        JournalAnnotations.noter("charger #\(JournalAnnotations.nom(self)) « \(document.filename) » clé \(identite.cle.prefix(8)) : \(annotations.count) annotation(s)")
         poser()
         // Les annotations de ce document, changées sur un autre appareil : on les relit.
         if abonnement == nil {
@@ -239,6 +284,7 @@ final class AnnotationsDocument: ObservableObject {
                 MainActor.assumeIsolated {
                     guard let self, let d = self.document, let id = self.identite, nom == id.cle else { return }
                     self.annotations = AnnotationsStore.lire(id, document: d)
+                    JournalAnnotations.noter("iCloud #\(JournalAnnotations.nom(self)) relu : \(self.annotations.count) annotation(s)")
                     self.poser()
                 }
             }
@@ -247,6 +293,7 @@ final class AnnotationsDocument: ObservableObject {
 
     func ajouter(_ a: Annotation) {
         annotations.append(a)
+        JournalAnnotations.noter("ajouter #\(JournalAnnotations.nom(self)) \(a.type.rawValue) « \(a.ancre.exact.prefix(30)) »\(a.ancre.media.map { " sur \($0)" } ?? "")")
         enregistrer()
     }
 
@@ -281,5 +328,16 @@ final class AnnotationsDocument: ObservableObject {
         livre?.poserAnnotations(j)
         diaporama?.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(j))")
         for vue in autresPages.allObjects { vue.evaluateJavaScript("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(j))") }
+        guard JournalAnnotations.actif else { return }
+        let moi = JournalAnnotations.nom(self)
+        JournalAnnotations.noter("poser #\(moi) \(annotations.count) annotation(s) · lecteur \(web != nil ? "oui" : "non") · livre \(livre != nil ? "oui" : "non") · diaporama \(JournalAnnotations.vue(diaporama)) · autres \(autresPages.allObjects.count)")
+        // Ce que la page en a fait, juste après (les appels passent dans l'ordre).
+        for vue in [diaporama].compactMap({ $0 }) + autresPages.allObjects {
+            vue.evaluateJavaScript("window.OKIA_ANNOT ? (window.OKIA_ANNOT.etat ? window.OKIA_ANNOT.etat() : 'etat absent') : 'OKIA_ANNOT absent'") { r, e in
+                MainActor.assumeIsolated {
+                    JournalAnnotations.noter("  page \(JournalAnnotations.nom(vue)) #\(moi) → \(r.map { "\($0)" } ?? "erreur \(e.map { "\($0)" } ?? "?")")")
+                }
+            }
+        }
     }
 }
