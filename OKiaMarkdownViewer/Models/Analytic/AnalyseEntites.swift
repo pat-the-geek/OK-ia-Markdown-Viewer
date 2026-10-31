@@ -141,6 +141,25 @@ struct ResolveurWikidata: Sendable {
                   refuses: Set<String> = [], langue: String) async throws -> ResolutionEntite {
         let nom = EntiteDocument.sansArticle(nomDuDocument)
         let candidats = try await service.client.rechercher(nom, langue: langue).filter { !refuses.contains($0.id) }
+        // Une personne ou une organisation de la détection dont le nom désigne un lieu : c'est un
+        // lieu, sauf si une fiche du bon genre, plus ancienne, porte ce nom même. « Schloss Chillon »
+        // n'est pas une personne ; « Alps » (Q1286) n'est pas le Musée alpin « ALPS » (Q452375) ;
+        // « Amazon » reste l'entreprise, aucun lieu ne s'appelant exactement ainsi (31/10/2026).
+        // Un mot seul pris pour une personne reste ce qu'il est : « Lagos » (des lacs, en espagnol)
+        // devenait la ville du Nigeria, « Laghi » une commune italienne.
+        if !typeFiable, type == .org || (type == .person && nom.contains(" ")),
+           let lieu = ChoixWikidata.candidats(candidats, nom: nom, type: .loc, typeFiable: false).first {
+            let choix = ChoixWikidata.candidats(candidats, nom: nom, type: type, typeFiable: false).first
+            let garde = choix.map { c in
+                KeywordMatcher.normalize(c.label) == KeywordMatcher.normalize(nom)
+                    && ChoixWikidata.numero(c) < ChoixWikidata.numero(lieu)
+            } ?? false
+            if !garde {
+                var r = try await fiche(lieu, type: .loc, langue: langue)
+                r.type = r.type ?? .loc
+                return r
+            }
+        }
         // Le nom seul : la fiche la plus ancienne dont le nom correspond et dont le genre tient
         // (`ChoixWikidata`) ; sinon, on s'abstient. Le choix de fornews, fait pour des articles
         // avec leur contexte, prenait l'homonyme obscur (NASA → une filiale de Saxe-Anhalt).
@@ -256,14 +275,36 @@ final class AnalyseEntites: ObservableObject {
     static let typesMontres: [TypeEntite] = [.person, .org, .gpe, .loc, .product, .event, .work, .maladie, .autre]
 
     var parType: [(type: TypeEntite, entites: [EntiteDocument])] {
-        Self.typesMontres.compactMap { t in
-            let l = entites.filter { $0.type == t && !$0.source }
+        let liste = montrees
+        return Self.typesMontres.compactMap { t in
+            let l = liste.filter { $0.type == t && !$0.source }
             return l.isEmpty ? nil : (t, l)
         }
     }
 
     /// Les entités situées, pour la carte.
-    var situees: [EntiteDocument] { entites.filter { $0.aDesCoordonnees && !$0.source } }
+    var situees: [EntiteDocument] { montrees.filter { $0.aDesCoordonnees && !$0.source } }
+
+    /// Les entités qu'on montre : sans les mots seuls que Wikidata n'a pas confirmés (`douteuse`).
+    /// Elles restent dans `entites`, d'où part la résolution.
+    var montrees: [EntiteDocument] {
+        entites.filter { !Self.douteuse($0, langue: langue, wikidataAccepte: wikidata == .accepte) }
+    }
+
+    /// Un mot seul que la détection donne pour une personne ou une organisation, sans que Wikidata
+    /// le confirme : un être humain pour une personne, une organisation pour une organisation. Le
+    /// modèle de noms de macOS prend des noms communs à majuscule pour des personnes — « Juni »,
+    /// « Dauer », « Ein », « Bilanz » dans les captures allemandes (31/10/2026). Sans Wikidata, rien
+    /// ne confirme rien : tout reste. Un nom corrigé par l'utilisateur reste aussi.
+    static func douteuse(_ e: EntiteDocument, langue: String, wikidataAccepte: Bool) -> Bool {
+        guard wikidataAccepte, e.origine == .detection, !e.id.contains(" "),
+              e.type == .person || e.type == .org,
+              CorrectionsEntites.partage.correction(e.nom) == nil else { return false }
+        // Une personne n'a de fiche que si Wikidata a trouvé un être humain (`ChoixWikidata`).
+        if e.type == .person { return e.qid == nil }
+        let r = CacheEntites.partage.resolution(e.nom, type: .org, langue: langue)
+        return !(r?.type.map { ChoixWikidata.compatibles(.org, $0) } ?? false)
+    }
 
     /// Les sources que le document cite, à part des entités de son texte.
     var sources: [EntiteDocument] { entites.filter(\.source) }
@@ -374,7 +415,7 @@ final class AnalyseEntites: ObservableObject {
         DetecteurEntites.compterMentions(&toutes, dans: texte)
         let sources = SourcesDocument.lire(texte)
         for i in toutes.indices where sources.contient(toutes[i]) { toutes[i].source = true }
-        toutes = DetecteurEntites.absorberFormesCourtes(toutes)
+        toutes = DetecteurEntites.retirerMotsDeNomsPlusLongs(DetecteurEntites.absorberFormesCourtes(toutes))
         toutes = toutes.filter { $0.mentions > 0 || $0.origine == .rapport }
         toutes.sort { ($0.mentions, $1.nom) > ($1.mentions, $0.nom) }
         return toutes

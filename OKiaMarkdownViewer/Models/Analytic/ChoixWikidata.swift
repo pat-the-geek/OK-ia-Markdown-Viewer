@@ -60,7 +60,11 @@ enum ChoixWikidata {
             // capitale, grande ville…) et `typeDepuisP31`, qui exige l'unanimité, s'abstenait —
             // Paris tombait alors sur Paris (Texas). Sans aucune classe de lieu connue, on
             // s'abstient : mieux vaut pas de fiche qu'une école marocaine pour « Ryad ».
+            // Un lac, un sommet, une rivière dont la classe manque à la table se reconnaissent à
+            // leur description : le Léman est un « lac glaciaire » (Q211302), et « Lake Geneva »
+            // tombait sur une localité de Floride (captures Mac, 31/10/2026).
             return c.instanceOf.contains { [.gpe, .loc].contains(WikimediaService.typeParP31[$0]) }
+                || decritUnLieuNaturel(c.description)
         case .autre:
             // Le repli par majuscules ne sait pas ce qu'il a trouvé : Wikidata le dira. Lui interdire
             // les lieux renvoyait « États-Unis » vers un pays de Star Trek (essai du 25/10).
@@ -87,6 +91,22 @@ enum ChoixWikidata {
         guard let d = description else { return false }
         let mots = Set(KeywordMatcher.normalize(d).split { !$0.isLetter }.map(String.init).prefix(6))
         return !mots.isDisjoint(with: motsDeLieu)
+    }
+
+    /// Des mots de lieux naturels et de châteaux, en tête d'une description courte de Wikidata
+    /// (« lake in Switzerland and France », « Burg am Genfersee »), dans les langues latines de l'app.
+    static let motsDeLieuNaturel = ["lake", "lac", "see", "lago", "meer", "mountain", "mount", "montagne", "berg",
+                                    "monte", "montagna", "peak", "sommet", "gipfel", "pic", "pizzo", "river",
+                                    "riviere", "fleuve", "fluss", "fiume", "rio", "rivier", "valley", "vallee",
+                                    "tal", "valle", "glacier", "gletscher", "ghiacciaio", "glaciar", "island",
+                                    "ile", "insel", "isola", "isla", "massif", "massiv", "massiccio", "range",
+                                    "castle", "chateau", "schloss", "burg", "wasserburg", "castello", "castillo", "kasteel",
+                                    "fortress", "forteresse", "festung"]
+
+    static func decritUnLieuNaturel(_ description: String?) -> Bool {
+        guard let d = description else { return false }
+        let mots = Set(KeywordMatcher.normalize(d).split { !$0.isLetter }.map(String.init).prefix(4))
+        return !mots.isDisjoint(with: motsDeLieuNaturel)
     }
 
     static func numero(_ c: WikidataCandidat) -> Int { Int(c.id.dropFirst()) ?? .max }

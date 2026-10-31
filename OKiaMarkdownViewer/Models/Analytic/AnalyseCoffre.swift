@@ -63,9 +63,12 @@ final class AnalyseCoffre: ObservableObject {
         #if DEBUG
         // Les captures (OKIA_DEMO) gardent leur index à part : ni l'index réel ne déteint sur elles,
         // ni elles sur l'index réel (le Mac partage le conteneur de l'utilisateur).
-        if let demo = ModeDemo.dossier { return demo.appendingPathComponent("Analytic/coffre.json") }
+        if let demo = ModeDemo.dossier { return demo.appendingPathComponent("Analytic/coffre-v2.json") }
         #endif
-        return dossier.appendingPathComponent("Analytic/coffre.json")
+        // « v2 » : les documents se relisent avec `retirerMotsDeNomsPlusLongs` (« Moritz » de
+        // « St. Moritz » n'est plus une personne, 31/10/2026). L'ancien index s'efface.
+        try? FileManager.default.removeItem(at: dossier.appendingPathComponent("Analytic/coffre.json"))
+        return dossier.appendingPathComponent("Analytic/coffre-v2.json")
     }()
 
     init() {
@@ -164,7 +167,7 @@ final class AnalyseCoffre: ObservableObject {
         DetecteurEntites.compterMentions(&toutes, dans: texte)
         let sources = SourcesDocument.lire(texte)
         for i in toutes.indices where sources.contient(toutes[i]) { toutes[i].source = true }
-        toutes = DetecteurEntites.absorberFormesCourtes(toutes)
+        toutes = DetecteurEntites.retirerMotsDeNomsPlusLongs(DetecteurEntites.absorberFormesCourtes(toutes))
             .filter { $0.mentions > 0 || $0.origine == .rapport }
         return DocumentIndexe(id: s.id, nom: s.nom, date: s.date, modifie: s.modifie,
                               langue: langue, entites: toutes)
@@ -201,12 +204,15 @@ final class AnalyseCoffre: ObservableObject {
     /// citées (médias) sont laissées de côté : elles sont partout et ne disent rien du sujet.
     func rassembler() {
         var parNom: [String: EntiteCoffre] = [:]
+        let wikidataAccepte = UserDefaults.standard.string(forKey: ConsentementWikidata.cle) == ConsentementWikidata.accepte.rawValue
         for doc in index.values {
             let corrigees = CorrectionsEntites.partage.appliquer(doc.entites).filter { !$0.source }
             for var e in corrigees {
                 if let r = CacheEntites.partage.resolution(e.nom, type: e.type, langue: doc.langue) {
                     e = AnalyseEntites.appliquer(r, a: e)
                 }
+                // Un mot seul que Wikidata n'a pas confirmé ne se montre pas (`AnalyseEntites.douteuse`).
+                if AnalyseEntites.douteuse(e, langue: doc.langue, wikidataAccepte: wikidataAccepte) { continue }
                 let p = Presence(document: doc.id, nom: doc.nom, date: doc.date, mentions: max(e.mentions, 1))
                 if var deja = parNom[e.id] {
                     if !deja.presences.contains(where: { $0.document == doc.id }) { deja.presences.append(p) }

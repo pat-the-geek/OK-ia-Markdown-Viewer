@@ -110,13 +110,13 @@ struct EntitesView: View {
     @ViewBuilder private var contenu: some View {
         if !achat.acces {
             ApercuAnalyticView(analyse: analyse)
-        } else if analyse.etat == .lecture || analyse.etat == .inactif || (analyse.entites.isEmpty && analyse.enDetection) {
+        } else if analyse.etat == .lecture || analyse.etat == .inactif || (analyse.montrees.isEmpty && analyse.enDetection) {
             VStack(spacing: 12) {
                 ProgressView()
                 Text(tr("Lecture du document…")).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if analyse.entites.isEmpty {
+        } else if analyse.montrees.isEmpty {
             ContentUnavailableView {
                 Label(tr("Aucune entité"), systemImage: "person.2")
             } description: {
@@ -311,7 +311,7 @@ struct EntitesView: View {
     }
 
     @ViewBuilder private var bandeauEtat: some View {
-        let n = analyse.entites.count
+        let n = analyse.montrees.count
         switch analyse.etat {
         case .detection(let fait, let total):
             // Les premières entités sont là ; le reste du document se lit encore.

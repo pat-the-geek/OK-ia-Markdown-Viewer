@@ -282,7 +282,21 @@ enum DetecteurEntites {
         let sansCasse = brutes.filter { Self.ecritureSansCasse($0.valeur) && Self.valide($0) }
         let filtrees = (FiltreEntitesNER.filtrer(brutes.filter { !Self.ecritureSansCasse($0.valeur) }, texteSource: texte) + sansCasse)
             .filter { !Self.nomsCommunsEnSigle.contains($0.valeur) }
-        return filtrees.map { EntiteDocument(nom: $0.valeur, type: $0.type, origine: .detection) }
+        return filtrees.map { EntiteDocument(nom: $0.valeur, type: ($0.type == .person || $0.type == .org) && lieuNomme($0.valeur) ? .loc : $0.type,
+                                     origine: .detection) }
+    }
+
+    /// Les mots qui font d'un nom un lieu, quoi qu'en dise le modèle de noms : « Schloss Chillon »,
+    /// « Chillon Castle » étaient des personnes sur Mac (captures du 31/10/2026). Sans les mots qui
+    /// sont aussi des noms de famille courants (Berg, Monte, See…).
+    static let motsQuiFontUnLieu: Set<String> = ["castle", "chateau", "schloss", "castello", "castillo", "kasteel",
+                                                 "lake", "lac", "lago", "loch", "mount", "mountain", "glacier",
+                                                 "gletscher", "ghiacciaio", "river", "fleuve", "island", "peninsula"]
+
+    /// Un nom de plusieurs mots dont un mot désigne un lieu.
+    static func lieuNomme(_ nom: String) -> Bool {
+        let mots = KeywordMatcher.normalize(nom).split { !$0.isLetter }.map(String.init)
+        return mots.count >= 2 && mots.contains(where: motsQuiFontUnLieu.contains)
     }
 
     static let nomsCommunsEnSigle: Set<String> = ["IA", "AI", "KI"]
@@ -472,6 +486,22 @@ enum DetecteurEntites {
         }
         if !courant.isEmpty { resultat.append(courant) }
         return resultat
+    }
+
+    /// Un mot seul que la détection donne pour une personne ou une organisation, et que le texte ne
+    /// montre JAMAIS hors d'un nom plus long, quel qu'en soit le genre : « Moritz » de « St. Moritz »,
+    /// « Lake » de « Lake Geneva », « Chillon » de « Schloss Chillon » (captures Mac, 31/10/2026).
+    /// Il suffit qu'il paraisse une fois seul pour rester : « Trump » cité à part de « la Maison
+    /// Blanche de Donald Trump » garde sa place (voir `absorberFormesCourtes`).
+    static func retirerMotsDeNomsPlusLongs(_ entites: [EntiteDocument]) -> [EntiteDocument] {
+        entites.filter { e in
+            guard e.origine == .detection, e.type == .person || e.type == .org,
+                  !e.id.contains(" "), e.mentions > 0 else { return true }
+            let dedans = entites.filter { f in
+                f.id != e.id && f.id.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).contains(Substring(e.id))
+            }.reduce(0) { $0 + $1.mentions }
+            return e.mentions > dedans
+        }
     }
 
     /// Une entité détectée qui n'est qu'une partie, en mots entiers, d'un nom plus long du même genre

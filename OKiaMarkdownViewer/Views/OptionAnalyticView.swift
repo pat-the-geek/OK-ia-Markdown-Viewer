@@ -125,7 +125,7 @@ struct ApercuAnalyticView: View {
                         .fill(Color(.secondarySystemGroupedBackground)))
                 if analyse.enCours || analyse.etat == .inactif {
                     ProgressView().frame(maxWidth: .infinity)
-                } else if !analyse.entites.isEmpty {
+                } else if !analyse.montrees.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(tr("Dans ce document"))
                             .font(.headline)
