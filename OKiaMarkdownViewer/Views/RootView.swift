@@ -56,7 +56,10 @@ struct RootView: View {
         // One importer for both modes — `importFolder` selects file vs. vault folder.
         .fileImporter(
             isPresented: $showImporter,
-            allowedContentTypes: importFolder ? [.folder] : importOffice ? ImportEnCours.types + [.folder] : RootView.importedTypes,
+            // « Ouvrir un fichier » montre aussi les Word, PowerPoint et PDF : on les voyait grisés,
+            // sans pouvoir les choisir (Patrick, 31/10/2026). Choisis là, ils s'importent.
+            allowedContentTypes: importFolder ? [.folder] : importOffice ? ImportEnCours.types + [.folder]
+                : RootView.importedTypes + ImportEnCours.types,
             // L'import (1.4) : plusieurs fichiers d'un coup, ou un dossier entier.
             allowsMultipleSelection: importOffice
         ) { result in
@@ -66,6 +69,7 @@ struct RootView: View {
                 if choisirSurveille { choisirSurveille = false; surveille.choisir(url) }
                 else if importFolder { store.vault.setFolder(url) }
                 else if importOffice { store.importerLot(urls) }
+                else if ImportEnCours.estImportable(url) { store.handleIncoming(url) }   // l'import, avec l'option
                 else { store.open(url: url) }
             case .failure(let error):
                 store.errorMessage = error.localizedDescription
