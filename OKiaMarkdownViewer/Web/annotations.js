@@ -285,8 +285,13 @@
   function placerSurMedia(img, m, hote, a) {
     // Les pourcentages d'une position absolue se prennent sur la boîte intérieure de l'hôte,
     // bordure exclue (le cadre d'un diagramme en a une).
+    // Tout en mesures d'écran : une diapositive est réduite par une transformation (`scale`), que
+    // `getBoundingClientRect` compte et que `clientWidth` ignore. Mêlées, la note du diaporama se
+    // posait à l'échelle de la réduction, plus petite et vers le coin en haut à gauche (Patrick,
+    // 31/10/2026). `k` ramène la boîte de l'hôte à l'écran.
     var r = hote.getBoundingClientRect(), d = dessin(m).getBoundingClientRect();
-    var h = { left: r.left + hote.clientLeft, top: r.top + hote.clientTop, width: hote.clientWidth };
+    var k = hote.offsetWidth ? r.width / hote.offsetWidth : 1;
+    var h = { left: r.left + hote.clientLeft * k, top: r.top + hote.clientTop * k, width: hote.clientWidth * k };
     if (h.width < 1 || d.width < 1) {   // une diapositive cachée : on reprend la place telle quelle
       img.style.left = (a.fx * 100) + '%';
       img.style.setProperty('margin-top', (a.fy * 100) + '%', 'important');
@@ -339,6 +344,7 @@
           suivreCarte(m);
         } else if (m) {
           placerSurMedia(img, m, bloc, a.ancre);
+          suivreTaille(dessin(m));
         } else {
           img.style.left = (a.ancre.fx * 100) + '%';
           img.style.setProperty('margin-top', (a.ancre.fy * 100) + '%', 'important');
@@ -461,6 +467,23 @@
     clearTimeout(minuterie);
     minuterie = setTimeout(poser, 250);
   }) : null;
+  // Le média lui-même peut changer de taille sans que la page change de largeur : la diapositive
+  // cachée qui s'affiche (mesurée à 0, la note gardait la place de l'écran de lecture), l'image que
+  // le diaporama agrandit ou qui finit de se charger. La note était posée à la mauvaise taille, en
+  // haut à gauche de l'image (Patrick, 31/10/2026) : on la repose quand son média change de taille.
+  var tailles = new WeakMap();
+  var tailleMedia = window.ResizeObserver ? new ResizeObserver(function (entrees) {
+    var change = false;
+    entrees.forEach(function (e) {
+      var t = Math.round(e.contentRect.width) + 'x' + Math.round(e.contentRect.height);
+      if (tailles.has(e.target) && tailles.get(e.target) !== t) change = true;
+      tailles.set(e.target, t);   // la première mesure, juste après la pose, ne relance rien
+    });
+    if (!change || occupe) return;
+    clearTimeout(minuterie);
+    minuterie = setTimeout(poser, 250);
+  }) : null;
+  function suivreTaille(el) { if (tailleMedia) tailleMedia.observe(el); }
   function observer() {
     var c = contenu();
     if (c) observateur.observe(c, { childList: true, subtree: true, characterData: true });

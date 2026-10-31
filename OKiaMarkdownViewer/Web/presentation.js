@@ -361,8 +361,13 @@
   // Enlarge a single primary image so it fills the canvas's remaining height,
   // keeping aspect ratio (so small sources are scaled up, like dragging an image
   // to fill a PowerPoint slide). Skipped when there are several images.
+  // Les notes manuscrites posées sur une image (annotations.js, `img.okia-encre`) ne comptent pas :
+  // avec une note, la diapositive n'avait plus « une seule image », et une image annotée seule
+  // dans son paragraphe passait en mosaïque, la note réduite à une case (Patrick, 31/10/2026).
+  var IMAGES = 'img:not(.okia-encre)';
+
   function fitImage(section, inner) {
-    var imgs = inner.querySelectorAll('img');
+    var imgs = inner.querySelectorAll(IMAGES);
     if (imgs.length !== 1) return;
     var img = imgs[0];
     img.style.height = '';
@@ -390,14 +395,14 @@
   // Une fois par diapositive : la mosaïque posée, l'appel suivant ne trouve plus de suite.
   function seulementDesImages(n) {
     if (n.nodeType !== 1 || n.tagName !== 'P' || n.textContent.trim()) return false;
-    var imgs = n.querySelectorAll('img');
+    var imgs = n.querySelectorAll(IMAGES);
     if (!imgs.length) return false;
     // Chaque enfant est une image, nue ou dans son enveloppe (le lien, l'agrandissement de
     // render.js), ou un saut de ligne.
     for (var i = 0; i < n.children.length; i++) {
       var c = n.children[i];
       if (c.tagName === 'BR' || c.tagName === 'IMG') continue;
-      if (c.querySelectorAll('img').length === 1) continue;
+      if (c.querySelectorAll(IMAGES).length === 1) continue;
       return false;
     }
     return true;
@@ -407,7 +412,7 @@
     var enfants = Array.prototype.slice.call(inner.children);
     var suite = [];
     function fermer() {
-      var nombre = suite.reduce(function (t, p) { return t + p.querySelectorAll('img').length; }, 0);
+      var nombre = suite.reduce(function (t, p) { return t + p.querySelectorAll(IMAGES).length; }, 0);
       if (nombre >= 2) {
         var mosaique = document.createElement('div');
         mosaique.className = 'okia-mosaique';
@@ -446,7 +451,7 @@
       }
       var px = Math.max(40, Math.floor(meilleur.cote)) + 'px';
       m.style.gridTemplateColumns = 'repeat(' + meilleur.colonnes + ', ' + px + ')';
-      Array.prototype.forEach.call(m.querySelectorAll('img'), function (img) {
+      Array.prototype.forEach.call(m.querySelectorAll(IMAGES), function (img) {
         img.style.width = px; img.style.height = px;
       });
     });
