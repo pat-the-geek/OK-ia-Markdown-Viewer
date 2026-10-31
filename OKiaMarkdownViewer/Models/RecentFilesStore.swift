@@ -30,16 +30,28 @@ final class RecentFilesStore: ObservableObject {
     func add(url: URL) {
         guard let data = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         else { return }
-        insert(RecentFile(name: url.lastPathComponent, bookmark: data, remoteURLString: nil, openedAt: Date()))
+        let chemin = Self.chemin(url)
+        insert(RecentFile(name: url.lastPathComponent, bookmark: data, remoteURLString: nil, openedAt: Date())) { item in
+            guard item.bookmark != nil else { return false }
+            // Un signet qui ne se résout plus (fichier supprimé, déplacé hors d'atteinte) ne désigne
+            // plus rien : du même nom, il cède la place.
+            guard let u = self.cheminSansEffet(item) else { return item.name == url.lastPathComponent }
+            return u == chemin
+        }
     }
 
     /// Remember a remote report (re-downloaded on reopen).
     func addRemote(url: URL, name: String) {
-        insert(RecentFile(name: name, bookmark: nil, remoteURLString: url.absoluteString, openedAt: Date()))
+        insert(RecentFile(name: name, bookmark: nil, remoteURLString: url.absoluteString, openedAt: Date())) {
+            $0.remoteURLString == url.absoluteString
+        }
     }
 
-    private func insert(_ file: RecentFile) {
-        var next = items.filter { $0.name != file.name }   // de-dupe by name (most recent wins)
+    /// Un récent par DOCUMENT, pas par nom : deux « Rapport.md » de dossiers différents restent l'un
+    /// et l'autre ; le dédoublonnage par nom chassait le premier dès qu'on ouvrait le second
+    /// (Patrick, 31/10/2026). `memeDocument` dit quelles entrées désignent le document ajouté.
+    private func insert(_ file: RecentFile, memeDocument: (RecentFile) -> Bool) {
+        var next = items.filter { !memeDocument($0) }
         next.insert(file, at: 0)
         if next.count > maxItems { next = Array(next.prefix(maxItems)) }
         items = next
@@ -68,13 +80,32 @@ final class RecentFilesStore: ObservableObject {
 
     /// Retire des récents le fichier qu'on va supprimer : son signet le suivrait jusqu'à la corbeille.
     func retirer(url: URL) {
-        let chemin = url.standardizedFileURL.resolvingSymlinksInPath().path
+        let chemin = Self.chemin(url)
         let avant = items.count
         items.removeAll { item in
             guard item.bookmark != nil, let u = resolve(item) else { return false }
-            return u.standardizedFileURL.resolvingSymlinksInPath().path == chemin
+            return Self.chemin(u) == chemin
         }
         if items.count != avant { save() }
+    }
+
+    /// Le dossier d'un récent local, pour distinguer deux récents du même nom ; nil pour un rapport
+    /// distant ou un signet qui ne se résout plus. Sans effet : appelé pendant l'affichage.
+    func dossier(_ item: RecentFile) -> String? {
+        cheminSansEffet(item).map { (($0 as NSString).deletingLastPathComponent as NSString).lastPathComponent }
+    }
+
+    private static func chemin(_ url: URL) -> String {
+        url.standardizedFileURL.resolvingSymlinksInPath().path
+    }
+
+    /// Le chemin d'un récent local, sans rafraîchir son signet (au contraire de `resolve`).
+    private func cheminSansEffet(_ item: RecentFile) -> String? {
+        guard let b = item.bookmark else { return nil }
+        var perime = false
+        guard let u = try? URL(resolvingBookmarkData: b, options: [], relativeTo: nil, bookmarkDataIsStale: &perime)
+        else { return nil }
+        return Self.chemin(u)
     }
 
     func remove(_ item: RecentFile) {

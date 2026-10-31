@@ -265,10 +265,19 @@ struct EmptyStateView: View {
     /// d'accessibilité, où deux cartes côte à côte ne laissent plus lire les noms.
     private var enGrille: Bool { !tailleTexte.isAccessibilitySize }
 
+    /// La mention d'un récent : sa date, précédée de son dossier quand un autre récent porte le même
+    /// nom — comme le coffre, qui donne toujours le sien.
+    private func mentionRecente(_ item: RecentFile) -> String {
+        let date = DecoupageParDate.mention(pour: item.openedAt)
+        guard recents.contains(where: { $0.id != item.id && $0.name == item.name }),
+              let dossier = recentsStore.dossier(item) else { return date }
+        return dossier + " · " + date
+    }
+
     /// Un récent en carte : mêmes gestes que la ligne.
     private func carteRecente(_ item: RecentFile) -> some View {
         CarteDocument(nom: (item.name as NSString).deletingPathExtension,
-                      mention: DecoupageParDate.mention(pour: item.openedAt),
+                      mention: mentionRecente(item),
                       resoudre: { recentsStore.resolve(item).map { ($0, $0) } },
                       action: { onRecent(item) }) {
             BoutonNouvelleFenetre {
@@ -310,7 +319,7 @@ struct EmptyStateView: View {
                         Text(item.name)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                        Text(DecoupageParDate.mention(pour: item.openedAt))
+                        Text(mentionRecente(item))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
