@@ -503,10 +503,7 @@ struct ReaderView: View {
                              sourceMarkdown: document.text)
         }
         .sheet(isPresented: $showConverter, onDismiss: {
-            if let d = presentationEnAttente {
-                JournalAnnotations.noter("conversion → diaporama (feuille) « \(d.filename) »")
-                presentationEnAttente = nil; presentationConvertie = d
-            }
+            if let d = presentationEnAttente { presentationEnAttente = nil; presentationConvertie = d }
         }) {
             PresentationConverterView(document: document,
                                       titreAffiche: title.isEmpty ? document.filename : title,
@@ -1010,10 +1007,7 @@ struct ReaderView: View {
                 // La présentation se construit à côté du rapport, qu'on continue de lire.
                 PresentationConverterView(document: document,
                                           titreAffiche: title.isEmpty ? document.filename : title,
-                                          onPresenter: { d in
-                                              JournalAnnotations.noter("conversion → diaporama (seconde partie) « \(d.filename) »")
-                                              presentationConvertie = d
-                                          },
+                                          onPresenter: { d in presentationConvertie = d },
                                           conversion: conversion)
             case .entites:
                 EntitesView(document: document, analyse: analyseEntites, surChoix: chercherEntite)
@@ -2030,7 +2024,6 @@ struct PresentationView: View {
             .fullScreenCover(item: $tappedImage) { ImageZoomView(image: $0) }
             .sheet(item: $sharePayload) { payload in ShareSheet(items: [payload.url]) }
             .onAppear {
-                JournalAnnotations.noter("diaporama ouvert « \(document.filename) » #\(JournalAnnotations.nom(annotations))")
                 requestLandscapeIfPhone()
                 trad.absorber(memoireHeritee)
                 barreDeFenetre(visible: false)
@@ -2050,7 +2043,6 @@ struct PresentationView: View {
                 #endif
             }
             .onDisappear {
-                JournalAnnotations.noter("diaporama fermé « \(document.filename) » #\(JournalAnnotations.nom(annotations))")
                 barreDeFenetre(visible: true)
                 calque?.retirer()
                 calque = nil
@@ -2207,7 +2199,6 @@ struct PresentationWebView: UIViewRepresentable {
         }
 
         context.coordinator.webView = webView
-        JournalAnnotations.noter("diaporama créé \(JournalAnnotations.nom(webView)) (\(mode.rawValue)) « \(document.filename) » pour #\(JournalAnnotations.nom(annotations))")
         loadRenderer(into: webView)
         return webView
     }
@@ -2287,7 +2278,6 @@ struct PresentationWebView: UIViewRepresentable {
                 self.envoyerTraduction(self.parent.translator.memoire, actif: true)
             }
             startPresentation()
-            JournalAnnotations.noter("diaporama chargé \(JournalAnnotations.vue(webView)) pour #\(JournalAnnotations.nom(parent.annotations))")
             // Les annotations du document sur ses diapositives ; le bouton « Annoter », avec l'option.
             parent.annotations.diaporama = webView
             parent.annotations.charger(parent.document)

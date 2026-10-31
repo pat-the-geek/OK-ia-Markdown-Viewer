@@ -26,7 +26,6 @@
   var BLOCS = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, td, th, figure, .callout, .okia-map, img:not(.okia-encre)';
   var annotations = [];        // l'état courant, tel que Swift l'a posé
   var occupe = false;          // nos propres retouches ne relancent pas l'observateur
-  var derniere = 'jamais';     // ce que la dernière pose a donné (diagnostic des builds de test)
 
   // La page du lecteur (et du livre) : #content. Le diaporama : #deck, toutes ses diapositives —
   // une diapositive reprend le texte du document, les annotations s'y retrouvent.
@@ -313,7 +312,7 @@
 
   function poser() {
     var c = contenu();
-    if (!c || !window.CSS || !CSS.highlights) { derniere = !c ? 'pas de contenu' : 'pas de CSS.highlights'; return; }
+    if (!c || !window.CSS || !CSS.highlights) return;
     occupe = true;
     c.querySelectorAll('.okia-encre').forEach(function (img) { img.remove(); });
     var t = noeudsTexte(c);
@@ -356,7 +355,6 @@
     // Effacer les anciens surlignages, poser les nouveaux, une couleur par nom.
     Array.from(CSS.highlights.keys()).forEach(function (k) { if (k.indexOf('okia-') === 0) CSS.highlights.delete(k); });
     Object.keys(groupes).forEach(function (cle) { CSS.highlights.set(cle, new Highlight(...groupes[cle])); });
-    derniere = (annotations.length - orphelines.length) + ' posée(s), ' + orphelines.length + ' orpheline(s), dans #' + c.id;
     setTimeout(function () { occupe = false; }, 0);
     post('annotationsPosees', { orphelines: orphelines });
   }
@@ -473,15 +471,6 @@
   window.OKIA_ANNOT = {
     // annotations : [{ id, type: 'surligne'|'souligne'|'encre', couleur, ancre, image? }]
     appliquer: function (liste) { annotations = liste || []; poser(); },
-    // Le diagnostic des builds de test : la dernière pose, et ce que la page montre.
-    etat: function () {
-      var d = document.getElementById('deck'), active = d ? d.querySelector('.slide.active') : null;
-      var n = 0; if (window.CSS && CSS.highlights) CSS.highlights.forEach(function (h, k) { if (k.indexOf('okia-') === 0) n += h.size; });
-      return annotations.length + ' reçue(s) · ' + derniere + ' · surlignages ' + n
-        + ' · notes ' + document.querySelectorAll('.okia-encre').length
-        + (d ? ' · diapositive ' + (active ? Array.prototype.indexOf.call(d.querySelectorAll('.slide'), active) + 1 : 'aucune') : '')
-        + ' · ' + document.visibilityState;
-    },
     ancrerTexte: ancrerTexte,
     ancrerEncre: ancrerEncre,
     sousLePoint: sousLePoint,
