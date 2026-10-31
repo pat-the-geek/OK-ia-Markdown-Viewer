@@ -384,9 +384,33 @@
     var otherH = inner.scrollHeight;
     var leftover = availH - otherH - 24;                 // breathing room
     var targetH = Math.min(leftover, availW / aspect, 600);
-    if (targetH < 120) targetH = Math.min(availW / aspect, 600); // tiny leftover → ignore
+    // Peu de place : l'image ne prend plus toute la largeur — le texte, déjà long, aurait fait
+    // réduire toute la diapositive, et la colonne avec (Patrick, 31/10/2026). Un tiers de la hauteur.
+    if (targetH < 120) targetH = Math.min(Math.max(120, availH / 3), availW / aspect, 600);
     img.style.height = Math.round(targetH) + 'px';
     img.style.width = 'auto';
+  }
+
+  // La plus longue liste de la diapositive, sur deux colonnes, si cela la raccourcit vraiment ;
+  // l'image seule reprend ensuite la place libérée. Sinon, rien ne change.
+  function deuxColonnes(section, inner, availH) {
+    // Une liste imbriquée compte aussi : « Les débuts », puis sept points en dessous — c'est la
+    // sous-liste qui passe sur deux colonnes. Au moins quatre points à elle.
+    var listes = Array.prototype.filter.call(inner.querySelectorAll('ul, ol'), function (l) {
+      return l.querySelectorAll(':scope > li').length >= 4 && !l.closest('table');
+    });
+    if (!listes.length) return;
+    var liste = listes.reduce(function (a, b) { return b.offsetHeight > a.offsetHeight ? b : a; });
+    var avant = inner.scrollHeight;
+    var rangees = Math.ceil(liste.querySelectorAll(':scope > li').length / 2);
+    liste.style.gridTemplateRows = 'repeat(' + rangees + ', auto)';
+    liste.classList.add('okia-deux-colonnes');
+    if (inner.scrollHeight > avant - 40) {
+      liste.classList.remove('okia-deux-colonnes');
+      liste.style.gridTemplateRows = '';
+      return;
+    }
+    fitImage(section, inner);
   }
 
   // Des images qui se suivent, seules dans leur paragraphe — la planche d'un Word importé, treize
@@ -481,21 +505,33 @@
     canvas.style.transform = '';
 
     // Adapt the canvas width to the viewport's aspect ratio so it fills exactly
-    // (no letterboxing on 4:3 iPad or 16:10 Mac); height stays the 720 reference.
+    // (no letterboxing on 4:3 iPad or 16:10 Mac); height stays the 720 reference, except
+    // upright (see below).
     var vw = section.clientWidth, vh = section.clientHeight;
     if (vw <= 0 || vh <= 0) return;
-    CW = Math.max(640, Math.round(CH * vw / vh));
+    CW = Math.max(640, Math.round(720 * vw / vh));
+    // Debout (téléphone tenu droit, Duo replié), la toile, au plancher de 640, prend la hauteur de
+    // l'écran au lieu de garder 720 : un texte long y tient sans réduire toute la diapositive, qui
+    // le laissait en colonne étroite au milieu de l'écran, du vide tout autour (Patrick, 31/10/2026).
+    CH = CW === 640 ? Math.max(720, Math.round(640 * vh / vw)) : 720;
     canvas.style.width = CW + 'px';
     canvas.style.height = CH + 'px';
+    var availW = CW - PAD_H * 2, availH = CH - PAD_V * 2;
 
     // 0. Grow a lone image to fill the canvas's leftover height (PowerPoint-style).
+    inner.querySelectorAll('.okia-deux-colonnes').forEach(function (l) {
+      l.classList.remove('okia-deux-colonnes');
+      l.style.gridTemplateRows = '';
+    });
     fitImage(section, inner);
     // 0 bis. Plusieurs images à la suite : une mosaïque à la mesure de la place libre.
     poserMosaiques(inner);
     fitMosaiques(inner);
+    // 0 ter. Une longue liste qui déborde, sur une toile large : deux colonnes plutôt qu'un texte
+    // réduit (Patrick, 31/10/2026). Pas sur une toile debout : une colonne y ferait quinze signes.
+    if (inner.scrollHeight > availH && availW >= 880) deuxColonnes(section, inner, availH);
 
     // 1. Shrink content if it overflows the design canvas (never enlarge here).
-    var availW = CW - PAD_H * 2, availH = CH - PAD_V * 2;
     var h = inner.scrollHeight, w = inner.scrollWidth;
     if (h > 0 && w > 0) {
       var shrink = Math.min(1, availH / h, availW / w);

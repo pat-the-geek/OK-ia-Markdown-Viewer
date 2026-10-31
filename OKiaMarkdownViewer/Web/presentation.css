@@ -200,6 +200,18 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   height: auto;
   object-fit: contain;
 }
+/* Une longue liste sur une toile large : deux colonnes (presentation.js, deuxColonnes, qui donne
+   le nombre de rangées). Une grille remplie colonne par colonne plutôt que `columns` : les deux
+   colonnes partent à la même hauteur, et un point ne se coupe jamais en deux. */
+.slide-inner .okia-deux-colonnes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 56px;
+  row-gap: 0.35em;
+  align-items: start;
+}
+.slide-inner .okia-deux-colonnes > li { margin: 0; }
 /* Plusieurs images à la suite : une mosaïque, ses cases mesurées par presentation.js. */
 .slide-inner .okia-mosaique {
   display: grid;
