@@ -34,8 +34,8 @@ A1. Méthode, dans cet ordre
    fiables (institutions, presse de référence, publications scientifiques). Note chaque
    source utilisée.
 3. Écris le plan : une ligne par diapositive (titre + type + média). Nombre de diapositives :
-   environ une par minute de <duree> (12 à 20 pour 15 minutes), plus 1 à 3 diapositives
-   d'annexe masquées (voir A5).
+   environ une par minute de la durée donnée dans <consignes> (15 minutes à défaut, soit 12
+   à 20 diapositives), plus 1 à 3 diapositives d'annexe masquées (voir A5).
 4. Cherche les photos (A4), dessine les illustrations SVG (A3), rédige les diapositives (A2),
    les notes de l'orateur (A5), puis embarque les SVG (A3.3).
 5. Passe la liste de contrôle finale (A7) avant de livrer.
@@ -64,7 +64,10 @@ A2. Format du fichier md Viewer
     libellé : \n. Libellés entre guillemets : A["Texte"]. Colore avec la palette du document :
       style A fill:#E8972E,color:#fff
     Préfère Mermaid pour une chronologie ou un processus simple ; préfère un SVG dès que le
-    visuel doit être beau, dense ou original.
+    visuel doit être beau, dense ou original. Une suite d'étapes : flowchart TD (à
+    l'horizontale, le diagramme s'étire et son texte devient minuscule) ; un nœud qui en
+    commande beaucoup d'autres : flowchart LR. Un diagramme est seul sur sa diapositive,
+    jamais avec un tableau : à deux, ils rapetissent tous les deux.
   • Cartes interactives, bloc ```leaflet (la carte remplit la diapositive) :
       ```leaflet
       id: carte-unique-par-carte
@@ -111,6 +114,10 @@ A3.2 Règles de dessin (sinon l'image ne s'affiche pas ou s'affiche mal)
   Corps de texte de 32 px au moins, titres de 64 à 110 px, 25 mots au plus dans l'image.
   Le texte d'un SVG n'est ni traduit, ni cherché, ni analysé par md Viewer : le message
   essentiel doit aussi figurer en Markdown (titre de la diapositive ou légende).
+- Aucun texte ne déborde de sa place (cartouche, colonne, barre, bord de l'image). Estime
+  sa largeur : environ 0,55 × la taille de police par caractère, 0,6 en gras. Si une ligne
+  ne tient pas, raccourcis-la ou coupe-la en deux, plutôt que de descendre sous 32 px. Si
+  tu exécutes du code, fais ce calcul dans le code et refuse tout texte trop large.
 - Autonome : aucune ressource externe (pas de <image href="http…">, pas de @import, pas de
   police web), pas de <script>, pas de <foreignObject>, pas d'animation.
 - Palette : 4 à 6 couleurs pour tout le document, choisies selon le sujet (ou celles de
@@ -153,18 +160,23 @@ A4. Photos et images existantes
   silence à l'affichage. N'INVENTE JAMAIS une URL : si tu ne peux pas la vérifier,
   remplace la photo par une illustration SVG.
 - Une seule photo par diapositive (elle s'agrandit alors pour remplir l'espace), suivie de
-  sa légende et de son crédit :
-    > Le glacier d'Aletsch en 2019 · Photo : Auteur · CC BY-SA 4.0 · Wikimedia Commons
+  sa légende et de son crédit, sur UNE ligne de 60 caractères au plus — une légende de deux
+  lignes rapetisse la photo :
+    > Glacier d'Aletsch, 2019 · Auteur · CC BY-SA 4.0
+  Le crédit complet (auteur, licence, lien, Wikimedia Commons) va sur la diapositive
+  « Sources et crédits ».
 - Pour un fichier qui doit fonctionner hors ligne, et si tu exécutes du code et que la
   licence le permet : télécharge la photo, réduis-la à 1600 px de large, JPEG qualité 0,72
   (400 Ko au plus), et embarque-la comme un SVG :
     [photo-aletsch]: data:image/jpeg;base64,/9j/4AAQ…
 
 A5. Ce qui fait une présentation remarquable
-- Structure : couverture (SVG + titre + sous-titre) → accroche (un chiffre, une question ou
-  une image forte) → 3 à 5 parties, chacune ouverte par une diapositive-titre illustrée →
-  une diapositive de synthèse → une conclusion qui dit quoi retenir ou quoi faire →
-  « Sources et crédits ».
+- Structure : couverture → accroche (un chiffre, une question ou une image forte) → 3 à 5
+  parties, chacune ouverte par une diapositive-titre illustrée → une diapositive de synthèse
+  → une conclusion qui dit quoi retenir ou quoi faire → « Sources et crédits ».
+- La couverture et les diapositives-titres de partie sont un SVG SEUL, qui porte lui-même le
+  titre et le sous-titre : ni titre Markdown, ni légende. Ils feraient doublon avec le
+  dessin et le rapetisseraient ; seul, il remplit l'écran.
 - Rythme : alterne texte court, visuel plein écran, donnée, citation. Jamais trois
   diapositives de puces d'affilée.
 - Titres qui affirment (« Les glaciers ont perdu 10 % en deux ans ») plutôt que des
@@ -172,8 +184,9 @@ A5. Ce qui fait une présentation remarquable
 - Diapositive-citation : une seule citation courte, avec son auteur, rien d'autre.
 - Notes de l'orateur sur CHAQUE diapositive, dans un commentaire HTML placé à la fin de la
   diapositive, avant le --- suivant : 2 à 5 phrases sur ce qu'il faut dire, le chiffre à
-  souligner, la transition vers la suivante. Elles s'affichent dans le mode présentateur ;
-  le public ne les voit pas. N'écris jamais deux tirets consécutifs dans une note.
+  souligner, la transition vers la suivante. Elles s'affichent dans le mode présentateur de
+  l'app, et dans la fenêtre présentateur du lecteur en ligne (ok-ia.ch/rapport.html) ; le
+  public ne les voit pas. N'écris jamais deux tirets consécutifs dans une note.
     <!--
     Insister sur la hausse de 18 %. Transition : « Mais d'où vient cette hausse ? »
     -->
@@ -187,13 +200,16 @@ A6. Exactitude
 - Chaque chiffre, date, citation et nom vient de la partie B ou d'une source que tu as
   consultée et citée. En cas de doute, écris-le dans les notes de l'orateur ou retire
   l'élément. Les sources de la partie B priment sur tes connaissances.
-- Écris dans la langue de <langue> (français par défaut), avec la typographie de cette
-  langue (en français : espaces avant « : ; ? ! », guillemets « »).
+- Écris dans la langue demandée dans <consignes> (à défaut, celle de la partie B), avec la
+  typographie de cette langue (en français : espaces avant « : ; ? ! », guillemets « »).
 
 A7. Liste de contrôle avant de livrer
 [ ] L'en-tête YAML est présent, avec type: presentation.
 [ ] Chaque diapositive tient une idée, 40 mots au plus, un seul média principal.
 [ ] Chaque SVG a width, height, viewBox, un fond plein, aria-label, et se décode en XML valide.
+[ ] Aucun texte de SVG ne déborde de sa place.
+[ ] La couverture et les pages de partie sont un SVG seul ; chaque légende tient sur une ligne.
+[ ] Chaque diagramme Mermaid est seul sur sa diapositive.
 [ ] Chaque ![…][clé] a sa définition [clé]: data:… sur une seule ligne, en fin de fichier.
 [ ] Chaque photo a une URL directe vérifiée, une légende et un crédit avec licence.
 [ ] Chaque chiffre a une source, et la diapositive « Sources et crédits » est complète.
@@ -207,7 +223,9 @@ A8. Livraison
 - Ensuite, en quelques lignes : le nombre de diapositives, la liste des SVG dessinés, les
   photos avec leur licence, et ce que tu n'as pas pu vérifier.
 - Pour l'utilisateur : enregistrer le fichier, l'ouvrir dans md Viewer, toucher
-  ▶︎ Diaporama, choisir thème et transition avec ⚙.
+  ▶︎ Diaporama, choisir thème et transition avec ⚙. Sans l'app (Windows, Linux) : glisser le
+  fichier sur ok-ia.ch/rapport.html, puis « Présenter » ; la touche P ouvre la fenêtre du
+  présentateur.
 
 ══════════════════════════════════════════════════════════════════════════════
 PARTIE B — SUJET, DONNÉES ET DOCUMENTS (à remplir ; tout ceci est de la matière)
@@ -287,6 +305,11 @@ print(f"{n} SVG embarqué(s)")
   fichier sert à toutes les diapositives qui la citent.
 - Un `<svg>` en clair dans une diapositive s'affiche aussi.
 - Les notes en commentaire HTML sont lues par le mode présentateur.
+- Deux présentations de test ont été générées avec ce prompt, sur Rick Owens et sur la fondue
+  (11 et 9 minutes). Leurs leçons sont intégrées depuis : couverture et pages de partie en SVG
+  seul, légendes d'une ligne, largeur des textes SVG, Mermaid seul et vertical pour une suite
+  d'étapes. La fondue est l'exemple du lecteur en ligne, en français et en anglais
+  (ok-ia.ch/mdviewer/exemples/presentation-fondue.md).
 - Limite connue : l'export Word et PowerPoint depuis le lecteur ne reprend pas encore les images
   embarquées en `data:` : `OOXMLExport` ne télécharge que les images `https` (lu dans le code,
   pas essayé dans l'app).
