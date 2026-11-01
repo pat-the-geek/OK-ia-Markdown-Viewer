@@ -8,47 +8,44 @@ Pas de compte requis → laisser les champs identifiants vides ; cocher **« Sig
 
 ---
 
-## Notes (EN — à coller)
+## Notes (EN — à coller) — version 1.4, 1er novembre 2026
 
 ```
-NEW IN 1.3 — HOW TO TEST
-• Convert to presentation (requires an Apple Intelligence device): open the sample ("View a sample", in the home screen's toolbar), tap the Apple Intelligence button in the reader's toolbar (on iPhone held upright it may sit in the "…" menu), then "Convert to presentation". Choose a number of slides and tap "Convert". The model writes the slides ON-DEVICE (Foundation Models, SystemLanguageModel); each slide appears as a thumbnail as soon as it is ready, then "Start the slideshow" presents them. No text leaves the device.
-• On a large screen (iPad or iPhone Pro Max in landscape, a wide Mac window, iPhone Duo unfolded), the conversion, the summary, the chat and the table of contents open next to the document instead of in a sheet.
-• Reading themes: the "Aa" button offers five themes, in light and dark.
-• iPhone Duo: the app uses the full inner screen and splits into two parts across the fold.
-• Book mode: automatic with the iPhone Duo half-folded; on iPad, iPhone Pro Max in landscape and Mac, turn on “Two pages, like a book” in the Aa panel. Drag a page to turn it; tap it to show or hide the toolbar.
-• Full screen: diagrams, images, tables and timelines carry a small round button; tapping it (or the object) opens it full screen, with pinch to zoom.
-• Built with the iOS 27.1 SDK; the minimum system stays iOS/iPadOS/macOS 26.4.
+md Viewer is a reader for Markdown reports. No account or login is required.
 
-md Viewer is a Markdown document (report) reader. No account or login is required.
+NEW IN 1.4 — THE ANALYTIC OPTION (in-app purchase, submitted with this version)
+• One non-consumable product per platform: ch.okia.markdownviewer.analytic (iPhone and iPad) and ch.okia.markdownviewer.analytic.mac (Mac). Family Sharing is on.
+• To see the offer: on the home screen tap "View a sample", then the Entities button (two people) in the reader's toolbar. "Unlock Analytic · <price>" buys it with the sandbox account; "Restore purchases" sits below.
+• With the option, on the same sample:
+ – Entities: the people, organisations, places and products of the document, as a list, a gallery and a map. Found ON-DEVICE (NaturalLanguage; Foundation Models when available).
+ – Wikidata is OFFERED, never imposed: at the first analysis the app asks "Complete with Wikidata?". Only after "yes" does it send the NAME of an entity (never the document or its title) to wikidata.org, then reads that entry's Wikipedia summary and Wikimedia Commons photo. "Entity options" turns it off again. Without it, everything works from the document alone.
+ – Annotate (pencil button): Apple Pencil, finger or mouse; the notes follow into the slideshow and into PDF and Word exports.
+ – Import Word, PDF or PowerPoint: folder button in the reader's toolbar (Mac: File menu, Shift-Cmd-I), or "Open a file" with such a file. The conversion runs on the device.
+ – Vault analysis: once a vault folder is chosen, an analysis of all its reports.
+ – Safari: Share, then "md Viewer" turns the page into a reading sheet, translated on the device.
+• iCloud: annotations, entity corrections and the entity cache go to the user's PRIVATE CloudKit database, for their other devices; documents the app creates go to the user's iCloud Drive, folder "md Viewer". We have no access to either.
+• Spotlight: with the option, the vault's documents are indexed ON-DEVICE so a system search finds them.
+• The interface now speaks 15 languages.
 
-HOW TO TEST
-• On launch, tap "View a sample" (FR: « Voir un exemple »). A bundled demo document opens and shows every rendering feature: Markdown, Mermaid diagrams, a map, callouts, entity highlighting.
-• Any .md file can also be opened with "Open a file" (Files app).
-• A document containing --- can be presented as a full-screen slideshow with the ▶ button.
+HOW TO TEST THE REST
+• "View a sample" opens a bundled demo document with every rendering feature: Markdown, Mermaid diagrams, a map, callouts, entity highlighting. Any .md file opens with "Open a file".
+• A document containing --- is presented full screen with the slideshow button.
+• Apple Intelligence (only shown on a device that has it): "Document summary", "Chat with the document" and "Convert to presentation" run ON-DEVICE with Foundation Models (SystemLanguageModel). No text leaves the device.
+• Translate (book icon): Apple's Translation framework, ON-DEVICE; a missing language comes only through the SYSTEM prompt. The sample is in French.
+• iPhone Duo: two parts across the fold, and a book mode when half-folded.
 
-NEW IN 1.2 — ON-DEVICE DOCUMENT TRANSLATION
-• The demo document is written in French, so translation can be tested right away: in the reader's bar, tap the book icon ("Translate") and pick English. The document is translated paragraph by paragraph, including diagram labels; code, links and URLs stay intact. The same menu then offers "Show original".
-• Translation uses Apple's Translation framework, ON-DEVICE. No text leaves the device and no remote service is called.
-• If a language dictionary is not installed, the app downloads nothing on its own: it shows a banner and waits for the user's tap, then the SYSTEM prompt handles the download.
-
-NEW IN 1.2 — OPENING DOCUMENTS FROM FORNEWS.AI
-• The app declares the App Group "group.ai.fornews.native". fornews.ai is a separate app from the same developer (team PU9BSXN2V5). It writes a document into the shared container and opens md Viewer with the URL mdviewer://fichier?nom=<file name>. This exists because iOS cannot hand a file to a named app, and long reports do not fit in a URL.
-• Reviewing this path requires the fornews.ai app; everything else works without it. The shared folder keeps only the last ten documents, stays on the device, and the received name is reduced to a plain file name so it cannot point outside the folder.
-
-APPLE INTELLIGENCE (optional)
-• "Document summary", "Chat with the document" and "Convert to presentation" use Foundation Models ON-DEVICE and work from the open document only. No text leaves the device.
-• The Apple Intelligence menu only appears when Apple Intelligence is available on the device. Otherwise both features are hidden and the rest of the app works.
+FORNEWS.AI
+• The app declares the App Group "group.ai.fornews.native", shared with fornews.ai, a separate app from the same developer (team PU9BSXN2V5). fornews.ai writes a document there and opens md Viewer with mdviewer://fichier?nom=<file name>, because iOS cannot hand a file to a named app. With both apps installed, md Viewer also reads the entity entries fornews.ai saved there; nothing goes over the network. The folder keeps the last ten documents, and the received name is reduced to a plain file name.
 
 NETWORK
-• The app works offline. Network is used only for map tiles (OpenFreeMap / OpenStreetMap) in documents containing a map, and to download a document when the user opens an https link.
-• No user data is collected or transmitted.
+• The app works offline. It goes online only for: map tiles (OpenFreeMap / OpenStreetMap); a document or image opened from an https link; a web page or PDF shared from Safari; and Wikidata, Wikipedia and Wikimedia Commons, only after the user's consent.
+• No user data is collected or transmitted to us. No analytics, no advertising, no tracking.
 
-SIRI / SHORTCUTS (App Intents)
-• "Open report", "Open latest report" and "Summarize report" rely on an optional user-configured vault folder; without one, they have no report to offer.
+SIRI / SHORTCUTS
+• "Open report", "Open latest report" and "Summarize report" need a vault folder chosen by the user; the option adds "Analyze a Document", "Import into md Viewer", "Make a Reading Sheet of a Web Page" and "Export as PDF with Annotations".
 
 PLATFORMS
-• Universal app: iPhone, iPad and Mac (Mac Catalyst).
+• Universal app: iPhone, iPad and Mac (Mac Catalyst). Minimum system: iOS, iPadOS and macOS 26.4.
 ```
 
 ## Notes (FR — pour mémoire)
