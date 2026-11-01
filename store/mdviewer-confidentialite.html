@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Politique de confidentialité / Privacy Policy — md Viewer (OK-ia)</title>
+  <title>Politique de confidentialité — md Viewer — OK-ia</title>
   <meta name="robots" content="index,follow" />
   <style>
     :root{
@@ -43,9 +43,9 @@
       code{background:#2a2a30}
     }
   </style>
-  <link rel="alternate" type="application/rss+xml"
-        title="OK-ia — Veille informationnelle" href="/rss.xml" />
   <meta name="description" content="Politique de confidentialité de md Viewer : aucune collecte, aucun compte, aucun pistage — vos documents restent sur vos appareils." />
+  <meta name="okia:title-en" content="Privacy policy — md Viewer — OK-ia" />
+  <meta name="okia:description-en" content="md Viewer privacy policy: no data collection, no account, no tracking — your documents stay on your devices." />
   <link rel="canonical" href="https://ok-ia.ch/mdviewer/confidentialite.html" />
   <link rel="alternate" hreflang="fr" href="https://ok-ia.ch/mdviewer/confidentialite.html" />
   <link rel="alternate" hreflang="en" href="https://ok-ia.ch/mdviewer/confidentialite.html?lang=en" />
@@ -62,7 +62,7 @@
     <div class="lang-fr">
       <h1>Politique de confidentialité</h1>
       <p class="meta">Application <strong>md Viewer</strong> (OK-ia Markdown Viewer) ·
-         Dernière mise à jour : 16 septembre 2026</p>
+         Dernière mise à jour : 1<sup>er</sup> novembre 2026 (version 1.4)</p>
 
       <p class="lead">md Viewer est un lecteur de documents Markdown.
          Notre principe est simple : <strong>vos documents restent les vôtres</strong>.</p>
@@ -85,9 +85,24 @@
         <li>si vous utilisez aussi <strong>fornews.ai</strong>, une copie des documents que vous
             y avez demandé d'ouvrir dans md Viewer, déposée dans un <strong>dossier partagé entre
             les deux applications</strong>. Seules les dix dernières sont gardées, les plus
-            anciennes étant effacées.</li>
+            anciennes étant effacées. md Viewer y lit aussi, sur l'appareil, les fiches d'entités
+            que fornews.ai a préparées pour lui ;</li>
+        <li>avec l'option <strong>Analytic</strong> : les photos des entités, dans un cache de
+            60 Mo au plus, et le texte des documents de votre coffre et de vos documents analysés,
+            confié à <strong>Spotlight</strong>, l'index de recherche du système, sur l'appareil, pour
+            les retrouver d'une recherche. Sans l'option, ce texte en est retiré.</li>
       </ul>
       <p>Ces informations restent <strong>sur votre appareil</strong> et ne nous sont jamais envoyées.</p>
+
+      <h2>Vos autres appareils (iCloud)</h2>
+      <p>Avec l'option Analytic, vos <strong>annotations</strong>, vos <strong>corrections
+         d'entités</strong> et le cache des fiches d'entités passent par la base
+         <strong>privée</strong> de votre compte iCloud (CloudKit), pour vous retrouver sur vos
+         autres appareils. Une annotation garde le passage qu'elle marque (quelques dizaines de
+         caractères) et l'empreinte du document, pas le document. Les documents que md Viewer crée
+         (imports, fiches de pages web) sont rangés dans votre <strong>iCloud Drive</strong>, dossier
+         « md Viewer » ; ceux que vous ouvrez depuis Fichiers restent où ils sont. Nous n'avons
+         <strong>aucun accès</strong> à ces données : elles sont chez Apple, dans votre compte.</p>
 
       <h2>Accès à Internet</h2>
       <p>L'application fonctionne hors-ligne. Elle se connecte à Internet uniquement
@@ -99,6 +114,20 @@
             <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a>) ;</li>
         <li>pour <strong>télécharger un document</strong> ou une image lorsque vous ouvrez un lien
             <code>https</code>.</li>
+        <li>pour faire la <strong>fiche d'une page web</strong> que vous partagez depuis Safari : la
+            page est lue dans Safari même ; pour une adresse seule, md Viewer charge la page comme
+            un navigateur, et télécharge le PDF quand l'adresse mène à un PDF. Les images de la
+            fiche s'affichent depuis le site de la page. La fiche est composée et traduite sur
+            l'appareil ;</li>
+        <li><strong>Wikidata</strong> (option Analytic), <strong>seulement si vous l'avez
+            accepté</strong> : pour compléter une entité que le document ne décrit pas (sa nature,
+            sa position, sa photo), md Viewer interroge
+            <a href="https://www.wikidata.org/" rel="noopener">Wikidata</a>, puis lit le résumé de
+            l'article <a href="https://www.wikipedia.org/" rel="noopener">Wikipédia</a> et la photo
+            de <a href="https://commons.wikimedia.org/" rel="noopener">Wikimedia Commons</a>
+            (Fondation Wikimedia). Seul le <strong>nom de l'entité</strong> est envoyé, jamais le
+            document ni son titre. Vous pouvez couper cette recherche à tout moment dans les
+            options des entités.</li>
       </ul>
       <p>Pour traduire un document, le <strong>système</strong> peut avoir besoin de télécharger
          le dictionnaire d'une langue auprès d'Apple. Ce téléchargement passe par l'invite du
@@ -108,11 +137,18 @@
          L'application, elle, ne collecte ni ne relie ces informations à votre identité.</p>
 
       <h2>Intelligence artificielle</h2>
-      <p>Le <strong>résumé du document</strong> et la <strong>discussion avec le document</strong>
-         utilisent <strong>Apple Intelligence sur l'appareil</strong>. La <strong>traduction des
-         documents</strong> utilise elle aussi un modèle d'Apple qui fonctionne <strong>sur
-         l'appareil</strong>. Dans les trois cas, le contenu de vos documents <strong>n'est envoyé
-         à aucun serveur</strong>.</p>
+      <p>Le <strong>résumé du document</strong>, la <strong>discussion avec le document</strong>,
+         la <strong>conversion en présentation</strong> et la rédaction des documents importés
+         utilisent le modèle d'<strong>Apple Intelligence sur l'appareil</strong>, jamais les serveurs
+         d'Apple (Private Cloud Compute). La <strong>traduction</strong> et la recherche des
+         <strong>entités</strong> fonctionnent elles aussi <strong>sur l'appareil</strong>. Dans tous
+         les cas, le contenu de vos documents <strong>n'est envoyé à aucun serveur</strong>.</p>
+
+      <h2>Achat de l'option Analytic</h2>
+      <p>L'option s'achète une fois, dans l'App Store. Le paiement est traité par
+         <strong>Apple</strong> ; nous ne recevons ni votre nom, ni votre adresse e-mail, ni vos
+         données de paiement. L'application vérifie seulement auprès de l'App Store que l'achat
+         existe.</p>
 
       <h2>Enfants</h2>
       <p>L'application ne collecte aucune donnée et convient à tous les publics.</p>
@@ -130,7 +166,7 @@
     <div class="lang-en">
       <h1>Privacy Policy</h1>
       <p class="meta"><strong>md Viewer</strong> app (OK-ia Markdown Viewer) ·
-         Last updated: September 16, 2026</p>
+         Last updated: November 1, 2026 (version 1.4)</p>
 
       <p class="lead">md Viewer is a Markdown document reader.
          Our principle is simple: <strong>your documents remain yours</strong>.</p>
@@ -152,9 +188,24 @@
             and transition, automatic document translation);</li>
         <li>if you also use <strong>fornews.ai</strong>, a copy of the documents you asked it to
             open in md Viewer, placed in a <strong>folder shared between the two apps</strong>. Only
-            the last ten are kept; older ones are deleted.</li>
+            the last ten are kept; older ones are deleted. md Viewer also reads there, on the
+            device, the entity entries fornews.ai prepared for it;</li>
+        <li>with the <strong>Analytic</strong> option: entity photos, in a cache of 60 MB at
+            most, and the text of the documents in your vault and of your analysed documents,
+            handed to <strong>Spotlight</strong>, the system's search index, on the device, so a
+            search finds them. Without the option, that text is removed from it.</li>
       </ul>
       <p>This information stays <strong>on your device</strong> and is never sent to us.</p>
+
+      <h2>Your other devices (iCloud)</h2>
+      <p>With the Analytic option, your <strong>annotations</strong>, your <strong>entity
+         corrections</strong> and the entity cache go through the <strong>private</strong> database
+         of your iCloud account (CloudKit), so they reach your other devices. An annotation keeps
+         the passage it marks (a few dozen characters) and the document's fingerprint, not the
+         document. Documents md Viewer creates (imports, web page sheets) are filed in your
+         <strong>iCloud Drive</strong>, folder "md Viewer"; those you open from Files stay where
+         they are. We have <strong>no access</strong> to this data: it sits with Apple, in your
+         account.</p>
 
       <h2>Internet access</h2>
       <p>The app works offline. It connects to the Internet only when <strong>you</strong>
@@ -165,7 +216,20 @@
             <a href="https://openfreemap.org/" rel="noopener">OpenFreeMap</a> and
             <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a>);</li>
         <li>to <strong>download a document</strong> or an image when you open an
-            <code>https</code> link.</li>
+            <code>https</code> link;</li>
+        <li>to make a <strong>web page sheet</strong> of a page you share from Safari: the page is
+            read in Safari itself; for a bare address, md Viewer loads the page like a browser,
+            and downloads the PDF when the address leads to one. The sheet's images are shown
+            from the page's site. The sheet is composed and translated on the device;</li>
+        <li><strong>Wikidata</strong> (Analytic option), <strong>only if you agreed</strong>: to
+            complete an entity the document does not describe (its nature, its location, its
+            photo), md Viewer queries
+            <a href="https://www.wikidata.org/" rel="noopener">Wikidata</a>, then reads the summary of
+            the <a href="https://www.wikipedia.org/" rel="noopener">Wikipedia</a> article and the
+            photo from <a href="https://commons.wikimedia.org/" rel="noopener">Wikimedia Commons</a>
+            (Wikimedia Foundation). Only the <strong>name of the entity</strong> is sent, never the
+            document or its title. You can turn this lookup off at any time in the entity
+            options.</li>
       </ul>
       <p>To translate a document, the <strong>system</strong> may need to download a language
          dictionary from Apple. That download goes through the system prompt, with your consent;
@@ -174,10 +238,17 @@
          The app itself neither collects nor links this information to your identity.</p>
 
       <h2>Artificial intelligence</h2>
-      <p><strong>Document summary</strong> and <strong>chat with the document</strong> use
-         <strong>Apple Intelligence on-device</strong>. <strong>Document translation</strong> also
-         relies on an Apple model that runs <strong>on the device</strong>. In all three cases, the
+      <p><strong>Document summary</strong>, <strong>chat with the document</strong>,
+         <strong>conversion to a presentation</strong> and the drafting of imported documents use
+         the <strong>Apple Intelligence model on the device</strong>, never Apple's servers
+         (Private Cloud Compute). <strong>Translation</strong> and the search for
+         <strong>entities</strong> also run <strong>on the device</strong>. In every case, the
          content of your documents is <strong>never sent</strong> to any server.</p>
+
+      <h2>Buying the Analytic option</h2>
+      <p>The option is bought once, in the App Store. Payment is handled by
+         <strong>Apple</strong>; we receive neither your name, nor your email address, nor your
+         payment details. The app only checks with the App Store that the purchase exists.</p>
 
       <h2>Children</h2>
       <p>The app collects no data and is suitable for all audiences.</p>
@@ -194,7 +265,6 @@
     <footer>
       © 2026 OK-ia · <a href="https://ok-ia.ch" rel="noopener">ok-ia.ch</a> ·
       <a href="roadmap.html"><span class="lang-fr">Feuille de route</span><span class="lang-en">Roadmap</span></a> ·
-      <a href="/rss.xml"><span class="lang-fr">Flux RSS</span><span class="lang-en">RSS feed</span></a> ·
       <a href="/mdviewer/"><span class="lang-fr">Retour à md Viewer</span><span class="lang-en">Back to md Viewer</span></a>
     </footer>
   </main>
@@ -203,6 +273,17 @@
   function fwSetLang(l) {
     document.documentElement.setAttribute('data-lang', l);
     document.documentElement.setAttribute('lang', l);
+  // Titre et description suivent la langue. Sans cela, la version anglaise gardait le titre
+  // français — et c'est lui que les moteurs affichaient dans leurs résultats.
+  var racine = document.documentElement, meta = document.querySelector('meta[name="description"]');
+  if (!racine.dataset.titreFr) {
+    racine.dataset.titreFr = document.title;
+    if (meta) racine.dataset.descFr = meta.content;
+  }
+  var tEn = document.querySelector('meta[name="okia:title-en"]');
+  var dEn = document.querySelector('meta[name="okia:description-en"]');
+  if (tEn) document.title = (l === 'en') ? tEn.content : racine.dataset.titreFr;
+  if (meta && dEn) meta.content = (l === 'en') ? dEn.content : racine.dataset.descFr;
     // Canonique auto-référente : sans elle, la variante ?lang=en est repliée sur la page
     // française et la version anglaise n'existe pour aucun moteur, malgré le hreflang.
     var can = document.querySelector('link[rel="canonical"]');
