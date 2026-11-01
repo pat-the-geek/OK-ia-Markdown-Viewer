@@ -120,6 +120,32 @@
   }
   function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
+  /* ---- gras et italique en chinois, japonais, coréen ----------------------
+     CommonMark laisse « **+2%**增长 » en clair : un ** fermant précédé d'une ponctuation et suivi
+     d'une lettre n'est pas « right-flanking ». Sans espaces entre les mots, le cas est courant en
+     CJK (réponses d'Apple Intelligence en chinois). Ces règles ne prennent la main que si le texte
+     touche un caractère CJK ; ailleurs, marked garde les siennes. presentation.js en profite aussi. */
+  var CJK = /[⺀-鿿가-힯豈-﫿＀-￯]/;
+  function emphaseCJK(nom, delim, balise) {
+    var d = escapeRegExp(delim);
+    var motif = new RegExp('^' + d + '(?![\\s*])([\\s\\S]*?[^\\s*\\\\])' + d + '(?!\\*)');
+    return {
+      name: nom, level: 'inline',
+      start: function (src) { var i = src.indexOf(delim); return i < 0 ? undefined : i; },
+      tokenizer: function (src) {
+        var m = motif.exec(src);
+        if (!m || !(CJK.test(m[1]) || CJK.test(src.charAt(m[0].length)))) return;
+        return { type: nom, raw: m[0], tokens: this.lexer.inlineTokens(m[1]) };
+      },
+      renderer: function (t) {
+        return '<' + balise + '>' + this.parser.parseInline(t.tokens) + '</' + balise + '>';
+      }
+    };
+  }
+  if (window.marked && window.marked.use) {
+    window.marked.use({ extensions: [emphaseCJK('grasCJK', '**', 'strong'), emphaseCJK('italiqueCJK', '*', 'em')] });
+  }
+
   /* =========================================================================
      1. FRONTMATTER
      ========================================================================= */
