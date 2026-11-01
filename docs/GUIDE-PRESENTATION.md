@@ -103,6 +103,28 @@ marker: default,-1.68,29.22,[[Goma]]
 
 ---
 
+## Notes de l'orateur
+
+Les notes s'écrivent dans le fichier, dans un commentaire HTML placé dans la diapositive, avant le
+`---` qui la sépare de la suivante :
+
+```markdown
+## Les chiffres de l'année
+
+- 486 articles analysés
+
+<!--
+Insister sur la hausse de 18 %.
+-->
+
+---
+```
+
+Le mode présentateur (option Analytic, second écran) les affiche ; le public ne les voit pas. Un
+PowerPoint importé arrive avec ses notes déjà rangées ainsi. On ne peut pas encore les écrire dans
+l'app : la prochaine version de md Viewer permettra d'ajouter et de modifier les notes directement
+dans l'app.
+
 ## À ne pas faire
 
 - Pas de diapos « murs de texte » (elles rétrécissent).
