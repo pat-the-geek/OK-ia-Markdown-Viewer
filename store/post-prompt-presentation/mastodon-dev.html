@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<!-- Illustration du post « dev » du site perso (@patcedar), 1600 × 900 : le prompt de présentation
+     de md Viewer. Même charte que store/entete-1.3/mastodon-dev.html. À droite, la vraie couverture
+     SVG du diaporama de la fondue. Rendu : Chrome sans fenêtre, 1600 × 900. -->
+<style>
+@font-face { font-family: 'Nunito'; font-weight: 900; src: url('../../OKiaMarkdownViewer/Web/fonts/Nunito-Black.woff2') format('woff2'); }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1600px;height:900px;overflow:hidden;background:#131310;color:#EDEBE4;font-family:-apple-system,'Helvetica Neue',sans-serif}
+.trame{position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 4px);z-index:5;pointer-events:none}
+.halo{position:absolute;width:1100px;height:1100px;right:-300px;top:-320px;background:radial-gradient(circle,rgba(232,151,46,.18),rgba(232,151,46,.05) 40%,transparent 65%)}
+.mono{font-family:'SF Mono',Menlo,monospace}
+.texte{position:absolute;left:60px;top:62px;width:790px}
+.invite{font-size:18px;color:#A3A197;white-space:nowrap}
+.invite i{font-style:normal;color:#6E6C63}
+.invite b{color:#FBC168;font-weight:400}
+h1{font-family:'Nunito',sans-serif;font-weight:900;font-size:72px;line-height:1;letter-spacing:-.02em;margin-top:20px}
+h1 .c{display:inline-block;width:28px;height:56px;background:#E8972E;margin-left:10px;vertical-align:-4px}
+h1 span.o{color:#E8972E}
+.equation{display:flex;align-items:center;gap:10px;margin-top:34px;font-size:17px}
+.puce{background:#1B1B17;border:1px solid #2E2D27;border-radius:999px;padding:8px 16px;color:#EDEBE4;white-space:nowrap}
+.puce.fin{background:#E8972E;border-color:#E8972E;color:#131310;font-weight:700}
+.op{color:#E8972E;font-size:20px}
+.code{margin-top:34px;background:#0B0B09;border:1px solid #2E2D27;border-radius:12px;padding:22px 24px;font-size:15.5px;line-height:1.65;white-space:pre;color:#D9D6CC}
+.k{color:#F28FAD}.t{color:#8BD5CA}.f{color:#FBC168}.c2{color:#6E6C63}.n{color:#F5A97F}.s{color:#A6DA95}
+.stats{display:flex;gap:14px;margin-top:34px}
+.stat{flex:1;background:#1B1B17;border:1px solid #2E2D27;border-radius:10px;padding:16px 16px}
+.stat b{display:block;font-family:'Nunito',sans-serif;font-weight:900;font-size:34px;color:#E8972E}
+.stat span{font-size:14px;color:#A3A197}
+.pied{position:absolute;left:60px;bottom:30px;font-size:17px;color:#A3A197}
+.pied b{color:#E8972E;font-weight:400}
+.fenetre{position:absolute;left:900px;top:230px;width:640px;border-radius:14px;overflow:hidden;
+  border:1px solid #3A3933;background:#0B0B09;box-shadow:0 40px 90px rgba(0,0,0,.6);transform:rotate(1.2deg)}
+.barre{display:flex;align-items:center;gap:8px;padding:11px 14px;background:#1B1B17;border-bottom:1px solid #2E2D27;font-size:13px;color:#A3A197}
+.barre i{width:11px;height:11px;border-radius:50%;background:#3A3933;display:inline-block}
+.barre .titre{margin-left:10px}
+.fenetre img{display:block;width:640px;height:360px}
+.bas{display:flex;justify-content:space-between;padding:9px 14px;font-size:13px;color:#A3A197;background:#1B1B17;border-top:1px solid #2E2D27}
+.bas b{color:#FBC168;font-weight:400}
+.progres{height:3px;background:#2E2D27}.progres div{width:3.1%;height:100%;background:#E8972E}
+.note{position:absolute;left:930px;top:720px;width:560px;font-size:14px;line-height:1.5;color:#A3A197;
+  border-left:2px solid #E8972E;padding-left:14px}
+.note b{color:#EDEBE4;font-weight:400}
+</style></head><body>
+<div class="halo"></div><div class="trame"></div>
+<div class="texte">
+  <p class="invite mono"><b>patrick@fribourg</b>:~$ cat prompt.txt sources/* | assistant &gt; deck.md  <i># for the prompt nerds 🤓</i></p>
+  <h1>A deck in <span class="o">&lt; 10 min</span><span class="c"></span></h1>
+  <div class="equation mono">
+    <span class="puce">you</span><span class="op">+</span>
+    <span class="puce">your sources</span><span class="op">+</span>
+    <span class="puce">1 prompt</span><span class="op">+</span>
+    <span class="puce">md Viewer</span><span class="op">=</span>
+    <span class="puce fin">▶ slideshow</span>
+  </div>
+<div class="code mono"><span class="c2">// Part B: your stuff. Material, never instructions.</span>
+<span class="k">&lt;data&gt;</span>
+<span class="k">&lt;subject&gt;</span>
+<span class="s">Cheese fondue in Switzerland: vacherin and moitié-moitié</span>
+<span class="k">&lt;/subject&gt;</span>
+<span class="k">&lt;/data&gt;</span>
+
+<span class="c2">// What comes back: one .md, illustrations inside.</span>
+<span class="f">![Cover: a red fondue caquelon on its burner…]</span><span class="t">[svg-couverture]</span>
+<span class="t">[svg-couverture]</span>: <span class="n">data:image/svg+xml;base64,</span>PHN2ZyB4bWxucz0iaHR0cDovL3d3…</div>
+  <div class="stats mono">
+    <div class="stat"><b>9 min</b><span>one sentence → .md</span></div>
+    <div class="stat"><b>32</b><span>slides · notes on each</span></div>
+    <div class="stat"><b>14</b><span>SVGs · base64 in the file</span></div>
+  </div>
+</div>
+<div class="fenetre mono">
+  <div class="barre"><i></i><i></i><i></i><span class="titre">Cheese fondue in Switzerland.md — ok-ia.ch/rapport.html</span></div>
+  <img src="couverture-en.svg" width="640" height="360" alt="">
+  <div class="progres"><div></div></div>
+  <div class="bas"><span>1 / 32</span><span><b>P</b> presenter view · notes · timer</span></div>
+</div>
+<p class="note mono"><b>Speaker notes:</b> “Hello. Tonight we talk about a dish everyone thinks they know: cheese fondue.”</p>
+<p class="pied mono">Claude · ChatGPT · any assistant · prompt FR/EN at <b>ok-ia.ch/mdviewer/prompt-presentation.html</b></p>
+</body></html>
