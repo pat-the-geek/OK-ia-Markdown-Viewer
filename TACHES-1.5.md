@@ -28,6 +28,20 @@ documentée nulle part pour l'utilisateur.
 - [ ] Documenter la syntaxe : page `mdviewer/import-et-annotations.html` (ou une page du
       diaporama), base du Terminal IA (`public/data/mdviewer-kb.md`), `docs/GUIDE-PRESENTATION.md`.
 
+## Images embarquées perdues à l'export Word et PowerPoint (demande du 1er novembre 2026)
+
+Vu en écrivant `docs/PROMPT-PRESENTATION-SVG.md` ; lu dans le code, pas essayé dans l'app.
+`exportModel` (render.js) passe une image comme `{ t: 'image', src }`, mais `OOXMLExport` ne
+télécharge que les `src` en `http` (`imageURLs`) : une image en `data:` n'est jamais résolue et
+disparaît de l'export. Cela touche les images des documents importés (Word, PDF, PowerPoint, 1.4)
+comme les SVG embarqués en base64 du prompt de présentation.
+
+- [ ] Essayer d'abord dans l'app : exporter en Word et en PowerPoint un document importé avec images.
+- [ ] Décoder les `data:image/…;base64` côté Swift (JPEG et PNG tels quels).
+- [ ] SVG : `UIImage` ne lit pas le SVG — le rastériser en PNG côté JavaScript avant l'export,
+      comme les diagrammes Mermaid (`svgToPng`), à la taille d'affichage × 2.
+- [ ] Vérifier l'export PDF avec les mêmes documents.
+
 ## Défauts vus pendant la 1.4
 
 - [ ] Anglais : « Search the Store », « Search the Store… » et « Neither the Store nor Analyzed
