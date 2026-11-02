@@ -1,4 +1,6 @@
-# Prompt — an outstanding presentation for md Viewer
+# Pro Max prompt — an outstanding presentation for md Viewer
+
+For Siri or an assistant that refuses a long message: the [Mini prompt](PROMPT-PRESENTATION-COURT.en.md).
 
 Paste it as is into an assistant (Claude, ChatGPT, etc.). **Part A** says how to build the
 presentation; it stays the same whatever the subject. **Part B** holds the subject, the data and
@@ -142,8 +144,10 @@ A3.3 Embedding as base64
   (xml.etree.ElementTree.fromstring).
 - If you can NOT run code: leave each SVG as plain text, directly in the slide, where the
   image goes (the <svg …> tag at the start of a line, NO blank line inside the SVG, a blank
-  line before and after). md Viewer displays it as is. Say in your answer that the script in
-  the appendix converts it to base64 in one command.
+  line before and after). In the <svg> tag, replace width="1600" height="900" with
+  width="100%": as plain text, the drawing then takes the width of the slide instead of
+  overflowing. md Viewer displays it as is. Say in your answer that the script in the appendix
+  converts it to base64 in one command.
 
 A4. Photos and existing images
 - Search order:
@@ -205,7 +209,8 @@ A6. Accuracy
 A7. Checklist before delivering
 [ ] The YAML header is there, with type: presentation.
 [ ] Each slide holds one idea, 40 words at most, a single main media item.
-[ ] Each SVG has width, height, viewBox, a solid background, aria-label, and decodes to valid XML.
+[ ] Each SVG has width and height (width="100%" if it stays as plain text), viewBox, a solid
+    background, aria-label, and decodes to valid XML.
 [ ] No SVG text overflows its space.
 [ ] The cover and part pages are an SVG alone; each caption fits on one line.
 [ ] Each Mermaid diagram stands alone on its slide.
@@ -283,6 +288,11 @@ def replace(m):
     global n
     svg = m.group(0)
     ET.fromstring(svg)                       # rejects a malformed SVG
+    # As plain text, width="100%" fits it to the slide; as an image it needs its size: the viewBox one.
+    head = re.match(r"<svg\b[^>]*>", svg).group(0)
+    vb = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"', head)
+    if vb and 'width="100%"' in head and " height=" not in head:
+        svg = svg.replace(head, head.replace('width="100%"', f'width="{vb[1]}" height="{vb[2]}"'), 1)
     n += 1
     alt = re.search(r'aria-label="([^"]*)"', svg)
     key = "svg-" + hashlib.sha1(svg.encode("utf-8")).hexdigest()[:10]   # stable: re-running mixes nothing up

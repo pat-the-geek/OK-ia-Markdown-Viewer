@@ -47,3 +47,9 @@ comme les SVG embarqués en base64 du prompt de présentation.
 - [ ] Anglais : « Search the Store », « Search the Store… » et « Neither the Store nor Analyzed
       Documents contain any documents. » disent « Store » ; l'anglais garde « vault » (seuls
       l'allemand, l'espagnol et l'italien disent « Store »).
+- [ ] Un `<svg>` en clair dans le document (réponse d'IA) garde sa largeur : avec
+      `width="1600"`, il déborde de la page en lecture et du cadre en diaporama (vu dans le lecteur
+      en ligne le 2 novembre 2026 ; même CSS dans l'app, pas essayé dans l'app). Borner
+      `svg[width]` hors Mermaid dans `style.css` et `presentation.css` (max-width 100 %, height
+      auto), dans l'app et dans le lecteur en ligne. Les prompts contournent déjà avec
+      `width="100%"`.

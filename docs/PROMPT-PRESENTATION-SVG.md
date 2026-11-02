@@ -1,4 +1,6 @@
-# Prompt — une présentation remarquable pour md Viewer
+# Prompt pro max — une présentation remarquable pour md Viewer
+
+Pour Siri ou un assistant qui refuse un long message : le [prompt mini](PROMPT-PRESENTATION-COURT.md).
 
 À coller tel quel dans un assistant (Claude, ChatGPT, etc.). La **partie A** dit comment fabriquer
 la présentation ; elle ne change pas d'un sujet à l'autre. La **partie B** porte le sujet, les
@@ -141,8 +143,10 @@ A3.3 Embarquer en base64
   (xml.etree.ElementTree.fromstring).
 - Si tu ne peux PAS exécuter de code : laisse chaque SVG en clair, directement dans la
   diapositive, à l'endroit de l'image (la balise <svg …> en début de ligne, AUCUNE ligne vide
-  à l'intérieur du SVG, une ligne vide avant et après). md Viewer l'affiche tel quel. Signale
-  dans ta réponse que le script de l'annexe le convertit en base64 en une commande.
+  à l'intérieur du SVG, une ligne vide avant et après). Dans la balise <svg>, remplace
+  width="1600" height="900" par width="100%" : en clair, le dessin prend la largeur de la
+  diapositive au lieu de déborder. md Viewer l'affiche tel quel. Signale dans ta réponse que le
+  script de l'annexe le convertit en base64 en une commande.
 
 A4. Photos et images existantes
 - Ordre de recherche :
@@ -206,7 +210,8 @@ A6. Exactitude
 A7. Liste de contrôle avant de livrer
 [ ] L'en-tête YAML est présent, avec type: presentation.
 [ ] Chaque diapositive tient une idée, 40 mots au plus, un seul média principal.
-[ ] Chaque SVG a width, height, viewBox, un fond plein, aria-label, et se décode en XML valide.
+[ ] Chaque SVG a width et height (width="100%" s'il reste en clair), viewBox, un fond plein,
+    aria-label, et se décode en XML valide.
 [ ] Aucun texte de SVG ne déborde de sa place.
 [ ] La couverture et les pages de partie sont un SVG seul ; chaque légende tient sur une ligne.
 [ ] Chaque diagramme Mermaid est seul sur sa diapositive.
@@ -285,6 +290,11 @@ def remplacer(m):
     global n
     svg = m.group(0)
     ET.fromstring(svg)                       # refuse un SVG mal formé
+    # En clair, width="100%" l'ajuste à la diapositive ; en image, il lui faut sa taille : celle du viewBox.
+    tete = re.match(r"<svg\b[^>]*>", svg).group(0)
+    vb = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"', tete)
+    if vb and 'width="100%"' in tete and " height=" not in tete:
+        svg = svg.replace(tete, tete.replace('width="100%"', f'width="{vb[1]}" height="{vb[2]}"'), 1)
     n += 1
     alt = re.search(r'aria-label="([^"]*)"', svg)
     cle = "svg-" + hashlib.sha1(svg.encode("utf-8")).hexdigest()[:10]   # stable : relancer ne mélange rien
@@ -303,7 +313,10 @@ print(f"{n} SVG embarqué(s)")
 - Un SVG en `data:image/svg+xml;base64` appelé par référence s'affiche dans le lecteur et dans le
   diaporama, agrandi à la diapositive (1600 × 900 lu comme tel). La définition placée à la fin du
   fichier sert à toutes les diapositives qui la citent.
-- Un `<svg>` en clair dans une diapositive s'affiche aussi.
+- Un `<svg>` en clair dans une diapositive s'affiche aussi, à condition d'avoir `width="100%"` sans
+  `height` (2 novembre 2026) : avec `width="1600" height="900"`, il garde 1 600 px et déborde de la
+  page, en lecture comme en diaporama, car aucune règle CSS ne borne un `<svg>` en clair. Le script
+  remet la taille du viewBox avant d'encoder.
 - Les notes en commentaire HTML sont lues par le mode présentateur.
 - Deux présentations de test ont été générées avec ce prompt, sur Rick Owens et sur la fondue
   (11 et 9 minutes). Leurs leçons sont intégrées depuis : couverture et pages de partie en SVG
