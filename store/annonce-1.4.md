@@ -1,4 +1,7 @@
-# Annonce de la 1.4 — à publier le jour de la sortie
+# Annonce de la 1.4 — publiée le 5 novembre 2026, à la sortie sur Mac
+
+Fil : https://techhub.social/@ok_ia_ch/117566230264305087 (EN, quatre images) et
+https://techhub.social/@ok_ia_ch/117566230299888848 (FR, en réponse, quatre images).
 
 Compte : @ok_ia_ch@techhub.social. Un fil de deux messages, anglais puis français en réponse,
 comme pour la 1.3. Rien ne part sans le feu vert de Patrick.
@@ -17,7 +20,7 @@ carte, annotations, import. Leurs textes alt sont ceux de la feuille de route, r
 ## Message 1 — anglais (quatre images)
 
 ```
-md Viewer 1.4 is out ✨
+md Viewer 1.4 is out — now on Mac too ✨
 
 Your documents come alive with the new Analytic option:
 • the people, places and organisations of a report, in a gallery and on a map
@@ -26,28 +29,28 @@ Your documents come alive with the new Analytic option:
 • share a page from Safari, get a reading sheet in your language
 
 All on-device. One purchase: CHF 3 on iPhone and iPad, CHF 5 on Mac.
-Reading stays free, now in 15 languages.
+Reading stays free, in 15 languages.
 https://ok-ia.ch/mdviewer/?lang=en
 
-#Apple #iOS #Markdown #AppleIntelligence
+#Apple #iOS #iPadOS #macOS #Markdown
 ```
 
 ## Message 2 — français, en réponse (quatre images)
 
 ```
-md Viewer 1.4 est sortie ✨
+md Viewer 1.4 est sortie, sur Mac aussi ✨
 
-Vos documents prennent vie avec la nouvelle option Analytic :
+La nouvelle option Analytic :
 • les personnes, lieux et organisations d'un rapport, en galerie et sur une carte
 • annoter à l'Apple Pencil, au doigt ou à la souris
 • importer Word, PDF et PowerPoint
-• partager une page depuis Safari, en lire la fiche dans votre langue
+• partager une page depuis Safari, lire sa fiche dans votre langue
 
 Tout sur l'appareil. Achat unique : 3 francs sur iPhone et iPad, 5 sur Mac.
 La lecture reste gratuite, en 15 langues.
 https://ok-ia.ch/mdviewer/
 
-#Apple #iOS #Markdown
+#Apple #iOS #iPadOS #macOS #Markdown
 ```
 
 ## Textes alt — anglais
