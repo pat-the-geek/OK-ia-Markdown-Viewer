@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="mul">
+<head>
+<meta charset="utf-8">
+<title>md Viewer — 15 langues</title>
+<!-- Illustration du post sur les langues (1600 × 900). Chaque carte reprend le bouton
+     « Lancer le diaporama » tel que l'app l'écrit, tiré de Localizable.xcstrings. Rendu :
+     Chrome sans fenêtre, --window-size=1600,900, puis sips en JPEG. -->
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1600px;height:900px;overflow:hidden;background:#111111}
+  body{font-family:-apple-system,"Helvetica Neue","PingFang SC","Hiragino Sans","Apple SD Gothic Neo","Kohinoor Devanagari",Arial,sans-serif;
+    color:#FAFAF8;position:relative}
+  .halo{position:absolute;left:-220px;top:-160px;width:980px;height:980px;border-radius:50%;
+    background:radial-gradient(circle,rgba(232,151,46,.30) 0%,rgba(232,151,46,.08) 45%,rgba(17,17,17,0) 70%)}
+  .gauche{position:absolute;left:72px;top:70px;bottom:70px;width:420px;display:flex;flex-direction:column}
+  .marque{font-size:40px;font-weight:700;letter-spacing:-.5px}
+  .marque span{color:#E8972E}
+  .quinze{font-size:330px;font-weight:800;line-height:.86;letter-spacing:-14px;color:#E8972E;margin-top:70px}
+  .sous{font-size:34px;font-weight:600;line-height:1.25;margin-top:26px;color:#FAFAF8}
+  .appareils{margin-top:auto;font-size:24px;color:#a7a79c;letter-spacing:.5px}
+  .grille{position:absolute;left:540px;right:70px;top:70px;bottom:70px;display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));gap:16px}
+  .carte{background:#1d1d21;border:1px solid #34343a;border-radius:20px;padding:16px 22px;
+    display:flex;flex-direction:column;justify-content:center;gap:8px}
+  .langue{font-size:19px;color:#a7a79c;font-weight:600;letter-spacing:.3px}
+  .bouton{display:flex;align-items:center;gap:12px;font-size:23px;font-weight:700;line-height:1.2;word-break:keep-all;hyphens:none}
+  .bouton.ligne{white-space:nowrap}
+  .bouton i{flex:none;width:34px;height:34px;border-radius:50%;background:#E8972E;position:relative}
+  .bouton i::after{content:"";position:absolute;left:13px;top:10px;border-left:12px solid #111;
+    border-top:7px solid transparent;border-bottom:7px solid transparent}
+  .carte.fr{border-color:#E8972E}
+</style>
+</head>
+<body>
+  <div class="halo"></div>
+  <div class="gauche">
+    <div class="marque">md <span>Viewer</span></div>
+    <div class="quinze">15</div>
+    <div class="sous">Menus · slideshow ·<br>Apple Intelligence</div>
+    <div class="appareils">iPhone · iPad · Mac</div>
+  </div>
+  <div class="grille">
+    <div class="carte fr"><div class="langue">Français</div><div class="bouton"><i></i>Lancer le diaporama</div></div>
+    <div class="carte"><div class="langue">English</div><div class="bouton"><i></i>Start the slideshow</div></div>
+    <div class="carte"><div class="langue">Deutsch</div><div class="bouton"><i></i>Diashow starten</div></div>
+    <div class="carte"><div class="langue">Español</div><div class="bouton"><i></i>Iniciar la presentación</div></div>
+    <div class="carte"><div class="langue">Italiano</div><div class="bouton"><i></i>Avvia la presentazione</div></div>
+    <div class="carte"><div class="langue">日本語</div><div class="bouton ligne" lang="ja"><i></i>スライドショーを開始</div></div>
+    <div class="carte"><div class="langue">한국어</div><div class="bouton" lang="ko"><i></i>슬라이드쇼 시작</div></div>
+    <div class="carte"><div class="langue">简体中文</div><div class="bouton" lang="zh-Hans"><i></i>开始幻灯片放映</div></div>
+    <div class="carte"><div class="langue">Português (Brasil)</div><div class="bouton"><i></i>Iniciar a apresentação de slides</div></div>
+    <div class="carte"><div class="langue">Nederlands</div><div class="bouton"><i></i>Start de diavoorstelling</div></div>
+    <div class="carte"><div class="langue">Русский</div><div class="bouton ligne"><i></i>Начать слайд‑шоу</div></div>
+    <div class="carte"><div class="langue">Українська</div><div class="bouton ligne"><i></i>Почати слайд‑шоу</div></div>
+    <div class="carte"><div class="langue">Türkçe</div><div class="bouton"><i></i>Slayt gösterisini başlat</div></div>
+    <div class="carte"><div class="langue">Tiếng Việt</div><div class="bouton"><i></i>Bắt đầu trình chiếu</div></div>
+    <div class="carte"><div class="langue">हिन्दी</div><div class="bouton" lang="hi"><i></i>स्लाइडशो शुरू करें</div></div>
+  </div>
+</body>
+</html>
