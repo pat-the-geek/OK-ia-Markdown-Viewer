@@ -34855,7 +34855,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search the Store"
+            "value": "Search the vault"
           }
         },
         "de": {
@@ -34950,7 +34950,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search the Store…"
+            "value": "Search the vault…"
           }
         },
         "de": {
@@ -35330,7 +35330,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Neither the Store nor Analyzed Documents contain any documents."
+            "value": "Neither the vault nor Analyzed Documents contain any documents."
           }
         },
         "de": {
@@ -38655,7 +38655,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Search your whole Store, see who appears in it, where and since when, and find your documents in Spotlight."
+            "value": "Search your whole vault, see who appears in it, where and since when, and find your documents in Spotlight."
           }
         },
         "de": {

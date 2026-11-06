@@ -2,7 +2,6 @@
 
 Le 6 novembre 2026, une fois la 1.4 en vente partout, Patrick a affecté à la 1.5 tous les points
 restants : ceux qu'il avait gardés pour plus tard pendant la 1.4, et les défauts vus pendant la 1.4.
-Rien n'est commencé.
 
 Les travaux côté fornews.ai relevés pendant la 1.4 (filtre des entités à majuscule, genres en
 cinq langues, reprise des diffs de `render.js`) n'en font pas partie : ils restent pour fornews 2.0,
@@ -52,20 +51,33 @@ télécharge que les `src` en `http` (`imageURLs`) : une image en `data:` n'est 
 disparaît de l'export. Cela touche les images des documents importés (Word, PDF, PowerPoint, 1.4)
 comme les SVG embarqués en base64 du prompt de présentation.
 
-- [ ] Essayer d'abord dans l'app : exporter en Word et en PowerPoint un document importé avec images.
-- [ ] Décoder les `data:image/…;base64` côté Swift (JPEG et PNG tels quels).
-- [ ] SVG : `UIImage` ne lit pas le SVG — le rastériser en PNG côté JavaScript avant l'export,
-      comme les diagrammes Mermaid (`svgToPng`), à la taille d'affichage × 2.
+**Fait le 6 novembre 2026 (build 153 à venir) :** `OOXMLExportBridge.imageDeDonnees` décode les
+`data:` (PNG et JPEG tels quels, le reste converti en PNG) ; `render.js` dessine en PNG les images
+SVG (`imgToPng`) et les `<svg>` écrits en clair (`svgToPng`), à la taille d'affichage × 2. Défaut
+trouvé en route : les images paresseuses (`loading="lazy"`) hors de l'écran ne se chargeaient
+jamais, et le SVG d'une diapositive manquait au PowerPoint ; `imgToPng` force leur chargement.
+Banc `tools/render-tests/export-images.html` (7 vérifications, navigateur et Safari du
+simulateur). Vu au simulateur iPad : un PowerPoint avec un PNG en `data:`, un SVG en base64 et un
+`<svg>` en clair porte ses trois images.
+
+- [x] Essayer dans l'app : export PowerPoint au simulateur (le Word passe par le même code, pas
+      essayé).
+- [x] Décoder les `data:image/…;base64` côté Swift (JPEG et PNG tels quels).
+- [x] SVG : rastérisé en PNG côté JavaScript avant l'export, comme les diagrammes Mermaid.
 - [ ] Vérifier l'export PDF avec les mêmes documents.
 
 ## Défauts vus pendant la 1.4
 
-- [ ] Anglais : « Search the Store », « Search the Store… » et « Neither the Store nor Analyzed
+- [x] Anglais : « Search the Store », « Search the Store… » et « Neither the Store nor Analyzed
       Documents contain any documents. » disent « Store » ; l'anglais garde « vault » (seuls
       l'allemand, l'espagnol et l'italien disent « Store »).
-- [ ] Un `<svg>` en clair dans le document (réponse d'IA) garde sa largeur : avec
+      Fait le 6 novembre 2026, avec un quatrième trouvé en route (« Search your whole Store… »).
+- [x] Un `<svg>` en clair dans le document (réponse d'IA) garde sa largeur : avec
       `width="1600"`, il déborde de la page en lecture et du cadre en diaporama (vu dans le lecteur
       en ligne le 2 novembre 2026 ; même CSS dans l'app, pas essayé dans l'app). Borner
       `svg[width]` hors Mermaid dans `style.css` et `presentation.css` (max-width 100 %, height
       auto), dans l'app et dans le lecteur en ligne. Les prompts contournent déjà avec
       `width="100%"`.
+      Fait le 6 novembre 2026 dans l'app (`svg[width][viewBox]`, hors Mermaid, cartes et icônes ;
+      banc `tools/render-tests/svg.html`, 7 vérifications). Lecteur en ligne : même règle,
+      committée sur la branche `claude/svg-bornes` du site, pas encore envoyée.

@@ -905,8 +905,42 @@ enum OOXMLExportBridge {
         if let b64 = d["jpeg"] as? String, let data = Data(base64Encoded: b64) {
             return OOXMLImage(data: data, widthPx: max(intOf(d["w"]), 1), heightPx: max(intOf(d["h"]), 1), isPNG: false)
         }
-        if let src = d["src"] as? String { return downloaded[src] }
+        if let src = d["src"] as? String {
+            if src.hasPrefix("data:") { return imageDeDonnees(src) }
+            return downloaded[src]
+        }
         return nil
+    }
+
+    /// Une image en `data:` (1.5) : celles des documents importés (Word, PDF, PowerPoint),
+    /// rangées dans le fichier en base64. Elles ne passaient pas par le téléchargement, réservé
+    /// aux adresses `http`, et disparaissaient de l'export. Les SVG n'arrivent pas jusqu'ici :
+    /// `render.js` les rastérise en PNG, que Word et PowerPoint lisent.
+    private static func imageDeDonnees(_ src: String) -> OOXMLImage? {
+        guard let virgule = src.firstIndex(of: ",") else { return nil }
+        let entete = src[..<virgule].lowercased()
+        let charge = String(src[src.index(after: virgule)...])
+        let data: Data?
+        if entete.hasSuffix(";base64") {
+            data = Data(base64Encoded: charge, options: .ignoreUnknownCharacters)
+        } else {
+            data = charge.removingPercentEncoding.map { Data($0.utf8) }
+        }
+        return data.flatMap(imageOffice)
+    }
+
+    /// Des octets d'image, dans un format que Word et PowerPoint lisent : PNG et JPEG tels
+    /// quels, le reste (GIF, WebP, HEIC…) converti en PNG.
+    private static func imageOffice(_ data: Data) -> OOXMLImage? {
+        guard let img = UIImage(data: data), let cg = img.cgImage else { return nil }
+        if data.starts(with: [0x89, 0x50, 0x4E, 0x47]) {
+            return OOXMLImage(data: data, widthPx: cg.width, heightPx: cg.height, isPNG: true)
+        }
+        if data.starts(with: [0xFF, 0xD8]) {
+            return OOXMLImage(data: data, widthPx: cg.width, heightPx: cg.height, isPNG: false)
+        }
+        guard let png = img.pngData() else { return nil }
+        return OOXMLImage(data: png, widthPx: cg.width, heightPx: cg.height, isPNG: true)
     }
 
     private static func block(_ d: [String: Any], _ downloaded: [String: OOXMLImage]) -> OOXMLBlock? {
@@ -951,16 +985,9 @@ enum OOXMLExportBridge {
             group.enter()
             URLSession.shared.dataTask(with: url) { data, _, _ in
                 defer { group.leave() }
-                guard let data = data, let img = UIImage(data: data), let cg = img.cgImage else { return }
-                let isPNG = data.starts(with: [0x89, 0x50, 0x4E, 0x47])
-                let isJPEG = data.starts(with: [0xFF, 0xD8])
-                let bytes: Data; let png: Bool
-                if isPNG { bytes = data; png = true }
-                else if isJPEG { bytes = data; png = false }
-                else if let p = img.pngData() { bytes = p; png = true }
-                else { return }
+                guard let data = data, let image = imageOffice(data) else { return }
                 lock.lock()
-                out[s] = OOXMLImage(data: bytes, widthPx: cg.width, heightPx: cg.height, isPNG: png)
+                out[s] = image
                 lock.unlock()
             }.resume()
         }

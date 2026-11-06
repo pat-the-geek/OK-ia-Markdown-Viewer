@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Test — svg écrits en clair</title>
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/style.css">
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/presentation.css">
+<style>
+  .cadre { width: 600px; }
+  #resultats { white-space: pre-wrap; font: 13px/1.6 ui-monospace, Menlo, monospace; }
+  .ok { color: #15803d; } .ko { color: #b91c1c; font-weight: 600; }
+</style>
+</head>
+<body>
+<!-- Un svg en clair, tel qu'une réponse d'IA l'écrit, borné à la page (1.5). -->
+<article class="markdown-body cadre" id="lecture">
+  <svg id="large" width="1600" height="800" viewBox="0 0 1600 800"><rect width="1600" height="800" fill="#0a7"/></svg>
+  <svg id="sansViewBox" width="1600" height="800"><rect width="1600" height="800" fill="#a70"/></svg>
+  <svg id="petit" width="40" height="20" viewBox="0 0 40 20"><rect width="40" height="20"/></svg>
+  <div class="leaflet-container" style="width:600px;overflow:hidden"><svg id="carte" width="720" height="300" viewBox="0 0 720 300"></svg></div>
+  <button><svg id="icone" width="18" height="18" viewBox="0 0 18 18"></svg></button>
+</article>
+<div class="slide-inner cadre" id="diapo">
+  <svg id="diapoLarge" width="1600" height="1600" viewBox="0 0 1600 1600"><rect width="1600" height="1600" fill="#07a"/></svg>
+</div>
+<div id="resultats">Chargement…</div>
+<script>
+const r = id => document.getElementById(id).getBoundingClientRect();
+const lignes = [];
+const verifier = (nom, ok, detail) => lignes.push(`<span class="${ok ? 'ok' : 'ko'}">${ok ? 'OK' : 'KO'}</span> ${nom} — ${detail}`);
+// La largeur utile de la page : sans sa marge intérieure.
+const page = document.getElementById('lecture'), cs = getComputedStyle(page);
+const utile = page.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+let b = r('large');
+verifier('svg large borné à la page', Math.round(b.width) === Math.round(utile), `${b.width}×${b.height} pour ${utile} utiles`);
+verifier('svg large garde ses proportions', Math.abs(b.height - b.width / 2) < 1, `${b.height}`);
+b = r('sansViewBox');
+verifier('svg sans viewBox laissé tel quel', Math.round(b.width) === 1600, `${b.width}`);
+b = r('petit');
+verifier('petit svg inchangé', Math.round(b.width) === 40 && Math.round(b.height) === 20, `${b.width}×${b.height}`);
+b = r('carte');
+verifier('svg de carte non touché', Math.round(b.width) === 720 && Math.round(b.height) === 300, `${b.width}×${b.height}`);
+b = r('icone');
+verifier('icône de bouton non touchée', Math.round(b.width) === 18, `${b.width}`);
+b = r('diapoLarge');
+verifier('diapositive : borné au cadre et à 600 px de haut', b.width <= 600 && b.height <= 600, `${b.width}×${b.height}`);
+const n = lignes.filter(l => l.includes('>KO<')).length;
+document.getElementById('resultats').innerHTML = `${lignes.length - n}/${lignes.length} vérifications\n\n` + lignes.join('\n');
+</script>
+</body>
+</html>

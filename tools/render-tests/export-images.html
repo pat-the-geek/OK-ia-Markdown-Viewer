@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Test — images de l'export Office</title>
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/style.css">
+<script src="../../OKiaMarkdownViewer/Web/vendor/marked.min.js"></script>
+<script src="../../OKiaMarkdownViewer/Web/vendor/mermaid.min.js"></script>
+<script src="../../OKiaMarkdownViewer/Web/mermaid-okia-theme.js"></script>
+<style>
+  #zone { width: 700px; }
+  #resultats { white-space: pre-wrap; font: 13px/1.6 ui-monospace, Menlo, monospace; }
+  .ok { color: #15803d; } .ko { color: #b91c1c; font-weight: 600; }
+</style>
+</head>
+<body>
+<article id="zone" class="markdown-body"></article>
+<div id="resultats">Chargement…</div>
+
+<script>
+// Anti-cache : un test qui vérifie du code périmé ne vérifie rien.
+document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/render.js?t=' + Date.now() + '"></scr' + 'ipt>');
+</script>
+
+<script>
+// 1.5 — les images en data: et les SVG disparaissaient de l'export Word et PowerPoint :
+// OOXMLExport ne téléchargeait que les adresses http. Ici, le modèle d'export côté JavaScript.
+(function () {
+  var lignes = [], echecs = 0;
+  function verifier(nom, ok, detail) {
+    if (ok) lignes.push('<span class="ok">OK</span> ' + nom);
+    else { echecs++; lignes.push('<span class="ko">KO ' + nom + (detail ? ' — ' + detail : '') + '</span>'); }
+  }
+  // Un PNG de 1 × 1 pixel, et un SVG de 160 × 80.
+  var PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  var SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80" viewBox="0 0 160 80"><rect width="160" height="80" fill="#E8972E"/><text x="10" y="40">Fondue</text></svg>';
+  var SVG64 = 'data:image/svg+xml;base64,' + btoa(SVG);
+  var MD = [
+    '# Images',
+    '',
+    '![Pixel](' + PNG + ')',
+    '',
+    '![Illustration][svg-couverture]',
+    '',
+    SVG.replace('<svg ', '<svg id="enClair" '),
+    '',
+    'Un paragraphe de texte.',
+    '',
+    '[svg-couverture]: ' + SVG64,
+  ].join('\n');
+
+  function attendre() {
+    if (!window.OKIA || !window.OKIA.exportModel) return setTimeout(attendre, 50);
+    var zone = document.getElementById('zone');
+    var rendu = window.OKIA.renderFragment ? window.OKIA.renderFragment(zone, MD) : Promise.resolve(window.OKIA.render(MD));
+    Promise.resolve(rendu).then(function () {
+      return new Promise(function (r) { setTimeout(r, 300); });
+    }).then(function () {
+      return window.OKIA.exportModel(zone);
+    }).then(function (blocs) {
+      var images = blocs.filter(function (b) { return b.t === 'image'; });
+      verifier('trois images dans le modèle', images.length === 3, JSON.stringify(blocs.map(function (b) { return b.t; })));
+      var png = images[0] || {};
+      verifier('le PNG en data: garde son adresse, pour Swift', (png.src || '').indexOf('data:image/png') === 0, png.src);
+      var svg = images[1] || {};
+      verifier('le SVG en data: est dessiné en PNG', !!svg.png && !svg.src, JSON.stringify({ src: svg.src, png: !!svg.png }));
+      verifier('… à sa taille d’affichage × 2', svg.w === 320 && svg.h === 160, svg.w + '×' + svg.h);
+      var clair = images[2] || {};
+      verifier('le &lt;svg&gt; en clair est dessiné en PNG', !!clair.png, JSON.stringify({ w: clair.w, h: clair.h }));
+      verifier('le texte qui suit reste un paragraphe', blocs.some(function (b) { return b.t === 'paragraph'; }));
+      // Hors de l'écran, comme les diapositives que l'export PowerPoint rend une à une : les
+      // images paresseuses ne s'y chargeaient pas, et le SVG manquait (vu au simulateur).
+      var hors = document.createElement('div');
+      hors.className = 'markdown-body';
+      hors.style.cssText = 'position:absolute;left:-99999px;top:0;width:1120px;';
+      document.body.appendChild(hors);
+      return Promise.resolve(window.OKIA.renderFragment(hors, MD)).then(function () {
+        return window.OKIA.exportModel(hors);
+      });
+    }).then(function (blocs) {
+      var images = blocs.filter(function (b) { return b.t === 'image'; });
+      var svg = images[1] || {};
+      verifier('hors écran : le SVG en data: est dessiné quand même', !!svg.png, JSON.stringify({ n: images.length, png: !!svg.png }));
+      var n = lignes.length;
+      lignes.push('', echecs ? '<span class="ko">' + echecs + ' échec(s)</span>' : '<span class="ok">' + n + ' vérifications, aucun échec.</span>');
+      document.getElementById('resultats').innerHTML = lignes.join('\n');
+    }).catch(function (e) {
+      document.getElementById('resultats').textContent = 'Erreur : ' + e;
+    });
+  }
+  attendre();
+})();
+</script>
+</body>
+</html>

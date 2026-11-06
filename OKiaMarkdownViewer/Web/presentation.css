@@ -238,6 +238,14 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
   max-height: 560px;
   height: auto;
 }
+/* Un <svg> écrit en clair (voir style.css) : borné au cadre comme une image. */
+.slide-inner svg[width][viewBox]:not(pre.mermaid svg):not(.leaflet-container svg):not(button svg) {
+  display: block;
+  margin: 0.4em auto;
+  max-width: 100%;
+  max-height: 600px;
+  height: auto;
+}
 /* Une diapositive se projette : pas de bouton sur ses objets — les toucher les agrandit. */
 .slide-inner .okia-agrandir { display: none; }
 

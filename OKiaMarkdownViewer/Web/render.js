@@ -2349,6 +2349,40 @@
     });
   }
 
+  // Une image SVG (<img src="….svg"> ou data:image/svg+xml) : ni Word, ni PowerPoint, ni
+  // UIImage ne la lisent. On la dessine ici, à sa taille d'affichage × 2, comme les diagrammes
+  // (1.5 — les illustrations du prompt de présentation disparaissaient de l'export).
+  function imgToPng(img) {
+    function dessiner() {
+      try {
+        var box = img.getBoundingClientRect();
+        var w = Math.round(box.width) || img.naturalWidth || 0;
+        var h = Math.round(box.height) || img.naturalHeight || 0;
+        if (!w || !h) return null;
+        var scale = 2;
+        var cv = document.createElement('canvas');
+        cv.width = w * scale; cv.height = h * scale;
+        var ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        return { png: cv.toDataURL('image/png').split(',')[1], w: w * scale, h: h * scale };
+      } catch (e) { return null; }   // une image d'un autre site salit le canevas
+    }
+    return new Promise(function (resolve) {
+      if (img.complete && img.naturalWidth) return resolve(dessiner());
+      // Paresseuse (loading="lazy"), une image hors de l'écran ne se charge jamais : celles des
+      // diapositives que l'export rend hors champ, celles du bas d'un long document.
+      if (img.getAttribute('loading') === 'lazy') {
+        img.setAttribute('loading', 'eager');
+        var s = img.getAttribute('src');
+        if (s) img.setAttribute('src', s);
+      }
+      img.addEventListener('load', function () { resolve(dessiner()); }, { once: true });
+      img.addEventListener('error', function () { resolve(null); }, { once: true });
+      setTimeout(function () { resolve(null); }, 5000);
+    });
+  }
+  function estSVG(src) { return /^data:image\/svg\+xml/i.test(src) || /\.svg(?:[?#]|$)/i.test(src); }
+
   // Wait for the tiles a map has already asked for. Rasterising before they land produces a
   // half-drawn map, which is worse than the marker list it replaces.
   function tilesSettled(el, timeoutMs) {
@@ -2633,7 +2667,27 @@
     var tasks = [];     // async image tasks
     var blocks = [];
     var kids = Array.prototype.slice.call(container.children);
-    var BLOC = /^(P|H[1-6]|UL|OL|TABLE|BLOCKQUOTE|PRE|IMG|DIV|SECTION|DETAILS|FIGURE|HR)$/;
+    var BLOC = /^(P|H[1-6]|UL|OL|TABLE|BLOCKQUOTE|PRE|IMG|DIV|SECTION|DETAILS|FIGURE|HR|svg)$/;
+
+    // Une image du document : son adresse pour Swift (http téléchargé, data: décodé), ou, pour
+    // un SVG, un PNG dessiné ici.
+    function blocImage(img) {
+      var src = img.currentSrc || img.src || '';
+      var bloc = { t: 'image', src: src, w: img.naturalWidth, h: img.naturalHeight, caption: [] };
+      if (estSVG(src)) {
+        bloc.src = /^https?:/i.test(src) ? src : null;
+        tasks.push(imgToPng(img).then(function (res) {
+          if (res) { bloc.png = res.png; bloc.w = res.w; bloc.h = res.h; }
+        }));
+      }
+      return bloc;
+    }
+    // Un <svg> écrit en clair dans le document (réponse d'IA) : rastérisé comme un diagramme.
+    function blocSVG(svg) {
+      var bloc = { t: 'image', png: null, w: 0, h: 0, caption: [] };
+      tasks.push(svgToPng(svg).then(function (res) { if (res) { bloc.png = res.png; bloc.w = res.w; bloc.h = res.h; } }));
+      return bloc;
+    }
 
     kids.forEach(function visit(el) {
       var tag = el.tagName;
@@ -2659,8 +2713,11 @@
         blocks.push({ t: 'heading', level: parseInt(tag[1], 10), runs: runsOf(el) });
       } else if (tag === 'P') {
         var img = el.querySelector('img');
+        var svgP = img ? null : el.querySelector('svg');
         if (img) {
-          blocks.push({ t: 'image', src: img.currentSrc || img.src, w: img.naturalWidth, h: img.naturalHeight, caption: [] });
+          blocks.push(blocImage(img));
+        } else if (svgP && el.textContent.trim() === svgP.textContent.trim()) {   // le svg seul, sans texte autour
+          blocks.push(blocSVG(svgP));
         } else {
           var r = runsOf(el); if (r.length) blocks.push({ t: 'paragraph', runs: r });
         }
@@ -2673,7 +2730,9 @@
       } else if (tag === 'TABLE') {
         blocks.push({ t: 'table', rows: tableModel(el) });
       } else if (tag === 'IMG') {
-        blocks.push({ t: 'image', src: el.currentSrc || el.src, w: el.naturalWidth, h: el.naturalHeight, caption: [] });
+        blocks.push(blocImage(el));
+      } else if (tag === 'svg') {
+        blocks.push(blocSVG(el));
       } else if (tag === 'PRE' && el.classList.contains('mermaid')) {
         var svg = el.querySelector('svg');
         if (svg) {
