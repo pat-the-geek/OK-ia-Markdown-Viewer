@@ -31,6 +31,10 @@ struct PresentationConverterView: View {
     /// Calculé une fois : un rapport de plusieurs millions de caractères ne se redécoupe pas à
     /// chaque rafraîchissement de l'écran.
     @State private var maximum = 60
+    /// Des notes de l'orateur pour chaque diapositive de texte (option Analytic, 1.5). Jamais
+    /// cochées d'avance, comme les options d'Apple Intelligence à l'import.
+    @AppStorage("conversionNotesOrateur") private var notesOrateur = false
+    private var avecNotes: Bool { notesOrateur && AchatAnalytic.partage.acces }
 
     private static let paliers = [5, 10, 15, 20, 25]
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
@@ -79,7 +83,7 @@ struct PresentationConverterView: View {
         .task {
             if ProcessInfo.processInfo.environment["OKIA_CONVERSION_REJEU"] != nil, case .reglage = conversion.etat {
                 conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande,
-                                 marques: marquesDuRapport)
+                                 marques: marquesDuRapport, notes: avecNotes)
             }
         }
         #endif
@@ -122,10 +126,17 @@ struct PresentationConverterView: View {
                 }
             }
         }
+        if AchatAnalytic.partage.acces {
+            Section {
+                Toggle(tr("Proposer des notes de l’orateur"), isOn: $notesOrateur)
+            } footer: {
+                Text(tr("Deux ou trois phrases par diapositive, tirées du rapport, à lire en mode présentateur et à reprendre à votre façon. Aucun chiffre absent du rapport."))
+            }
+        }
         Section {
             Button {
                 conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande,
-                                 marques: marquesDuRapport)
+                                 marques: marquesDuRapport, notes: avecNotes)
             } label: {
                 Label(tr("Convertir"), systemImage: "sparkles")
             }
@@ -163,12 +174,16 @@ struct PresentationConverterView: View {
                     HStack(spacing: 10) { compte(r); Spacer(minLength: 4); actions(r) }
                     VStack(alignment: .leading, spacing: 8) { compte(r); HStack(spacing: 10) { actions(r) } }
                 }
-                if !r.omissions.isEmpty || r.ecartees > 0 {
+                if !r.omissions.isEmpty || r.ecartees > 0 || r.phrasesEcartees > 0 {
                     DisclosureGroup(tr("Laissé de côté")) {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(r.omissions, id: \.self) { Text($0) }
                             if r.ecartees > 0 {
                                 Text(tr("Puces écartées faute d’un chiffre présent dans le rapport : %d", r.ecartees))
+                                    .foregroundStyle(.secondary)
+                            }
+                            if r.phrasesEcartees > 0 {
+                                Text(tr("Phrases de notes écartées faute d’un chiffre présent dans le rapport : %d", r.phrasesEcartees))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -223,7 +238,7 @@ struct PresentationConverterView: View {
             Text(message).foregroundStyle(.secondary)
             Button(tr("Réessayer")) {
                 conversion.lancer(markdown: document.text, titre: titreAffiche, diapositives: demande,
-                                 marques: marquesDuRapport)
+                                 marques: marquesDuRapport, notes: avecNotes)
             }
         }
     }
@@ -238,6 +253,7 @@ final class ConversionEnCours: ObservableObject {
         let diapositives: Int
         let omissions: [String]
         let ecartees: Int
+        var phrasesEcartees = 0
     }
 
     enum Etat {
@@ -259,7 +275,7 @@ final class ConversionEnCours: ObservableObject {
     /// Les surlignages et soulignements du rapport converti.
     private var marques: [Annotation] = []
 
-    func lancer(markdown: String, titre: String, diapositives: Int, marques: [Annotation] = []) {
+    func lancer(markdown: String, titre: String, diapositives: Int, marques: [Annotation] = [], notes: Bool = false) {
         tache?.cancel()
         self.marques = marques
         self.diapositives = []
@@ -295,12 +311,13 @@ final class ConversionEnCours: ObservableObject {
             do {
                 let r = try await ConvertisseurPresentation().convertir(
                     markdown: markdown, titreParDefaut: titre, diapositives: diapositives,
-                    marques: marques.map(\.ancre.exact), avancement: suivi)
+                    marques: marques.map(\.ancre.exact), notes: notes, avancement: suivi)
                 let document = Self.enregistrer(r)
                 self?.reporterMarques(sur: document)
                 self?.markdownFinal = r.markdown
                 self?.etat = .fini(Fini(document: document, diapositives: r.diapositives,
-                                        omissions: r.omissions.map(Self.texte), ecartees: r.pucesEcartees.count))
+                                        omissions: r.omissions.map(Self.texte), ecartees: r.pucesEcartees.count,
+                                        phrasesEcartees: r.phrasesEcartees.count))
             } catch is CancellationError {
                 // Annulée par le lecteur : l'écran est déjà revenu au réglage.
             } catch ConvertisseurPresentation.Echec.modeleIndisponible {
@@ -536,50 +553,5 @@ struct ChantierWebView: UIViewRepresentable {
             dernier = data
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.chantier(\(json));")
         }
-    }
-}
-
-/// Le marquage des diapositives masquées dans le fichier d'une présentation : un commentaire en tête
-/// de la diapositive, que `presentation.js` reconnaît (`MASQUEE`). Le découpage suit celui du
-/// diaporama (`splitSlides`) — séparateurs `---` hors des blocs de code, en-tête YAML à part,
-/// diapositives vides ignorées —, sinon le rang ne désignerait pas la même diapositive.
-enum DiapositivesMasquees {
-    static let marque = "<!-- okia:masquee -->"
-
-    /// Un texte Markdown tel qu'il se lit, pour y chercher un passage surligné : sans les astérisques
-    /// ni les accents graves de l'emphase, ni les marques des diapositives masquées.
-    static func sansEmphase(_ t: String) -> String {
-        t.replacingOccurrences(of: marque + "\n", with: "")
-            .replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
-            .replacingOccurrences(of: "*", with: "").replacingOccurrences(of: "`", with: "")
-    }
-
-    static func marquer(_ markdown: String, masquees: Set<Int>) -> String {
-        var lignes = markdown.components(separatedBy: "\n")
-        var debut = 0
-        if lignes.first?.trimmingCharacters(in: .whitespaces) == "---",
-           let fin = lignes.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" }) {
-            debut = fin + 1
-        }
-        // Le premier rang non vide de chaque diapositive, dans l'ordre.
-        var tetes: [Int] = [], tete: Int?, cloture: String?
-        for i in debut..<lignes.count {
-            let t = lignes[i].trimmingCharacters(in: .whitespaces)
-            if let c = cloture {
-                if t.hasPrefix(c) { cloture = nil }
-            } else if t.hasPrefix("```") || t.hasPrefix("~~~") {
-                cloture = String(t.prefix(3))
-            } else if t.count >= 3, t.allSatisfy({ $0 == "-" }) {
-                if let h = tete { tetes.append(h) }
-                tete = nil
-                continue
-            }
-            if tete == nil, !t.isEmpty { tete = i }
-        }
-        if let h = tete { tetes.append(h) }
-        for (rang, h) in tetes.enumerated().reversed() where masquees.contains(rang) {
-            lignes.insert(marque, at: h)
-        }
-        return lignes.joined(separator: "\n")
     }
 }

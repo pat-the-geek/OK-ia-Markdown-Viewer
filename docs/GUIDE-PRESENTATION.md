@@ -132,6 +132,14 @@ tout éditeur lit. Écrire une note ne touche pas aux annotations du document. L
 que pour un fichier Markdown (`.md`, `.markdown`, `.txt`) que l'app peut modifier : pas pour
 l'exemple intégré, ni pour un Word, un PDF ou un PowerPoint ouvert tel quel.
 
+**Les faire proposer par la conversion (1.5, option Analytic).** « Convertir en présentation »
+propose, si l'on coche **Proposer des notes de l'orateur** (jamais coché d'avance), deux ou trois
+phrases par diapositive de texte, tirées de sa section du rapport. Chaque phrase passe la même
+vérification que les puces : une phrase dont un nombre n'est pas dans la section est écartée, et
+comptée sous « Laissé de côté ». Les notes s'écrivent comme ci-dessus ; on les reprend ensuite dans
+l'app ou dans tout éditeur. Mesuré au banc (`tools/ConversionBench`, `--notes`) : pas de temps de
+plus sensible, aucune phrase écartée sur un rapport français et un rapport allemand.
+
 Deux précisions :
 
 - `--` fermerait le commentaire : l'app le remplace par un tiret long (—), comme l'import.

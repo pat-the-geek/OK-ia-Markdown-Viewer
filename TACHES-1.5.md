@@ -36,8 +36,15 @@ PowerPoint ou Keynote, le Mac, un fichier du coffre dans iCloud.
       marques des diapositives masquées, ou faire suivre les annotations.
 - [x] Reprendre les notes dans l'**export PowerPoint** (`OOXMLExport` n'écrit pas de
       `notesSlide`) : aller-retour complet avec l'import.
-- [ ] La **conversion en présentation** par Apple Intelligence pourrait proposer des notes tirées
-      du rapport (à décider : jamais de chiffre absent du rapport).
+- [x] La **conversion en présentation** par Apple Intelligence propose des notes tirées du rapport
+      (décidé par Patrick le 6 novembre 2026 : « Oui »). Interrupteur « Proposer des notes de
+      l'orateur », option Analytic, jamais coché d'avance ; les notes viennent du même appel que les
+      puces (propriété `notes` du schéma), chaque phrase est vérifiée contre les nombres de la
+      section (`noteVerifiee`). Au banc sur ce Mac, vrai modèle : rapport français (8 diapositives,
+      3 notes, 10,6 s) et allemand (9 diapositives, 3 notes, 10,1 s), aucune phrase écartée, langue
+      tenue. Le banc ne compilait plus depuis la 1.4 (`DiapositivesMasquees` vivait dans une vue) :
+      l'enum est passé dans `PresentationConverter.swift`. Vu au simulateur : le réglage. Pas vu :
+      une conversion dans l'app (le simulateur ne génère pas).
 - [ ] Documenter la syntaxe : page `mdviewer/import-et-annotations.html` (ou une page du
       diaporama), base du Terminal IA (`public/data/mdviewer-kb.md`), `docs/GUIDE-PRESENTATION.md`.
       `docs/GUIDE-PRESENTATION.md` fait le 6 novembre ; la page du site et la base du Terminal IA

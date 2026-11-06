@@ -391,6 +391,53 @@ enum VerificationsPresentation {
 
 // MARK: - La conversion
 
+// Déplacé de PresentationConverterView.swift (1.5) : Foundation seul, le banc de conversion
+// (tools/ConversionBench) le compile avec le moteur.
+/// Le marquage des diapositives masquées dans le fichier d'une présentation : un commentaire en tête
+/// de la diapositive, que `presentation.js` reconnaît (`MASQUEE`). Le découpage suit celui du
+/// diaporama (`splitSlides`) — séparateurs `---` hors des blocs de code, en-tête YAML à part,
+/// diapositives vides ignorées —, sinon le rang ne désignerait pas la même diapositive.
+enum DiapositivesMasquees {
+    static let marque = "<!-- okia:masquee -->"
+
+    /// Un texte Markdown tel qu'il se lit, pour y chercher un passage surligné : sans les astérisques
+    /// ni les accents graves de l'emphase, ni les marques des diapositives masquées.
+    static func sansEmphase(_ t: String) -> String {
+        t.replacingOccurrences(of: marque + "\n", with: "")
+            .replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
+            .replacingOccurrences(of: "*", with: "").replacingOccurrences(of: "`", with: "")
+    }
+
+    static func marquer(_ markdown: String, masquees: Set<Int>) -> String {
+        var lignes = markdown.components(separatedBy: "\n")
+        var debut = 0
+        if lignes.first?.trimmingCharacters(in: .whitespaces) == "---",
+           let fin = lignes.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" }) {
+            debut = fin + 1
+        }
+        // Le premier rang non vide de chaque diapositive, dans l'ordre.
+        var tetes: [Int] = [], tete: Int?, cloture: String?
+        for i in debut..<lignes.count {
+            let t = lignes[i].trimmingCharacters(in: .whitespaces)
+            if let c = cloture {
+                if t.hasPrefix(c) { cloture = nil }
+            } else if t.hasPrefix("```") || t.hasPrefix("~~~") {
+                cloture = String(t.prefix(3))
+            } else if t.count >= 3, t.allSatisfy({ $0 == "-" }) {
+                if let h = tete { tetes.append(h) }
+                tete = nil
+                continue
+            }
+            if tete == nil, !t.isEmpty { tete = i }
+        }
+        if let h = tete { tetes.append(h) }
+        for (rang, h) in tetes.enumerated().reversed() where masquees.contains(rang) {
+            lignes.insert(marque, at: h)
+        }
+        return lignes.joined(separator: "\n")
+    }
+}
+
 #if canImport(FoundationModels)
 final class ConvertisseurPresentation {
 
@@ -424,6 +471,8 @@ final class ConvertisseurPresentation {
         let omissions: [Omission]
         /// Puces écartées parce qu'un de leurs nombres n'apparaissait pas dans le rapport.
         let pucesEcartees: [String]
+        /// Phrases des notes de l'orateur écartées pour la même raison (1.5).
+        var phrasesEcartees: [String] = []
     }
 
     enum Echec: LocalizedError {
@@ -501,7 +550,12 @@ final class ConvertisseurPresentation {
 
     /// `marques` : les passages que le lecteur a surlignés ou soulignés (option Analytic, 1.4). Chaque
     /// section signale au modèle ceux qu'elle contient, à garder en priorité.
+    /// `notes` (option Analytic, 1.5) : chaque diapositive de texte reçoit des notes de l'orateur,
+    /// tirées de sa section, écrites en commentaire à la fin de la diapositive — le format que le
+    /// diaporama lit et que l'app sait modifier. Leurs phrases passent la même vérification des
+    /// nombres que les puces : jamais de chiffre absent du rapport.
     func convertir(markdown: String, titreParDefaut: String, diapositives demande: Int, marques: [String] = [],
+                   notes: Bool = false,
                    avancement: @escaping @Sendable (Avancement) -> Void) async throws -> Resultat {
         guard Self.disponible else { throw Echec.modeleIndisponible }
         let rapport = RapportDecoupe(markdown: markdown, titreParDefaut: titreParDefaut)
@@ -521,6 +575,7 @@ final class ConvertisseurPresentation {
         let prevues = max(demande, plan.total)
 
         var diapos: [String] = [], resumes: [String] = [], omissions: [Omission] = [], ecartees: [String] = []
+        var phrasesEcartees: [String] = []
         var etape = 0
         let fixes = Self.titresFixes(rapport.langue)
         let diapoPlan: String? = plan.plan == 1 ? {
@@ -560,7 +615,8 @@ final class ConvertisseurPresentation {
                                       diapositives: pretes(), prevues: prevues))
                 do {
                     let (lot, omis) = try await genererSection(s, nombre: k, fenetre: fenetre, regle: regle,
-                                                               marques: Self.marquesDe(s, parmi: marques))
+                                                               marques: Self.marquesDe(s, parmi: marques),
+                                                               notes: notes)
                     let source = VerificationsPresentation.nombres(s.texte + "\n" + s.blocs.map(\.texte).joined(separator: "\n"))
                     for d in lot {
                         var gardees: [String] = []
@@ -574,6 +630,12 @@ final class ConvertisseurPresentation {
                         let titre = VerificationsPresentation.nettoyer(d.titre)
                         var diapo = (["## \(titre)", ""] + gardees.map { "- \($0)" }).joined(separator: "\n")
                         if !illustrations.isEmpty { diapo += "\n\n" + illustrations.removeFirst() }
+                        if let n = d.notes {
+                            let (texte, refusees) = Self.noteVerifiee(n, source: source, langue: rapport.langue,
+                                                                       titreSection: s.titre)
+                            phrasesEcartees += refusees
+                            if !texte.isEmpty { diapo += "\n\n<!--\n\(texte)\n-->" }
+                        }
                         diapos.append(diapo)
                         resumes.append((["## \(titre)"] + gardees.map { "- \($0)" }).joined(separator: "\n"))
                     }
@@ -630,12 +692,32 @@ final class ConvertisseurPresentation {
         return Resultat(titre: rapport.titre,
                         markdown: finale.joined(separator: "\n\n---\n\n") + "\n",
                         diapositives: finale.count, demandees: demande,
-                        omissions: omissions, pucesEcartees: ecartees)
+                        omissions: omissions, pucesEcartees: ecartees, phrasesEcartees: phrasesEcartees)
+    }
+
+    /// La note proposée, phrase par phrase : on garde celles dont tous les nombres sont dans la
+    /// section, sans consigne recopiée ; `--` ne peut pas vivre dans un commentaire HTML, il devient
+    /// un tiret, comme à l'import PowerPoint et dans l'éditeur des notes.
+    static func noteVerifiee(_ note: String, source: [String], langue: String,
+                             titreSection: String) -> (texte: String, ecartees: [String]) {
+        let decoupeur = NLTokenizer(unit: .sentence)
+        decoupeur.string = note
+        decoupeur.setLanguage(NLLanguage(rawValue: langue))
+        var gardees: [String] = [], ecartees: [String] = []
+        for r in decoupeur.tokens(for: note.startIndex..<note.endIndex) {
+            let phrase = note[r].trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "--", with: "—")
+                .replacingOccurrences(of: "\n", with: " ")
+            guard !phrase.isEmpty, !estParasite(phrase, titreSection: titreSection), !phrase.contains("##") else { continue }
+            if VerificationsPresentation.nombres(phrase).allSatisfy(source.contains) { gardees.append(phrase) }
+            else { ecartees.append(phrase) }
+        }
+        return (gardees.joined(separator: " "), ecartees)
     }
 
     // MARK: Les appels au modèle
 
-    private struct DiapoGeneree { var titre: String; var puces: [String] }
+    private struct DiapoGeneree { var titre: String; var puces: [String]; var notes: String? = nil }
 
     /// Les passages marqués que contient une section, huit au plus, chacun raccourci : le texte de
     /// la section est lu sans gras ni italique, comme la page les affiche.
@@ -646,7 +728,7 @@ final class ConvertisseurPresentation {
     }
 
     private func genererSection(_ s: RapportDecoupe.Section, nombre k: Int, fenetre: Int,
-                                regle: String, marques: [String] = []) async throws -> ([DiapoGeneree], String) {
+                                regle: String, marques: [String] = [], notes: Bool = false) async throws -> ([DiapoGeneree], String) {
         // Le texte doit tenir dans la fenêtre, avec la place des consignes, du schéma et de la réponse.
         var texte = s.texte
         // Ce que le lecteur a surligné passe d'abord — la langue de rédaction reste en dernière ligne.
@@ -654,7 +736,8 @@ final class ConvertisseurPresentation {
             "Passages que le lecteur a surlignés dans cette partie : garde-les en priorité, recopiés mot pour mot quand une puce le permet.\n"
             + marques.map { "« \($0) »" }.joined(separator: "\n") + "\n\n"
         let place = priorites.isEmpty ? 0 : try await modele.tokenCount(for: Prompt(priorites))
-        let reserve = try await modele.tokenCount(for: Instructions(Self.consignes)) + 900 + k * 120 + place
+        // Les notes de l'orateur (1.5) : deux ou trois phrases par diapositive, à loger aussi.
+        let reserve = try await modele.tokenCount(for: Instructions(Self.consignes)) + 900 + k * (notes ? 260 : 120) + place
         var jetons = try await modele.tokenCount(for: Prompt(texte))
         while jetons + reserve > fenetre && texte.count > 2000 {
             texte = String(texte.prefix(texte.count * 3 / 4))
@@ -663,24 +746,32 @@ final class ConvertisseurPresentation {
         let session = LanguageModelSession(model: modele, instructions: Self.consignes)
         let reponse = try await session.respond(
             to: "Fais exactement \(k) diapositive(s) de cette partie, intitulée « \(s.titre) » :\n\n\(texte)\n\n\(priorites)\(regle)",
-            schema: Self.schemaSection(k))
+            schema: Self.schemaSection(k, notes: notes))
         let liste = try reponse.content.value([GeneratedContent].self, forProperty: "diapositives")
         let lot = try liste.map { d in
             DiapoGeneree(titre: try d.value(String.self, forProperty: "titre"),
-                         puces: try d.value([String].self, forProperty: "puces"))
+                         puces: try d.value([String].self, forProperty: "puces"),
+                         notes: notes ? (try? d.value(String.self, forProperty: "notes")) : nil)
         }
         return (lot, (try? reponse.content.value(String.self, forProperty: "omis")) ?? "")
     }
 
     /// Le nombre exact de diapositives est imposé par le schéma, pas demandé au modèle : la consigne
     /// seule ne le garantirait pas.
-    private static func schemaSection(_ k: Int) -> GenerationSchema {
+    private static func schemaSection(_ k: Int, notes: Bool = false) -> GenerationSchema {
         let texte = DynamicGenerationSchema(type: String.self)
-        let diapo = DynamicGenerationSchema(name: "Diapositive", properties: [
+        var proprietes: [DynamicGenerationSchema.Property] = [
             .init(name: "titre", description: "Titre court de la diapositive, une seule idée", schema: texte),
             .init(name: "puces", description: "De 1 à 5 puces, 12 mots au plus chacune",
                   schema: DynamicGenerationSchema(arrayOf: texte, minimumElements: 1, maximumElements: 5))
-        ])
+        ]
+        // Après les puces : le modèle écrit d'abord ce que l'écran montre, puis ce que l'orateur en dit.
+        if notes {
+            proprietes.append(.init(name: "notes",
+                description: "Ce que l'orateur dit en montrant cette diapositive : 2 ou 3 phrases complètes tirées du texte, qui expliquent les puces sans les répéter ; aucun chiffre absent du texte",
+                schema: texte))
+        }
+        let diapo = DynamicGenerationSchema(name: "Diapositive", properties: proprietes)
         let racine = DynamicGenerationSchema(name: "Section", properties: [
             .init(name: "diapositives", schema: DynamicGenerationSchema(arrayOf: diapo, minimumElements: k, maximumElements: k)),
             .init(name: "omis", description: "Une phrase : ce qui a été laissé de côté dans cette section", schema: texte)

@@ -42347,6 +42347,291 @@
           }
         }
       }
+    },
+    "Proposer des notes de l’orateur": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proposer des notes de l’orateur"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggest speaker notes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notizen vorschlagen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proponer notas del orador"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proponi note del relatore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "発表者ノートを提案"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "발표자 노트 제안"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建议演讲者备注"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sugerir notas do apresentador"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notities van de spreker voorstellen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предложить заметки докладчика"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запропонувати нотатки доповідача"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konuşmacı notları öner"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề xuất ghi chú của người thuyết trình"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रस्तुतकर्ता नोट्स सुझाएँ"
+          }
+        }
+      }
+    },
+    "Deux ou trois phrases par diapositive, tirées du rapport, à lire en mode présentateur et à reprendre à votre façon. Aucun chiffre absent du rapport.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deux ou trois phrases par diapositive, tirées du rapport, à lire en mode présentateur et à reprendre à votre façon. Aucun chiffre absent du rapport."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two or three sentences per slide, drawn from the report, to read in presenter mode and rework your own way. No figure that is not in the report."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwei oder drei Sätze pro Folie, aus dem Bericht übernommen, im Referentenmodus zu lesen und nach Belieben anzupassen. Keine Zahl, die nicht im Bericht steht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dos o tres frases por diapositiva, tomadas del informe, para leer en el modo presentador y adaptar a su manera. Ninguna cifra ausente del informe."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due o tre frasi per diapositiva, tratte dal rapporto, da leggere in modalità relatore e da rielaborare a modo vostro. Nessuna cifra assente dal rapporto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スライドごとに2～3文、レポートから抜き出し、発表者モードで読み、自由に書き直せます。レポートにない数値は含みません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "슬라이드마다 보고서에서 가져온 두세 문장으로, 발표자 모드에서 읽고 원하는 대로 고칠 수 있습니다. 보고서에 없는 수치는 넣지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每张幻灯片两三句，取自报告，可在演讲者模式中阅读，并按您的方式改写。不含报告中没有的数字。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duas ou três frases por slide, tiradas do relatório, para ler no modo apresentador e adaptar do seu jeito. Nenhum número ausente do relatório."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twee of drie zinnen per dia, uit het rapport, om in de presentatormodus te lezen en naar eigen inzicht te herschrijven. Geen cijfer dat niet in het rapport staat."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Две-три фразы на слайд, взятые из отчёта, — для чтения в режиме докладчика и для доработки по-своему. Никаких чисел, которых нет в отчёте."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Два-три речення на слайд, узяті зі звіту, — для читання в режимі доповідача й доопрацювання по-своєму. Жодних чисел, яких немає у звіті."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slayt başına rapordan alınmış iki üç cümle; sunucu modunda okumak ve kendi tarzınızda düzenlemek için. Raporda olmayan hiçbir rakam yok."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai hoặc ba câu cho mỗi trang chiếu, lấy từ báo cáo, để đọc ở chế độ người thuyết trình và chỉnh lại theo cách của bạn. Không có con số nào ngoài báo cáo."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हर स्लाइड के लिए रिपोर्ट से लिए गए दो-तीन वाक्य, प्रस्तुतकर्ता मोड में पढ़ने और अपने ढंग से बदलने के लिए। रिपोर्ट से बाहर का कोई आँकड़ा नहीं।"
+          }
+        }
+      }
+    },
+    "Phrases de notes écartées faute d’un chiffre présent dans le rapport : %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phrases de notes écartées faute d’un chiffre présent dans le rapport : %d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note sentences dropped because a figure was not in the report: %d"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verworfene Notizsätze, weil eine Zahl nicht im Bericht stand: %d"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frases de notas descartadas porque una cifra no figuraba en el informe: %d"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frasi delle note scartate perché una cifra non compariva nel rapporto: %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "レポートにない数値を含むため除外したノートの文：%d"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보고서에 없는 수치가 포함되어 제외된 노트 문장: %d"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "因数字未见于报告而舍弃的备注句子：%d"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frases das notas descartadas por conter um número ausente do relatório: %d"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notitiezinnen weggelaten omdat een cijfer niet in het rapport stond: %d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фразы заметок, исключённые из-за чисел, которых нет в отчёте: %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Речення нотаток, відкинуті через числа, яких немає у звіті: %d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporda geçmeyen bir rakam nedeniyle çıkarılan not cümleleri: %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Câu ghi chú bị loại vì con số không có trong báo cáo: %d"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हटाए गए नोट वाक्य, क्योंकि उनका आँकड़ा रिपोर्ट में नहीं था: %d"
+          }
+        }
+      }
     }
   }
 }

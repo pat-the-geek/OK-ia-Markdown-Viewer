@@ -4,11 +4,14 @@
 //
 //   swiftc -O OKiaMarkdownViewer/Models/PresentationConverter.swift tools/ConversionBench/main.swift \
 //          -o build/conversion-bench
-//   build/conversion-bench <rapport.md> <nombre de diapositives> [sortie.md]
+//   build/conversion-bench <rapport.md> <nombre de diapositives> [sortie.md] [--notes]
+//
+// --notes (1.5) : chaque diapositive de texte reçoit des notes de l'orateur.
 
 import Foundation
 
-let args = CommandLine.arguments
+let avecNotes = CommandLine.arguments.contains("--notes")
+let args = CommandLine.arguments.filter { $0 != "--notes" }
 guard args.count >= 3, let demande = Int(args[2]) else {
     print("usage : conversion-bench <rapport.md> <nombre de diapositives> [sortie.md]"); exit(2)
 }
@@ -27,7 +30,8 @@ print("   fixes : ouverture \(plan.ouverture), plan \(plan.plan), à retenir \(p
 let horloge = ContinuousClock()
 let debut = horloge.now
 do {
-    let r = try await ConvertisseurPresentation().convertir(markdown: md, titreParDefaut: nom, diapositives: demande) { a in
+    let r = try await ConvertisseurPresentation().convertir(markdown: md, titreParDefaut: nom, diapositives: demande,
+                                                         notes: avecNotes) { a in
         print("   … \(a.etape)/\(a.total) \(a.section.isEmpty ? "ouverture et conclusion" : a.section) — \(a.diapositives.count)/\(a.prevues) prêtes")
     }
     let duree = horloge.now - debut
@@ -37,6 +41,11 @@ do {
     print("   durée : \(duree.formatted(.units(allowed: [.seconds], fractionalPart: .show(length: 1))))")
     print("   puces écartées faute d'un chiffre présent dans le rapport : \(r.pucesEcartees.count)")
     for p in r.pucesEcartees.prefix(6) { print("     ⚠️ \(p)") }
+    if avecNotes {
+        let notes = r.markdown.components(separatedBy: "<!--\n").count - 1
+        print("   notes de l'orateur : \(notes) ; phrases écartées faute d'un chiffre présent : \(r.phrasesEcartees.count)")
+        for p in r.phrasesEcartees.prefix(6) { print("     ⚠️ \(p)") }
+    }
     print("   laissé de côté :")
     for o in r.omissions { print("     · \(o)") }
 } catch {

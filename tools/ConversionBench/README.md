@@ -8,8 +8,10 @@ exécuté sur les serveurs d'Apple, qui contredirait la promesse de l'app.
 ```bash
 swiftc -O OKiaMarkdownViewer/Models/PresentationConverter.swift tools/ConversionBench/main.swift \
        -o build/conversion-bench
-build/conversion-bench <rapport.md> <nombre de diapositives> [sortie.md]
+build/conversion-bench <rapport.md> <nombre de diapositives> [sortie.md] [--notes]
 ```
+
+`--notes` (1.5) fait proposer les notes de l'orateur, comme l'interrupteur de l'app.
 
 **Depuis le 2026-10-01, le banc compile le moteur de l'app** (`PresentationConverter.swift`) au
 lieu d'en porter une copie : ce qu'il mesure est ce que l'app livre.
