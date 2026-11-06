@@ -1,7 +1,12 @@
-# md Viewer — pour une prochaine version (après la 1.4)
+# md Viewer 1.5
 
-Ce que Patrick a demandé de garder pour plus tard. Rien n'est commencé ; chaque point attend son
-feu vert.
+Le 6 novembre 2026, une fois la 1.4 en vente partout, Patrick a affecté à la 1.5 tous les points
+restants : ceux qu'il avait gardés pour plus tard pendant la 1.4, et les défauts vus pendant la 1.4.
+Rien n'est commencé.
+
+Les travaux côté fornews.ai relevés pendant la 1.4 (filtre des entités à majuscule, genres en
+cinq langues, reprise des diffs de `render.js`) n'en font pas partie : ils restent pour fornews 2.0,
+comme décidé le 29 octobre 2026.
 
 ## Notes de l'orateur (demande du 1er novembre 2026)
 
