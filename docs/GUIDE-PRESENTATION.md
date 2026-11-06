@@ -121,9 +121,22 @@ Insister sur la hausse de 18 %.
 ```
 
 Le mode présentateur (option Analytic, second écran) les affiche ; le public ne les voit pas. Un
-PowerPoint importé arrive avec ses notes déjà rangées ainsi. On ne peut pas encore les écrire dans
-l'app : la prochaine version de md Viewer permettra d'ajouter et de modifier les notes directement
-dans l'app.
+PowerPoint importé arrive avec ses notes déjà rangées ainsi, et l'export PowerPoint les remet dans
+la page de notes de chaque diapositive (1.5).
+
+**Les écrire dans l'app (1.5, option Analytic).** Dans le diaporama, le bouton **Notes** (à droite
+d'« Annoter ») ouvre la note de la diapositive affichée ; en mode présentateur, le crayon à côté de
+« Notes de l'orateur » fait de même. **Enregistrer** l'écrit dans le fichier, en commentaire à la fin
+de la diapositive, comme ci-dessus ; une note vide est retirée. Le fichier reste du Markdown que
+tout éditeur lit. Écrire une note ne touche pas aux annotations du document. Le bouton n'apparaît
+que pour un fichier Markdown (`.md`, `.markdown`, `.txt`) que l'app peut modifier : pas pour
+l'exemple intégré, ni pour un Word, un PDF ou un PowerPoint ouvert tel quel.
+
+Deux précisions :
+
+- `--` fermerait le commentaire : l'app le remplace par un tiret long (—), comme l'import.
+- Tous les commentaires d'une diapositive sont des notes, sauf les marques internes de l'app
+  (`okia:…`, `fornews:…`) ; quand l'app réécrit une note, elle les réunit en un seul commentaire.
 
 ## À ne pas faire
 

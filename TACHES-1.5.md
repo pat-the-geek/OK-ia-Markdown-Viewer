@@ -19,19 +19,30 @@ HTML d'une diapositive (`<!-- … -->`, avant le `---` suivant). `presentation.j
 et second écran). L'import PowerPoint les y range (« Notes de l'orateur : »). La syntaxe n'est
 documentée nulle part pour l'utilisateur.
 
+**Fait le 6 novembre 2026 (non poussé, à essayer sur appareil) :** bouton « Notes » du diaporama
+et crayon de la colonne du présentateur, avec l'option ; la note s'écrit dans le fichier par
+`presentation.js` (`ecrireNote`, banc `tools/render-tests/notes.html`, 21 vérifications) et
+`NotesOrateur.enregistrer` ; l'empreinte du document ne compte plus les commentaires
+(`IdentiteDocument.sansMarques`, reprise des annotations rangées sous l'ancienne clé) ; pages de
+notes dans l'export PowerPoint ; guide `docs/GUIDE-PRESENTATION.md`. Vu au simulateur iPad : éditeur,
+écriture du fichier, colonne du présentateur, export. Pas vu : l'ouverture du PowerPoint exporté dans
+PowerPoint ou Keynote, le Mac, un fichier du coffre dans iCloud.
+
 **À faire :**
-- [ ] Écrire et modifier les notes de chaque diapositive dans l'app : depuis le mode présentateur,
+- [x] Écrire et modifier les notes de chaque diapositive dans l'app : depuis le mode présentateur,
       la grille des vignettes de la présentation générée, ou les deux. Elles s'écrivent dans le
       `.md` en commentaire HTML sous la diapositive (`--` interdit dans un commentaire : le
       remplacer, comme l'import). ⚠️ Écrire dans le fichier change son empreinte : les annotations
       du document y sont liées (`IdentiteDocument`) — exclure les notes de l'identité, comme les
       marques des diapositives masquées, ou faire suivre les annotations.
-- [ ] Reprendre les notes dans l'**export PowerPoint** (`OOXMLExport` n'écrit pas de
+- [x] Reprendre les notes dans l'**export PowerPoint** (`OOXMLExport` n'écrit pas de
       `notesSlide`) : aller-retour complet avec l'import.
 - [ ] La **conversion en présentation** par Apple Intelligence pourrait proposer des notes tirées
       du rapport (à décider : jamais de chiffre absent du rapport).
 - [ ] Documenter la syntaxe : page `mdviewer/import-et-annotations.html` (ou une page du
       diaporama), base du Terminal IA (`public/data/mdviewer-kb.md`), `docs/GUIDE-PRESENTATION.md`.
+      `docs/GUIDE-PRESENTATION.md` fait le 6 novembre ; la page du site et la base du Terminal IA
+      attendent la sortie de la 1.5.
 
 ## Images embarquées perdues à l'export Word et PowerPoint (demande du 1er novembre 2026)
 

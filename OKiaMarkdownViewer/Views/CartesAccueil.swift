@@ -42,6 +42,9 @@ struct ApercuDocument {
     var origine: Origine?
     /// La clé de ses annotations (`IdentiteDocument.cle`) : la marque « annoté » la cherche.
     var cleAnnotations: String?
+    /// Sa clé d'avant la 1.5, quand le document a des commentaires (`IdentiteDocument.cleAncienne`) :
+    /// ses annotations y restent tant qu'il n'a pas été rouvert.
+    var cleAncienne: String?
 }
 
 /// Les aperçus, calculés hors du fil principal et gardés : en mémoire, et sur le disque (le dossier
@@ -69,6 +72,10 @@ final class ApercusDocuments {
         var titre: String; var extrait: String; var origine: ApercuDocument.Origine?; var image: Bool
         /// Absente des fiches d'avant la marque « annoté » (B135) : calculée une fois, puis gardée.
         var cle: String?
+        var cleAncienne: String?
+        /// La règle de la clé : 2 depuis la 1.5, où les commentaires ne comptent plus. Absente,
+        /// la clé gardée est à recalculer.
+        var regle: Int?
     }
 
     nonisolated private static var dossierCache: URL? {
@@ -89,11 +96,14 @@ final class ApercusDocuments {
         let vignette = dossierCache?.appendingPathComponent(empreinte + ".jpg")
         if let fiche, let d = try? Data(contentsOf: fiche), var f = try? JSONDecoder().decode(Fiche.self, from: d) {
             let image = f.image ? vignette.flatMap { UIImage(contentsOfFile: $0.path) } : nil
-            if f.cle == nil, let donnees = try? Data(contentsOf: url) {
+            if f.cle == nil || f.regle != 2, let donnees = try? Data(contentsOf: url) {
                 f.cle = IdentiteDocument.cle(fichier: url, octets: donnees)
+                f.cleAncienne = IdentiteDocument.cleAncienne(fichier: url, octets: donnees)
+                f.regle = 2
                 if let d = try? JSONEncoder().encode(f) { try? d.write(to: fiche) }
             }
-            return ApercuDocument(image: image, titre: f.titre, extrait: f.extrait, origine: f.origine, cleAnnotations: f.cle)
+            return ApercuDocument(image: image, titre: f.titre, extrait: f.extrait, origine: f.origine,
+                                  cleAnnotations: f.cle, cleAncienne: f.cleAncienne)
         }
         // Un document encore dans iCloud (pas téléchargé) : son nom seul.
         guard let donnees = try? Data(contentsOf: url), let texte = String(data: donnees, encoding: .utf8) else {
@@ -101,12 +111,14 @@ final class ApercusDocuments {
         }
         var a = lire(texte, nom: nom)
         a.cleAnnotations = IdentiteDocument.cle(fichier: url, octets: donnees)
+        a.cleAncienne = IdentiteDocument.cleAncienne(fichier: url, octets: donnees)
         if let source = premiereImage(texte, dossier: url.deletingLastPathComponent()),
            let image = charger(source).flatMap(reduire) {
             a.image = image
             if let vignette, let jpeg = image.jpegData(compressionQuality: 0.78) { try? jpeg.write(to: vignette) }
         }
-        if let fiche, let d = try? JSONEncoder().encode(Fiche(titre: a.titre, extrait: a.extrait, origine: a.origine, image: a.image != nil, cle: a.cleAnnotations)) {
+        if let fiche, let d = try? JSONEncoder().encode(Fiche(titre: a.titre, extrait: a.extrait, origine: a.origine, image: a.image != nil, cle: a.cleAnnotations,
+                                                                 cleAncienne: a.cleAncienne, regle: 2)) {
             try? d.write(to: fiche)
         }
         return a
@@ -342,7 +354,7 @@ struct CarteDocument<Menu: View>: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.primary.opacity(0.08)))
                     .overlay(alignment: .topLeading) { badge }
-                    .overlay(alignment: .bottomTrailing) { MarqueAnnotee(cle: apercu?.cleAnnotations, surVignette: true) }
+                    .overlay(alignment: .bottomTrailing) { MarqueAnnotee(cle: apercu?.cleAnnotations, cleAncienne: apercu?.cleAncienne, surVignette: true) }
                     .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
                 Text(nom)
                     .font(.subheadline.weight(.semibold))
@@ -412,13 +424,14 @@ struct CarteDocument<Menu: View>: View {
 /// fichier »). Sur la vignette d'une carte, dans une pastille ; au bout d'une ligne, seule.
 struct MarqueAnnotee: View {
     let cle: String?
+    var cleAncienne: String? = nil
     var surVignette = false
     @ObservedObject private var annotes = DocumentsAnnotes.partage
     @ObservedObject private var loc = Localization.shared
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
-        if let cle, annotes.cles.contains(cle) {
+        if let cle, annotes.cles.contains(cle) || cleAncienne.map(annotes.cles.contains) == true {
             Image(systemName: "highlighter")
                 .font(surVignette ? .caption.weight(.semibold) : .footnote)
                 .foregroundStyle(orange)
@@ -435,12 +448,15 @@ struct MarqueAnnotee: View {
 struct MarqueAnnoteeLigne: View {
     var resoudre: () -> (url: URL, portee: URL?)?
     @State private var cle: String?
+    @State private var cleAncienne: String?
 
     var body: some View {
-        MarqueAnnotee(cle: cle)
+        MarqueAnnotee(cle: cle, cleAncienne: cleAncienne)
             .task {
                 guard cle == nil, let (url, portee) = resoudre() else { return }
-                cle = await ApercusDocuments.partage.apercu(url, portee: portee).cleAnnotations
+                let a = await ApercusDocuments.partage.apercu(url, portee: portee)
+                cle = a.cleAnnotations
+                cleAncienne = a.cleAncienne
             }
     }
 }

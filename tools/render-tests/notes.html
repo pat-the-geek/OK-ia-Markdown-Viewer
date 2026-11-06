@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr" class="present-html">
+<head>
+<meta charset="utf-8">
+<title>Test — notes de l'orateur</title>
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/style.css">
+<link rel="stylesheet" href="../../OKiaMarkdownViewer/Web/presentation.css">
+<script src="../../OKiaMarkdownViewer/Web/vendor/marked.min.js"></script>
+<script src="../../OKiaMarkdownViewer/Web/vendor/mermaid.min.js"></script>
+<script src="../../OKiaMarkdownViewer/Web/mermaid-okia-theme.js"></script>
+<style>
+  #resultats { position: fixed; inset: 0; z-index: 9999; overflow: auto; padding: 1.5rem;
+               background: #fff; color: #111; white-space: pre-wrap;
+               font: 13px/1.6 ui-monospace, Menlo, monospace; }
+  .ok { color: #15803d; }
+  .ko { color: #b91c1c; font-weight: 600; }
+</style>
+</head>
+<body class="present-body">
+
+<!-- La coquille du diaporama, réduite à ce que le moteur exige. -->
+<div id="deck" class="deck"></div>
+<div class="present-progress"><div id="progressBar" class="present-progress-bar"></div></div>
+<button id="navPrev"></button>
+<button id="navNext"></button>
+<button id="presentEnd"></button>
+<button id="presentMenuBtn"></button>
+<div id="presentMenu" hidden></div>
+<button id="presentGridBtn"></button>
+<button id="presentNotesBtn" hidden></button>
+<div id="presentOverview" hidden>
+  <div class="overview-head"><span class="overview-title"></span><button id="overviewClose"></button></div>
+  <div id="overviewGrid"></div>
+</div>
+<div id="counter"></div>
+
+<div id="resultats">Chargement…</div>
+
+<script>
+// Anti-cache : un test qui vérifie du code périmé ne vérifie rien.
+(function () {
+  var t = Date.now();
+  document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/render.js?t=' + t + '"></scr' + 'ipt>');
+  document.write('<scr' + 'ipt src="../../OKiaMarkdownViewer/Web/presentation.js?t=' + t + '"></scr' + 'ipt>');
+})();
+</script>
+
+<script>
+// Les notes de l'orateur écrites dans l'app (1.5) : chaque note doit tomber dans SA diapositive du
+// fichier, malgré l'en-tête YAML, les blocs de code, les diapositives masquées, les définitions
+// de référence d'un document importé et les longs tableaux découpés à l'écran.
+(function () {
+  var lignes = [], echecs = 0;
+  function verifier(nom, condition, detail) {
+    if (condition) lignes.push('<span class="ok">✓</span> ' + nom);
+    else { echecs++; lignes.push('<span class="ko">✗ ' + nom + (detail ? ' — ' + detail : '') + '</span>'); }
+  }
+  function egal(nom, vu, attendu) {
+    verifier(nom, vu === attendu, '\nvu      : ' + JSON.stringify(vu) + '\nattendu : ' + JSON.stringify(attendu));
+  }
+  function rendre() {
+    lignes.push('');
+    lignes.push(echecs === 0
+      ? '<span class="ok">' + (lignes.length - 1) + ' vérifications, aucun échec.</span>'
+      : '<span class="ko">' + echecs + ' ÉCHEC(S).</span>');
+    document.getElementById('resultats').innerHTML = lignes.join('\n');
+    document.title = (echecs === 0 ? 'OK' : 'ÉCHEC') + ' — notes de l’orateur';
+  }
+
+  var P = window.OKIA_PRESENT;
+  if (!P || !P._avecNote) {
+    document.getElementById('resultats').innerHTML = '<span class="ko">moteur absent ou en cache</span>';
+    return;
+  }
+
+  // -- avecNote, sur le texte seul ---------------------------------------------------------------
+  var MD = [
+    '---', 'title: Essai', 'type: presentation', '---',
+    '# Couverture', '',
+    '---', '',
+    '## Code', '', '```', 'a', '---', 'b', '```', '',
+    '<!--', 'ancienne note', '-->', '',
+    '---',
+    '<!-- okia:masquee -->', '## Masquée', '',
+    '---', '',
+    '## Fin', '', 'Texte ![logo][img1]', '',
+    '[img1]: data:image/png;base64,AAAA', ''
+  ].join('\n');
+
+  var r = P._avecNote(MD, 0, 'Bonjour');
+  egal('la note va à la couverture, après l’en-tête YAML',
+       r, MD.replace('# Couverture\n', '# Couverture\n\n<!--\nBonjour\n-->\n'));
+
+  r = P._avecNote(MD, 1, 'Nouvelle note');
+  verifier('le séparateur dans le bloc de code ne coupe pas la diapositive',
+           r.indexOf('```\na\n---\nb\n```\n\n<!--\nNouvelle note\n-->') !== -1, r);
+  verifier('l’ancienne note est remplacée', r.indexOf('ancienne note') === -1, r);
+
+  r = P._avecNote(MD, 1, '');
+  verifier('une note vide retire la note', r.indexOf('ancienne note') === -1 && r.indexOf('<!--\n') === -1, r);
+  verifier('… sans laisser trois lignes vides', !/\n\n\n\n/.test(r), JSON.stringify(r));
+
+  r = P._avecNote(MD, 2, 'Pour la fin');
+  verifier('la diapositive masquée est sautée : la note va à « Fin »',
+           r.indexOf('Texte ![logo][img1]\n\n<!--\nPour la fin\n-->\n\n[img1]: data:') !== -1, r);
+  verifier('la marque de la masquée reste', r.indexOf('<!-- okia:masquee -->') !== -1);
+
+  egal('une diapositive absente rend null', P._avecNote(MD, 3, 'x'), null);
+
+  r = P._avecNote(MD, 0, 'a -- b -->');
+  verifier('« -- » ne ferme pas le commentaire', r.indexOf('a — b —>') !== -1, r);
+
+  // L'empreinte du document (IdentiteDocument.sansMarques, côté Swift) ne voit pas les notes :
+  // écrire, changer, effacer une note ne doit jamais la changer.
+  function empreinte(t) {
+    return t.split('<!-- okia:masquee -->\n').join('').replace(/\s*<!--[\s\S]*?-->/g, '');
+  }
+  var FORCE = 'Ligne avec retour forcé  \nsuite\n\n```html\n<!-- dans le code -->\n```\n';
+  var DOCS = [MD, FORCE, '<!-- seule note -->\n\n---\n\n## B\n', MD.replace(/\n/g, '\r\n')];
+  var stable = true, detail = '';
+  DOCS.forEach(function (d, k) {
+    for (var o = 0; o < 4; o++) ['Une note', '', 'Deux\n\nlignes'].forEach(function (n) {
+      var x = P._avecNote(d, o, n);
+      if (x == null) return;
+      if (empreinte(x) !== empreinte(d)) { stable = false; detail = 'doc ' + k + ', diapo ' + o + ', « ' + n + ' »\n' + JSON.stringify(x); }
+      var y = P._avecNote(x, o, '');
+      if (y == null || empreinte(y) !== empreinte(d)) { stable = false; detail = 'retrait, doc ' + k + ', diapo ' + o; }
+    });
+  });
+  verifier('l’empreinte du document ne change jamais', stable, detail);
+  r = P._avecNote(FORCE, 0, 'N');
+  verifier('le retour forcé (deux espaces) et le commentaire du code restent',
+           r.indexOf('forcé  \nsuite') !== -1 && r.indexOf('<!-- dans le code -->') !== -1, JSON.stringify(r));
+  r = P._avecNote('<!-- seule note -->\n\n---\n\n## B\n', 0, '');
+  verifier('une diapositive faite de sa seule note ne disparaît pas',
+           r.indexOf('<!-- -->') === 0, JSON.stringify(r));
+
+  var CRLF = '# Un\r\n\r\n---\r\n\r\n## Deux\r\n';
+  r = P._avecNote(CRLF, 1, 'Note');
+  verifier('fin de ligne Windows : la note va à la deuxième',
+           /## Deux\r?\n\n<!--\nNote\n-->/.test(r), JSON.stringify(r));
+
+  // -- le diaporama : notes(), ecrireNote(), l'export -------------------------------------------
+  var LONG = ['## Tableau', '', '| a | b |', '|---|---|'];
+  for (var i = 0; i < 60; i++) LONG.push('| ligne ' + i + ' | ' + i + ' |');
+  var DOC = ['# Titre', '', '<!--', 'Notes de l’orateur :', 'Dire bonjour', '-->', '',
+             '---', '', LONG.join('\n'), '', '---', '', '## Dernière', ''].join('\n');
+  P.start(DOC);
+
+  setTimeout(function () {
+    egal('l’en-tête de l’import PowerPoint ne fait pas partie de la note', P.notes(0), 'Dire bonjour');
+    var total = document.querySelectorAll('#deck .slide').length;
+    verifier('le long tableau est découpé à l’écran', total > 3, 'diapositives=' + total);
+    var derniere = total - 1;
+    var md = P.ecrireNote(derniere, 'Conclure');
+    verifier('la note de la dernière page affichée va à la dernière diapositive du fichier',
+             md && /## Dernière\n\n<!--\nConclure\n-->\n$/.test(md), JSON.stringify(md && md.slice(-60)));
+    egal('notes() rend la note écrite', P.notes(derniere), 'Conclure');
+    md = P.ecrireNote(2, 'Sur le tableau');
+    verifier('une page de suite du tableau écrit dans le tableau',
+             md && md.indexOf('| ligne 59 | 59 |\n\n<!--\nSur le tableau\n-->') !== -1, '');
+    egal('… et toutes ses pages montrent la note', P.notes(1), 'Sur le tableau');
+    verifier('la note de la dernière est toujours là', md.indexOf('Conclure') !== -1);
+
+    P.exportModel().then(function (modele) {
+      var n = modele.slides.map(function (s) { return s.notes; });
+      egal('l’export porte les notes de chaque diapositive', JSON.stringify(n),
+           JSON.stringify(['Dire bonjour', 'Sur le tableau', 'Conclure']));
+      rendre();
+    }, function (e) { verifier('export', false, String(e)); rendre(); });
+  }, 400);
+})();
+</script>
+</body>
+</html>

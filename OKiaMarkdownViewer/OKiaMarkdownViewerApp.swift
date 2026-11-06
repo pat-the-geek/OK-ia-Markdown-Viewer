@@ -528,7 +528,8 @@ struct OKiaMarkdownViewerApp: App {
         if let chemin = env["OKIA_RENDER_FILE"], !chemin.isEmpty,
            let texte = try? String(contentsOfFile: chemin, encoding: .utf8) {
             let name = env["OKIA_RENDER_NAME"] ?? (chemin as NSString).lastPathComponent
-            store.document = MarkdownDocument(filename: name, text: texte)
+            // Avec son fichier : les notes de l'orateur (1.5) s'y écrivent, comme dans un vrai document.
+            store.document = MarkdownDocument(filename: name, text: texte, sourceURL: URL(fileURLWithPath: chemin))
         }
         // OKIA_COFFRE=<dossier> : le coffre, sans le sélecteur (un dossier du conteneur au simulateur) ;
         // OKIA_ANALYSE_COFFRE : ouvre l'analyse de tout le coffre au lancement.

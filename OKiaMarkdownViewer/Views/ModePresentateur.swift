@@ -134,6 +134,8 @@ struct FenetrePublique: View {
 struct PanneauPresentateur: View {
     @ObservedObject var seance: SeancePresentation
     var arreter: () -> Void
+    /// Écrire la note de la diapositive en cours (1.5) ; nil sans l'option ou sans fichier Markdown.
+    var modifierNotes: (() -> Void)? = nil
     @State private var debut = Date()
     @State private var pause: Date?
     @State private var cumulPause: TimeInterval = 0
@@ -147,7 +149,19 @@ struct PanneauPresentateur: View {
                 .aspectRatio(16 / 10, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.15)))
-            Text(tr("Notes de l’orateur")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            HStack {
+                Text(tr("Notes de l’orateur")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                Spacer()
+                if let modifierNotes {
+                    Button(action: modifierNotes) {
+                        Label(tr("Modifier les notes"), systemImage: "square.and.pencil")
+                            .labelStyle(.iconOnly)
+                    }
+                    .font(.callout)
+                    .foregroundStyle(orange)
+                    .accessibilityLabel(tr("Modifier les notes"))
+                }
+            }
             ScrollView {
                 Text(seance.notes.isEmpty ? tr("Pas de notes pour cette diapositive.") : seance.notes)
                     .font(.title3)

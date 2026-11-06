@@ -585,7 +585,7 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
 .present-duo-btn {
   position: fixed;
   top: max(14px, env(safe-area-inset-top));
-  left: max(176px, calc(env(safe-area-inset-left) + 176px));
+  left: max(230px, calc(env(safe-area-inset-left) + 230px));
   z-index: 41;
   width: 46px;
   height: 46px;
@@ -608,6 +608,7 @@ body.present-public .present-menu-btn,
 body.present-public .present-grid-btn,
 body.present-public .present-annot-btn,
 body.present-public .present-duo-btn,
+body.present-public .present-notes-btn,
 body.present-public .present-counter,
 body.present-public .okia-agrandir,
 body.present-apercu .present-progress,
@@ -617,6 +618,7 @@ body.present-apercu .present-menu-btn,
 body.present-apercu .present-grid-btn,
 body.present-apercu .present-annot-btn,
 body.present-apercu .present-duo-btn,
+body.present-apercu .present-notes-btn,
 body.present-apercu .present-counter,
 body.present-apercu .okia-agrandir { display: none !important; }
 
@@ -637,15 +639,34 @@ body.present-apercu .okia-agrandir { display: none !important; }
   transition: opacity 0.2s ease, background 0.2s ease;
 }
 .present-annot-btn[hidden] { display: none !important; }
-body.present-chantier .present-duo-btn { display: none; }
+body.present-chantier .present-duo-btn, body.present-chantier .present-notes-btn { display: none; }
+
+/* ---- Notes de l'orateur (option Analytic, 1.5), à droite d'« Annoter » --------------------- */
+.present-notes-btn {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(176px, calc(env(safe-area-inset-left) + 176px));
+  z-index: 41;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(40, 40, 40, 0.30);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+.present-notes-btn[hidden] { display: none !important; }
+.present-notes-btn:hover { opacity: 1; background: rgba(232, 151, 46, 0.6); }
 .present-annot-btn:hover, .present-annot-btn.actif { opacity: 1; background: rgba(232, 151, 46, 0.6); }
 
-.present-end, .present-menu-btn, .present-grid-btn, .present-annot-btn, .present-duo-btn, .overview-close {
+.present-end, .present-menu-btn, .present-grid-btn, .present-annot-btn, .present-duo-btn, .present-notes-btn, .overview-close {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.present-end svg, .present-menu-btn svg, .present-grid-btn svg, .present-annot-btn svg, .present-duo-btn svg, .overview-close svg {
+.present-end svg, .present-menu-btn svg, .present-grid-btn svg, .present-annot-btn svg, .present-duo-btn svg, .present-notes-btn svg, .overview-close svg {
   width: 20px;
   height: 20px;
   fill: none;

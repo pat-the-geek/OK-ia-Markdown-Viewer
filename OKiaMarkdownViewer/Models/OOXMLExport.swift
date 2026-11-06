@@ -450,6 +450,9 @@ enum DocxBuilder {
 struct PptxSlide {
     var title: [OOXMLRun]
     var blocks: [OOXMLBlock]
+    /// Les notes de l'orateur (1.5) : elles vont dans la page de notes de la diapositive, celle
+    /// que l'import PowerPoint relit.
+    var notes: String = ""
 }
 
 enum PptxBuilder {
@@ -474,6 +477,10 @@ enum PptxBuilder {
         var slideOverrides = ""
         var presRels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster\" Target=\"slideMasters/slideMaster1.xml\"/>"
         var sldIdList = ""
+        // Les pages de notes demandent un masque des notes : il n'est écrit que si une diapositive
+        // a des notes, et le fichier d'une présentation sans notes reste ce qu'il était.
+        let avecNotes = slides.contains { !$0.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let ridMasqueNotes = "rId\(slides.count + 2)"
 
         for (i, slide) in slides.enumerated() {
             let n = i + 1
@@ -487,6 +494,13 @@ enum PptxBuilder {
                 rels += "<Relationship Id=\"rIdImg\(k + 1)\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"../media/\(entry.name)\"/>"
                 zip.add("ppt/media/\(entry.name)", entry.img.data)
             }
+            if !slide.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                rels += "<Relationship Id=\"rIdNotes\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide\" Target=\"../notesSlides/notesSlide\(n).xml\"/>"
+                zip.add("ppt/notesSlides/notesSlide\(n).xml", xml: notesXML(slide.notes))
+                zip.add("ppt/notesSlides/_rels/notesSlide\(n).xml.rels", xml: relsDoc(
+                    "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster\" Target=\"../notesMasters/notesMaster1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" Target=\"../slides/slide\(n).xml\"/>"))
+                slideOverrides += "<Override PartName=\"/ppt/notesSlides/notesSlide\(n).xml\" ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml\"/>"
+            }
             zip.add("ppt/slides/_rels/slide\(n).xml.rels", xml: relsDoc(rels))
 
             slideOverrides += "<Override PartName=\"/ppt/slides/slide\(n).xml\" ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
@@ -494,9 +508,18 @@ enum PptxBuilder {
             sldIdList += "<p:sldId id=\"\(255 + n)\" r:id=\"\(rid)\"/>"
         }
 
+        if avecNotes {
+            presRels += "<Relationship Id=\"\(ridMasqueNotes)\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster\" Target=\"notesMasters/notesMaster1.xml\"/>"
+            slideOverrides += "<Override PartName=\"/ppt/notesMasters/notesMaster1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml\"/>"
+                + "<Override PartName=\"/ppt/theme/theme2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/>"
+            zip.add("ppt/notesMasters/notesMaster1.xml", xml: notesMaster)
+            zip.add("ppt/notesMasters/_rels/notesMaster1.xml.rels", xml: relsDoc(
+                "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"../theme/theme2.xml\"/>"))
+            zip.add("ppt/theme/theme2.xml", xml: theme1)
+        }
         zip.add("[Content_Types].xml", xml: contentTypes(slideOverrides))
         zip.add("_rels/.rels", xml: rootRels)
-        zip.add("ppt/presentation.xml", xml: presentationXML(sldIdList))
+        zip.add("ppt/presentation.xml", xml: presentationXML(sldIdList, masqueNotes: avecNotes ? ridMasqueNotes : nil))
         zip.add("ppt/_rels/presentation.xml.rels", xml: relsDoc(presRels))
         zip.add("ppt/slideMasters/slideMaster1.xml", xml: slideMaster)
         zip.add("ppt/slideMasters/_rels/slideMaster1.xml.rels", xml: relsDoc(
@@ -751,15 +774,58 @@ enum PptxBuilder {
     </Relationships>
     """
 
-    private static func presentationXML(_ sldIdList: String) -> String {
-        """
+    private static func presentationXML(_ sldIdList: String, masqueNotes: String? = nil) -> String {
+        // L'ordre de `CT_Presentation` : le masque des notes suit celui des diapositives.
+        let notes = masqueNotes.map { "<p:notesMasterIdLst><p:notesMasterId r:id=\"\($0)\"/></p:notesMasterIdLst>" } ?? ""
+        return """
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
-        <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>\
+        <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>\(notes)\
         <p:sldIdLst>\(sldIdList)</p:sldIdLst>\
         <p:sldSz cx="\(slideW)" cy="\(slideH)" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>
         """
     }
+
+    // MARK: notes de l'orateur (1.5)
+
+    /// La page de notes d'une diapositive : l'image de la diapositive, puis le texte, un paragraphe
+    /// par ligne.
+    private static func notesXML(_ notes: String) -> String {
+        let paras = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: .newlines)
+            .map { l -> String in
+                let t = l.trimmingCharacters(in: .whitespaces)
+                return t.isEmpty ? "<a:p><a:endParaRPr lang=\"fr-FR\"/></a:p>"
+                    : "<a:p><a:r><a:rPr lang=\"fr-FR\" dirty=\"0\"/><a:t>\(XML.esc(t))</a:t></a:r></a:p>"
+            }.joined()
+        return """
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <p:notes xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
+        <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>\
+        <p:sp><p:nvSpPr><p:cNvPr id="2" name="Slide Image Placeholder 1"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr><p:spPr/></p:sp>\
+        <p:sp><p:nvSpPr><p:cNvPr id="3" name="Notes Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/>\
+        <p:txBody><a:bodyPr/><a:lstStyle/>\(paras)</p:txBody></p:sp>\
+        </p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>
+        """
+    }
+
+    /// Le masque des notes : la place de l'image de la diapositive et celle du texte, sur une page
+    /// portrait (`notesSz`).
+    private static let notesMaster = """
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <p:notesMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
+    <p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>\
+    <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>\
+    <p:sp><p:nvSpPr><p:cNvPr id="2" name="Slide Image Placeholder 1"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg" idx="2"/></p:nvPr></p:nvSpPr>\
+    <p:spPr><a:xfrm><a:off x="381000" y="685800"/><a:ext cx="6096000" cy="3429000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln w="12700"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln></p:spPr></p:sp>\
+    <p:sp><p:nvSpPr><p:cNvPr id="3" name="Notes Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" sz="quarter" idx="3"/></p:nvPr></p:nvSpPr>\
+    <p:spPr><a:xfrm><a:off x="685800" y="4343400"/><a:ext cx="5486400" cy="4114800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>\
+    <p:txBody><a:bodyPr vert="horz" lIns="91440" tIns="45720" rIns="91440" bIns="45720" rtlCol="0"/><a:lstStyle/><a:p><a:endParaRPr lang="fr-FR"/></a:p></p:txBody></p:sp>\
+    </p:spTree></p:cSld>\
+    <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>\
+    <p:notesStyle><a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1200" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr></p:notesStyle>\
+    </p:notesMaster>
+    """
 
     private static let slideMaster = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -921,7 +987,7 @@ enum OOXMLExportBridge {
         download(imageURLs(in: allBlocks)) { imgs in
             let slides = rawSlides.map { s -> PptxSlide in
                 let blocks = ((s["blocks"] as? [[String: Any]]) ?? []).compactMap { block($0, imgs) }
-                return PptxSlide(title: runs(s["title"]), blocks: blocks)
+                return PptxSlide(title: runs(s["title"]), blocks: blocks, notes: (s["notes"] as? String) ?? "")
             }
             completion(PptxBuilder.build(slides: slides, transition: model["transition"] as? String))
         }

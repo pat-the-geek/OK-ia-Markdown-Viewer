@@ -97,8 +97,39 @@ struct IdentiteDocument: Codable, Equatable {
     /// Le texte qui fait l'identité : sans les marques des diapositives masquées d'une présentation
     /// (`DiapositivesMasquees`). Masquer une diapositive réécrit le fichier ; ses annotations s'y
     /// perdaient (Patrick, 30/10/2026 : « fais les 2 »).
+    ///
+    /// Ni les commentaires HTML (1.5) : c'est là que vivent les notes de l'orateur, que l'app écrit
+    /// désormais dans le fichier. Un commentaire part avec les blancs qui le précèdent — la règle
+    /// même de `presentation.js` (`NOTE`), qui écrit une note en « \n\n<!--\n…\n--> » : écrire,
+    /// changer ou effacer une note ne change pas l'empreinte. Un texte sans commentaire garde
+    /// l'empreinte d'avant la 1.5.
     nonisolated static func sansMarques(_ texte: String) -> String {
+        let t = sansMasquees(texte)
+        guard t.contains("<!--") else { return t }
+        return t.replacingOccurrences(of: #"\s*<!--[\s\S]*?-->"#, with: "", options: .regularExpression)
+    }
+
+    nonisolated static func sansMasquees(_ texte: String) -> String {
         texte.replacingOccurrences(of: DiapositivesMasquees.marque + "\n", with: "")
+    }
+
+    /// L'identité qu'avait le document jusqu'à la 1.4, quand ses commentaires comptaient — nil si
+    /// c'est la même. Ses annotations y sont peut-être encore rangées.
+    nonisolated static func ancienne(_ document: MarkdownDocument) -> IdentiteDocument? {
+        let avant = sansMasquees(document.text)
+        guard avant.contains("<!--") else { return nil }
+        var i = IdentiteDocument(document)
+        let octets = Data(avant.utf8)
+        i.taille = octets.count
+        i.empreinte = hex(SHA256.hash(data: octets))
+        return i
+    }
+
+    /// La clé d'avant la 1.5, d'après le fichier — nil si c'est la même (la marque « annoté »).
+    nonisolated static func cleAncienne(fichier url: URL, octets: Data) -> String? {
+        let avant = sansMasquees(MarkdownLoader.decode(octets))
+        guard avant.contains("<!--") else { return nil }
+        return cle(nom: url.lastPathComponent, empreinte: hex(SHA256.hash(data: Data(avant.utf8))))
     }
 
     private nonisolated static func cle(nom: String, empreinte: String) -> String {
@@ -149,6 +180,16 @@ enum AnnotationsStore {
         if let data = try? Data(contentsOf: url(identite.cle)),
            let f = try? JSONDecoder().decode(Fichier.self, from: data),
            f.document == nil || f.document?.empreinte == identite.empreinte {
+            return f.annotations
+        }
+        // Jusqu'à la 1.4, les commentaires du document comptaient dans son empreinte : ses
+        // annotations passent sous la nouvelle clé, une fois, au document ouvert.
+        if let ancienne = IdentiteDocument.ancienne(document),
+           let data = try? Data(contentsOf: url(ancienne.cle)),
+           let f = try? JSONDecoder().decode(Fichier.self, from: data),
+           f.document == nil || f.document?.empreinte == ancienne.empreinte {
+            ecrire(f.annotations, pour: identite)
+            ecrire([], pour: ancienne)
             return f.annotations
         }
         return reprendreAncien(identite, document: document)

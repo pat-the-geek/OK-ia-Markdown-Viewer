@@ -430,11 +430,14 @@ final class ConversionEnCours: ObservableObject {
         if let url = r.document.sourceURL { try? document(r).text.write(to: url, atomically: true, encoding: .utf8) }
     }
 
-    /// La présentation telle qu'on la lance ou l'enregistre : les diapositives masquées marquées.
+    /// La présentation telle qu'on la lance ou l'enregistre : les diapositives masquées marquées, et
+    /// les notes de l'orateur écrites au diaporama (1.5) — sans quoi masquer une diapositive les
+    /// effacerait du fichier.
     func document(_ r: Fini) -> MarkdownDocument {
-        guard !masquees.isEmpty else { return r.document }
+        let lu = NotesOrateur.aJour(r.document)
+        guard !masquees.isEmpty else { return lu }
         return MarkdownDocument(filename: r.document.filename,
-                                text: DiapositivesMasquees.marquer(r.document.text, masquees: masquees),
+                                text: DiapositivesMasquees.marquer(IdentiteDocument.sansMasquees(lu.text), masquees: masquees),
                                 sourceURL: r.document.sourceURL)
     }
 

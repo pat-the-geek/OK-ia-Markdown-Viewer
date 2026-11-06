@@ -355,7 +355,9 @@ struct ReaderView: View {
             // Le diaporama reçoit le traducteur du lecteur, pas un neuf : sa mémoire
             // porte déjà tout ce que la lecture a traduit, et la même diapositive ne se
             // paiera pas une seconde fois.
-            PresentationView(document: document,
+            // Avec les notes de l'orateur écrites lors d'un diaporama précédent (1.5) : le lecteur
+            // garde le texte qu'il a ouvert.
+            PresentationView(document: NotesOrateur.aJour(document),
                              memoireHeritee: translator.memoire,
                              langueSource: translator.demandeSource,
                              traduire: traductionActive)
@@ -1993,6 +1995,10 @@ struct PresentationView: View {
     @ObservedObject private var seance = SeancePresentation.partage
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
+    @ObservedObject private var achat = AchatAnalytic.partage
+    /// La note de l'orateur qu'on écrit (1.5), et ce qui l'a empêchée d'être enregistrée.
+    @State private var noteEnCours: NoteEnCours?
+    @State private var erreurNote: String?
 
     var body: some View {
         // Le diaporama garde sa place (et son état) quand la colonne du présentateur s'ouvre.
@@ -2001,7 +2007,8 @@ struct PresentationView: View {
                 diaporama
                     .frame(width: seance.presentateur ? geo.size.width * 0.62 : geo.size.width)
                 if seance.presentateur {
-                    PanneauPresentateur(seance: seance, arreter: { dismissWindow(id: "public") })
+                    PanneauPresentateur(seance: seance, arreter: { dismissWindow(id: "public") },
+                                        modifierNotes: notesModifiables ? { ouvrirNote(seance.index) } : nil)
                 }
             }
         }
@@ -2023,6 +2030,13 @@ struct PresentationView: View {
             .fullScreenCover(item: $tappedDiagram) { DiagramZoomView(diagram: $0) }
             .fullScreenCover(item: $tappedImage) { ImageZoomView(image: $0) }
             .sheet(item: $sharePayload) { payload in ShareSheet(items: [payload.url]) }
+            .sheet(item: $noteEnCours) { note in
+                EditeurNoteOrateur(note: note, enregistrer: { enregistrerNote(note.index, $0) })
+            }
+            .alert(tr("Note non enregistrée"), isPresented: Binding(get: { erreurNote != nil },
+                                                                   set: { if !$0 { erreurNote = nil } })) {
+                Button(tr("OK"), role: .cancel) {}
+            } message: { Text(erreurNote ?? "") }
             .onAppear {
                 requestLandscapeIfPhone()
                 trad.absorber(memoireHeritee)
@@ -2033,6 +2047,14 @@ struct PresentationView: View {
                 // OKIA_PRESENTATEUR : sur iPad et iPhone, fait comme si un écran externe était branché
                 // (la colonne du présentateur sans second écran, au simulateur) ; sur Mac, ouvre la
                 // vraie fenêtre du public, comme le bouton.
+                // OKIA_NOTE=<rang>|<texte> : écrit cette note de l'orateur par le chemin du bouton
+                // « Enregistrer » (1.5), le clavier du simulateur ne tapant pas de texte.
+                if let essai = ProcessInfo.processInfo.environment["OKIA_NOTE"],
+                   let barre = essai.firstIndex(of: "|"), let rang = Int(essai[..<barre]) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        enregistrerNote(rang, String(essai[essai.index(after: barre)...]).replacingOccurrences(of: "\\n", with: "\n"))
+                    }
+                }
                 if ProcessInfo.processInfo.environment["OKIA_PRESENTATEUR"] != nil {
                     #if targetEnvironment(macCatalyst)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) { openWindow(id: "public") }
@@ -2071,7 +2093,41 @@ struct PresentationView: View {
                                 }
                             },
                             onChoix: { seance.choix = $0 },
-                            onPresentateur: { openWindow(id: "public") })
+                            onPresentateur: { openWindow(id: "public") },
+                            onNotes: { ouvrirNote($0) })
+    }
+
+    /// Les notes s'écrivent avec l'option, dans un fichier Markdown (1.5).
+    private var notesModifiables: Bool { achat.acces && NotesOrateur.modifiable(document) }
+
+    /// Ouvre l'éditeur sur la note de la diapositive affichée `i`, telle que le diaporama la lit.
+    private func ouvrirNote(_ i: Int) {
+        guard notesModifiables else { return }
+        annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
+            noteEnCours = NoteEnCours(index: i, texte: (r as? String) ?? "")
+        }
+    }
+
+    /// Le diaporama retouche le fichier (`ecrireNote`) ; on l'enregistre.
+    private func enregistrerNote(_ i: Int, _ texte: String) {
+        guard let vue = annotations.diaporama else { return }
+        vue.callAsyncJavaScript("return window.OKIA_PRESENT.ecrireNote(index, texte);",
+                                arguments: ["index": i, "texte": texte], in: nil, in: .page) { resultat in
+            guard case .success(let valeur) = resultat, let md = valeur as? String else {
+                erreurNote = NotesOrateur.Erreur.diapositiveIntrouvable.localizedDescription
+                return
+            }
+            do {
+                try NotesOrateur.enregistrer(md, document: document)
+            } catch {
+                erreurNote = error.localizedDescription
+            }
+            if i == seance.index {
+                vue.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
+                    seance.notes = (r as? String) ?? ""
+                }
+            }
+        }
     }
 
     private func diaporama(_ geste: String) {
@@ -2163,6 +2219,8 @@ struct PresentationWebView: UIViewRepresentable {
     var onDiapositive: ((Int, Int) -> Void)?
     var onChoix: (([String: String]) -> Void)?
     var onPresentateur: (() -> Void)?
+    /// Le bouton « Notes » (1.5) : écrire la note de la diapositive affichée.
+    var onNotes: ((Int) -> Void)?
 
     enum ModeDiaporama: String { case complet, `public`, apercu }
 
@@ -2171,7 +2229,7 @@ struct PresentationWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
         for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered", "annoter",
-                     "diapositive", "choix", "presentateur"] {
+                     "diapositive", "choix", "presentateur", "notes"] {
             controller.add(context.coordinator, name: name)
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
@@ -2283,6 +2341,17 @@ struct PresentationWebView: UIViewRepresentable {
             parent.annotations.charger(parent.document)
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettreAnnotation(\(AchatAnalytic.partage.acces));")
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettrePresentateur(\(AchatAnalytic.partage.acces && SeancePresentation.fenetrePossible));")
+            // Les notes de l'orateur s'écrivent dans le fichier (1.5) : avec l'option, et un fichier
+            // Markdown à retoucher.
+            let notes = AchatAnalytic.partage.acces && parent.onNotes != nil && NotesOrateur.modifiable(parent.document)
+            webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettreNotes(\(notes));")
+            #if DEBUG
+            // OKIA_EXPORT_PPTX : exporte le PowerPoint au lancement (son fichier, dans le dossier
+            // temporaire de l'app), pour en vérifier les pages de notes sans piloter le menu.
+            if ProcessInfo.processInfo.environment["OKIA_EXPORT_PPTX"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in self?.exportPptx() }
+            }
+            #endif
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak webView] in
                 webView?.becomeFirstResponder()
             }
@@ -2438,6 +2507,9 @@ struct PresentationWebView: UIViewRepresentable {
                 if let d = message.body as? [String: String] { parent.onChoix?(d) }
             case "presentateur":
                 parent.onPresentateur?()
+            case "notes":
+                let d = message.body as? [String: Any]
+                parent.onNotes?((d?["index"] as? Int) ?? (d?["index"] as? Double).map(Int.init) ?? 0)
             case "presentExit":
                 parent.onExit()
             case "diagramTapped":

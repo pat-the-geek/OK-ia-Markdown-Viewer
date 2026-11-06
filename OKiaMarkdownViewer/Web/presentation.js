@@ -94,6 +94,8 @@
         ja: 'スライドを非表示', ko: '슬라이드 가리기', 'zh-Hans': '隐藏幻灯片', 'pt-BR': 'Ocultar slide', nl: 'Verberg dia', ru: 'Скрыть слайд', uk: 'Приховати слайд', tr: 'Slaytı gizle', vi: 'Ẩn trang chiếu', hi: 'स्लाइड छिपाएँ' },
     'Montrer la diapositive': { en: 'Show slide', de: 'Folie einblenden', es: 'Mostrar diapositiva', it: 'Mostra diapositiva',
         ja: 'スライドを表示', ko: '슬라이드 보이기', 'zh-Hans': '显示幻灯片', 'pt-BR': 'Mostrar slide', nl: 'Toon dia', ru: 'Показать слайд', uk: 'Показати слайд', tr: 'Slaytı göster', vi: 'Hiện trang chiếu', hi: 'स्लाइड दिखाएँ' },
+    'Notes de l’orateur': { en: 'Speaker notes', de: 'Sprechernotizen', es: 'Notas del orador', it: 'Note del relatore',
+        ja: '発表者ノート', ko: '발표자 노트', 'zh-Hans': '演讲者备注', 'pt-BR': 'Notas do apresentador', nl: 'Sprekersnotities', ru: 'Заметки докладчика', uk: 'Нотатки доповідача', tr: 'Konuşmacı notları', vi: 'Ghi chú của người thuyết trình', hi: 'वक्ता के नोट्स' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
     'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta',
         ja: '書き出し', ko: '내보내기', 'zh-Hans': '导出', 'pt-BR': 'Exportar', nl: 'Exporteer', ru: 'Экспорт', uk: 'Експорт', tr: 'Dışa aktar', vi: 'Xuất', hi: 'एक्सपोर्ट करें' }
@@ -893,18 +895,22 @@
 
     // Lire une diapositive rendue et l'ajouter au modèle. Le premier titre devient le
     // titre de la diapositive.
+    // Les notes de l'orateur partent avec la diapositive (1.5) : le PowerPoint les montre sous
+    // chacune, comme l'import les a lues.
+    var noteCourante = '';
     function lireModele() {
       return window.OKIA.exportModel(tmp).then(function (blocks) {
         var title = [];
         if (blocks.length && blocks[0].t === 'heading') { title = blocks[0].runs; blocks = blocks.slice(1); }
-        out.push({ title: title, blocks: blocks });
+        out.push({ title: title, blocks: blocks, notes: noteCourante });
       });
     }
 
     var chain = Promise.resolve();
     // Les diapositives du document, sans le découpage des longs tableaux propre à cet écran.
-    rawSlidesOrigine.forEach(function (md) {
+    rawSlidesOrigine.forEach(function (md, o) {
       chain = chain.then(function () {
+        noteCourante = Object.prototype.hasOwnProperty.call(notesEcrites, o) ? notesEcrites[o] : notesDe(md);
         return window.OKIA.renderFragment(tmp, md).then(function () {
           // Le modèle d'export se lit dans le DOM : on y repose la traduction avant de
           // lire, sinon le fichier PowerPoint sortirait dans la langue d'origine alors
@@ -1122,14 +1128,15 @@
     mesure.appendChild(toile);
     deck.appendChild(mesure);
     var parse = window.marked.parse || window.marked;
-    var change = false, resultat = [];
-    rawSlides.forEach(function (md) {
+    var change = false, resultat = [], origines = [];
+    rawSlides.forEach(function (md, o) {
+      function garder() { resultat.push(md); origines.push(o); }
       var t = autourDuTableau(md);
-      if (!t) { resultat.push(md); return; }
+      if (!t) { garder(); return; }
       inner.innerHTML = parse(md, { gfm: true, breaks: true });
-      if (inner.scrollHeight <= place) { resultat.push(md); return; }
+      if (inner.scrollHeight <= place) { garder(); return; }
       var trs = inner.querySelectorAll('tbody > tr');
-      if (trs.length !== t.rangees.length) { resultat.push(md); return; }
+      if (trs.length !== t.rangees.length) { garder(); return; }
       var hauteurs = Array.prototype.map.call(trs, function (tr) { return tr.getBoundingClientRect().height; });
       var fixe = inner.scrollHeight - hauteurs.reduce(function (a, b) { return a + b; }, 0);
       // Des pages remplies tour à tour, une rangée au moins chacune.
@@ -1139,7 +1146,7 @@
         pages[pages.length - 1].push(r);
         h += hauteurs[i];
       });
-      if (pages.length < 2) { resultat.push(md); return; }
+      if (pages.length < 2) { garder(); return; }
       // Les notes (commentaires HTML) restent à la première page ; le texte d'après, à la dernière.
       var notes = (t.apres.match(/<!--[\s\S]*?-->/g) || []).join('\n\n');
       var reste = t.apres.replace(/<!--[\s\S]*?-->/g, '').trim();
@@ -1148,11 +1155,12 @@
         if (i === pages.length - 1 && reste) bloc.push(reste);
         if (i === 0 && notes) bloc.push(notes);
         resultat.push(bloc.filter(function (b) { return b; }).join('\n\n'));
+        origines.push(o);
       });
       change = true;
     });
     deck.removeChild(mesure);
-    if (change) rawSlides = resultat;
+    if (change) { rawSlides = resultat; origineDe = origines; }
     return change;
   }
 
@@ -1195,6 +1203,7 @@
     setLabel('presentGridBtn', 'Vue d’ensemble des diapositives');
     setLabel('presentAnnotBtn', 'Annoter');
     setLabel('presentDuoBtn', 'Présenter sur un second écran');
+    setLabel('presentNotesBtn', 'Notes de l’orateur');
     setLabel('overviewClose', 'Fermer');
     var t = document.querySelector('.overview-title');
     if (t) t.textContent = TXT('Diapositives');
@@ -1209,6 +1218,9 @@
     rawSlides = splitSlides(md || '').filter(function (s) { return !MASQUEE.test(s); });
     if (!rawSlides.length) rawSlides = [' '];
     rawSlidesOrigine = rawSlides.slice();
+    origineDe = rawSlides.map(function (_, i) { return i; });
+    mdSource = md || '';
+    notesEcrites = {};
     current = 0;
     build();
 
@@ -1243,6 +1255,9 @@
     if (annotBtn) annotBtn.onclick = function (e) { e.stopPropagation(); closeMenu(); post('annoter', {}); };
     var duoBtn = el('presentDuoBtn');
     if (duoBtn) duoBtn.onclick = function (e) { e.stopPropagation(); closeMenu(); post('presentateur', {}); };
+    // Option Analytic (1.5) : l'hôte ouvre l'éditeur des notes de la diapositive en cours.
+    var notesBtn = el('presentNotesBtn');
+    if (notesBtn) notesBtn.onclick = function (e) { e.stopPropagation(); closeMenu(); post('notes', { index: current }); };
     var ovClose = el('overviewClose');
     if (ovClose) ovClose.onclick = function (e) { e.stopPropagation(); closeOverview(); };
     // Tap anywhere else closes the transition menu.
@@ -1449,18 +1464,134 @@
   }
 
   // Les notes de l'orateur d'une diapositive : ses commentaires HTML (l'import PowerPoint y range
-  // les notes et les commentaires), sans les marques internes de l'import.
+  // les notes et les commentaires), sans les marques internes de l'app. Une page de suite d'un
+  // long tableau a les notes de sa diapositive.
   function notes(index) {
-    var md = rawSlides[index] || '', out = [], re = /<!--([\s\S]*?)-->/g, m;
+    var o = origineDe[index] != null ? origineDe[index] : index;
+    if (Object.prototype.hasOwnProperty.call(notesEcrites, o)) return notesEcrites[o];
+    return notesDe(rawSlidesOrigine[o] || rawSlides[index] || '');
+  }
+
+  // Un commentaire interne (diapositive masquée, consigne de la conversion, repère des rapports
+  // du terminal de fornews), qui n'est pas une note.
+  function marqueInterne(t) { return /^(okia|fornews):/.test(t) || /^consigne:\d+$/.test(t); }
+
+  function notesDe(md) {
+    var out = [], re = /<!--([\s\S]*?)-->/g, m;
     while ((m = re.exec(md))) {
       var t = m[1].trim();
       // L'en-tête que l'import PowerPoint pose (« Notes de l’orateur : »), dans les cinq langues :
       // la colonne du présentateur a déjà son titre.
       t = t.replace(/^(Notes de l’orateur|Speaker notes|Sprechernotizen|Notas del orador|Note del relatore)\s*:\s*\n/, '').trim();
-      if (t && !/^consigne:\d+$/.test(t)) out.push(t);
+      if (t && !marqueInterne(t)) out.push(t);
     }
     return out.join('\n\n');
   }
+
+  /* ---- écrire les notes de l'orateur (option Analytic, 1.5) ---------------------------------- */
+  // Patrick, 1er novembre 2026 : « Je ne trouve pas comment ajouter les notes de l'orateur ».
+  // La note s'écrit dans le fichier même, en commentaire HTML à la fin de sa diapositive : le
+  // format reste celui que tout éditeur Markdown lit, et que l'import PowerPoint écrit déjà. Le
+  // texte du fichier est retouché ici, avec le découpage même du diaporama (`splitSlides`) : un
+  // second découpage, côté Swift, finirait par ne plus désigner la même diapositive.
+
+  var mdSource = '';            // le fichier tel que le diaporama l'a reçu, notes écrites comprises
+  var origineDe = [];           // rang affiché → rang de la diapositive du fichier
+  var notesEcrites = {};        // rang du fichier → note écrite pendant la séance
+
+  // Les diapositives du fichier, en plages de lignes, dans l'ordre et avec les écarts de
+  // `splitSlides` : en-tête YAML à part, séparateurs hors des blocs de code, diapositives vides,
+  // masquées ou faites des seules définitions de référence ignorées.
+  function plagesDesDiapositives(lignes) {
+    var debut = 0, fm = lignes.join('\n').match(/^﻿?---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+    if (fm) debut = (fm[0].match(/\n/g) || []).length + (/\n$/.test(fm[0]) ? 0 : 1);
+    var plages = [], d = debut, fence = null;
+    for (var i = debut; i <= lignes.length; i++) {
+      if (i === lignes.length) { plages.push([d, i]); break; }
+      var line = lignes[i], f = line.match(/^\s*(```|~~~)/);
+      if (f) {
+        if (fence && line.trim().indexOf(fence) === 0) fence = null;
+        else if (!fence) fence = f[1];
+        continue;
+      }
+      if (!fence && /^\s*-{3,}\s*$/.test(line)) { plages.push([d, i]); d = i + 1; }
+    }
+    var texte = function (p) { return lignes.slice(p[0], p[1]).join('\n').trim(); };
+    plages = plages.filter(function (p) { return texte(p).length; });
+    // `splitSlides` découpe sur /\r?\n/ : ses lignes n'ont pas de « \r », que DEFINITION refuse.
+    function def(l) { return DEFINITION.test(l.replace(/\r$/, '')); }
+    var defs = plages.some(function (p) { return lignes.slice(p[0], p[1]).some(def); });
+    if (defs) plages = plages.filter(function (p) {
+      return lignes.slice(p[0], p[1]).some(function (l) { return l.trim() && !def(l); });
+    });
+    return plages.filter(function (p) { return !MASQUEE.test(texte(p)); });
+  }
+
+  // ⚠️ Une seule règle pour retirer une note, la même que celle de l'empreinte du document
+  // (`IdentiteDocument.sansMarques`, côté Swift) : le commentaire ET les blancs qui le précèdent.
+  // Une note s'écrit donc en « \n\n<!--\n…\n--> » juste après le texte de sa diapositive : retirée
+  // par cette règle, il ne reste que le fichier d'avant. Écrire, changer ou effacer une note ne
+  // change pas l'empreinte, et les annotations du document restent les siennes. Rien d'autre du
+  // texte n'est touché — pas même les deux espaces d'un retour à la ligne forcé.
+  var NOTE = /\s*<!--([\s\S]*?)-->/g;
+
+  // Le texte d'une diapositive sans ses notes. Les commentaires des blocs de code (un exemple de
+  // HTML) et les marques internes restent.
+  function sansNotes(texte) {
+    var codes = [], re = /^[ \t]*(```|~~~)[^\n]*$/gm, m, ouvert = null;
+    while ((m = re.exec(texte))) {
+      if (ouvert == null) { ouvert = { debut: m.index, fence: m[1] }; continue; }
+      if (m[0].trim().indexOf(ouvert.fence) === 0) { codes.push([ouvert.debut, m.index + m[0].length]); ouvert = null; }
+    }
+    if (ouvert) codes.push([ouvert.debut, texte.length]);
+    return texte.replace(NOTE, function (tout, c, pos) {
+      var debut = pos + tout.indexOf('<!--');
+      var dansLeCode = codes.some(function (z) { return debut >= z[0] && debut < z[1]; });
+      return dansLeCode || marqueInterne(c.trim()) ? tout : '';
+    });
+  }
+
+  // `--` fermerait le commentaire trop tôt : l'import PowerPoint le remplace déjà ainsi.
+  function propre(texte) { return (texte || '').replace(/\r/g, '').replace(/--/g, '—').trim(); }
+
+  // Le fichier avec la note `texte` pour la diapositive `o` du fichier (vide : sans note), ou null.
+  function avecNote(md, o, texte) {
+    var lignes = md.split('\n'), p = plagesDesDiapositives(lignes)[o];
+    if (!p) return null;
+    var seg = sansNotes(lignes.slice(p[0], p[1]).join('\n'));
+    var note = propre(texte);
+    // La note va après la dernière ligne de texte, avant les définitions de référence de la fin
+    // (les images d'un document importé) et les lignes vides.
+    var l = seg.split('\n'), fin = -1, pos = 0, ici = -1;
+    l.forEach(function (x, i) { if (x.trim() && !DEFINITION.test(x.replace(/\r$/, ''))) fin = i; });
+    // Avant le « \r » d'une fin de ligne Windows : retirer la note doit rendre la ligne entière.
+    for (var i = 0; i <= fin; i++) { ici = pos + l[i].replace(/\r$/, '').length; pos += l[i].length + 1; }
+    if (ici < 0) {
+      // Plus rien que la note : la diapositive garde un commentaire vide, sans quoi elle
+      // disparaîtrait du diaporama et les suivantes changeraient de rang.
+      seg = '<!--' + (note ? '\n' + note + '\n' : ' ') + '-->' + seg;
+    } else if (note) {
+      seg = seg.slice(0, ici) + '\n\n<!--\n' + note + '\n-->' + seg.slice(ici);
+    }
+    return lignes.slice(0, p[0]).concat(seg.split('\n'), lignes.slice(p[1])).join('\n');
+  }
+
+  // Écrire la note de la diapositive affichée `index` : rend le fichier entier à enregistrer, ou
+  // null si la diapositive ne se retrouve pas dans le fichier. Le diaporama garde la note (la
+  // colonne du présentateur, l'export PowerPoint) sans se reconstruire.
+  function ecrireNote(index, texte) {
+    var o = origineDe[index] != null ? origineDe[index] : index;
+    var md = avecNote(mdSource, o, texte);
+    if (md == null) return null;
+    mdSource = md;
+    var note = propre(texte);
+    notesEcrites[o] = note;
+    rawSlidesOrigine[o] = sansNotes(rawSlidesOrigine[o] || '') + (note ? '\n\n<!--\n' + note + '\n-->' : '');
+    return md;
+  }
+
+  // L'hôte montre le bouton « Notes » avec l'option, quand le fichier peut s'écrire.
+  function permettreNotes(oui) { var b = el('presentNotesBtn'); if (b) b.hidden = !oui; }
 
   // Le présentateur change de transition ou de thème : le public suit.
   function appliquerChoix(c) {
@@ -1486,6 +1617,9 @@
   window.OKIA_PRESENT = { start: start, chantier: chantier, next: next, prev: prev, exit: exit,
                           permettreAnnotation: permettreAnnotation, annotationActive: annotationActive,
                           mode: mode, aller: aller, notes: notes, appliquerChoix: appliquerChoix,
+                          ecrireNote: ecrireNote, permettreNotes: permettreNotes,
+                          courante: function () { return current; },
+                          _avecNote: avecNote,
                           permettrePresentateur: permettrePresentateur,
                           collectSlide: collectSlide, collectAllSlides: collectAllSlides,
                           collectSlideExtras: collectSlideExtras,
