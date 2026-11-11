@@ -140,4 +140,12 @@ Captures du Duo : l'analyse du coffre donnait « 12 entités », toutes géopoli
 - [x] Index du coffre en « v3 » : tout est relu une fois.
 - [x] Vu au simulateur iPad : Berlin, Miami Beach, Santa Clara (une seule), Lisa Su, Olaf Scholz,
       Nvidia, AMD, Creative Cloud.
+- [x] Le fichier de Patrick (« entité du jour » de fornews, Jensen Huang) : la section est en
+      `### Entités`, ses genres en `####`, et toutes les entités d'un genre sur une ligne
+      (`[[Microsoft]] (1674) · [[OpenAI]] (1060) · …`) — elle était ignorée, par l'analyse comme
+      par le lecteur (`render.js`, `extractEntities`). Désormais : titre à tout niveau, genres au
+      niveau suivant, plusieurs liens par ligne ; « Thèmes » écartés, « Modèles » en produits. Les
+      épingles sont des liens qui portent leur légende (`[[Santa Clara · siège de Nvidia · …]]`) :
+      le lieu en est tiré aussi. Vu au simulateur avec ce fichier : 8 personnes, 6 organisations,
+      11 lieux à leur seul nom, 3 produits ; au lecteur, la légende et les couleurs des entités.
 

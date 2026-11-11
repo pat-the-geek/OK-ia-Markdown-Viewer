@@ -380,7 +380,7 @@
   // La langue du document, pour le titre de la section : celle du titre de sa section
   // d'entités (fornews l'écrit dans la langue du rapport), sinon celle du frontmatter.
   function langueDuDocument(body, meta) {
-    var m, re = /^##\s+(.+?)\s*$/gm;
+    var m, re = /^#{2,4}\s+(.+?)\s*$/gm;   // la section, de ## à #### (11/11/2026)
     while ((m = re.exec(body))) {
       if (!isEntityHeading(m[1])) continue;
       var brut = m[1].trim().toLowerCase();
@@ -593,30 +593,32 @@
 
   function extractEntities(body) {
     var lines = body.split(/\r?\n/);
-    var inSection = false, subtype = null, colorIdx = 0;
+    var inSection = false, sectionLevel = 0, subtype = null, colorIdx = 0;
     var subtypes = {};            // subtype -> rgb
     var entities = {};            // entityName -> rgb
+    // Les thèmes d'une fiche (« Pouvoir », « Sécurité ») ne sont pas des entités.
+    var THEMES = /^(th[eè]me|thema|tema|テーマ|主题|주제|тем|konu|chủ đề|विषय)/i;
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
-      var h2 = line.match(/^##\s+(.+?)\s*$/);
-      if (h2) {
-        inSection = isEntityHeading(h2[1]);
-        subtype = null;
-        if (!inSection && /^(##\s)/.test(line)) { /* left the section */ }
+      // La section à tout niveau de titre, ses genres au niveau suivant : un rapport fornews
+      // l'écrit en ## / ###, une fiche « personnalité du jour » en ### / #### (11/11/2026).
+      var h = line.match(/^(#{1,6})\s+(.+?)\s*$/);
+      if (h) {
+        var level = h[1].length;
+        if (isEntityHeading(h[2])) { inSection = true; sectionLevel = level; subtype = null; }
+        else if (inSection && level > sectionLevel) {
+          subtype = THEMES.test(h[2].trim()) ? null : h[2].trim();
+          if (subtype && !(subtype in subtypes)) {
+            subtypes[subtype] = NER_PALETTE[colorIdx % NER_PALETTE.length];
+            colorIdx++;
+          }
+        } else { inSection = false; subtype = null; }
         continue;
       }
-      if (!inSection) continue;
-      var h3 = line.match(/^###\s+(.+?)\s*$/);
-      if (h3) {
-        subtype = h3[1].trim();
-        if (!(subtype in subtypes)) {
-          subtypes[subtype] = NER_PALETTE[colorIdx % NER_PALETTE.length];
-          colorIdx++;
-        }
-        continue;
-      }
-      var ent = line.match(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/);
-      if (ent && subtype) {
+      if (!inSection || !subtype) continue;
+      // Une entité par ligne, ou toutes sur une ligne : « [[Microsoft]] (1674) · [[OpenAI]] (1060) ».
+      var re = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, ent;
+      while ((ent = re.exec(line))) {
         var name = ent[1].trim();
         if (name) entities[name] = subtypes[subtype];
       }

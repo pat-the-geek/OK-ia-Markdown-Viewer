@@ -72,6 +72,7 @@ enum LecteurRapportFornews {
         var entites: [EntiteDocument] = []
         var coordonnees: [String: (Double, Double)] = [:]
         var dansSection = false, genre: String?
+        var niveauSection = 0
         var cloture: String?          // la clôture du bloc de code ouvert (``` ou ~~~)
         var dansCarte = false
 
@@ -87,17 +88,23 @@ enum LecteurRapportFornews {
                 dansCarte = ligne.dropFirst(3).trimmingCharacters(in: .whitespaces).lowercased() == "leaflet"
                 continue
             }
-            if ligne.hasPrefix("## ") {
-                dansSection = estTitreEntites(String(ligne.dropFirst(3)))
-                genre = nil
+            // La section « Entités » à tout niveau de titre, ses genres au niveau suivant : un rapport
+            // fornews l'écrit en `##` / `###`, une fiche « personnalité du jour » en `###` / `####`
+            // (Patrick, 11/11/2026 — la section était ignorée, il ne restait que la carte).
+            if let (niveau, titre) = titre(ligne) {
+                if estTitreEntites(titre) {
+                    dansSection = true; niveauSection = niveau; genre = nil
+                } else if dansSection && niveau > niveauSection {
+                    genre = titre
+                } else {
+                    dansSection = false; genre = nil
+                }
                 continue
             }
-            guard dansSection else { continue }
-            if ligne.hasPrefix("### ") {
-                genre = String(ligne.dropFirst(4)).trimmingCharacters(in: .whitespaces)
-                continue
-            }
-            if let g = genre, let nom = lienWiki(ligne) {
+            guard dansSection, let g = genre, !estGenreDeThemes(g) else { continue }
+            // Une entité par ligne (« - [[Nom]] »), ou toutes sur une ligne : « [[Microsoft]] (1674) ·
+            // [[OpenAI]] (1060) · … ».
+            for nom in liensWiki(ligne) {
                 entites.append(EntiteDocument(nom: nom, type: typeDuGenre(g), genre: g, origine: .rapport))
             }
         }
@@ -121,6 +128,20 @@ enum LecteurRapportFornews {
             }
         }
         return dedoublonner(resultat)
+    }
+
+    /// `### Titre` → (3, « Titre ») ; nil si la ligne n'est pas un titre.
+    static func titre(_ ligne: String) -> (Int, String)? {
+        guard ligne.hasPrefix("#") else { return nil }
+        let niveau = ligne.prefix(while: { $0 == "#" }).count
+        guard (1...6).contains(niveau), ligne.dropFirst(niveau).first == " " else { return nil }
+        return (niveau, ligne.dropFirst(niveau).trimmingCharacters(in: .whitespaces))
+    }
+
+    /// Les thèmes d'une fiche (« Pouvoir », « Sécurité ») ne sont pas des entités.
+    static func estGenreDeThemes(_ genre: String) -> Bool {
+        let g = plier(genre)
+        return ["theme", "thema", "tema", "テーマ", "主题", "주제", "тем", "konu", "chủ đề", "विषय"].contains { g.hasPrefix(plier($0)) }
     }
 
     /// Le titre de la section d'entités, dans les cinq langues d'export de fornews — la même liste
@@ -149,12 +170,22 @@ enum LecteurRapportFornews {
         if commence(["organi", "組織", "组织", "机构", "조직", "организ", "організ", "kuruluş", "tổ chức", "संगठन"]) { return .org }
         if commence(["lieu", "place", "orte", "ort ", "lugar", "luogh", "luogo", "pays", "countr", "ville", "cit",
                      "plaats", "local", "場所", "地名", "地点", "장소", "мест", "місц", "yer", "địa điểm", "स्थान"]) { return .gpe }
-        if commence(["produ", "oeuvre", "work", "製品", "产品", "제품", "продукт", "ürün", "sản phẩm", "उत्पाद"]) { return .product }
+        if commence(["produ", "oeuvre", "work", "modele", "model", "modell", "modelo", "modello", "製品", "产品", "제품", "продукт", "ürün", "sản phẩm", "उत्पाद"]) { return .product }
         if commence(["evenement", "event", "ereignis", "acontecimiento", "evento", "gebeurtenis", "出来事", "イベント",
                      "事件", "사건", "이벤트", "событи", "поді", "olay", "sự kiện", "घटना"]) { return .event }
         if commence(["sante", "health", "gesundheit", "salud", "salute", "maladie", "disease", "gezondheid", "saúde",
                      "健康", "건강", "здоров", "sağlık", "sức khỏe", "स्वास्थ्य"]) { return .maladie }
         return .autre
+    }
+
+    /// Tous les liens d'une ligne, dans l'ordre : « [[A]] (3) · [[B|b]] » → [« A », « B »].
+    static func liensWiki(_ ligne: String) -> [String] {
+        guard let re = try? NSRegularExpression(pattern: #"\[\[([^\]|]+)(?:\|[^\]]+)?\]\]"#) else { return [] }
+        let ns = ligne as NSString
+        return re.matches(in: ligne, range: NSRange(location: 0, length: ns.length)).compactMap { m in
+            let nom = ns.substring(with: m.range(at: 1)).trimmingCharacters(in: .whitespaces)
+            return nom.isEmpty ? nil : nom
+        }
     }
 
     /// `- [[Nom]]` ou `- [[Nom|libellé]]` → « Nom ».
@@ -182,7 +213,8 @@ enum LecteurRapportFornews {
             return nil
         }
         guard CoordonneeTerrestre.estValide(latitude: lat, longitude: lon),
-              let nom = lienWiki(etiquette) ?? nomDuLieu(etiquette)
+              // Le lien d'une épingle porte parfois sa légende : « [[Santa Clara · siège de Nvidia]] ».
+              let nom = nomDuLieu(lienWiki(etiquette) ?? etiquette)
         else { return nil }
         return (nom, lat, lon)
     }
@@ -210,7 +242,7 @@ enum LecteurRapportFornews {
             let ligne = brute.trimmingCharacters(in: .whitespaces)
             if let c = cloture { if ligne.hasPrefix(c) { cloture = nil }; continue }
             if ligne.hasPrefix("```") || ligne.hasPrefix("~~~") { cloture = String(ligne.prefix(3)); continue }
-            if ligne.hasPrefix("## "), estTitreEntites(String(ligne.dropFirst(3))) { return true }
+            if let (_, t) = titre(ligne), estTitreEntites(t) { return true }
         }
         return false
     }
@@ -692,7 +724,7 @@ enum SourcesDocument {
 enum TexteAnalysable {
     static func depuis(_ markdown: String) -> String {
         var lignes: [String] = []
-        var cloture: String?, dansEntites = false
+        var cloture: String?, dansEntites = false, niveauEntites = 0
         var texte = markdown
         if let r = texte.range(of: "^---\\r?\\n[\\s\\S]*?\\r?\\n---\\r?\\n?", options: .regularExpression),
            r.lowerBound == texte.startIndex {
@@ -702,7 +734,10 @@ enum TexteAnalysable {
             let ligne = brute.trimmingCharacters(in: .whitespaces)
             if let c = cloture { if ligne.hasPrefix(c) { cloture = nil }; continue }
             if ligne.hasPrefix("```") || ligne.hasPrefix("~~~") { cloture = String(ligne.prefix(3)); continue }
-            if ligne.hasPrefix("## ") { dansEntites = LecteurRapportFornews.estTitreEntites(String(ligne.dropFirst(3))) }
+            if let (niveau, t) = LecteurRapportFornews.titre(ligne) {
+                if LecteurRapportFornews.estTitreEntites(t) { dansEntites = true; niveauEntites = niveau }
+                else if !dansEntites || niveau <= niveauEntites { dansEntites = false }
+            }
             if dansEntites { continue }
             lignes.append(brute)
         }
