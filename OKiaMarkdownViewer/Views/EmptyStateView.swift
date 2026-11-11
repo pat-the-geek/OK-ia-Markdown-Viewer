@@ -69,7 +69,8 @@ struct EmptyStateView: View {
             .navigationTitle("md Viewer")
             .toolbar { barreAccueil }
         }
-        .onAppear { vault.refresh() }
+        // Hors du fil principal : le coffre peut être un partage réseau lent.
+        .task { await vault.rafraichirEnArrierePlan() }
         // Les documents analysés, relus à chaque retour à l'accueil (un import vient peut-être d'y entrer).
         .task(id: achat.acces) { rechargerAnalyses() }
         .onAppear { rechargerAnalyses() }
@@ -131,7 +132,7 @@ struct EmptyStateView: View {
         })
         VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault, onDelete: { r in
             aSupprimer = Suppression(nom: (r.name as NSString).deletingPathExtension,
-                                     precision: r.subfolder + " · " + dateComplete(r.modified),
+                                     precision: r.mentionDossier + dateComplete(r.modified),
                                      duCoffre: true) {
                 try vault.supprimer(r)
             }

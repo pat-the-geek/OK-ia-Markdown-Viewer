@@ -42632,6 +42632,481 @@
           }
         }
       }
+    },
+    "Aucun fichier Markdown dans « %@ », ni dans ses dossiers « %@ ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun fichier Markdown dans « %@ », ni dans ses dossiers « %@ »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Markdown file in “%@” or in its “%@” folders."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Markdown-Datei in „%@“ und in seinen Ordnern „%@“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún archivo Markdown en «%@» ni en sus carpetas «%@»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun file Markdown in «%@» né nelle sue cartelle «%@»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」とその「%@」フォルダに Markdown ファイルがありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘%@’ 및 그 ‘%@’ 폴더에 Markdown 파일이 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”及其“%@”文件夹中没有 Markdown 文件。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum arquivo Markdown em “%@” nem nas pastas “%@”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen Markdown-bestand in “%@” of in de mappen “%@”."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В «%@» и в его папках «%@» нет ни одного файла Markdown."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У «%@» та в його папках «%@» немає жодного файлу Markdown."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” içinde ve “%@” klasörlerinde Markdown dosyası yok."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có tệp Markdown nào trong “%@” hay trong các thư mục “%@” của nó."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” में और उसके “%@” फ़ोल्डरों में कोई Markdown फ़ाइल नहीं है।"
+          }
+        }
+      }
+    },
+    "Le coffre est grand : la lecture s’est arrêtée à %d fichiers. Le motif des réglages vise les bons dossiers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le coffre est grand : la lecture s’est arrêtée à %d fichiers. Le motif des réglages vise les bons dossiers."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The vault is large: reading stopped at %d files. Use the pattern in the settings to target the right folders."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Store ist groß: Das Lesen wurde bei %d Dateien beendet. Mit dem Muster in den Einstellungen wählen Sie die richtigen Ordner."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El Store es grande: la lectura se detuvo en %d archivos. El patrón de los ajustes permite elegir las carpetas adecuadas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo Store è grande: la lettura si è fermata a %d file. Il modello nelle impostazioni permette di scegliere le cartelle giuste."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫が大きいため、%d 件のファイルで読み込みを停止しました。設定のパターンで対象のフォルダを絞り込めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함이 커서 파일 %d개에서 읽기를 멈췄습니다. 설정의 패턴으로 원하는 폴더를 지정하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "资料库很大：读取在 %d 个文件处停止。可在设置中用名称模式选定需要的文件夹。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O cofre é grande: a leitura parou em %d arquivos. Use o padrão nos ajustes para escolher as pastas certas."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De kluis is groot: het lezen stopte bij %d bestanden. Kies met het patroon in de instellingen de juiste mappen."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хранилище большое: чтение остановлено на %d файлах. Шаблон в настройках позволяет выбрать нужные папки."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сховище велике: читання зупинено на %d файлах. Шаблон у налаштуваннях дає змогу вибрати потрібні папки."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasa büyük: okuma %d dosyada durdu. Doğru klasörleri seçmek için ayarlardaki deseni kullanın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho rất lớn: việc đọc đã dừng ở %d tệp. Dùng mẫu tên trong cài đặt để chọn đúng thư mục."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट बड़ा है: पढ़ना %d फ़ाइलों पर रुक गया। सही फ़ोल्डर चुनने के लिए सेटिंग्स का पैटर्न इस्तेमाल करें।"
+          }
+        }
+      }
+    },
+    "Les fichiers à la racine du coffre sont toujours lus. Le motif choisit les sous-dossiers à lire, à tous leurs niveaux (jokers * et ? ; * : tous).": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fichiers à la racine du coffre sont toujours lus. Le motif choisit les sous-dossiers à lire, à tous leurs niveaux (jokers * et ? ; * : tous)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files at the root of the vault are always read. The pattern picks the subfolders to read, at every level (wildcards * and ?; * means all)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dateien im Hauptordner des Stores werden immer gelesen. Das Muster wählt die Unterordner, die auf allen Ebenen gelesen werden (Platzhalter * und ?; * für alle)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los archivos de la raíz del Store se leen siempre. El patrón elige las subcarpetas que se leen, en todos sus niveles (comodines * y ?; * para todas)."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I file nella radice dello Store vengono sempre letti. Il modello sceglie le sottocartelle da leggere, a tutti i livelli (caratteri jolly * e ?; * per tutte)."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫の最上位にあるファイルは常に読み込まれます。パターンで読み込むサブフォルダを選び、その中はすべての階層を読み込みます（ワイルドカード * と ?、* はすべて）。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함 최상위의 파일은 항상 읽습니다. 패턴으로 읽을 하위 폴더를 고르며, 그 안의 모든 단계를 읽습니다(와일드카드 * 및 ?, *는 전체)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "资料库根目录中的文件始终会被读取。名称模式选择要读取的子文件夹，并读取其所有层级（通配符 * 和 ?；* 表示全部）。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os arquivos na raiz do cofre são sempre lidos. O padrão escolhe as subpastas a ler, em todos os níveis (curingas * e ?; * para todas)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestanden in de hoofdmap van de kluis worden altijd gelezen. Het patroon kiest de submappen die op alle niveaus worden gelezen (jokers * en ?; * voor alle)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файлы в корне хранилища читаются всегда. Шаблон выбирает подпапки для чтения на всех уровнях (подстановочные знаки * и ?; * — все)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файли в корені сховища читаються завжди. Шаблон вибирає підпапки для читання на всіх рівнях (символи підстановки * і ?; * — усі)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasanın kök klasöründeki dosyalar her zaman okunur. Desen, her düzeyde okunacak alt klasörleri seçer (* ve ? joker karakterleri; * hepsi)."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tệp ở thư mục gốc của kho luôn được đọc. Mẫu tên chọn các thư mục con cần đọc, ở mọi cấp (ký tự đại diện * và ?; * là tất cả)."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट के मुख्य फ़ोल्डर की फ़ाइलें हमेशा पढ़ी जाती हैं। पैटर्न पढ़े जाने वाले सबफ़ोल्डर चुनता है, उनके हर स्तर तक (वाइल्डकार्ड * और ?; * यानी सभी)।"
+          }
+        }
+      }
+    },
+    "Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis revenez à l’accueil.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis revenez à l’accueil."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The vault folder is not responding. If another computer shares it, check that it is on and that the share is connected, then come back to the home screen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Store-Ordner antwortet nicht. Wird er von einem anderen Computer freigegeben, prüfen Sie, ob dieser eingeschaltet und die Freigabe verbunden ist, und kehren Sie dann zur Startseite zurück."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La carpeta del Store no responde. Si la comparte otro ordenador, compruebe que esté encendido y que el recurso compartido esté conectado, y vuelva a la pantalla de inicio."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cartella dello Store non risponde. Se è condivisa da un altro computer, verificate che sia acceso e che la condivisione sia collegata, poi tornate alla schermata iniziale."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫のフォルダが応答しません。別のコンピュータで共有している場合は、そのコンピュータの電源が入っていて共有に接続されているか確認してから、ホームに戻ってください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함 폴더가 응답하지 않습니다. 다른 컴퓨터가 공유하는 폴더라면 그 컴퓨터가 켜져 있고 공유가 연결되어 있는지 확인한 뒤 홈으로 돌아오세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "资料库文件夹没有响应。如果它由另一台电脑共享，请确认该电脑已开机且共享已连接，然后返回主屏幕。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasta do cofre não responde. Se ela for compartilhada por outro computador, verifique se ele está ligado e se o compartilhamento está conectado, depois volte à tela inicial."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De map van de kluis reageert niet. Wordt ze gedeeld door een andere computer, controleer dan of die aanstaat en de deling verbonden is, en ga terug naar het beginscherm."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка хранилища не отвечает. Если её открыл для общего доступа другой компьютер, убедитесь, что он включён и общий ресурс подключён, затем вернитесь на главный экран."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка сховища не відповідає. Якщо її спільно використовує інший комп’ютер, перевірте, що він увімкнений і спільний ресурс підключений, а потім поверніться на головний екран."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasa klasörü yanıt vermiyor. Başka bir bilgisayar tarafından paylaşılıyorsa, o bilgisayarın açık ve paylaşımın bağlı olduğunu denetleyin, sonra ana ekrana dönün."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư mục kho không phản hồi. Nếu thư mục do một máy tính khác chia sẻ, hãy kiểm tra máy đó đang bật và phần chia sẻ đã được kết nối, rồi quay lại màn hình chính."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट फ़ोल्डर जवाब नहीं दे रहा। अगर इसे कोई दूसरा कंप्यूटर साझा करता है, तो जाँचें कि वह चालू है और साझा फ़ोल्डर जुड़ा है, फिर होम स्क्रीन पर लौटें।"
+          }
+        }
+      }
+    },
+    "Ce dossier ne peut pas devenir le coffre : le système refuse d’en garder l’accès. Pour un dossier partagé, connectez le partage, puis choisissez-le de nouveau.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce dossier ne peut pas devenir le coffre : le système refuse d’en garder l’accès. Pour un dossier partagé, connectez le partage, puis choisissez-le de nouveau."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder cannot become the vault: the system will not keep access to it. For a shared folder, connect the share, then choose it again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Ordner kann nicht zum Store werden: Das System behält den Zugriff darauf nicht. Bei einem freigegebenen Ordner verbinden Sie die Freigabe und wählen ihn erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta carpeta no puede ser el Store: el sistema no conserva el acceso a ella. Si es una carpeta compartida, conecte el recurso compartido y vuelva a elegirla."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa cartella non può diventare lo Store: il sistema non ne conserva l’accesso. Per una cartella condivisa, collegate la condivisione e sceglietela di nuovo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このフォルダは保管庫にできません。システムがアクセスを保持しません。共有フォルダの場合は、共有に接続してからもう一度選択してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 폴더는 보관함으로 쓸 수 없습니다. 시스템이 접근 권한을 유지하지 않습니다. 공유 폴더라면 공유를 연결한 뒤 다시 선택하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件夹无法用作资料库：系统不保留对它的访问权限。如果是共享文件夹，请先连接共享，然后重新选择。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta pasta não pode ser o cofre: o sistema não mantém o acesso a ela. Para uma pasta compartilhada, conecte o compartilhamento e escolha-a de novo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze map kan geen kluis worden: het systeem houdt de toegang niet vast. Bij een gedeelde map verbindt u eerst de deling en kiest u de map opnieuw."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эта папка не может стать хранилищем: система не сохраняет к ней доступ. Для общей папки подключите общий ресурс и выберите её снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ця папка не може стати сховищем: система не зберігає доступ до неї. Для спільної папки підключіть спільний ресурс і виберіть її знову."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu klasör kasa olamaz: sistem ona erişimi korumuyor. Paylaşılan bir klasörse paylaşımı bağlayın, sonra yeniden seçin."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể dùng thư mục này làm kho: hệ thống không giữ quyền truy cập vào nó. Với thư mục chia sẻ, hãy kết nối phần chia sẻ rồi chọn lại."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह फ़ोल्डर वॉल्ट नहीं बन सकता: सिस्टम इसकी पहुँच बनाए नहीं रखता। साझा फ़ोल्डर के लिए पहले साझाकरण जोड़ें, फिर इसे दोबारा चुनें।"
+          }
+        }
+      }
     }
   }
 }

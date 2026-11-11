@@ -103,3 +103,24 @@ binaire du 153.
       colonne du système.
 - [ ] Build 154 à essayer sur le vrai Duo : déplié, mi-replié (livre), « mini-ordinateur ».
 
+## Un dossier partagé d'un iMac comme coffre (demandé par Patrick le 11 novembre 2026)
+
+Patrick : « Je désire utiliser comme coffre un répertoire partagé de mon iMac et cela ne fonctionne
+pas », puis « Oui » à la lecture en profondeur. Le coffre ne lisait que les sous-dossiers de premier
+niveau nommés `rapports-*` (la forme du coffre de fornews), et deux échecs restaient muets.
+
+- [x] Lecture des `.md` et `.markdown` de la racine et de tous les niveaux des sous-dossiers que
+      retient le motif, `*` par défaut (`VaultStore.lire`) ; dossiers cachés (`.obsidian`, `.git`)
+      et paquets ignorés ; bornes : 8 niveaux, 3 000 fichiers, 4 secondes, avec une mention à
+      l'accueil quand une borne arrête la lecture.
+- [x] La relecture périodique du Mac et celle de l'accueil se font hors du fil principal : un
+      partage réseau lent ne gèle plus l'app.
+- [x] Un dossier que le système refuse de retenir le dit (alerte) ; un coffre injoignable (partage
+      déconnecté) le dit à l'accueil, avec le nom du dossier gardé.
+- [x] Vu au simulateur iPad : coffre d'essai à trois niveaux (racine, `Projets/2026/Novembre`,
+      `.markdown`, `rapports-veille` ; `.obsidian` et `.txt` ignorés), ouverture du fichier le plus
+      profond, coffre illisible signalé. Compilé iOS et Mac.
+- [ ] À essayer avec le vrai partage de l'iMac : sur Mac (volume monté dans le Finder) et sur
+      iPhone ou iPad (serveur ajouté dans Fichiers), y compris après un redémarrage de l'iMac.
+- [ ] À la sortie : la base du Terminal IA décrit encore le coffre en `rapports-*`.
+

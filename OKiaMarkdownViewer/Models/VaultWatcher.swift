@@ -1,8 +1,9 @@
 #if targetEnvironment(macCatalyst)
 import Foundation
 
-/// macOS only: periodically polls the vault's matching subfolders and reports newly arrived
-/// reports so the app can auto-open them. Polling (vs. a single FS event source) is used because
+/// macOS only: periodically polls the vault and reports newly arrived reports so the app can
+/// auto-open them. The poll reads off the main thread (`rafraichirEnArrierePlan`) : the vault may
+/// be a slow network share. Polling (vs. a single FS event source) is used because
 /// reports may land in several "rapports-*" subfolders, and iCLoud sync itself isn't instant.
 /// Runs only while the app is active (iOS suspends background apps, so this is Catalyst-only).
 @MainActor
@@ -12,6 +13,8 @@ final class VaultWatcher {
 
     private var timer: Timer?
     private var lastNewest: Date = .distantPast
+    /// Une relecture en cours : la suivante attend qu'elle finisse.
+    private var enCours = false
     private let interval: TimeInterval = 5
 
     init(vault: VaultStore, onNew: @escaping (VaultReport) -> Void) {
@@ -38,11 +41,16 @@ final class VaultWatcher {
     }
 
     private func tick() {
-        vault.refresh()
-        guard let newest = vault.reports.first else { return }
-        if newest.modified > lastNewest {
-            lastNewest = newest.modified
-            onNew(newest)
+        guard !enCours else { return }
+        enCours = true
+        Task { @MainActor in
+            await vault.rafraichirEnArrierePlan()
+            enCours = false
+            guard let newest = vault.reports.first else { return }
+            if newest.modified > lastNewest {
+                lastNewest = newest.modified
+                onNew(newest)
+            }
         }
     }
 }

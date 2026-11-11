@@ -25,9 +25,22 @@ struct VaultSectionView: View {
                 }
                 .tint(orange)
                 .ligneAccueil()
+            } else if vault.injoignable {
+                // Le plus souvent un dossier partagé d'un autre Mac, déconnecté (Patrick, 11/11/2026).
+                Text(tr("Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis revenez à l’accueil."))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .ligneAccueil()
             } else if vault.reports.isEmpty {
-                Text(tr("Aucun rapport trouvé dans les dossiers « %@ » de « %@ ».",
-                        vault.pattern, vault.folderName ?? ""))
+                Text(tr("Aucun fichier Markdown dans « %@ », ni dans ses dossiers « %@ ».",
+                        vault.folderName ?? "", vault.pattern))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .ligneAccueil()
+            } else if vault.tronque {
+                // Un dossier partagé immense : la lecture s'est arrêtée à une borne.
+                Text(tr("Le coffre est grand : la lecture s’est arrêtée à %d fichiers. Le motif des réglages vise les bons dossiers.",
+                        vault.reports.count))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .ligneAccueil()
@@ -79,7 +92,7 @@ struct VaultSectionView: View {
 
     private func carte(_ report: VaultReport) -> some View {
         CarteDocument(nom: (report.name as NSString).deletingPathExtension,
-                      mention: report.subfolder + " · " + DecoupageParDate.mention(pour: report.modified),
+                      mention: report.mentionDossier + DecoupageParDate.mention(pour: report.modified),
                       resoudre: { report.downloaded ? vault.reportURL(report).map { ($0, vault.resolveFolder()) } : nil },
                       action: { onOpen(report) }) {
             Button(role: .destructive) { onDelete(report) } label: { Label(tr("Supprimer"), systemImage: "trash") }
@@ -94,7 +107,7 @@ struct VaultSectionView: View {
                         Text(report.name)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                        Text("\(report.subfolder) · \(DecoupageParDate.mention(pour: report.modified))")
+                        Text(report.mentionDossier + DecoupageParDate.mention(pour: report.modified))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -120,7 +133,7 @@ struct VaultSectionView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(tr("Dossiers à inclure"))
                 .font(.headline)
-            Text(tr("Motif des sous-dossiers du coffre à lire (jokers * et ?). Les autres dossiers sont ignorés."))
+            Text(tr("Les fichiers à la racine du coffre sont toujours lus. Le motif choisit les sous-dossiers à lire, à tous leurs niveaux (jokers * et ? ; * : tous)."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField(VaultStore.defaultPattern, text: $patternDraft)

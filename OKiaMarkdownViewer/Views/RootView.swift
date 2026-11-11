@@ -67,7 +67,9 @@ struct RootView: View {
             case .success(let urls):
                 guard let url = urls.first else { return }
                 if choisirSurveille { choisirSurveille = false; surveille.choisir(url) }
-                else if importFolder { store.vault.setFolder(url) }
+                else if importFolder, !store.vault.setFolder(url) {
+                    store.errorMessage = tr("Ce dossier ne peut pas devenir le coffre : le système refuse d’en garder l’accès. Pour un dossier partagé, connectez le partage, puis choisissez-le de nouveau.")
+                }
                 else if importOffice { store.importerLot(urls) }
                 else if ImportEnCours.estImportable(url) { store.handleIncoming(url) }   // l'import, avec l'option
                 else { store.open(url: url) }
@@ -189,7 +191,7 @@ struct RootView: View {
         .task {
             store.startVaultWatch()
             // Spotlight : ce qui a changé depuis le dernier lancement.
-            store.vault.refresh()
+            await store.vault.rafraichirEnArrierePlan()
             RechercheCoffre.partage.indexerSpotlight()
             #if targetEnvironment(macCatalyst)
             // Le dossier d'import surveillé : ses nouveaux fichiers rejoignent la file d'import.
