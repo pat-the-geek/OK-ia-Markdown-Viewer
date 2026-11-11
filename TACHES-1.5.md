@@ -124,3 +124,20 @@ niveau nommés `rapports-*` (la forme du coffre de fornews), et deux échecs res
       iPhone ou iPad (serveur ajouté dans Fichiers), y compris après un redémarrage de l'iMac.
 - [ ] À la sortie : la base du Terminal IA décrit encore le coffre en `rapports-*`.
 
+## Entités mal détectées dans les documents à carte (signalé par Patrick le 11 novembre 2026)
+
+Captures du Duo : l'analyse du coffre donnait « 12 entités », toutes géopolitiques, nommées
+« Berlin · sommet Invest in Germany du 19 octobre · d… », « Santa Clara · Nvidia et AM… » et
+« Santa Clara · siège de Nvid… ». Deux causes :
+
+- [x] L'étiquette entière d'une épingle de la carte devenait le nom du lieu : il est maintenant pris
+      avant le premier séparateur (`·`, `—`, `–`, `|`, ` - `) — `LecteurRapportFornews.nomDuLieu`.
+      Les deux formes de ligne sont lues : `type, lat, lon, étiquette` (fornews) et
+      `lat, lon, étiquette` (cartes écrites à la main, que l'analyse ignorait).
+- [x] Un document à carte sans section « Entités » passait pour un rapport fornews : la détection
+      n'était pas lancée, d'où ni personne ni organisation. Seule la section fait un rapport
+      (`aUneSectionEntites`).
+- [x] Index du coffre en « v3 » : tout est relu une fois.
+- [x] Vu au simulateur iPad : Berlin, Miami Beach, Santa Clara (une seule), Lisa Su, Olaf Scholz,
+      Nvidia, AMD, Creative Cloud.
+

@@ -170,11 +170,49 @@ enum LecteurRapportFornews {
     static func marqueur(_ ligne: String) -> (String, Double, Double)? {
         guard ligne.lowercased().hasPrefix("marker:") else { return nil }
         let champs = ligne.dropFirst(7).split(separator: ",", maxSplits: 3).map { $0.trimmingCharacters(in: .whitespaces) }
-        guard champs.count == 4, let lat = Double(champs[1]), let lon = Double(champs[2]),
-              CoordonneeTerrestre.estValide(latitude: lat, longitude: lon),
-              let nom = lienWiki(champs[3]) ?? Optional(champs[3]).flatMap({ $0.isEmpty ? nil : $0 })
+        // Deux formes, comme le lecteur (`parseMarkerLine`) : celle du plugin Obsidian que fornews
+        // écrit, « type, lat, lon, étiquette », et la courte, « lat, lon, étiquette », des cartes
+        // écrites à la main.
+        let lat: Double, lon: Double, etiquette: String
+        if champs.count == 4, let a = Double(champs[1]), let b = Double(champs[2]) {
+            lat = a; lon = b; etiquette = champs[3]
+        } else if champs.count >= 3, let a = Double(champs[0]), let b = Double(champs[1]) {
+            lat = a; lon = b; etiquette = champs[2...].joined(separator: ", ")
+        } else {
+            return nil
+        }
+        guard CoordonneeTerrestre.estValide(latitude: lat, longitude: lon),
+              let nom = lienWiki(etiquette) ?? nomDuLieu(etiquette)
         else { return nil }
         return (nom, lat, lon)
+    }
+
+    /// Le lieu dans l'étiquette d'un marqueur. Une carte écrite à la main ou par une IA légende
+    /// souvent ses épingles — « Berlin · sommet Invest in Germany du 19 octobre » — : le lieu est
+    /// avant le premier séparateur. L'étiquette entière devenait une « entité géopolitique », et
+    /// « Santa Clara » comptait deux fois sous deux légendes (Patrick, 11/11/2026).
+    static func nomDuLieu(_ etiquette: String) -> String? {
+        var nom = etiquette
+        for separateur in [" · ", " — ", " – ", " | ", " - "] {
+            if let r = nom.range(of: separateur) { nom = String(nom[..<r.lowerBound]) }
+        }
+        nom = nom.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
+            .trimmingCharacters(in: CharacterSet.whitespaces.union(.punctuationCharacters).subtracting(CharacterSet(charactersIn: ".")))
+        return nom.isEmpty ? nil : nom
+    }
+
+    /// Le document a-t-il une section « Entités » (un rapport fornews) ? Une carte seule ne fait
+    /// pas un rapport : ses lieux s'ajoutent à la détection, qui ne doit pas être sautée — sans
+    /// quoi un document à carte n'avait que des lieux, ni personne ni organisation.
+    static func aUneSectionEntites(_ markdown: String) -> Bool {
+        var cloture: String?
+        for brute in markdown.components(separatedBy: .newlines) {
+            let ligne = brute.trimmingCharacters(in: .whitespaces)
+            if let c = cloture { if ligne.hasPrefix(c) { cloture = nil }; continue }
+            if ligne.hasPrefix("```") || ligne.hasPrefix("~~~") { cloture = String(ligne.prefix(3)); continue }
+            if ligne.hasPrefix("## "), estTitreEntites(String(ligne.dropFirst(3))) { return true }
+        }
+        return false
     }
 
     private static func nomsDesMarqueurs(_ markdown: String) -> [String: String] {

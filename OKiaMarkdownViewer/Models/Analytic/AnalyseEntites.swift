@@ -380,13 +380,15 @@ final class AnalyseEntites: ObservableObject {
         tache = Task { [weak self] in
             let langue = TexteAnalysable.langue(texte) ?? Localization.shared.code
             let duRapport = LecteurRapportFornews.lire(texte)
+            // Un vrai rapport fornews (sa section « Entités »), pas un document qui n'a qu'une carte.
+            let rapportFornews = LecteurRapportFornews.aUneSectionEntites(texte)
             // La liste se remplit au fur et à mesure (Patrick, 29/10/2026 : « très lente ») : les
             // entités d'un rapport tout de suite, puis celles de chaque morceau détecté.
             if !duRapport.isEmpty {
                 self?.recevoir(Partiel(generation: generation, rapport: duRapport, detectees: [], texte: texte, langue: langue),
                                fait: 0, total: 1)
             }
-            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue, replis: duRapport.isEmpty) { [weak self] partielles, fait, total in
+            let (detectees, methode) = await DetecteurEntites.detecter(texte, langue: langue, replis: !rapportFornews) { [weak self] partielles, fait, total in
                 await self?.recevoir(Partiel(generation: generation, rapport: duRapport, detectees: partielles, texte: texte, langue: langue),
                                      fait: fait, total: total)
             }
@@ -397,7 +399,7 @@ final class AnalyseEntites: ObservableObject {
             guard !Task.isCancelled, self.generation == generation else { return }
             self.langue = langue
             self.methode = methode
-            self.depuisRapport = !duRapport.isEmpty
+            self.depuisRapport = rapportFornews
             self.brutes = toutes
             self.assembler()
             if wikidata == .accepte { self.completerParWikidata() } else { self.etat = .fini }

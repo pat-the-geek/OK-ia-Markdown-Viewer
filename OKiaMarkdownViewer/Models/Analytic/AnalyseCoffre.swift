@@ -66,9 +66,13 @@ final class AnalyseCoffre: ObservableObject {
         if let demo = ModeDemo.dossier { return demo.appendingPathComponent("Analytic/coffre-v2.json") }
         #endif
         // « v2 » : les documents se relisent avec `retirerMotsDeNomsPlusLongs` (« Moritz » de
-        // « St. Moritz » n'est plus une personne, 31/10/2026). L'ancien index s'efface.
-        try? FileManager.default.removeItem(at: dossier.appendingPathComponent("Analytic/coffre.json"))
-        return dossier.appendingPathComponent("Analytic/coffre-v2.json")
+        // « St. Moritz » n'est plus une personne, 31/10/2026). « v3 » : les lieux des cartes réduits
+        // à leur nom, et la détection pour les documents à carte sans section « Entités »
+        // (11/11/2026). Les anciens index s'effacent.
+        for ancien in ["coffre.json", "coffre-v2.json"] {
+            try? FileManager.default.removeItem(at: dossier.appendingPathComponent("Analytic/" + ancien))
+        }
+        return dossier.appendingPathComponent("Analytic/coffre-v3.json")
     }()
 
     init() {
@@ -162,7 +166,9 @@ final class AnalyseCoffre: ObservableObject {
         let langue = TexteAnalysable.langue(texte) ?? "fr"
         let duRapport = LecteurRapportFornews.lire(texte)
         // Un rapport fornews nomme déjà ses entités : la détection ne relit que les autres documents.
-        let detectees = duRapport.isEmpty ? await DetecteurEntites.detecter(texte, langue: langue).entites : []
+        // Une carte seule ne fait pas un rapport (ses lieux ne sont pas toutes les entités).
+        let detectees = LecteurRapportFornews.aUneSectionEntites(texte) ? []
+            : await DetecteurEntites.detecter(texte, langue: langue).entites
         var toutes = LecteurRapportFornews.dedoublonner(duRapport + detectees)
         DetecteurEntites.compterMentions(&toutes, dans: texte)
         let sources = SourcesDocument.lire(texte)
