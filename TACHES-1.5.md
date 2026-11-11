@@ -149,3 +149,21 @@ Captures du Duo : l'analyse du coffre donnait « 12 entités », toutes géopoli
       le lieu en est tiré aussi. Vu au simulateur avec ce fichier : 8 personnes, 6 organisations,
       11 lieux à leur seul nom, 3 produits ; au lecteur, la légende et les couleurs des entités.
 
+## Un coffre à travers Tailscale : la latence (demandé par Patrick le 11 novembre 2026)
+
+Patrick : « Est-ce que tu tiens compte d'une latence pour ouvrir le coffre à travers un
+tailscale ? », puis « Oui change et b155 ».
+
+- [x] Les dossiers d'un même niveau se lisent ensemble (8 à la fois) : une structure année / mois
+      se lit en trois vagues.
+- [x] Volume réseau reconnu (`volumeIsLocal`, serveurs de Fichiers sous `/LiveFiles/`) : lecture
+      jamais sur le fil principal, borne de 20 s au lieu de 4, relecture du Mac toutes les 60 s au
+      lieu de 5 ; le signet se résout sans monter le volume (un partage absent ne fige plus l'app).
+- [x] La dernière liste est gardée (`coffre-liste.json`) et montrée dès le lancement ; « Lecture du
+      coffre… » pendant la première lecture ; un partage qui ne répond pas un instant ne vide plus
+      l'accueil.
+- [x] Harnais `OKIA_LATENCE_COFFRE=<ms>` (Debug, refusé par le script dans un binaire livré). Au
+      simulateur, 48 dossiers à 200 ms : liste complète en 1 à 2 s au lieu d'une dizaine ; à 3 s par
+      dossier, la liste gardée s'affiche à l'ouverture.
+- [ ] À essayer sur le vrai partage de l'iMac à travers Tailscale (build 155).
+

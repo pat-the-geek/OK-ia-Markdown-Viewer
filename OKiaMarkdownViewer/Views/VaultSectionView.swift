@@ -31,6 +31,15 @@ struct VaultSectionView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .ligneAccueil()
+            } else if vault.reports.isEmpty && vault.enLecture {
+                // Un partage lointain met du temps à répondre : on le dit, plutôt qu'un coffre vide.
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(tr("Lecture du coffre…"))
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .ligneAccueil()
             } else if vault.reports.isEmpty {
                 Text(tr("Aucun fichier Markdown dans « %@ », ni dans ses dossiers « %@ ».",
                         vault.folderName ?? "", vault.pattern))

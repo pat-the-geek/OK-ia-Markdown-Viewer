@@ -16,6 +16,9 @@ final class VaultWatcher {
     /// Une relecture en cours : la suivante attend qu'elle finisse.
     private var enCours = false
     private let interval: TimeInterval = 5
+    /// Un coffre sur un volume réseau (un partage à travers Tailscale) se relit moins souvent : tout
+    /// relire toutes les cinq secondes faisait un trafic permanent.
+    private let intervalReseau: TimeInterval = 60
 
     init(vault: VaultStore, onNew: @escaping (VaultReport) -> Void) {
         self.vault = vault
@@ -25,9 +28,15 @@ final class VaultWatcher {
     func start() {
         stop()
         guard vault.hasFolder else { return }
-        // Baseline: don't auto-open an existing report at startup, only future arrivals.
-        vault.refresh()
+        // Baseline: don't auto-open an existing report at startup, only future arrivals. Lue hors du
+        // fil principal : le coffre est peut-être un partage lent.
         lastNewest = vault.reports.first?.modified ?? .distantPast
+        enCours = true
+        Task { @MainActor in
+            await vault.rafraichirEnArrierePlan()
+            lastNewest = max(lastNewest, vault.reports.first?.modified ?? .distantPast)
+            enCours = false
+        }
 
         let t = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -42,6 +51,7 @@ final class VaultWatcher {
 
     private func tick() {
         guard !enCours else { return }
+        if vault.reseau, Date().timeIntervalSince(vault.derniereLecture) < intervalReseau { return }
         enCours = true
         Task { @MainActor in
             await vault.rafraichirEnArrierePlan()
