@@ -14,8 +14,9 @@ normalisé. Les documents peuvent aussi être **présentés en diaporama plein �
 PowerPoint). Tout fonctionne **100 % hors-ligne** — `marked`, `mermaid` et `leaflet` sont embarqués
 dans l'app.
 
-Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent par **TestFlight**
-(`scripts/deploy-testflight.sh`).
+Distribution : **App Store** (en vente : la **1.4** sur iPhone, iPad et Mac) ; les préversions
+passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y est en test depuis le
+11 novembre 2026 (build 155 sous le numéro 1.5).
 
 ---
 
@@ -88,9 +89,10 @@ Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent 
 - **Portrait + paysage** : relayout fluide, colonne de lecture élargie en paysage.
 - **Mode sombre iOS** : la page passe en sombre, les diagrammes restent sur un cadre clair pour
   préserver la palette OK-ia.
-- **Interface en 5 langues** (français, anglais, allemand, espagnol, italien) : la langue de
-  l'appareil si elle est prise en charge, anglais sinon ; choix manuel (Système / Français /
-  English / Deutsch / Español / Italiano) dans **Réglages** sur l'écran d'accueil. Couvre les vues
+- **Interface en 15 langues** depuis la 1.4 (français, anglais, allemand, espagnol, italien,
+  japonais, coréen, chinois simplifié, portugais du Brésil, néerlandais, russe, ukrainien, turc,
+  vietnamien, hindi) : la langue de l'appareil si elle est prise en charge, anglais sinon ; choix
+  manuel dans **Réglages** sur l'écran d'accueil. Couvre les vues
   natives, les messages d'erreur, la couche web (`window.OKIA_LANG` : « Lire l'article », menus du
   diaporama) et la langue du résumé Apple Intelligence. Les App Intents (Siri/Raccourcis) sont
   traduits eux aussi, mais suivent la langue **système** — c'est le système qui les résout, hors
@@ -101,6 +103,23 @@ Distribution : **App Store** (la 1.0.0 est publiée) ; les préversions passent 
   dans chaque langue (`ReaderView.instructions`), pas traduit mot à mot.
 - **Fichiers récents** : les derniers `.md` ouverts sont mémorisés (bookmarks security-scoped) et
   proposés sur l'écran d'accueil.
+- **Le coffre** : un dossier choisi une fois (signet security-scoped), dont les documents
+  s'affichent sur l'accueil (`Models/VaultStore.swift`). Depuis la 1.5.1 :
+  - **ce qu'il lit** : les `.md` et `.markdown` **de la racine**, et ceux de **tous les niveaux**
+    des sous-dossiers de premier niveau que retient le **motif** des réglages (`*` par défaut,
+    `rapports-*` jusqu'à la 1.5 — la forme du coffre de fornews). Une structure année / mois est
+    donc lue entière. Dossiers cachés (`.obsidian`, `.git`) et paquets ignorés ; les fichiers
+    encore dans iCloud (`.nom.md.icloud`) comptés ;
+  - **ses bornes** : 8 niveaux, 3 000 fichiers, 4 s de lecture (20 s sur un volume réseau) ;
+    l'accueil le dit quand une borne arrête la lecture ;
+  - **un dossier réseau** (partage d'un autre Mac, y compris à travers Tailscale ; serveur ajouté
+    dans Fichiers) : les dossiers d'un même niveau se lisent ensemble (8 à la fois), jamais sur le
+    fil principal ; la dernière liste est gardée (`coffre-liste.json`) et montrée dès l'ouverture,
+    « Lecture du coffre… » la première fois ; le Mac le relit toutes les 60 s au lieu de 5 ; le
+    signet se résout sans monter le volume ;
+  - **les échecs sont dits** : un dossier que le système refuse de retenir (alerte), un partage
+    injoignable (mention à l'accueil, la dernière liste reste affichée).
+  Harnais de test : `OKIA_COFFRE=<dossier>`, `OKIA_LATENCE_COFFRE=<ms>` (Debug).
 - **Listes groupées par date** : les récents et les rapports du coffre sont découpés en tranches —
   aujourd'hui, hier, les 7 puis les 30 derniers jours, ensuite un groupe par mois. Le découpage est
   commun aux deux listes (`Models/DateGrouping.swift`) pour qu'un même fichier tombe sous le même
@@ -133,8 +152,16 @@ affiche le document en **plein écran**, façon Keynote/PowerPoint.
   une image seule est agrandie pour remplir la diapo.
 - **Thèmes** : **Clair** (défaut), **Sombre**, **Console** (vert monospace sur noir), **Sépia**
   (papier), **Océan** (bleu nuit). Choisis via le menu **⚙** ; choix mémorisé (`localStorage`).
-- **Transitions** (les 5 classiques de Keynote) : **Fondu**, **Poussée**, **Entrée**, **Échelle**,
-  **Retournement 3D**. Aussi dans le menu **⚙** (haut-gauche) ; le choix est mémorisé (`localStorage`).
+- **Transitions** : les 5 classiques de Keynote — **Fondu**, **Poussée**, **Entrée**, **Échelle**,
+  **Retournement 3D** — et six de plus depuis la 1.3. Dans le menu **⚙** (haut-gauche) ; le choix
+  est mémorisé (`localStorage`).
+- **Notes de l'orateur** : un commentaire HTML `<!-- … -->` à la fin de la diapositive, montré par
+  le **mode présentateur** (option Analytic, second écran). Depuis la 1.5, elles **s'écrivent dans
+  l'app** (bouton **Notes** du diaporama, crayon de la colonne du présentateur ; fichiers Markdown
+  modifiables seulement) — `ecrireNote` dans `presentation.js`, `Models/NotesOrateur.swift` ; la
+  **conversion en présentation** peut les **proposer** ; l'**export PowerPoint** les reprend.
+  L'empreinte du document ne compte pas les commentaires : écrire une note ne détache pas ses
+  annotations. Détail : [guide de rédaction](docs/GUIDE-PRESENTATION.md).
 - **Navigateur de diapositives** : le bouton **▦** ouvre une **grille de vignettes** (mini-rendu du
   contenu + numéro + titre) ; cliquer une vignette saute directement à la diapo, la diapo courante est
   surlignée.
@@ -167,27 +194,34 @@ DOCX/PPTX, Foundation pur donc validable hors-app).
   **tableaux éditables** bordurés, images + diagrammes.
 - **Diaporama → PowerPoint (`.pptx`, mixte)** : menu **⚙ → Export → « PowerPoint (.pptx) »**. Une
   diapo par bloc, en **texte éditable** (titre + puces) + **tableaux éditables** (`a:tbl`) + **images**
-  (diagrammes Mermaid rasterisés, photos intégrées) positionnées.
+  (diagrammes Mermaid rasterisés, photos intégrées) positionnées, et, depuis la 1.5, les **notes de
+  l'orateur** dans la page de notes de chaque diapositive (`notesSlideN.xml`, `notesMaster1.xml`).
 
 **Pipeline** : le JS `window.OKIA.exportModel(container)` parcourt le DOM rendu → blocs ordonnés et
-**rasterise les diagrammes Mermaid** en PNG ; côté Swift, `OOXMLExportBridge` télécharge les images
-distantes (natif, sans souci CORS), les dimensionne, puis appelle `DocxBuilder` / `PptxBuilder` ; le
-fichier part dans la share sheet.
+**rasterise en PNG** les diagrammes Mermaid, les **images SVG** (`imgToPng`) et les **`<svg>` écrits
+en clair** (1.5), à leur taille d'affichage × 2 — Word, PowerPoint et `UIImage` ne lisent pas le
+SVG ; les images paresseuses hors de l'écran sont chargées avant. Côté Swift, `OOXMLExportBridge`
+télécharge les images distantes (natif, sans souci CORS), **décode les images `data:`** des
+documents importés (1.5 : elles disparaissaient de l'export), les dimensionne, puis appelle
+`DocxBuilder` / `PptxBuilder` ; le fichier part dans la share sheet. Bancs :
+`tools/render-tests/export-images.html`, `notes.html`.
 
 > **Couverture des 4 cibles** : `.docx` s'ouvre dans **Word et Pages** ; `.pptx` s'ouvre dans
 > **PowerPoint et Keynote** (import OOXML d'Apple). Les formats Apple natifs `.key`/`.pages` (fermés)
-> ne sont pas générés directement. Les **cartes** sont exportées en **liste de marqueurs** (texte) ;
-> leur rendu image natif reste une amélioration possible. Validé hors-app : `.docx` via `textutil`,
+> ne sont pas générés directement. Les **cartes** sont exportées en **image** (JPEG, avec la liste
+> des lieux en légende) ; si la rastérisation échoue, en **liste de marqueurs** (texte). Validé hors-app : `.docx` via `textutil`,
 > `.pptx` via QuickLook (moteur Office/iWork de macOS).
 
 ---
 
 ## Prérequis
 
-- **Xcode 26.4+** — c'est le **SDK** qui décide de ce que l'on peut appeler, et `skipsTranslation`
-  comme la traduction d'un `AttributedString` n'apparaissent qu'au SDK 26.4. La 1.2 a été livrée
-  avec **Xcode 26.6** (SDK 26.5) : `vtool -show-build-version` sur le binaire du build 36 affiche
-  `minos 26.4, sdk 26.5`. Le passage à Xcode 27 est en attente, voir la feuille de route.
+- **Xcode 27.1+** — c'est le **SDK** qui décide de ce que l'on peut appeler : la charnière de
+  l'iPhone Duo (`UIHingeInteraction`, `ArrangementView`) n'existe qu'au SDK 27.1. Livré aujourd'hui
+  avec **Xcode 27.2**. ⛔ Le code du Duo est derrière `#if DUO_SDK`, défini dans `project.yml` pour
+  tous les SDK iOS : la condition ne visait d'abord que le SDK 27.1, et le passage à Xcode 27.2 a
+  fait partir les builds 152 et 153 **sans le Duo**, sans la moindre erreur (11/11/2026). Le script
+  de livraison le vérifie désormais (voir « Livraison TestFlight »).
 - **iOS/iPadOS 26.4+ et macOS 26.4+** (cibles de déploiement depuis la 1.2).
 - **XcodeGen** — le `.xcodeproj` est généré à partir de [`project.yml`](project.yml) (non commité).
 
@@ -429,10 +463,12 @@ Les identifiants viennent de `scripts/deploy.env` (non commité — voir `deploy
 `ASC_KEY_ID` et `ASC_ISSUER_ID`. La clé privée reste dans
 `~/.appstoreconnect/private_keys/AuthKey_<ASC_KEY_ID>.p8`.
 
-Quatre contrôles bloquent l'envoi, chacun pour une panne silencieuse au build et coûteuse plus tard :
+Cinq contrôles bloquent l'envoi, chacun pour une panne silencieuse au build et coûteuse plus tard :
 signature **Apple Distribution** (une IPA signée en développement est refusée par App Store Connect),
-**absence du harnais de debug** dans les binaires, **cinq localisations** présentes, et **version
-conforme** à `project.yml`. Le test du harnais est précédé d'un **canari** (`OKIA_LANG`, présent dans
+**absence du harnais de debug** dans les binaires, **quinze localisations** présentes, **code du
+Duo présent** dans le binaire iOS (il doit référencer `UIHingeInteraction` — les builds 152 et 153
+sont partis sans, après le passage à Xcode 27.2), et **version conforme** à `project.yml`. Le script
+refuse aussi d'envoyer un binaire compilé par un Xcode bêta. Le test du harnais est précédé d'un **canari** (`OKIA_LANG`, présent dans
 tout build) : si le canari manque, c'est que `strings` ne lit pas les littéraux du binaire et le
 contrôle serait vide — le script s'arrête plutôt que d'afficher un feu vert sans valeur.
 
@@ -1457,6 +1493,14 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    - **Un rapport fornews est exploité d'abord** : sa section `## Entités`, ses balises de dates et
      de montants, ses cartes `leaflet`, ses sources. On ne va chercher sur **Wikidata** que ce que
      le document ne donne pas.
+   - *Depuis la 1.5.1* (`LecteurRapportFornews`, et `extractEntities` dans `render.js`) : la section
+     se reconnaît à **tout niveau de titre**, ses genres au niveau suivant — une fiche
+     « personnalité du jour » l'écrit en `### Entités` / `####` — et une ligne peut porter **toutes
+     les entités d'un genre** (`[[Microsoft]] (1674) · [[OpenAI]] (1060)`). Les « Thèmes » ne sont
+     pas des entités ; les « Modèles » sont des produits. Une épingle de carte ne garde que le
+     **lieu**, avant le premier séparateur de sa légende (`Berlin · sommet…` → Berlin), lien wiki ou
+     non, en forme longue (`type, lat, lon, étiquette`) comme courte (`lat, lon, étiquette`). Une
+     carte seule ne fait pas un rapport : sans section « Entités », la détection est lancée.
    - **Si fornews est installé**, on interroge d'abord sa base, puis Wikidata ; et une entité
      s'ouvre dans fornews par son **QID**.
    - **Un petit cache local** des entités déjà résolues, **partagé entre les appareils par
@@ -1614,3 +1658,32 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
   fois le partage fait). Texte proposé dans `TACHES-1.4.md`, section ⑥.
 
 Liste des tâches : `TACHES-1.4.md`.
+
+### 1.5 — les notes de l'orateur (version 1.5.1)
+
+**Décidé par Patrick le 2026-11-06** : tous les points restants de la 1.4 vont à la 1.5. En test
+sur TestFlight depuis le 6 novembre (builds 152 à 155) ; version **1.5.1** depuis le 11 novembre.
+
+- **Notes de l'orateur** (option Analytic) : écrites dans l'app, proposées par la conversion en
+  présentation (jamais un chiffre absent du rapport), reprises dans l'export PowerPoint.
+- **Export Word et PowerPoint** : les images `data:` des documents importés et les SVG suivent.
+- **Un `<svg>` écrit en clair** est borné à la page et au cadre du diaporama (app et lecteur en
+  ligne, OK-ia#584).
+- **Anglais** : « vault » au lieu de « Store ».
+- **Le coffre** : lu en profondeur, prêt pour un dossier réseau (Tailscale) — voir
+  « Fonctionnalités ».
+- **Les entités** des fiches « personnalité du jour » et des cartes légendées — voir la 1.4,
+  point 1.
+- **Le Duo de retour** après les builds 152 et 153, partis sans lui — voir « Prérequis ».
+- **Reste** : vérifier l'export PDF avec images ; la page du site et la base du Terminal IA à la
+  sortie (la base décrit encore le coffre en `rapports-*`).
+
+Liste des tâches : `TACHES-1.5.md`.
+
+### Après la 1.5 — 1.6, 1.7 et les fonctions pour tous
+
+**Retenu par Patrick le 2026-11-06** (« Ajoute les toutes ») et publié sur la feuille de route du
+site (OK-ia#585) : **1.6 — Présenter** (répétition chronométrée, l'iPhone pour télécommande,
+polycopié PDF, thèmes à vos couleurs), **1.7 — Le coffre** (interroger tout le coffre, le point de
+la semaine, import Pages, Keynote, Numbers, Excel et CSV), et **pour tous** (un tableau devient un
+graphique, lecture à voix haute, widgets). Liste des tâches : `TACHES-1.6.md`.
