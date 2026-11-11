@@ -88,3 +88,18 @@ simulateur). Vu au simulateur iPad : un PowerPoint avec un PNG en `data:`, un SV
       Fait le 6 novembre 2026 dans l'app (`svg[width][viewBox]`, hors Mermaid, cartes et icônes ;
       banc `tools/render-tests/svg.html`, 7 vérifications). Lecteur en ligne : même règle,
       committée sur la branche `claude/svg-bornes` du site, pas encore envoyée.
+
+## Régression du Duo dans les builds 152 et 153 (signalée par Patrick le 11 novembre 2026)
+
+Patrick : « sur le duo, la charnière n'est plus respectée ». Cause : Xcode est passé en 27.2, et
+`DUO_SDK` n'était défini que pour les SDK 27.1 (`project.yml`) ; tout le code du Duo — charnière,
+livre, seconde partie, colonne du système — est sorti des builds 152 et 153 sans erreur. Le build 151
+en vente (1.4, SDK 27.1) n'est pas touché. Vérifié : aucune trace de `UIHingeInteraction` dans le
+binaire du 153.
+
+- [x] `DUO_SDK` défini pour tous les SDK iOS (`[sdk=iphoneos*]`, `[sdk=iphonesimulator*]`).
+- [x] `scripts/deploy-testflight.sh` refuse un binaire iOS sans `UIHingeInteraction`.
+- [x] Compilé iOS (SDK 27.2) et Mac ; au simulateur Duo plié, les commandes reviennent dans la
+      colonne du système.
+- [ ] Build 154 à essayer sur le vrai Duo : déplié, mi-replié (livre), « mini-ordinateur ».
+

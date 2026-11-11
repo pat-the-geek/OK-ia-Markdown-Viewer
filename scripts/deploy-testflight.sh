@@ -232,6 +232,16 @@ PLIST
   done
   ok "aucun harnais de debug dans le binaire"
 
+  # Le Duo (charnière, livre, seconde partie) tient dans `#if DUO_SDK`, une condition du
+  # SDK posée par project.yml. Les builds 152 et 153 sont partis sans : la condition ne visait que
+  # le SDK 27.1, et Xcode était passé en 27.2 — rien n'avait échoué, le Duo avait simplement
+  # disparu (Patrick, 11/11/2026). Le binaire iOS doit donc référencer UIHingeInteraction.
+  if [ "$platform" = ios ]; then
+    grep -q 'UIHingeInteraction' "$tmp/strings.txt" \
+      || die "le code du Duo manque au binaire (UIHingeInteraction absent) : DUO_SDK n'est pas défini pour ce SDK — voir project.yml"
+    ok "code du Duo présent (charnière)"
+  fi
+
   for lang in $LANGS; do
     [ -d "$resources/$lang.lproj" ] || die "localisation manquante : $lang.lproj"
   done
