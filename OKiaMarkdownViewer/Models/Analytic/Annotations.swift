@@ -227,6 +227,32 @@ enum AnnotationsStore {
         }
     }
 
+    /// Efface les annotations rangées sous cette clé — celles d'un document introuvable (liste de
+    /// toutes les annotations, 1.5.1). Sur tous les appareils : la synchro efface aussi leur copie.
+    static func effacer(cle: String) {
+        try? FileManager.default.removeItem(at: url(cle))
+        SynchroICloud.partage.signaler()
+        DocumentsAnnotes.partage.rafraichir()
+    }
+
+    /// Relie à `document` les annotations rangées sous `cle` (un document modifié, renommé ou
+    /// remplacé) : elles s'ajoutent aux siennes, puis la clé d'origine est effacée. Celles dont le
+    /// texte ne s'y retrouve pas restent, signalées par le lecteur comme non retrouvées. Rend le
+    /// nombre d'annotations reliées (0 : rien à relier, ou c'est déjà le même document).
+    @discardableResult
+    static func relier(cle: String, a document: MarkdownDocument) -> Int {
+        guard let data = try? Data(contentsOf: url(cle)),
+              let f = try? JSONDecoder().decode(Fichier.self, from: data), !f.annotations.isEmpty else { return 0 }
+        let identite = IdentiteDocument(document)
+        guard identite.cle != cle else { return 0 }
+        let siennes = lire(identite, document: document)
+        let deja = Set(siennes.map(\.id))
+        let reliees = f.annotations.filter { !deja.contains($0.id) }
+        ecrire(siennes + reliees, pour: identite)
+        effacer(cle: cle)
+        return reliees.count
+    }
+
     static func ecrire(_ annotations: [Annotation], pour identite: IdentiteDocument) {
         let u = url(identite.cle)
         defer { SynchroICloud.partage.signaler(); DocumentsAnnotes.partage.rafraichir() }

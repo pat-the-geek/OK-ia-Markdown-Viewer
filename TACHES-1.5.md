@@ -329,3 +329,41 @@ prévoir l'option mettre dans le coffre ».
       partage endormi compris.
 - [ ] Pas fait : « Mettre dans le coffre » depuis le lecteur (seulement depuis l'accueil) ; la
       description de l'action Raccourcis « Importer » parle encore de « Documents analysés ».
+
+## L'annotation touchée qui ne se montrait pas (signalé par Patrick le 12 novembre 2026)
+
+Patrick, sur l'appareil (build 161) : « Lorsque j'ouvre un fichier depuis l'annotation, l'app ne se
+positionne pas sur l'annotation. »
+
+- [x] Causes probables (pas reproduites au simulateur iPad, où la vue ne change pas de taille) :
+      à l'ouverture, la vue du lecteur change de taille (la feuille qui se ferme, les barres) et
+      `VueWebLecteur` remet une page lue « en haut » tout en haut, à 0,15 et 0,6 s — par-dessus
+      notre défilement ; et les cartes et diagrammes, dessinés après, repoussent le texte.
+- [x] `annotations.js` : la page se recale sur l'annotation (et le halo la suit) à 0,3, 0,7, 1,2,
+      2 et 3 s, tant qu'on n'a pas touché la page (toucher, molette, clavier).
+- [x] Vu au simulateur du Duo, un diagramme Mermaid en tête du document : surlignage du paragraphe
+      34 et note manuscrite au tiers de l'écran.
+- [ ] À revoir sur l'appareil de Patrick. Pas couvert : le livre du Duo (deux pages) ne défile pas
+      jusqu'à l'annotation.
+
+## Les annotations sans document (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « Que faire avec les annotations qui n'ont plus de document ? » ; choix : relier et effacer.
+
+- [x] Prudence : « introuvable » veut dire introuvable sur cet appareil (un document du Mac
+      seulement, ses annotations venues par iCloud) ; effacer efface partout. Rien d'automatique.
+- [x] Menu (…) sur l'en-tête d'un document introuvable : « Relier à un document… » et « Effacer ces
+      annotations » ; en bas de la liste, « Effacer les annotations introuvables (N) » dès qu'il y en
+      a plusieurs, la recherche des documents finie. Chaque effacement demande confirmation, qui
+      dit « sur tous vos appareils » et invite à vérifier d'abord.
+- [x] `AnnotationsStore.relier(cle:a:)` : les annotations passent au document choisi, ajoutées aux
+      siennes (sans doublon), puis l'ancienne clé est effacée ; le document s'ouvre, celles dont le
+      texte ne s'y retrouve pas y sont signalées comme non retrouvées. `effacer(cle:)` : la
+      synchro efface aussi la copie iCloud.
+- [x] Le choix du fichier passe par le sélecteur d'UIKit (`SelecteurDocument`) dans sa feuille :
+      un second `.fileImporter` (l'accueil a le sien) ne s'ouvrait pas.
+- [x] Vu au simulateur iPad : le document d'essai modifié (diagramme ajouté) rend ses 3 annotations
+      introuvables ; reliées (`OKIA_RELIER`, Debug : le sélecteur ne se manie pas au simulateur),
+      elles retrouvent le document du coffre ; « Ancien document » effacé après confirmation, les
+      autres intacts. Compilation Mac réussie. 15 langues.
+- [ ] À essayer sur l'appareil : relier par le sélecteur de fichiers.

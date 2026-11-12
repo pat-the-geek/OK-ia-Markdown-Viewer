@@ -1556,7 +1556,9 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    Sur l'accueil, **un stabilo orange marque les documents annotés** (B135). Depuis la 1.5.1, **la
    liste de toutes les annotations** (le surligneur de la barre de l'accueil, ⇧⌘A sur Mac), document
    par document : toucher une annotation ouvre son document, qui défile jusqu'à elle et la signale
-   d'un halo (`Views/ListeAnnotationsView.swift`). Détail et vérifications : `TACHES-1.4.md`, lot ④
+   d'un halo (`Views/ListeAnnotationsView.swift`). Les annotations d'un document introuvable se
+   **relient** à un autre document (modifié, renommé) ou s'**effacent**, une à une ou toutes,
+   avec confirmation : elles disparaissent sur tous les appareils. Détail et vérifications : `TACHES-1.4.md`, lot ④
    bis, et `TACHES-1.5.md`.
 5. ~~**Des modèles plus poussés** (Private Cloud Compute)~~ — **écarté le 2026-10-25**, voir les
    décisions ci-dessous.

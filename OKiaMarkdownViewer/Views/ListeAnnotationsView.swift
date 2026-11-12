@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // Option Analytic, 1.5.1 — toutes les annotations, document par document (Patrick, 12/11/2026 :
 // « une liste de toutes les annotations prises qui permet d'ouvrir le document concerné »).
@@ -45,6 +46,12 @@ struct ListeAnnotationsView: View {
     @State private var documents: [DocumentAnnote] = []
     @State private var lu = false
     @State private var requete = ""
+    /// Les documents introuvables dont on va effacer les annotations (confirmation).
+    @State private var aEffacer: [DocumentAnnote] = []
+    /// Le document introuvable dont on relie les annotations à un fichier choisi.
+    @State private var aRelier: DocumentAnnote?
+    @State private var choisirFichier = false
+    @State private var message: String?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
@@ -57,6 +64,34 @@ struct ListeAnnotationsView: View {
                 }
                 .searchable(text: $requete, placement: .navigationBarDrawer(displayMode: .always),
                             prompt: tr("Rechercher dans les annotations"))
+                // Relier : le document qui remplace l'introuvable (modifié, renommé, déplacé). Le
+                // sélecteur d'UIKit, dans sa feuille : un second `.fileImporter` (l'accueil a le sien)
+                // ne s'ouvrait pas.
+                .sheet(isPresented: $choisirFichier) {
+                    SelecteurDocument(types: RootView.importedTypes) { url in
+                        choisirFichier = false
+                        guard let url, let d = aRelier else { aRelier = nil; return }
+                        aRelier = nil
+                        relier(d, a: url)
+                    }
+                    .ignoresSafeArea()
+                }
+                .confirmationDialog(aEffacer.count == 1
+                                    ? tr("Effacer les annotations de « %@ » ?", aEffacer.first?.titre ?? "")
+                                    : tr("Effacer les annotations de %d documents introuvables ?", aEffacer.count),
+                                    isPresented: Binding(get: { !aEffacer.isEmpty }, set: { if !$0 { aEffacer = [] } }),
+                                    titleVisibility: .visible) {
+                    Button(tr("Effacer"), role: .destructive) {
+                        aEffacer.forEach { AnnotationsStore.effacer(cle: $0.id) }
+                        aEffacer = []
+                    }
+                    Button(tr("Annuler"), role: .cancel) { aEffacer = [] }
+                } message: {
+                    Text(tr("Elles disparaissent sur tous vos appareils. Un document introuvable ici peut se trouver sur un autre appareil : vérifiez d’abord."))
+                }
+                .alert(message ?? "", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+                    Button("OK") { message = nil }
+                }
         }
         .tint(orange)
         // Relue quand des annotations s'écrivent, s'effacent ou arrivent d'un autre appareil.
@@ -83,7 +118,18 @@ struct ListeAnnotationsView: View {
                     Section {
                         ForEach(d.annotations) { a in ligne(a, de: d) }
                     } header: {
-                        entete(d)
+                        if introuvable(d) { menuIntrouvable(d) } else { entete(d) }
+                    }
+                }
+                // Toutes les introuvables d'un coup, une fois la recherche des documents finie.
+                let perdus = documents.filter(introuvable)
+                if perdus.count > 1, !documents.contains(where: \.recherche), requete.isEmpty {
+                    Section {
+                        Button(role: .destructive) { aEffacer = perdus } label: {
+                            Label(tr("Effacer les annotations introuvables (%d)", perdus.count), systemImage: "trash")
+                        }
+                    } footer: {
+                        Text(tr("Elles disparaissent sur tous vos appareils. Un document introuvable ici peut se trouver sur un autre appareil : vérifiez d’abord."))
                     }
                 }
             }
@@ -107,6 +153,47 @@ struct ListeAnnotationsView: View {
         }
     }
 
+    /// Introuvable sur cet appareil, la recherche finie.
+    private func introuvable(_ d: DocumentAnnote) -> Bool { d.lieu == nil && !d.recherche }
+
+    /// L'en-tête d'un document introuvable : un menu pour relier ses annotations à un autre document,
+    /// ou les effacer (Patrick, 12/11/2026).
+    private func menuIntrouvable(_ d: DocumentAnnote) -> some View {
+        Menu {
+            // Le sélecteur un instant après : demandé pendant que le menu se retire, SwiftUI le perdait.
+            Button {
+                aRelier = d
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { choisirFichier = true }
+            } label: {
+                Label(tr("Relier à un document…"), systemImage: "link")
+            }
+            Button(role: .destructive) { aEffacer = [d] } label: {
+                Label(tr("Effacer ces annotations"), systemImage: "trash")
+            }
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                etiquette(d)
+                Image(systemName: "ellipsis.circle").foregroundStyle(orange)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .textCase(nil)
+    }
+
+    /// Relie les annotations d'un document introuvable à celui qu'on a choisi, puis l'ouvre : on y
+    /// voit ce qui s'est reposé.
+    private func relier(_ d: DocumentAnnote, a url: URL) {
+        Task {
+            let lu = await Task.detached(priority: .userInitiated) { try? MarkdownLoader.load(from: url) }.value
+            guard let document = lu else { message = tr("Impossible de lire le fichier « %@ ».", url.lastPathComponent); return }
+            let n = AnnotationsStore.relier(cle: d.id, a: document)
+            guard n > 0 else { message = tr("Ce document porte déjà ces annotations."); return }
+            dismiss()
+            ouvrir(.init(url: url, portee: url, source: .recent), nil)
+        }
+    }
+
     /// L'en-tête d'un document : son nom (le toucher l'ouvre), où il est, combien d'annotations.
     private func entete(_ d: DocumentAnnote) -> some View {
         Button {
@@ -114,6 +201,16 @@ struct ListeAnnotationsView: View {
             dismiss()
             ouvrir(lieu, nil)
         } label: {
+            etiquette(d)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(d.lieu == nil)
+        .textCase(nil)
+        .accessibilityHint(d.lieu == nil ? "" : tr("Ouvrir le document"))
+    }
+
+    private func etiquette(_ d: DocumentAnnote) -> some View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Image(systemName: symbole(d.lieu?.source))
                     .foregroundStyle(d.lieu == nil ? Color.secondary : orange)
@@ -134,12 +231,6 @@ struct ListeAnnotationsView: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(d.lieu == nil)
-        .textCase(nil)
-        .accessibilityHint(d.lieu == nil ? "" : tr("Ouvrir le document"))
     }
 
     private func ligne(_ a: Annotation, de d: DocumentAnnote) -> some View {
@@ -296,5 +387,29 @@ struct ListeAnnotationsView: View {
             documents[i].lieu = trouve
             documents[i].recherche = false
         }
+    }
+}
+
+/// Le sélecteur de documents d'UIKit, un fichier à la fois (`nil` : annulé).
+struct SelecteurDocument: UIViewControllerRepresentable {
+    let types: [UTType]
+    let choisi: (URL?) -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let p = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: false)
+        p.allowsMultipleSelection = false
+        p.delegate = context.coordinator
+        return p
+    }
+
+    func updateUIViewController(_ p: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinateur { Coordinateur(choisi: choisi) }
+
+    final class Coordinateur: NSObject, UIDocumentPickerDelegate {
+        let choisi: (URL?) -> Void
+        init(choisi: @escaping (URL?) -> Void) { self.choisi = choisi }
+        func documentPicker(_ c: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { choisi(urls.first) }
+        func documentPickerWasCancelled(_ c: UIDocumentPickerViewController) { choisi(nil) }
     }
 }

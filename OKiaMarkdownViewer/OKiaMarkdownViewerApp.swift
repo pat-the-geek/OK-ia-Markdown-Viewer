@@ -688,6 +688,12 @@ struct OKiaMarkdownViewerApp: App {
         if let id = env["OKIA_TROUVE"], !id.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { store.ouvrirTrouve(id) }
         }
+        // OKIA_RELIER=<clé>|<fichier> : relie les annotations d'un document introuvable à un fichier,
+        // comme « Relier à un document… » (le sélecteur de fichiers ne se manie pas au simulateur).
+        if let r = env["OKIA_RELIER"], let sep = r.firstIndex(of: "|"),
+           let doc = try? MarkdownLoader.load(from: URL(fileURLWithPath: String(r[r.index(after: sep)...]))) {
+            print("OKIA_RELIER", AnnotationsStore.relier(cle: String(r[..<sep]), a: doc))
+        }
         // OKIA_ANNOTATIONS : ouvre la liste de toutes les annotations au lancement.
         if env["OKIA_ANNOTATIONS"] != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {

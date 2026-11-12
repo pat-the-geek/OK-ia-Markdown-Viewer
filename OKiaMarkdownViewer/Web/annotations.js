@@ -501,43 +501,64 @@
   // le document peut arriver après la demande.
   var aMontrer = null;
   function montrer(id) { aMontrer = id; essayerDeMontrer(); }
-  function essayerDeMontrer() {
-    if (!aMontrer) return;
-    var a = annotations.find(function (x) { return x.id === aMontrer; });
-    if (!a) return;
-    var rect = null;
+
+  // Le rectangle de l'annotation dans la fenêtre ; null tant qu'elle n'est pas là. Une note
+  // manuscrite pas encore décodée n'a pas de hauteur : on attend son image.
+  function rectDe(a, rappel) {
     if (a.type === 'encre') {
       var img = Array.from(document.querySelectorAll('.okia-encre')).find(function (i) {
         return i.getAttribute('data-id') === a.id;
       });
-      if (!img) return;
-      // Une note pas encore décodée n'a pas de hauteur : le halo n'était qu'un trait.
+      if (!img) return null;
       if (!img.complete || !img.naturalHeight) {
-        img.addEventListener('load', essayerDeMontrer, { once: true });
-        return;
+        if (rappel) img.addEventListener('load', rappel, { once: true });
+        return null;
       }
-      rect = img.getBoundingClientRect();
-    } else {
-      var c = contenu();
-      var r = c ? resoudre(noeudsTexte(c), a.ancre) : null;
-      if (r) rect = r.getBoundingClientRect();
+      return img.getBoundingClientRect();
     }
+    var c = contenu();
+    var r = c ? resoudre(noeudsTexte(c), a.ancre) : null;
+    return r ? r.getBoundingClientRect() : null;
+  }
+
+  function essayerDeMontrer() {
+    if (!aMontrer) return;
+    var a = annotations.find(function (x) { return x.id === aMontrer; });
+    if (!a) return;
+    var rect = rectDe(a, essayerDeMontrer);
     if (!rect || !rect.width || !rect.height) return;
     aMontrer = null;
-    // En coordonnées de la page, relevées avant de défiler.
-    var gauche = rect.left + window.scrollX, haut = rect.top + window.scrollY;
-    // Au tiers de l'écran : on voit ce qui précède. Sans animation : un rendu qui suit (diagrammes)
-    // l'interrompait à mi-course.
-    window.scrollTo(0, Math.max(0, haut - window.innerHeight / 3));
     var halo = document.createElement('div');
     halo.className = 'okia-halo';
     halo.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(halo);
+    caler(a, halo);
+    // Tenir la place quelques secondes : à l'ouverture, la vue du lecteur change de taille et le
+    // remet en haut de page, et les cartes et diagrammes, dessinés après, repoussent le texte
+    // (Patrick, 12/11/2026 : « l'app ne se positionne pas sur l'annotation »). Dès qu'on touche la
+    // page, on la laisse.
+    var touche = false;
+    function lacher() { touche = true; }
+    ['touchstart', 'wheel', 'keydown', 'mousedown'].forEach(function (e) {
+      window.addEventListener(e, lacher, { once: true, passive: true });
+    });
+    [300, 700, 1200, 2000, 3000].forEach(function (ms) {
+      setTimeout(function () { if (!touche) caler(a, halo); }, ms);
+    });
+    setTimeout(function () { halo.remove(); }, 3400);
+  }
+
+  // Place la page (l'annotation au tiers de l'écran : on voit ce qui précède) et le halo.
+  function caler(a, halo) {
+    var rect = rectDe(a, null);
+    if (!rect || !rect.width || !rect.height) return;
+    var gauche = rect.left + window.scrollX, haut = rect.top + window.scrollY;
+    var cible = Math.max(0, haut - window.innerHeight / 3);
+    if (Math.abs(window.scrollY - cible) > 12) window.scrollTo(0, cible);
     halo.style.left = (gauche - 6) + 'px';
     halo.style.top = (haut - 4) + 'px';
     halo.style.width = (rect.width + 12) + 'px';
     halo.style.height = (rect.height + 8) + 'px';
-    document.body.appendChild(halo);
-    setTimeout(function () { halo.remove(); }, 2600);
   }
 
   window.OKIA_ANNOT = {
