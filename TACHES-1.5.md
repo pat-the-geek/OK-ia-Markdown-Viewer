@@ -231,3 +231,18 @@ Viewer colle ». Son coffre est le partage de l'iMac, à travers Tailscale.
 - [x] Vu au simulateur iPad (coffre de test, 300 ms par dossier) : cartes et vignettes du coffre et
       des récents, ouverture d'une fiche du coffre, retour à l'accueil.
 - [ ] À essayer sur l'iPhone, avec le partage de l'iMac (build 159).
+
+## La liste des entités du coffre qui saute au défilement (signalé par Patrick le 12 novembre 2026)
+
+Patrick, capture du Duo à l'appui : « Lorsque je scrolle dans la liste des entités il me semble que
+la liste se rafraîchit et je ne peux pas bien naviguer. »
+
+- [x] Cause : le défaut du lecteur corrigé au build 120. iOS 27 réduit la barre de navigation au
+      défilement ; le résumé du haut (« 6 documents · 135 entités ») et la grille suivaient la zone
+      sûre, le système y voyait un défilement inverse et rétablissait la barre, sans fin. Sur la
+      capture, la barre est réduite (ni titre ni « Fermer »).
+- [x] `barreSansReduction()` posé sur l'analyse du coffre (`AnalyseCoffreView`), la seule autre vue
+      à bandeau en haut.
+- [x] Vu au simulateur du Duo (coffre de test, 42 documents) : après défilement, la barre reste
+      entière, le résumé ne bouge plus.
+- [ ] À essayer sur le vrai Duo.

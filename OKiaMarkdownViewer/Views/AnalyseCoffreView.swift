@@ -55,6 +55,11 @@ struct AnalyseCoffreView: View {
             }
             .navigationTitle(tr("Analyse du coffre"))
             .navigationBarTitleDisplayMode(.inline)
+            // La barre ne se réduit pas au défilement, comme celle du lecteur (B120) : réduite, elle
+            // déplaçait le résumé du haut et la grille avec lui, iOS y voyait un défilement inverse et
+            // la rétablissait — la liste sautait sans fin (Patrick, 12/11/2026 : « il me semble que la
+            // liste se rafraîchit et je ne peux pas bien naviguer »).
+            .barreSansReduction()
             .toolbar { barre }
             .safeAreaInset(edge: .top, spacing: 0) { resume }
             .navigationDestination(for: AnalyseCoffre.EntiteCoffre.self) { e in
