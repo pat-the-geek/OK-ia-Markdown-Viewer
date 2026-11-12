@@ -401,3 +401,20 @@ modèle des images ? » ; choix : « Partout si possible ».
       d'écrit).
 - [ ] Limite : la marque « annoté » de l'accueil n'apparaît qu'une fois le document ouvert sur
       cet appareil.
+
+## La galerie des entités du coffre qui remonte (signalé par Patrick le 12 novembre 2026)
+
+Patrick, sur le Duo : « La liste des entités ne permet pas de scroller : elle change chaque fois et
+remonte ».
+
+- [x] Cause probable : une grille paresseuse par genre dans une pile paresseuse, aux cartes d'une ou
+      deux lignes de nom et aux photos qui arrivent au défilement ; SwiftUI corrigeait ses hauteurs
+      estimées et ramenait la page vers le haut. Le bandeau du haut grandissait aussi pendant la
+      lecture des documents (barre de progression), puis rapetissait.
+- [x] Une seule `LazyVGrid`, un genre par `Section` ; le nom réserve toujours deux lignes (toutes
+      les cartes ont la même hauteur) ; le bandeau garde sa hauteur : la lecture prend la ligne des
+      chiffres, sa progression un filet au pied du bandeau.
+- [x] Vu au simulateur du Duo (coffre d'essai, 47 documents) : défilement stable, pendant la lecture
+      comme après. Compilation Mac réussie.
+- [ ] Pas reproduit tel quel : le coffre d'essai n'a pas de photos Wikidata. À revoir sur le vrai
+      Duo avec le coffre de l'iMac.

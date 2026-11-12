@@ -122,28 +122,36 @@ struct AnalyseCoffreView: View {
     }
 
     /// Ce que l'analyse couvre, et où elle en est.
+    /// Toujours de la même hauteur : la lecture prend la ligne des chiffres, et sa progression un
+    /// filet au pied du bandeau. Un bandeau qui grandit puis rapetisse déplaçait la grille dessous.
     private var resume: some View {
         VStack(spacing: 6) {
             if TailleAccueil.surMac { selecteur }
-            if case .lecture(let fait, let total) = analyse.etat {
-                ProgressView(value: Double(fait), total: Double(max(total, 1))) {
-                    Text(tr("Lecture des documents… %d sur %d", fait, total)).font(.caption)
-                }
-                .tint(orange)
-            }
             HStack {
-                Text(tr("%d documents", analyse.nombreDocuments) + " · " + tr("%d entités", analyse.entites.count))
-                if analyse.nonTelecharges > 0 {
-                    Text("· " + tr("%d dans iCloud, pas téléchargés", analyse.nonTelecharges))
+                if case .lecture(let fait, let total) = analyse.etat {
+                    Text(tr("Lecture des documents… %d sur %d", fait, total))
+                } else {
+                    Text(tr("%d documents", analyse.nombreDocuments) + " · " + tr("%d entités", analyse.entites.count))
+                    if analyse.nonTelecharges > 0 {
+                        Text("· " + tr("%d dans iCloud, pas téléchargés", analyse.nonTelecharges))
+                    }
                 }
                 Spacer()
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            .lineLimit(1)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(.bar)
+        .overlay(alignment: .bottom) {
+            if case .lecture(let fait, let total) = analyse.etat {
+                ProgressView(value: Double(fait), total: Double(max(total, 1)))
+                    .tint(orange)
+                    .padding(.horizontal, 16)
+            }
+        }
     }
 
     private var genresPresents: [TypeEntite] {
@@ -215,17 +223,23 @@ struct AnalyseCoffreView: View {
         if analyse.entites.isEmpty, analyse.etat == .fini {
             aucune
         } else {
+            // Une seule grille, un genre par section, des cartes toutes de la même hauteur : une
+            // grille par genre dans une pile paresseuse, aux cartes d'une ou deux lignes de nom,
+            // corrigeait ses hauteurs estimées au défilement et ramenait la page vers le haut
+            // (Patrick, 12/11/2026, sur le Duo : « La liste des entités ne permet pas de scroller :
+            // elle change chaque fois et remonte »).
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 26) {
+                LazyVGrid(columns: colonnes, alignment: .leading, spacing: 18) {
                     ForEach(groupes, id: \.type) { g in
-                        VStack(alignment: .leading, spacing: 12) {
-                            entete(g.type, g.entites.count)
-                            LazyVGrid(columns: colonnes, alignment: .leading, spacing: 18) {
-                                ForEach(g.entites) { e in
-                                    NavigationLink(value: e) { CarteEntiteCoffre(entite: e) }
-                                        .buttonStyle(.plain)
-                                }
+                        Section {
+                            ForEach(g.entites) { e in
+                                NavigationLink(value: e) { CarteEntiteCoffre(entite: e) }
+                                    .buttonStyle(.plain)
                             }
+                        } header: {
+                            entete(g.type, g.entites.count)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 8)
                         }
                     }
                 }
@@ -265,9 +279,10 @@ private struct CarteEntiteCoffre: View {
             VignetteEntite(entite: entite.entite, taille: 170, rond: false)
                 .overlay(alignment: .topTrailing) { PastilleMentions(n: entite.mentions).padding(6) }
                 .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+            // Deux lignes réservées, même pour un nom court : toutes les cartes ont la même hauteur.
             Text(entite.entite.nom)
                 .font(.subheadline.weight(.semibold))
-                .lineLimit(2)
+                .lineLimit(2, reservesSpace: true)
                 .multilineTextAlignment(.leading)
             Text(tr("%d documents", entite.presences.count) + " · " + tr("depuis le %@", entite.premiere.dateCourte))
                 .font(.caption)
