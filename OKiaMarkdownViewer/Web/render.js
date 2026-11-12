@@ -1083,6 +1083,26 @@
     return /^(xychart|pie|quadrantchart|gantt)/.test(t);
   }
 
+  /* Un xychart dont l'axe x porte des étiquettes sans guillemets — des dates « 29/10 », écrites
+     ainsi par une IA (fiche fornews, 12/11/2026) — est refusé par Mermaid : « Lexical error …
+     Unrecognized text ». Seuls les mots simples passent sans guillemets. Les étiquettes de
+     `x-axis [ … ]` en reçoivent donc, celles qui en ont déjà restant telles quelles ; rien
+     d'autre n'est touché, ni un autre type de diagramme. */
+  function reparerXychart(src) {
+    if (!/^\s*(?:%%[^\n]*\n\s*)*xychart/i.test(src)) return src;
+    return src.replace(/^(\s*x-axis\b[^\[\n]*\[)([^\]\n]*)(\])/gm, function (m, avant, liste, apres) {
+      // L'espace avant une étiquette entre guillemets en fait partie : sans lui, « "févr, mars" »
+      // était coupé à sa virgule.
+      var items = liste.match(/\s*"[^"]*"|[^,]+/g);
+      if (!items) return m;
+      return avant + items.map(function (it) {
+        var t = it.trim();
+        if (!t || /^".*"$/.test(t)) return t;
+        return '"' + t.replace(/"/g, "'") + '"';
+      }).filter(function (t) { return t; }).join(', ') + apres;
+    });
+  }
+
   function renderMermaid(container, title) {
     var blocks = Array.prototype.slice.call(container.querySelectorAll('pre.mermaid'));
     if (!blocks.length) return Promise.resolve();
@@ -1091,7 +1111,8 @@
     blocks.forEach(function (pre) {
       var src = pre.textContent;
       pre.setAttribute('data-okia-src', src);
-      var normalized = window.normalizeMermaidPalette ? window.normalizeMermaidPalette(src) : src;
+      var repare = reparerXychart(src);
+      var normalized = window.normalizeMermaidPalette ? window.normalizeMermaidPalette(repare) : repare;
       pre.textContent = normalized;
     });
 

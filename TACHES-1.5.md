@@ -193,3 +193,20 @@ Patrick : « il faut ajouter un bouton pour forcer le rechargement du coffre. »
 - [x] Au simulateur (iPad, 300 ms par dossier) : un fichier ajouté au coffre de test apparaît sous
       « Aujourd'hui » après ↻ ; à 2 s par dossier, la roue remplace ↻ pendant la lecture.
 - [ ] À essayer : le remontage d'un partage de l'iMac déconnecté (Mac, puis iPad).
+
+## Un graphique Mermaid en erreur de syntaxe (signalé par Patrick le 12 novembre 2026)
+
+Patrick, avec la fiche fornews `entite-gemini.md` : « Il y a un diagramme mermaid qui fait une
+erreur de syntaxe. Je pense le 1er. »
+
+- [x] Cause : un `xychart-beta` dont l'axe x porte des dates sans guillemets
+      (`x-axis [29/10, 30/10, …]`). Mermaid 11.15 refuse la barre oblique hors guillemets
+      (« Lexical error … Unrecognized text ») ; la ligne `%%{init}%%` n'y est pour rien.
+- [x] `reparerXychart` (render.js) met entre guillemets, avant le rendu, les étiquettes de
+      `x-axis [ … ]` qui n'en ont pas ; une étiquette déjà entre guillemets reste telle quelle,
+      virgule comprise ; un axe numérique (`0 --> 10`) et les autres diagrammes ne sont pas
+      touchés. Le fichier n'est pas modifié.
+- [x] Vu dans le lecteur (navigateur, six cas) et au simulateur iPad avec la fiche entière : le
+      graphique et ses quatorze dates.
+- [ ] fornews écrit ces étiquettes sans guillemets : à corriger dans son prompt, et `reparerXychart`
+      à reprendre dans `MoteurMdViewer` (fornews 2.0, voir la mémoire sur le sens de copie).
