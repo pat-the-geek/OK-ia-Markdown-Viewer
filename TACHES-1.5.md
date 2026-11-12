@@ -167,3 +167,16 @@ tailscale ? », puis « Oui change et b155 ».
       dossier, la liste gardée s'affiche à l'ouverture.
 - [ ] À essayer sur le vrai partage de l'iMac à travers Tailscale (build 155).
 
+
+## Un bouton pour recharger le coffre (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « il faut ajouter un bouton pour forcer le rechargement du coffre. »
+
+- [x] ↻ dans l'en-tête du coffre (une roue pendant la lecture) ; sur Mac, Fichier › Recharger le
+      coffre (⌘R). La relecture part tout de suite, hors du fil principal, même pour un dossier
+      réseau relu il y a moins de 60 s ; demandée pendant une lecture, elle la suit.
+- [x] Un partage déconnecté est remonté par ce bouton seulement (signet résolu sans
+      `.withoutMounting`) ; la mention « ne répond pas » dit désormais de recharger le coffre (↻).
+- [x] Au simulateur (iPad, 300 ms par dossier) : un fichier ajouté au coffre de test apparaît sous
+      « Aujourd'hui » après ↻ ; à 2 s par dossier, la roue remplace ↻ pendant la lecture.
+- [ ] À essayer : le remontage d'un partage de l'iMac déconnecté (Mac, puis iPad).

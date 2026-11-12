@@ -118,7 +118,12 @@ passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y e
     « Lecture du coffre… » la première fois ; le Mac le relit toutes les 60 s au lieu de 5 ; le
     signet se résout sans monter le volume ;
   - **les échecs sont dits** : un dossier que le système refuse de retenir (alerte), un partage
-    injoignable (mention à l'accueil, la dernière liste reste affichée).
+    injoignable (mention à l'accueil, la dernière liste reste affichée) ;
+  - **le bouton ↻ « Recharger le coffre »** (en-tête du coffre ; sur Mac aussi Fichier › Recharger
+    le coffre, ⌘R) : relit tout de suite, hors du fil principal, sans attendre la relecture
+    suivante ; demandé pendant une lecture, il la suit ; seul lui remonte un partage déconnecté
+    (le signet est résolu une seconde fois en laissant le système monter le volume). Pendant une
+    lecture, une roue tourne à sa place.
   Harnais de test : `OKIA_COFFRE=<dossier>`, `OKIA_LATENCE_COFFRE=<ms>` (Debug).
 - **Listes groupées par date** : les récents et les rapports du coffre sont découpés en tranches —
   aujourd'hui, hier, les 7 puis les 30 derniers jours, ensuite un groupe par mois. Le découpage est

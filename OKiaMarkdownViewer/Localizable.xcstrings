@@ -43202,6 +43202,196 @@
           }
         }
       }
+    },
+    "Recharger le coffre": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recharger le coffre"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload the vault"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Store neu laden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recargar el Store"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ricarica lo Store"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫を再読み込み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함 다시 불러오기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新载入资料库"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recarregar o cofre"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kluis opnieuw laden"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезагрузить хранилище"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезавантажити сховище"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasayı yeniden yükle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải lại kho"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट फिर से लोड करें"
+          }
+        }
+      }
+    },
+    "Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis rechargez le coffre (↻).": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis rechargez le coffre (↻)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The vault folder is not responding. If another computer shares it, check that it is on and that the share is connected, then reload the vault (↻)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Store-Ordner antwortet nicht. Wird er von einem anderen Computer freigegeben, prüfen Sie, ob dieser eingeschaltet und die Freigabe verbunden ist, und laden Sie dann den Store neu (↻)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La carpeta del Store no responde. Si la comparte otro ordenador, compruebe que esté encendido y que el recurso compartido esté conectado, y recargue el Store (↻)."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cartella dello Store non risponde. Se è condivisa da un altro computer, verificate che sia acceso e che la condivisione sia collegata, poi ricaricate lo Store (↻)."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫のフォルダが応答しません。別のコンピュータで共有している場合は、そのコンピュータの電源が入っていて共有に接続されているか確認してから、保管庫を再読み込みしてください（↻）。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함 폴더가 응답하지 않습니다. 다른 컴퓨터가 공유하는 폴더라면 그 컴퓨터가 켜져 있고 공유가 연결되어 있는지 확인한 뒤 보관함을 다시 불러오세요(↻)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "资料库文件夹没有响应。如果它由另一台电脑共享，请确认该电脑已开机且共享已连接，然后重新载入资料库（↻）。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasta do cofre não responde. Se ela for compartilhada por outro computador, verifique se ele está ligado e se o compartilhamento está conectado, depois recarregue o cofre (↻)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De map van de kluis reageert niet. Wordt ze gedeeld door een andere computer, controleer dan of die aanstaat en de deling verbonden is, en laad de kluis opnieuw (↻)."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка хранилища не отвечает. Если её открыл для общего доступа другой компьютер, убедитесь, что он включён и общий ресурс подключён, затем перезагрузите хранилище (↻)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папка сховища не відповідає. Якщо її спільно використовує інший комп’ютер, перевірте, що він увімкнений і спільний ресурс підключений, а потім перезавантажте сховище (↻)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasa klasörü yanıt vermiyor. Başka bir bilgisayar tarafından paylaşılıyorsa, o bilgisayarın açık ve paylaşımın bağlı olduğunu denetleyin, sonra kasayı yeniden yükleyin (↻)."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư mục kho không phản hồi. Nếu thư mục do một máy tính khác chia sẻ, hãy kiểm tra máy đó đang bật và phần chia sẻ đã được kết nối, rồi tải lại kho (↻)."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट फ़ोल्डर जवाब नहीं दे रहा। अगर इसे कोई दूसरा कंप्यूटर साझा करता है, तो जाँचें कि वह चालू है और साझा फ़ोल्डर जुड़ा है, फिर वॉल्ट फिर से लोड करें (↻)।"
+          }
+        }
+      }
     }
   }
 }

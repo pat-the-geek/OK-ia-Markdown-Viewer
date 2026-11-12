@@ -49,14 +49,14 @@ final class VaultStore: ObservableObject {
     private let nameKey = "okia.vaultFolderName"
     static let defaultPattern = "*"
     /// Les bornes d'une lecture : un dossier partagé peut être immense, et le réseau lent.
-    static let profondeurMax = 8
-    static let fichiersMax = 3000
-    static let dureeMax: TimeInterval = 4
+    nonisolated static let profondeurMax = 8
+    nonisolated static let fichiersMax = 3000
+    nonisolated static let dureeMax: TimeInterval = 4
     /// Sur un volume réseau, la lecture se fait en arrière-plan : elle peut durer davantage.
-    static let dureeMaxReseau: TimeInterval = 20
+    nonisolated static let dureeMaxReseau: TimeInterval = 20
     /// Les dossiers lus ensemble : assez pour masquer la latence, sans noyer le serveur.
-    static let lecturesSimultanees = 8
-    static let extensions: Set<String> = ["md", "markdown"]
+    nonisolated static let lecturesSimultanees = 8
+    nonisolated static let extensions: Set<String> = ["md", "markdown"]
 
     private var bookmark: Data?
 
@@ -192,16 +192,48 @@ final class VaultStore: ObservableObject {
         publier(Self.lire(racine: root, motif: pattern))
     }
 
+    /// Une relecture forcée demandée pendant une autre lecture : elle suit celle-ci.
+    private var relireEnsuite = false
+
     /// Relit le coffre hors du fil principal, puis publie. Une lecture à la fois : celle qui est en
     /// cours suffit.
-    func rafraichirEnArrierePlan() async {
-        guard !enLecture else { return }
-        guard let root = resolveFolder() else { publierInjoignable(); return }
-        let motif = pattern
+    ///
+    /// `forcee` — le bouton « Recharger le coffre » (Patrick, 12/11/2026) : la relecture part tout de
+    /// suite, même pour un dossier réseau relu il y a peu ; demandée pendant une lecture, elle la
+    /// suit au lieu d'être perdue ; et un partage déconnecté est remonté, si le système le peut
+    /// (une lecture ordinaire ne monte jamais rien).
+    func rafraichirEnArrierePlan(forcee: Bool = false) async {
+        guard !enLecture else {
+            if forcee { relireEnsuite = true }
+            return
+        }
+        guard let marque = bookmark else { return }
         enLecture = true
-        let lecture = await Task.detached(priority: .utility) { Self.lire(racine: root, motif: motif) }.value
+        var monter = forcee
+        repeat {
+            relireEnsuite = false
+            let rapide = resolveFolder()
+            let motif = pattern
+            let lecture = await Task.detached(priority: monter ? .userInitiated : .utility) {
+                Self.lire(rapide: rapide, marque: marque, motif: motif, monter: monter)
+            }.value
+            if let lecture { publier(lecture) } else { publierInjoignable() }
+            monter = true
+        } while relireEnsuite
         enLecture = false
-        publier(lecture)
+    }
+
+    /// La lecture du dossier résolu sans montage ; s'il ne répond pas et que `monter`, le signet
+    /// est résolu à nouveau en laissant le système monter le volume (un partage SMB de l'iMac,
+    /// déconnecté), puis relu. Nil : le dossier reste introuvable.
+    nonisolated private static func lire(rapide: URL?, marque: Data, motif: String, monter: Bool) -> Lecture? {
+        var lecture: Lecture?
+        if let rapide { lecture = lire(racine: rapide, motif: motif) }
+        guard monter, lecture?.lu != true else { return lecture }
+        var perime = false
+        guard let monte = try? URL(resolvingBookmarkData: marque, options: [], relativeTo: nil,
+                                   bookmarkDataIsStale: &perime) else { return lecture }
+        return lire(racine: monte, motif: motif)
     }
 
     private func publier(_ l: Lecture) {

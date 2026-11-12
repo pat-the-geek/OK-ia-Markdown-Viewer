@@ -608,6 +608,11 @@ struct OKiaMarkdownViewerApp: App {
                     NotificationCenter.default.post(name: .okiaRechercheCoffre, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
+                // Relire le coffre sans attendre la relecture suivante (Patrick, 12/11/2026).
+                Button(tr("Recharger le coffre")) {
+                    Task { await VaultStore.partage.rafraichirEnArrierePlan(forcee: true) }
+                }
+                .keyboardShortcut("r", modifiers: .command)
                 #endif
             }
         }

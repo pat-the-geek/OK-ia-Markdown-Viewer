@@ -27,7 +27,7 @@ struct VaultSectionView: View {
                 .ligneAccueil()
             } else if vault.injoignable {
                 // Le plus souvent un dossier partagé d'un autre Mac, déconnecté (Patrick, 11/11/2026).
-                Text(tr("Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis revenez à l’accueil."))
+                Text(tr("Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis rechargez le coffre (↻)."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .ligneAccueil()
@@ -63,6 +63,22 @@ struct VaultSectionView: View {
                 Text(tr("Coffre") + (vault.folderName.map { " · \($0)" } ?? ""))
                     .foregroundStyle(.secondary)
                 Spacer()
+                if vault.hasFolder {
+                    // Relire le coffre sans attendre la relecture suivante (Patrick, 12/11/2026) :
+                    // un partage lointain n'est relu que toutes les 60 s, et un partage déconnecté
+                    // ne se remonte qu'ici. Pendant une lecture, la roue tourne à sa place.
+                    if vault.enLecture {
+                        ProgressView()
+                            .controlSize(.small)
+                            .accessibilityLabel(tr("Lecture du coffre…"))
+                    } else {
+                        Button { Task { await vault.rafraichirEnArrierePlan(forcee: true) } } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .accessibilityLabel(tr("Recharger le coffre"))
+                        .help(tr("Recharger le coffre"))
+                    }
+                }
                 Button { patternDraft = vault.pattern; showSettings = true } label: {
                     Image(systemName: "slider.horizontal.3")
                 }
