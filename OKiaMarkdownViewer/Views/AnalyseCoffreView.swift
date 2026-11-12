@@ -43,6 +43,16 @@ struct AnalyseCoffreView: View {
             case .carte: return tr("Carte")
             }
         }
+        /// Le sélecteur montre une image, son nom reste pour VoiceOver (Patrick, 12/11/2026 : « replacer
+        /// les textes dans les boutons par les images » ; « Semaine » était coupé sur l'iPhone).
+        var symbole: String {
+            switch self {
+            case .semaine: return "calendar"
+            case .liste: return "list.bullet"
+            case .galerie: return "square.grid.2x2"
+            case .carte: return "map"
+            }
+        }
     }
 
     enum Tri: String, CaseIterable, Identifiable {
@@ -134,7 +144,7 @@ struct AnalyseCoffreView: View {
 
     private var selecteur: some View {
         Picker(tr("Affichage"), selection: $vue) {
-            ForEach(Vue.allCases) { v in Text(v.libelle).tag(v) }
+            ForEach(Vue.allCases) { v in Image(systemName: v.symbole).accessibilityLabel(v.libelle).tag(v) }
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: 420)

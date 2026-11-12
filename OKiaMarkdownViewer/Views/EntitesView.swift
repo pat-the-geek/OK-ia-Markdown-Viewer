@@ -21,6 +21,14 @@ struct EntitesView: View {
             case .carte:   return tr("Carte")
             }
         }
+        /// Une image dans le sélecteur, le nom pour VoiceOver (comme l'analyse du coffre).
+        var symbole: String {
+            switch self {
+            case .liste:   return "list.bullet"
+            case .galerie: return "square.grid.2x2"
+            case .carte:   return "map"
+            }
+        }
     }
 
     @AppStorage(ConsentementWikidata.cle) private var consentementBrut = ConsentementWikidata.jamaisDemande.rawValue
@@ -129,7 +137,7 @@ struct EntitesView: View {
         } else {
             VStack(spacing: 0) {
                 Picker(tr("Affichage"), selection: $vueBrute) {
-                    ForEach(Vue.allCases) { v in Text(v.libelle).tag(v.rawValue) }
+                    ForEach(Vue.allCases) { v in Image(systemName: v.symbole).accessibilityLabel(v.libelle).tag(v.rawValue) }
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16)
