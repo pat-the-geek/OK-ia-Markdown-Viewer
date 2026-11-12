@@ -71,7 +71,20 @@ simulateur). Vu au simulateur iPad : un PowerPoint avec un PNG en `data:`, un SV
       essayé).
 - [x] Décoder les `data:image/…;base64` côté Swift (JPEG et PNG tels quels).
 - [x] SVG : rastérisé en PNG côté JavaScript avant l'export, comme les diagrammes Mermaid.
-- [ ] Vérifier l'export PDF avec les mêmes documents.
+- [x] Vérifier l'export PDF avec les mêmes documents. **Fait le 12 novembre 2026 (build 157) :**
+      au simulateur iPad, par le harnais `OKIA_RACCOURCI=pdf`, un document de 40 paragraphes suivis
+      d'un PNG en `data:`, d'un SVG en base64 et d'un `<svg>` en clair : les trois images sont dans
+      le PDF (le chargement forcé des images paresseuses existait déjà). Deux défauts corrigés :
+      - une page à moitié vide avant le PNG, puis six passes de rendu pour rien. La recherche des
+        titres isolés en bas de page lisait le seul texte ; une image n'en a pas, si bien qu'un
+        titre suivi de son image passait pour isolé, et un titre en haut de page suivi d'une image
+        était retrouvé à chaque passe. Désormais un titre par passe, jamais celui qui ouvre sa
+        page, ni celui sous lequel quelque chose est dessiné (pixels de la page rendue à
+        demi-échelle). Résultat : 7 pages au lieu de 8, deux rendus au lieu de sept ;
+      - le `<svg>` en clair collé à gauche, les images centrées. Écrit sur une ligne, il arrive
+        dans un `<p>` (CommonMark) : `svgSeuls` (render.js) le marque `okia-svg-bloc` quand il
+        est seul dans son paragraphe, et il se centre, à l'écran comme dans le PDF.
+      Bancs `svg.html` 7/7 et `export-images.html` 7/7.
 
 ## Défauts vus pendant la 1.4
 

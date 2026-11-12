@@ -824,6 +824,20 @@
     });
   }
 
+  /* Un <svg> écrit sur une seule ligne n'est pas un bloc HTML pour CommonMark : il arrive dans un
+     <p>, collé à gauche quand les images sont centrées (vu à l'export PDF, 12/11/2026). Seul dans
+     son paragraphe, il est marqué pour se centrer comme une image ; dans une ligne de texte, une
+     icône par exemple, il reste à sa place. */
+  function svgSeuls(container) {
+    Array.prototype.forEach.call(container.querySelectorAll('p > svg[width][viewBox]'), function (svg) {
+      var p = svg.parentNode;
+      var autres = Array.prototype.filter.call(p.childNodes, function (n) {
+        return n !== svg && !(n.nodeType === 3 && !n.textContent.trim()) && n.nodeName !== 'BR';
+      });
+      if (!autres.length) svg.classList.add('okia-svg-bloc');
+    });
+  }
+
   /* Le bouton qui dit qu'un objet s'ouvre en plein écran — diagramme, image, chronologie,
      tableau : une pastille de verre, toujours au même coin, à l'accent du thème. Il ne fait
      que montrer le chemin : toucher l'objet lui-même l'ouvre aussi. */
@@ -1601,6 +1615,7 @@
       hideRedundantSecondImage(container);
       watchImages(container);                                     // 5 drop images that fail
       attachImageZoom(container);                                 // tap image → full-screen
+      svgSeuls(container);                                        // un <svg> seul se centre
       poserBoutonsAgrandir(container);                            // ⤢ sur chaque objet agrandissable
       clearSearch();
       applyFontScale();                                           // keep chosen size across renders
@@ -1639,6 +1654,7 @@
     renderLeafletMaps(container);
     watchImages(container);
     attachImageZoom(container);
+    svgSeuls(container);
     poserBoutonsAgrandir(container);
     return renderMermaid(container, '');
   }

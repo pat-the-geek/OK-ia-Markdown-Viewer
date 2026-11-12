@@ -136,6 +136,11 @@ passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y e
 - **Sommaire (TOC)** : liste des titres du document avec saut direct à une section.
 - **Recherche dans le document** : surlignage des occurrences + navigation précédent/suivant.
 - **Partage / export** : export du rendu en **PDF** ou partage du fichier `.md` via la share sheet iOS.
+  Le PDF est paginé (A4 ou Letter) ; un titre resté seul en bas de page passe à la suivante, une
+  passe par titre (le premier saut décale la suite), sauf s'il ouvre sa page ou si quelque chose
+  est dessiné sous lui — une image n'a pas de texte, les pixels de la page le disent
+  (`ReaderWebController.strandedHeadingIDs`). Images `data:`, SVG en base64 et `<svg>` en clair y
+  sont, centrés.
 - **Export Office (Word / PowerPoint)** : le **Rapport** s'exporte en **`.docx`** (titres, gras/italique,
   citations, listes, **tableaux éditables**, images + diagrammes) ; le **Diaporama** s'exporte en
   **`.pptx` mixte** (texte éditable + **tableaux éditables** + images/diagrammes rasterisés). Générateur
@@ -1680,8 +1685,11 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; version **1.5.1** depu
 - **Les entités** des fiches « personnalité du jour » et des cartes légendées — voir la 1.4,
   point 1.
 - **Le Duo de retour** après les builds 152 et 153, partis sans lui — voir « Prérequis ».
-- **Reste** : vérifier l'export PDF avec images ; la page du site et la base du Terminal IA à la
-  sortie (la base décrit encore le coffre en `rapports-*`).
+- **Export PDF avec images** vérifié (12/11) : les trois formes d'image y sont ; une page à moitié
+  vide avant une image et un `<svg>` collé à gauche corrigés.
+- **Recharger le coffre** : bouton ↻, ⌘R sur Mac (build 156).
+- **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
+  coffre en `rapports-*`).
 
 Liste des tâches : `TACHES-1.5.md`.
 

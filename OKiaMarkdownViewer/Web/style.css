@@ -272,6 +272,13 @@ img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin:
   max-width: 100%;
   height: auto;
 }
+/* Posé seul entre deux paragraphes, il se centre comme une image (12/11/2026 : il restait collé à
+   gauche, à l'écran comme dans le PDF). Écrit sur une ligne, il arrive dans un <p> : render.js le
+   marque alors (svgSeuls). Écrit sur plusieurs lignes, c'est un bloc — enveloppé dans .okia-keep
+   avec son titre à l'export PDF. Dans une ligne de texte, il reste à sa place. */
+svg.okia-svg-bloc,
+.markdown-body > svg[width][viewBox],
+.markdown-body > .okia-keep > svg[width][viewBox] { display: block; margin: 1em auto; }
 img.okia-zoomable { cursor: zoom-in; }
 .okia-map-print { display: none; }   /* raster d'impression, voir @media print */
 

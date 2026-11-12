@@ -358,23 +358,29 @@ final class ReaderWebController: ObservableObject {
     /// Draw the PDF, look for headings left stranded at the foot of a page, mark those for a
     /// page break, and draw again.
     ///
-    /// This costs a second (rarely a third) render, and it is the only thing that works: this
+    /// This costs one more render per stranded heading (rarely more than two), and it is the only thing that works: this
     /// print engine ignores `break-inside: avoid` and `break-after: avoid` — measured, a
     /// heading followed by a map that did not fit stayed behind while the map moved on. It
     /// does honour an explicit break, but nothing in the DOM knows where the page boundaries
     /// will fall. So the boundaries are read back from the PDF that was just produced.
+    /// Les passes de correction après le premier rendu : une par titre isolé, au plus six. Un
+    /// rendu prend une fraction de seconde ; un rapport n'a d'ordinaire qu'un ou deux titres isolés.
+    private static let passesMax = 6
+
     private func renderPass(_ webView: WKWebView, headings: [(id: String, text: String)],
                             attempt: Int, completion: @escaping (URL?) -> Void) {
         renderPDF(webView) { url in
-            guard attempt < 2, !headings.isEmpty, let url,
+            guard attempt < Self.passesMax, !headings.isEmpty, let url,
                   let data = try? Data(contentsOf: url),
                   let doc = PDFDocument(data: data) else { completion(url); return }
 
-            let stranded = self.strandedHeadingIDs(in: doc, headings: headings)
-            guard !stranded.isEmpty else { completion(url); return }
+            // Un seul titre par passe, le premier : un saut de page décale toute la suite, et les
+            // titres isolés repérés plus loin ne le sont plus. Les marquer tous d'un coup forçait
+            // des sauts inutiles — une page à moitié vide avant une image (12/11/2026).
+            guard let premier = self.strandedHeadingIDs(in: doc, headings: headings).first
+            else { completion(url); return }
 
-            let list = stranded.map { "\"\($0)\"" }.joined(separator: ",")
-            webView.evaluateJavaScript("window.OKIA && window.OKIA.markBreakBefore([\(list)]);") { _, _ in
+            webView.evaluateJavaScript("window.OKIA && window.OKIA.markBreakBefore([\"\(premier)\"]);") { _, _ in
                 self.renderPass(webView, headings: headings, attempt: attempt + 1,
                                 completion: completion)
             }
@@ -384,22 +390,67 @@ final class ReaderWebController: ObservableObject {
     /// Outline entries whose heading is the last thing printed on a page — the reader has to
     /// turn over to find what it announces. The last page is exempt: a heading there has
     /// nowhere better to go.
+    ///
+    /// The text alone is not enough (12/11/2026): an image has no text, so a heading followed by
+    /// its image at the foot of a page read as the last line, and was sent over for nothing; a
+    /// heading alone at the TOP of its page, followed by an image, was found again at every pass.
+    /// A heading that opens its page is therefore never stranded, and one with anything drawn
+    /// below it (an image, a diagram, a map) is not either.
     private func strandedHeadingIDs(in doc: PDFDocument,
                                     headings: [(id: String, text: String)]) -> [String] {
         guard doc.pageCount > 1 else { return [] }
         var ids: [String] = []
         for index in 0..<(doc.pageCount - 1) {
-            guard let text = doc.page(at: index)?.string else { continue }
+            guard let page = doc.page(at: index), let text = page.string else { continue }
             let lines = text.components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-            guard let last = lines.last else { continue }
+            guard let last = lines.last, lines.count > 1 else { continue }
             // The PDF may wrap a long heading, so compare on a prefix rather than equality.
-            if let item = headings.first(where: { headingMatches($0.text, last) }) {
-                ids.append(item.id)
-            }
+            guard let item = headings.first(where: { headingMatches($0.text, last) }) else { continue }
+            if lines.first.map({ headingMatches(item.text, $0) }) == true { continue }
+            let range = (text as NSString).range(of: last, options: .backwards)
+            if range.location != NSNotFound,
+               let bounds = page.selection(for: range)?.bounds(for: page),
+               Self.dessinSous(bounds.minY, page: page) { continue }
+            ids.append(item.id)
         }
         return ids
+    }
+
+    /// Y a-t-il quelque chose de dessiné sous cette hauteur (en points PDF, origine en bas), au-dessus
+    /// de la marge du bas ? La page est rendue à demi-échelle et ses pixels comparés au fond — le
+    /// blanc du papier et le blanc cassé de la colonne ; un filet clair de titre ne compte pas.
+    private static func dessinSous(_ y: CGFloat, page: PDFPage) -> Bool {
+        let boite = page.bounds(for: .mediaBox)
+        let echelle: CGFloat = 0.5, marge: CGFloat = 42
+        let largeur = Int(boite.width * echelle), hauteur = Int(boite.height * echelle)
+        guard largeur > 0, hauteur > 0,
+              let ctx = CGContext(data: nil, width: largeur, height: hauteur, bitsPerComponent: 8,
+                                  bytesPerRow: largeur * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+        ctx.setFillColor(UIColor.white.cgColor)
+        ctx.fill(CGRect(x: 0, y: 0, width: largeur, height: hauteur))
+        ctx.scaleBy(x: echelle, y: echelle)
+        page.draw(with: .mediaBox, to: ctx)
+        guard let donnees = ctx.data?.assumingMemoryBound(to: UInt8.self) else { return false }
+        // Les lignes du tampon vont du haut vers le bas ; y PDF part du bas. Sous le titre, en
+        // laissant son filet (10 pt), jusqu'à la marge du bas.
+        let haut = Int((boite.height - (y - 10)) * echelle), bas = Int((boite.height - marge) * echelle)
+        let gauche = Int(marge * echelle), droite = largeur - Int(marge * echelle)
+        guard haut < bas else { return false }
+        var points = 0
+        for rangee in max(0, haut)..<min(hauteur, bas) {
+            for colonne in stride(from: gauche, to: droite, by: 2) {
+                let i = (rangee * largeur + colonne) * 4
+                let r = Int(donnees[i]), v = Int(donnees[i + 1]), b = Int(donnees[i + 2])
+                if min(r, v, b) < 215 || max(r, v, b) - min(r, v, b) > 30 {
+                    points += 1
+                    if points > 40 { return true }
+                }
+            }
+        }
+        return false
     }
 
     private func headingMatches(_ heading: String, _ line: String) -> Bool {
