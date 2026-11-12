@@ -20,6 +20,9 @@ struct AnalyseCoffreView: View {
     @State private var recherche = ""
     @State private var genre: TypeEntite?
     @State private var chemin: [AnalyseCoffre.EntiteCoffre] = []
+    /// Les deux corrections qui demandent une liste (1.5), ouvertes depuis le menu contextuel.
+    @State private var autreFiche: EntiteDocument?
+    @State private var memeQue: EntiteDocument?
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     /// La liste, la galerie (grandes photos) et la carte ; liste et galerie groupées par genre (Patrick,
@@ -66,6 +69,8 @@ struct AnalyseCoffreView: View {
                 DetailEntiteCoffre(entite: e, ouvrir: { id in dismiss(); ouvrir(id) })
             }
         }
+        .sheet(item: $autreFiche) { e in ChoixFicheView(entite: e, analyse: analyse) }
+        .sheet(item: $memeQue) { e in ChoixMemeEntiteView(entite: e, analyse: analyse) }
         .onAppear { analyse.analyser(vault) }
         #if targetEnvironment(macCatalyst)
         .frame(minWidth: 640, minHeight: 620)
@@ -180,6 +185,12 @@ struct AnalyseCoffreView: View {
         }
     }
 
+    /// Les corrections d'une entité, comme sur un document : elles valent pour tous les documents.
+    private func menuCorrection(_ e: AnalyseCoffre.EntiteCoffre) -> some View {
+        MenuSignalerErreur(entite: e.entite, analyse: analyse,
+                           autreFiche: { autreFiche = e.entite }, memeQue: { memeQue = e.entite })
+    }
+
     private func entete(_ t: TypeEntite, _ n: Int) -> some View {
         Label(tr(t.libelle) + " · \(n)", systemImage: t.symbole)
             .font(.headline)
@@ -200,6 +211,7 @@ struct AnalyseCoffreView: View {
                     Section {
                         ForEach(g.entites) { e in
                             NavigationLink(value: e) { LigneEntiteCoffre(entite: e) }
+                                .contextMenu { menuCorrection(e) }
                         }
                     } header: {
                         entete(g.type, g.entites.count).textCase(nil)
@@ -235,6 +247,7 @@ struct AnalyseCoffreView: View {
                             ForEach(g.entites) { e in
                                 NavigationLink(value: e) { CarteEntiteCoffre(entite: e) }
                                     .buttonStyle(.plain)
+                                    .contextMenu { menuCorrection(e) }
                             }
                         } header: {
                             entete(g.type, g.entites.count)
@@ -319,6 +332,10 @@ private struct DetailEntiteCoffre: View {
     let entite: AnalyseCoffre.EntiteCoffre
     var ouvrir: (String) -> Void
     @ObservedObject private var analyse = AnalyseCoffre.partage
+    @State private var autreFiche = false
+    @State private var memeQue = false
+    @Environment(\.dismiss) private var dismiss
+    private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
         List {
@@ -371,5 +388,18 @@ private struct DetailEntiteCoffre: View {
             }
         }
         .navigationTitle(entite.entite.nom)
+        // Les corrections, comme sur la fiche d'un document (1.5). Une entité retirée ou réunie à
+        // une autre : retour à la galerie.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                MenuSignalerErreur(entite: entite.entite, analyse: analyse,
+                                   autreFiche: { autreFiche = true }, memeQue: { memeQue = true },
+                                   retiree: { dismiss() })
+                    .labelStyle(.iconOnly)
+                    .tint(orange)
+            }
+        }
+        .sheet(isPresented: $autreFiche) { ChoixFicheView(entite: entite.entite, analyse: analyse) }
+        .sheet(isPresented: $memeQue) { ChoixMemeEntiteView(entite: entite.entite, analyse: analyse, reunie: { dismiss() }) }
     }
 }

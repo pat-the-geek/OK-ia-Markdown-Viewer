@@ -39,6 +39,11 @@ struct ReaderView: View {
     /// partie, et gardées tant que le document reste ouvert.
     @StateObject private var analyseEntites = AnalyseEntites()
     @State private var showEntites = false
+    /// La fiche d'une entité touchée dans la page (1.5).
+    @State private var ficheTouchee: EntiteDocument?
+    /// Le nom touché pendant que l'analyse du document tourne encore : la fiche s'ouvre dès qu'elle
+    /// l'a trouvé.
+    @State private var entiteAttendue: String?
     /// Option Analytic (1.4) : les annotations du document, et le calque du mode « Annoter ».
     @StateObject private var annotationsDoc = AnnotationsDocument()
     @State private var calques: [CalqueAnnotation] = []
@@ -204,7 +209,7 @@ struct ReaderView: View {
                 } else if modeLivre {
                     PageLivre(livre: livre, surPret: { demarrerLivre() },
                               surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
-                              surCarte: { tappedCarte = $0 })
+                              surCarte: { tappedCarte = $0 }, surEntite: { toucherEntite($0) })
                         .ignoresSafeArea(edges: [.bottom, .horizontal])
                 }
             }
@@ -240,7 +245,7 @@ struct ReaderView: View {
                 // même hauteur, et l'iPad n'y montre plus une bande noire.
                 PageLivre(livre: livre, surPret: { demarrerLivre() },
                               surDiagramme: { tapped = $0 }, surImage: { tappedImage = $0 },
-                              surCarte: { tappedCarte = $0 })
+                              surCarte: { tappedCarte = $0 }, surEntite: { toucherEntite($0) })
                     .frame(width: tailleEcran.width / 2)
                     // Sur Mac, la page de droite commence sous la barre de la fenêtre, comme celle
                     // de gauche : passée dessous, son haut se lisait derrière les commandes.
@@ -539,7 +544,22 @@ struct ReaderView: View {
             annotationsDoc.livre = livre
             web.onAnnotationsOrphelines = { [weak annotationsDoc] in annotationsDoc?.signalerOrphelines($0) }
             annotationsDoc.charger(document)
+            web.onEntite = { toucherEntite($0) }
         }
+        // La fiche d'une entité touchée dans la page, et celle qu'on attendait de l'analyse.
+        .sheet(item: $ficheTouchee) { e in
+            NavigationStack {
+                FicheEntiteView(entite: analyseEntites.entite(nommee: e.nom) ?? e, analyse: analyseEntites,
+                                voirDansLeDocument: { x in ficheTouchee = nil; chercher(x.nom, apres: 0.5) })
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(tr("Fermer")) { ficheTouchee = nil }
+                        }
+                    }
+            }
+        }
+        .onChange(of: analyseEntites.entites) { _, _ in montrerEntiteAttendue() }
+        .onChange(of: analyseEntites.etat) { _, _ in montrerEntiteAttendue() }
         // Un vrai document (pas l'exemple) compte pour la demande de note ; elle vient une fois le
         // document affiché, et jamais par-dessus une feuille ou le diaporama.
         .task(id: document.id) {
@@ -1267,6 +1287,32 @@ struct ReaderView: View {
     /// suivants. ⚠️ Replier le clavier change les marges de la vue web, ce qui interrompt le
     /// défilement doux vers la première mention (essai du 25/10/2026 : 15 mentions trouvées, la
     /// page restée en haut) : on cherche donc une seconde fois, le clavier parti.
+    /// Une entité colorée touchée dans la page : sa fiche, celle du panneau des entités. L'analyse
+    /// du document se lance au besoin, et la fiche s'ouvre quand elle a trouvé le nom. Sans l'option
+    /// Analytic, le panneau des entités, qui la présente. En mode Annoter, le toucher sert à annoter.
+    private func toucherEntite(_ nom: String) {
+        guard !annotationsDoc.actif, ficheTouchee == nil, !showEntites else { return }
+        guard achat.acces else { showEntites = true; return }
+        if let e = analyseEntites.entite(nommee: nom) { ficheTouchee = e; return }
+        entiteAttendue = nom
+        let brut = UserDefaults.standard.string(forKey: ConsentementWikidata.cle) ?? ""
+        analyseEntites.analyser(document, wikidata: ConsentementWikidata(rawValue: brut) ?? .jamaisDemande)
+        montrerEntiteAttendue()
+    }
+
+    private func montrerEntiteAttendue() {
+        guard let nom = entiteAttendue else { return }
+        if let e = analyseEntites.entite(nommee: nom) {
+            entiteAttendue = nil
+            ficheTouchee = e
+        } else if analyseEntites.etat == .fini {
+            // Un nom que l'analyse n'a pas retenu (un mot seul écarté, une correction) : le panneau
+            // des entités, plutôt que rien.
+            entiteAttendue = nil
+            showEntites = true
+        }
+    }
+
     private func chercherEntite(_ e: EntiteDocument) {
         chercher(e.nom, apres: panneauDuo == .entites ? 0 : 0.5)
     }

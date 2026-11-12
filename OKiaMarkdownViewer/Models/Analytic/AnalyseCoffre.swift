@@ -214,9 +214,21 @@ final class AnalyseCoffre: ObservableObject {
         for doc in index.values {
             let corrigees = CorrectionsEntites.partage.appliquer(doc.entites).filter { !$0.source }
             for var e in corrigees {
-                if let r = CacheEntites.partage.resolution(e.nom, type: e.type, langue: doc.langue) {
+                // La fiche choisie par l'utilisateur l'emporte ; sinon le cache, sauf une fiche
+                // refusée ou « aucune fiche » (comme `AnalyseEntites.completer`).
+                let c = CorrectionsEntites.partage.correction(e.nom)
+                if let f = c?.fiche, c?.sansFiche != true {
+                    e.qid = f.qid
+                    e.description = f.description ?? e.description
+                    e.image = f.image ?? e.image
+                    if let lat = f.latitude, let lon = f.longitude { e.latitude = lat; e.longitude = lon }
+                    if c?.type == nil, let t = f.type { e.type = t }
+                } else if c?.sansFiche != true,
+                          let r = CacheEntites.partage.resolution(e.nom, type: e.type, langue: doc.langue),
+                          !(r.qid.map { c?.qidsRefuses.contains($0) == true } ?? false) {
                     e = AnalyseEntites.appliquer(r, a: e)
                 }
+                if c?.sansImage == true { e.image = nil }
                 // Un mot seul que Wikidata n'a pas confirmé ne se montre pas (`AnalyseEntites.douteuse`).
                 if AnalyseEntites.douteuse(e, langue: doc.langue, wikidataAccepte: wikidataAccepte) { continue }
                 let p = Presence(document: doc.id, nom: doc.nom, date: doc.date, mentions: max(e.mentions, 1))
@@ -253,6 +265,9 @@ final class AnalyseCoffre: ObservableObject {
         .prefix(limite).map { $0 }
     }
 
+    /// La langue d'un document de l'index.
+    func indexLangue(_ id: String) -> String? { index[id]?.langue }
+
     /// Les entités situées, pour la carte.
     var situees: [EntiteDocument] { entites.map(\.entite).filter(\.aDesCoordonnees) }
 
@@ -266,5 +281,60 @@ final class AnalyseCoffre: ObservableObject {
 
     func entite(nommee nom: String) -> EntiteCoffre? {
         entites.first { $0.entite.nom == nom || $0.id == EntiteDocument.cle(nom) }
+    }
+}
+
+// MARK: - Les corrections, depuis l'analyse du coffre (1.5)
+
+/// Les mêmes corrections que sur un document (`MenuSignalerErreur`) : elles valent pour tous les
+/// documents, et le coffre se rassemble aussitôt (Patrick, 12/11/2026 : « on devrait pouvoir
+/// corriger les entités aussi depuis la galerie analytique »).
+extension AnalyseCoffre: CorrecteurEntites {
+    var wikidataAccepte: Bool {
+        AchatAnalytic.partage.acces
+            && UserDefaults.standard.string(forKey: ConsentementWikidata.cle) == ConsentementWikidata.accepte.rawValue
+    }
+
+    var entitesACorriger: [EntiteDocument] { entites.map(\.entite) }
+
+    func corriger(_ e: EntiteDocument, _ changement: (inout CorrectionEntite) -> Void) {
+        CorrectionsEntites.partage.modifier(e.nom, changement)
+        rassembler()
+    }
+
+    func correction(_ e: EntiteDocument) -> CorrectionEntite? { CorrectionsEntites.partage.correction(e.nom) }
+
+    func oublierCorrections(_ e: EntiteDocument) {
+        CorrectionsEntites.partage.oublier(e.nom)
+        rassembler()
+    }
+
+    /// La langue des documents qui nomment l'entité : Wikidata répond dans celle-là.
+    private func langue(de e: EntiteDocument) -> String {
+        let docs = entites.first { $0.id == e.id }?.presences.map(\.document) ?? []
+        return docs.lazy.compactMap { self.indexLangue($0) }.first ?? "fr"
+    }
+
+    func propositions(pour e: EntiteDocument, terme: String?) async throws -> [WikidataCandidat] {
+        try await ResolveurWikidata().propositions(terme ?? e.nom, langue: langue(de: e))
+    }
+
+    func choisirFiche(_ choix: WikidataCandidat, pour e: EntiteDocument) async throws {
+        var r = try await ResolveurWikidata().fiche(choix, type: e.type, langue: langue(de: e))
+        if r.description == nil { r.description = ResolveurWikidata.descriptionLisible(choix.description) }
+        corriger(e) { c in
+            if let ancienne = e.qid, ancienne != choix.id, !c.qidsRefuses.contains(ancienne) { c.qidsRefuses.append(ancienne) }
+            c.qidsRefuses.removeAll { $0 == choix.id }
+            c.fiche = r
+            c.sansFiche = false
+        }
+    }
+
+    func retirerFiche(_ e: EntiteDocument) {
+        corriger(e) { c in
+            if let q = e.qid, !c.qidsRefuses.contains(q) { c.qidsRefuses.append(q) }
+            c.fiche = nil
+            c.sansFiche = true
+        }
     }
 }

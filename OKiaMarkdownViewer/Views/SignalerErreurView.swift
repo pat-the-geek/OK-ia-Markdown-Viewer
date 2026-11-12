@@ -7,9 +7,30 @@ import SwiftUI
 /// Le menu se trouve sur la fiche d'une entité et dans le menu contextuel de la liste et de la
 /// galerie. Les deux choix qui demandent une liste (une autre fiche, l'entité qui la reprend)
 /// ouvrent une feuille, tenue par la vue qui montre le menu.
-struct MenuSignalerErreur: View {
+/// Ce qu'il faut pour corriger une entité : l'analyse d'un document (`AnalyseEntites`) ou celle de
+/// tout le coffre (`AnalyseCoffre`, 1.5 ; Patrick, 12/11/2026 : « on devrait pouvoir corriger les
+/// entités aussi depuis la galerie analytique »). Les corrections sont les mêmes, par nom, pour
+/// tous les documents (`CorrectionsEntites`) ; chacune des deux analyses se refait ensuite.
+@MainActor
+protocol CorrecteurEntites: ObservableObject {
+    var wikidataAccepte: Bool { get }
+    /// Les entités parmi lesquelles choisir « c'est la même que ».
+    var entitesACorriger: [EntiteDocument] { get }
+    func corriger(_ e: EntiteDocument, _ changement: (inout CorrectionEntite) -> Void)
+    func correction(_ e: EntiteDocument) -> CorrectionEntite?
+    func oublierCorrections(_ e: EntiteDocument)
+    func propositions(pour e: EntiteDocument, terme: String?) async throws -> [WikidataCandidat]
+    func choisirFiche(_ choix: WikidataCandidat, pour e: EntiteDocument) async throws
+    func retirerFiche(_ e: EntiteDocument)
+}
+
+extension AnalyseEntites: CorrecteurEntites {
+    var entitesACorriger: [EntiteDocument] { entites }
+}
+
+struct MenuSignalerErreur<A: CorrecteurEntites>: View {
     let entite: EntiteDocument
-    @ObservedObject var analyse: AnalyseEntites
+    @ObservedObject var analyse: A
     /// Ouvre le choix d'une autre fiche Wikidata.
     var autreFiche: () -> Void
     /// Ouvre le choix de l'entité qui reprend celle-ci.
@@ -74,9 +95,9 @@ struct MenuSignalerErreur: View {
 
 /// « Ce n'est pas la bonne fiche » : les fiches que Wikidata connaît pour ce nom, toutes, les plus
 /// anciennes d'abord ; un autre terme peut être cherché (« palais de l'Élysée » pour « Elysée »).
-struct ChoixFicheView: View {
+struct ChoixFicheView<A: CorrecteurEntites>: View {
     let entite: EntiteDocument
-    @ObservedObject var analyse: AnalyseEntites
+    @ObservedObject var analyse: A
 
     @State private var terme = ""
     @State private var propositions: [WikidataCandidat] = []
@@ -177,9 +198,9 @@ struct ChoixFicheView: View {
 
 /// « C'est la même que… » : les autres entités du document. Le nom choisi reprend les mentions
 /// de celui-ci, dans ce document et dans les suivants.
-struct ChoixMemeEntiteView: View {
+struct ChoixMemeEntiteView<A: CorrecteurEntites>: View {
     let entite: EntiteDocument
-    @ObservedObject var analyse: AnalyseEntites
+    @ObservedObject var analyse: A
     /// L'entité a rejoint une autre : une fiche ouverte se referme.
     var reunie: () -> Void = {}
 
@@ -189,7 +210,7 @@ struct ChoixMemeEntiteView: View {
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     private var autres: [EntiteDocument] {
-        let l = analyse.entites.filter { $0.id != entite.id }
+        let l = analyse.entitesACorriger.filter { $0.id != entite.id }
         let f = EntiteDocument.cle(filtre)
         return f.isEmpty ? l : l.filter { $0.id.contains(f) }
     }

@@ -919,6 +919,14 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (e.defaultPrevented || !t || !t.closest) return;
+    // Une entité colorée : l'app ouvre sa fiche (Patrick, 12/11/2026 : « En cliquant sur les
+    // entités on devrait afficher le détail de l'entité »). Pas dans un lien, ni pendant une
+    // sélection de texte.
+    var entite = t.closest('mark.ner-tag');
+    if (entite && !t.closest('a') && !(window.getSelection && String(window.getSelection()).length)) {
+      post('entiteTapped', { nom: entite.textContent.trim() });
+      return;
+    }
     var bouton = t.closest('.okia-agrandir');
     if (bouton) {
       // Le bouton ouvre l'objet de son enveloppe, ou le diagramme qui le porte.
@@ -3595,7 +3603,7 @@
     var t = e.target;
     if (e.defaultPrevented || !t || !t.closest) return;
     if (t.closest('a, img, button, input, select, textarea, summary, table, .okia-map, ' +
-                  'pre, sup.fn-ref, .fn-apercu, .ner-legend, ' + FORNEWS_AGRANDIR)) return;
+                  'pre, sup.fn-ref, .fn-apercu, .ner-legend, mark.ner-tag, ' + FORNEWS_AGRANDIR)) return;
     if (window.getSelection && String(window.getSelection()).length) return;
     post('tapPage', {});
   });

@@ -56,6 +56,8 @@ struct PageLivre: UIViewRepresentable {
     var surDiagramme: (TappedDiagram) -> Void = { _ in }
     var surImage: (TappedImage) -> Void = { _ in }
     var surCarte: (TappedCarte) -> Void = { _ in }
+    /// Une entité colorée touchée : sa fiche.
+    var surEntite: (String) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -66,6 +68,7 @@ struct PageLivre: UIViewRepresentable {
         controller.add(context.coordinator, name: "diagramTapped")
         controller.add(context.coordinator, name: "imageTapped")
         controller.add(context.coordinator, name: "carteTapped")
+        controller.add(context.coordinator, name: "entiteTapped")
         controller.addUserScript(WKUserScript(
             source: Localization.shared.scriptLangue,
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -98,6 +101,9 @@ struct PageLivre: UIViewRepresentable {
             }
             if message.name == "carteTapped", let d = message.body as? [String: Any], let cfg = d["cfg"] as? String {
                 parent.surCarte(TappedCarte(cfg: cfg)); return
+            }
+            if message.name == "entiteTapped", let d = message.body as? [String: Any], let nom = d["nom"] as? String {
+                parent.surEntite(nom); return
             }
             if message.name == "imageTapped", let d = message.body as? [String: Any], let src = d["src"] as? String {
                 parent.surImage(TappedImage(src: src)); return

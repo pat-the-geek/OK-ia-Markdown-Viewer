@@ -418,3 +418,24 @@ remonte ».
       comme après. Compilation Mac réussie.
 - [ ] Pas reproduit tel quel : le coffre d'essai n'a pas de photos Wikidata. À revoir sur le vrai
       Duo avec le coffre de l'iMac.
+
+## Toucher une entité ; corriger depuis l'analyse du coffre (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « En cliquant sur les entités on devrait afficher le détail de l'entité », puis « on
+devrait pouvoir corriger les entités aussi depuis la galerie analytique ».
+
+- [x] Une entité colorée touchée dans la page (`mark.ner-tag`, `render.js`) envoie son nom
+      (`entiteTapped`) ; le lecteur ouvre sa fiche (`FicheEntiteView`) dans une feuille, l'analyse
+      du document lancée au besoin. Aussi dans la page de droite du livre. Pas en mode Annoter ;
+      sans l'option, le panneau des entités ; un nom que l'analyse n'a pas retenu, le panneau aussi.
+- [x] Les corrections communes aux deux analyses (`CorrecteurEntites`) : `MenuSignalerErreur`,
+      `ChoixFicheView`, `ChoixMemeEntiteView` génériques. `AnalyseCoffre` les applique (fiche
+      choisie, aucune fiche, fiche refusée, photo) et se rassemble aussitôt.
+- [x] Dans l'analyse du coffre : menu contextuel des cartes de la galerie et des lignes de la
+      liste ; bouton « Signaler une erreur » sur la fiche d'une entité du coffre.
+- [x] Vu au simulateur iPad : « Nvidia » touché dans un rapport ouvre sa fiche ; les menus
+      s'ouvrent dans la galerie et la fiche du coffre. Compilation Mac réussie.
+- [ ] Pas confirmé au simulateur : le choix final d'un sous-menu (les touchers n'y prennent pas).
+      À essayer sur l'appareil : « Mauvais genre », « Ce n'est pas une entité » depuis la galerie.
+- [ ] Pendant la lecture des documents, la galerie se met à jour tous les dix documents et
+      referme un menu contextuel ouvert.

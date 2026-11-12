@@ -80,6 +80,8 @@ final class ReaderWebController: ObservableObject {
     var onTapPage: (() -> Void)?
     /// Une carte à ouvrir en plein écran (depuis le livre).
     var onCarte: ((TappedCarte) -> Void)?
+    /// Une entité colorée touchée dans la page : son nom, pour ouvrir sa fiche.
+    var onEntite: ((String) -> Void)?
 
     func suivreMiroir(_ actif: Bool) {
         eval("window.OKIA && window.OKIA.suivreMiroir(\(actif))")
