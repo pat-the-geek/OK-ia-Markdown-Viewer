@@ -208,10 +208,13 @@ erreur de syntaxe. Je pense le 1er. »
       touchés. Le fichier n'est pas modifié.
 - [x] Vu dans le lecteur (navigateur, six cas) et au simulateur iPad avec la fiche entière : le
       graphique et ses quatorze dates.
-- [ ] Les fiches viennent des routines Claude « Rapport de veille fornews — IA quotidien » et
+- [x] Les fiches viennent des routines Claude « Rapport de veille fornews — IA quotidien » et
       « Veille hebdomadaire espace et environnement » : leur section Mermaid exige la palette, pas
-      les guillemets des étiquettes (prompt à compléter avec l’accord de Patrick). `reparerXychart`
-      à reprendre dans `MoteurMdViewer` de fornews (fornews 2.0, voir le sens de copie de render.js).
+      les guillemets des étiquettes. Prompts laissés tels quels (Patrick, 12/11/2026 : « Laissons
+      tomber. Md viewer prendra l'erreur en compte ») : l'API ne modifie une routine Cowork qu'en
+      renvoyant toute sa configuration, et Cowork la régénère à chaque modification.
+- [ ] `reparerXychart` à reprendre dans `MoteurMdViewer` de fornews (fornews 2.0, voir le sens de
+      copie de render.js).
 
 ## L'accueil qui se fige (signalé par Patrick le 12 novembre 2026)
 
