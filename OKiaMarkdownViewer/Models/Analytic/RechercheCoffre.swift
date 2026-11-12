@@ -121,7 +121,8 @@ final class RechercheCoffre: ObservableObject {
     private nonisolated static func lire(_ f: Fichier, racineCoffre: URL?) -> String? {
         let scoped = f.source == .coffre && (racineCoffre?.startAccessingSecurityScopedResource() ?? false)
         defer { if scoped { racineCoffre?.stopAccessingSecurityScopedResource() } }
-        return try? String(contentsOf: f.url, encoding: .utf8)
+        // Sans le bloc des annotations inscrites : la recherche porte sur le document.
+        return (try? String(contentsOf: f.url, encoding: .utf8)).map(AnnotationsIntegrees.sans)
     }
 
     // MARK: La recherche

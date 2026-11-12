@@ -172,15 +172,30 @@ enum AnnotationsStore {
         /// L'ancienne clé : le chemin, ou le nom.
         var cle: String?
         var annotations: [Annotation]
+        /// La dernière écriture (1.5.1), comparée à celle du bloc inscrit dans le fichier.
+        var ecrit: Date?
     }
 
     private static func url(_ cle: String) -> URL { SynchroICloud.Genre.annotations.url(cle) }
 
+    /// Les annotations du document : celles d'ici, ou celles inscrites dans son fichier
+    /// (`AnnotationsIntegrees`) quand elles sont plus récentes — un fichier annoté sur un autre
+    /// appareil, copié, partagé. Elles deviennent alors celles d'ici. Les tracés PencilKit d'ici,
+    /// que le fichier ne porte pas, sont gardés.
     static func lire(_ identite: IdentiteDocument, document: MarkdownDocument) -> [Annotation] {
+        let (locales, ecrit) = lireLocales(identite, document: document)
+        guard let bloc = document.integrees, bloc.ecrit > (ecrit ?? .distantPast) else { return locales }
+        let traces = Dictionary(locales.compactMap { a in a.trace.map { (a.id, $0) } }, uniquingKeysWith: { a, _ in a })
+        let duFichier = bloc.annotations.map { a in var a = a; a.trace = a.trace ?? traces[a.id]; return a }
+        if duFichier != locales { ecrire(duFichier, pour: identite, ecrit: bloc.ecrit) }
+        return duFichier
+    }
+
+    private static func lireLocales(_ identite: IdentiteDocument, document: MarkdownDocument) -> ([Annotation], Date?) {
         if let data = try? Data(contentsOf: url(identite.cle)),
            let f = try? JSONDecoder().decode(Fichier.self, from: data),
            f.document == nil || f.document?.empreinte == identite.empreinte {
-            return f.annotations
+            return (f.annotations, f.ecrit)
         }
         // Jusqu'à la 1.4, les commentaires du document comptaient dans son empreinte : ses
         // annotations passent sous la nouvelle clé, une fois, au document ouvert.
@@ -190,9 +205,9 @@ enum AnnotationsStore {
            f.document == nil || f.document?.empreinte == ancienne.empreinte {
             ecrire(f.annotations, pour: identite)
             ecrire([], pour: ancienne)
-            return f.annotations
+            return (f.annotations, nil)
         }
-        return reprendreAncien(identite, document: document)
+        return (reprendreAncien(identite, document: document), nil)
     }
 
     /// Les annotations des builds de test jusqu'à B96 étaient rangées sous l'empreinte du chemin (à
@@ -248,17 +263,19 @@ enum AnnotationsStore {
         let siennes = lire(identite, document: document)
         let deja = Set(siennes.map(\.id))
         let reliees = f.annotations.filter { !deja.contains($0.id) }
-        ecrire(siennes + reliees, pour: identite)
+        let maintenant = Date()
+        ecrire(siennes + reliees, pour: identite, ecrit: maintenant)
+        AnnotationsIntegrees.inscrire(siennes + reliees, document: document, ecrit: maintenant)
         effacer(cle: cle)
         return reliees.count
     }
 
-    static func ecrire(_ annotations: [Annotation], pour identite: IdentiteDocument) {
+    static func ecrire(_ annotations: [Annotation], pour identite: IdentiteDocument, ecrit: Date = Date()) {
         let u = url(identite.cle)
         defer { SynchroICloud.partage.signaler(); DocumentsAnnotes.partage.rafraichir() }
         if annotations.isEmpty { try? FileManager.default.removeItem(at: u); return }
         try? FileManager.default.createDirectory(at: u.deletingLastPathComponent(), withIntermediateDirectories: true)
-        if let data = try? JSONEncoder().encode(Fichier(document: identite, annotations: annotations)) {
+        if let data = try? JSONEncoder().encode(Fichier(document: identite, annotations: annotations, ecrit: ecrit)) {
             try? data.write(to: u, options: .atomic)
         }
     }
@@ -350,7 +367,10 @@ final class AnnotationsDocument: ObservableObject {
     func signalerOrphelines(_ ids: [String]) { orphelines = Set(ids) }
 
     private func enregistrer() {
-        if let identite { AnnotationsStore.ecrire(annotations, pour: identite) }
+        let maintenant = Date()
+        if let identite { AnnotationsStore.ecrire(annotations, pour: identite, ecrit: maintenant) }
+        // Et dans le fichier lui-même, s'il s'écrit (1.5.1).
+        if let document { AnnotationsIntegrees.inscrire(annotations, document: document, ecrit: maintenant) }
         poser()
     }
 

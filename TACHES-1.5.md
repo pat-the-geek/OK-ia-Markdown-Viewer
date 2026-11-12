@@ -367,3 +367,34 @@ Patrick : « Que faire avec les annotations qui n'ont plus de document ? » ; ch
       elles retrouvent le document du coffre ; « Ancien document » effacé après confirmation, les
       autres intacts. Compilation Mac réussie. 15 langues.
 - [ ] À essayer sur l'appareil : relier par le sélecteur de fichiers.
+
+## Les annotations dans le document (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « Penses-tu qu'il est possible de stocker les annotations dans le document ? Sur le
+modèle des images ? » ; choix : « Partout si possible ».
+
+- [x] Le bloc : `<!-- md-viewer-annotations` + JSON + `-->` à la fin du fichier, après une ligne
+      vide (`AnnotationsIntegrees`). Les « -- » du JSON s'écrivent « -\u002d ». Sans le tracé
+      PencilKit (rien ne le relit ; l'image de la note suffit). Hors de l'empreinte, comme tout
+      commentaire : l'écrire ne change pas la clé des annotations.
+- [x] Retiré du texte dès la lecture (`MarkdownLoader`, rapport distant, `OKIA_RENDER_FILE`) : ni
+      le rendu, ni le diaporama, ni les notes de l'orateur ne le voient ; retiré aussi de l'analyse
+      et de la recherche du coffre.
+- [x] Écrit à chaque ajout ou effacement, et au « Relier », hors du fil principal, coordonné, une
+      écriture à la fois — seulement dans un fichier Markdown hors de l'app, lisible en UTF-8, et
+      qui n'a pas changé depuis l'ouverture. Ailleurs (pièce jointe, Word/PDF converti), le
+      stockage local seul.
+- [x] À l'ouverture, le plus récent l'emporte : le bloc (`ecrit`) ou le stockage local (`ecrit`,
+      nouveau ; absent = ancien). Un bloc plus récent devient le stockage local (liste, marque
+      « annoté », iCloud), en gardant les tracés d'ici.
+- [x] Les réécritures du fichier par l'app (note de l'orateur, diapositive masquée) gardent le
+      bloc ; « Partager le Markdown » l'inclut.
+- [x] Vu au simulateur iPad : un fichier annoté « ailleurs » (bloc seul, « -- » et « --> » dans la
+      citation) montre ses deux annotations, et le stockage local les reprend ; « Relier » inscrit
+      le bloc dans un fichier, qui, rouvert sans stockage local, retrouve son surlignage.
+      Compilation Mac réussie.
+- [ ] À essayer sur l'appareil : annoter un document du coffre sur l'iPad, l'ouvrir sur le Mac
+      (coffre sur le partage de l'iMac) ; un fichier d'iCloud Drive ; une pièce jointe (rien
+      d'écrit).
+- [ ] Limite : la marque « annoté » de l'accueil n'apparaît qu'une fois le document ouvert sur
+      cet appareil.

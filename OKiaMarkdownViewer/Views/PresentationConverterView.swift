@@ -444,7 +444,9 @@ final class ConversionEnCours: ObservableObject {
         if masquees.contains(i) { masquees.remove(i) }
         else if masquees.count + 1 < r.diapositives { masquees.insert(i) }
         else { return }
-        if let url = r.document.sourceURL { try? document(r).text.write(to: url, atomically: true, encoding: .utf8) }
+        if let url = r.document.sourceURL {
+            try? AnnotationsIntegrees.reporter(document(r).text, depuis: url).write(to: url, atomically: true, encoding: .utf8)
+        }
     }
 
     /// La présentation telle qu'on la lance ou l'enregistre : les diapositives masquées marquées, et

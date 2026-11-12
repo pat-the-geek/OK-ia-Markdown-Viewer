@@ -64,7 +64,9 @@ enum NotesOrateur {
         var erreur: NSError?
         var ecriture: Error?
         NSFileCoordinator().coordinate(writingItemAt: u, options: .forReplacing, error: &erreur) { cible in
-            do { try texte.write(to: cible, atomically: true, encoding: .utf8) } catch { ecriture = error }
+            // Les annotations inscrites à la fin du fichier y restent (`AnnotationsIntegrees`).
+            let complet = AnnotationsIntegrees.reporter(texte, depuis: cible)
+            do { try complet.write(to: cible, atomically: true, encoding: .utf8) } catch { ecriture = error }
         }
         if let erreur { throw erreur }
         if let ecriture { throw ecriture }

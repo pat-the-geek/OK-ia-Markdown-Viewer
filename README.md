@@ -1705,6 +1705,9 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; version **1.5.1** depu
 - **La liste de toutes les annotations**, qui ouvre chaque document à son annotation (12/11).
 - **Les imports dans le coffre** : dossier `coffre md viewer`, repli sur « Documents analysés »,
   « Mettre dans le coffre » pour les documents déjà analysés (12/11).
+- **Les annotations dans le document** : un commentaire `<!-- md-viewer-annotations … -->` à la
+  fin du fichier, partout où l'app peut écrire ; le stockage local reste, et le plus récent des
+  deux l'emporte (`AnnotationsIntegrees`, 12/11).
 - **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
   coffre en `rapports-*`).
 

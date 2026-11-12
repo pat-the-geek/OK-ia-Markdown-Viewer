@@ -7,6 +7,8 @@ struct MarkdownDocument: Identifiable, Equatable {
     let text: String
     /// Original file URL when opened from disk (nil for the bundled sample); used for sharing.
     var sourceURL: URL?
+    /// Les annotations inscrites à la fin du fichier (`AnnotationsIntegrees`), retirées de `text`.
+    var integrees: AnnotationsIntegrees.Bloc? = nil
 
     static func == (lhs: MarkdownDocument, rhs: MarkdownDocument) -> Bool {
         lhs.id == rhs.id
@@ -44,8 +46,10 @@ enum MarkdownLoader {
             }
         }
 
-        let text = decode(data)
-        return MarkdownDocument(filename: url.lastPathComponent, text: text, sourceURL: url)
+        // Le bloc des annotations inscrites dans le fichier sort du texte : seul le lecteur
+        // d'annotations le lit (`AnnotationsStore.lire`).
+        let (text, integrees) = AnnotationsIntegrees.separer(decode(data))
+        return MarkdownDocument(filename: url.lastPathComponent, text: text, sourceURL: url, integrees: integrees)
     }
 
     /// UTF-8 first, then Latin-1 fallback, then a lossy last resort.

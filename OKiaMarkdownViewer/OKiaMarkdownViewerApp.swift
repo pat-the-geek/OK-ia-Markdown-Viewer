@@ -174,9 +174,9 @@ final class DocumentStore: ObservableObject {
                 }
                 if let data, error == nil {
                     let safeName = self.sanitize(name)
-                    self.document = MarkdownDocument(filename: safeName,
-                                                     text: MarkdownLoader.decode(data),
-                                                     sourceURL: url)
+                    let (texte, integrees) = AnnotationsIntegrees.separer(MarkdownLoader.decode(data))
+                    self.document = MarkdownDocument(filename: safeName, text: texte,
+                                                     sourceURL: url, integrees: integrees)
                     self.recents.addRemote(url: url, name: safeName)
                     self.errorMessage = nil
                 } else {
@@ -660,7 +660,8 @@ struct OKiaMarkdownViewerApp: App {
            let texte = try? String(contentsOfFile: chemin, encoding: .utf8) {
             let name = env["OKIA_RENDER_NAME"] ?? (chemin as NSString).lastPathComponent
             // Avec son fichier : les notes de l'orateur (1.5) s'y écrivent, comme dans un vrai document.
-            store.document = MarkdownDocument(filename: name, text: texte, sourceURL: URL(fileURLWithPath: chemin))
+            let (lu, integrees) = AnnotationsIntegrees.separer(texte)
+            store.document = MarkdownDocument(filename: name, text: lu, sourceURL: URL(fileURLWithPath: chemin), integrees: integrees)
         }
         // OKIA_COFFRE=<dossier> : le coffre, sans le sélecteur (un dossier du conteneur au simulateur) ;
         // OKIA_ANALYSE_COFFRE : ouvre l'analyse de tout le coffre au lancement.

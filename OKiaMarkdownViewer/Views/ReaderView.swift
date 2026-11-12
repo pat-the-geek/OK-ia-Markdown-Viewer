@@ -1563,7 +1563,10 @@ struct ReaderView: View {
         let name = document.filename.hasSuffix(".md") ? document.filename : document.filename + ".md"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
         do {
-            try document.text.data(using: .utf8)?.write(to: url)
+            // Avec ses annotations à la fin, comme dans le fichier (`AnnotationsIntegrees`) : elles
+            // voyagent avec lui.
+            let annotations = AnnotationsStore.lire(IdentiteDocument(document), document: document)
+            try AnnotationsIntegrees.avec(document.text, annotations: annotations).data(using: .utf8)?.write(to: url)
             sharePayload = SharePayload(url: url)
         } catch { /* ignore */ }
     }

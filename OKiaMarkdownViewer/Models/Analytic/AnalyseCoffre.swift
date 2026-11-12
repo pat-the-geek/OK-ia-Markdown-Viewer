@@ -129,7 +129,7 @@ final class AnalyseCoffre: ObservableObject {
             defer { if scoped { racine?.stopAccessingSecurityScopedResource() } }
             for (n, s) in aLire.enumerated() {
                 guard !Task.isCancelled else { return }
-                if let texte = try? String(contentsOf: s.url, encoding: .utf8) {
+                if let texte = (try? String(contentsOf: s.url, encoding: .utf8)).map(AnnotationsIntegrees.sans) {
                     self.index[s.id] = await Self.indexer(texte, source: s)
                 }
                 self.etat = .lecture(fait: n + 1, total: aLire.count)
