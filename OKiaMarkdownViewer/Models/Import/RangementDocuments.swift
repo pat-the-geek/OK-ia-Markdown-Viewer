@@ -123,8 +123,8 @@ enum RangementDocuments {
     /// `analyse` : un document de l'option (import, fiche) ; faux, le texte seul d'une page web, sans
     /// l'option — dans « Pages web », un dossier local de l'app, jamais dans « Documents analysés ».
     ///
-    /// Depuis la 1.5.1, un document de l'option va dans le coffre, dossier « coffre md viewer »
-    /// (`importsDansCoffre`) ; le coffre injoignable (un partage qui dort), dans « Documents
+    /// Depuis la 1.5.1, un document de l'option va dans le coffre, dossier « coffre md viewer », par
+    /// année et par mois (`importsDansCoffre`) ; le coffre injoignable (un partage qui dort), dans « Documents
     /// analysés », et l'import le dit (`estRepli`).
     static func ecrire(_ markdown: String, titre: String, analyse: Bool = true) throws -> URL {
         if analyse, importsDansCoffre, let racine = racineCoffre() {
@@ -202,13 +202,13 @@ enum RangementDocuments {
         return FileManager.default.fileExists(atPath: racine.path, isDirectory: &dossier) && dossier.boolValue
     }
 
-    /// `coffre md viewer/AAAA/MM/JJ` dans le coffre.
+    /// `coffre md viewer/AAAA/MM` dans le coffre : par année et par mois, comme les rapports
+    /// (Patrick, 12/11/2026 : « on prévoit aussi une structure année mois »).
     static func dossierDansCoffre(_ racine: URL, pour date: Date = Date()) -> URL {
-        let c = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
+        let c = Calendar(identifier: .gregorian).dateComponents([.year, .month], from: date)
         return racine.appendingPathComponent(dossierDuCoffre, isDirectory: true)
             .appendingPathComponent(String(format: "%04d", c.year ?? 0), isDirectory: true)
             .appendingPathComponent(String(format: "%02d", c.month ?? 0), isDirectory: true)
-            .appendingPathComponent(String(format: "%02d", c.day ?? 0), isDirectory: true)
     }
 
     /// Les documents rangés dans « Documents analysés » faute de coffre joignable : l'import le dit.
@@ -236,8 +236,8 @@ enum RangementDocuments {
         }
     }
 
-    /// « Mettre dans le coffre » : déplace un document analysé dans `coffre md viewer`, au dossier de
-    /// son jour de création. Le même nom et le même contenu : ses annotations le suivent. Un document
+    /// « Mettre dans le coffre » : déplace un document analysé dans `coffre md viewer`, au dossier du
+    /// mois de sa création. Le même nom et le même contenu : ses annotations le suivent. Un document
     /// identique déjà là : celui de « Documents analysés » est seulement retiré. Hors du fil principal.
     static func mettreDansCoffre(_ source: URL) throws -> URL {
         guard let racine = racineCoffre() else { throw ErreurCoffre.aucun }

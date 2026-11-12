@@ -45103,101 +45103,6 @@
         }
       }
     },
-    "Les documents Word, PDF, PowerPoint et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par jour. Si le coffre n’est pas joignable, dans « Documents analysés ».": {
-      "extractionState": "manual",
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les documents Word, PDF, PowerPoint et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par jour. Si le coffre n’est pas joignable, dans « Documents analysés »."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Imported Word, PDF and PowerPoint documents and web pages go to the “coffre md viewer” folder in the vault, sorted by day. If the vault can’t be reached, to “Analyzed Documents”."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importierte Word-, PDF- und PowerPoint-Dokumente und Webseiten kommen in den Ordner „coffre md viewer“ des Stores, nach Tagen geordnet. Ist der Store nicht erreichbar, in „Analysierte Dokumente“."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los documentos Word, PDF y PowerPoint y las páginas web importados van a la carpeta «coffre md viewer» del Store, ordenados por día. Si el Store no está disponible, a «Documentos analizados»."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I documenti Word, PDF e PowerPoint e le pagine web importati vanno nella cartella «coffre md viewer» dello Store, ordinati per giorno. Se lo Store non è raggiungibile, in «Documenti analizzati»."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "読み込んだWord、PDF、PowerPointの書類とWebページは、保管庫の「coffre md viewer」フォルダに日付ごとに保存されます。保管庫に接続できないときは「分析済みの書類」に保存されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "가져온 Word, PDF, PowerPoint 문서와 웹 페이지는 보관함의 ‘coffre md viewer’ 폴더에 날짜별로 저장됩니다. 보관함에 연결할 수 없으면 ‘분석된 문서’에 저장됩니다."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "导入的 Word、PDF、PowerPoint 文稿和网页会按日期存入资料库的“coffre md viewer”文件夹。无法访问资料库时，存入“已分析的文档”。"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Os documentos Word, PDF e PowerPoint e as páginas web importados vão para a pasta “coffre md viewer” do cofre, organizados por dia. Se o cofre não estiver acessível, para “Documentos analisados”."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geïmporteerde Word-, PDF- en PowerPoint-documenten en webpagina’s gaan naar de map ‘coffre md viewer’ in de kluis, per dag geordend. Is de kluis niet bereikbaar, dan naar ‘Geanalyseerde documenten’."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Импортированные документы Word, PDF, PowerPoint и веб-страницы попадают в папку «coffre md viewer» хранилища, по дням. Если хранилище недоступно — в «Проанализированные документы»."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Імпортовані документи Word, PDF, PowerPoint і вебсторінки потрапляють до папки «coffre md viewer» сховища, за днями. Якщо сховище недоступне — до «Проаналізовані документи»."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "İçe aktarılan Word, PDF ve PowerPoint belgeleri ile web sayfaları, kasadaki “coffre md viewer” klasörüne güne göre kaydedilir. Kasaya ulaşılamazsa “Analiz Edilen Belgeler”e."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tài liệu Word, PDF, PowerPoint và trang web đã nhập được lưu vào thư mục “coffre md viewer” của kho, theo ngày. Nếu không truy cập được kho, vào “Tài liệu đã phân tích”."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आयात किए गए Word, PDF, PowerPoint दस्तावेज़ और वेब पेज वॉल्ट के “coffre md viewer” फ़ोल्डर में दिन के अनुसार रखे जाते हैं। वॉल्ट उपलब्ध न हो तो “विश्लेषित दस्तावेज़” में।"
-          }
-        }
-      }
-    },
     "Mettre dans le coffre": {
       "extractionState": "manual",
       "localizations": {
@@ -45673,101 +45578,6 @@
         }
       }
     },
-    "rangés dans le coffre, dossier « coffre md viewer », au dossier du jour.": {
-      "extractionState": "manual",
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "rangés dans le coffre, dossier « coffre md viewer », au dossier du jour."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "stored in the vault, “coffre md viewer” folder, in today’s folder."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "im Store abgelegt, Ordner „coffre md viewer“, im Ordner des Tages."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "guardados en el Store, carpeta «coffre md viewer», en la carpeta del día."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "archiviati nello Store, cartella «coffre md viewer», nella cartella del giorno."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保管庫の「coffre md viewer」フォルダ内、今日のフォルダに保存されました。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "보관함의 ‘coffre md viewer’ 폴더, 오늘 날짜 폴더에 저장되었습니다."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已存入资料库的“coffre md viewer”文件夹中当天的文件夹。"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "guardados no cofre, pasta “coffre md viewer”, na pasta do dia."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "bewaard in de kluis, map ‘coffre md viewer’, in de map van vandaag."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "сохранены в хранилище, папка «coffre md viewer», в папке дня."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "збережено у сховищі, папка «coffre md viewer», у папці дня."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "kasada, “coffre md viewer” klasöründe, günün klasörüne kaydedildi."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "đã lưu vào kho, thư mục “coffre md viewer”, trong thư mục của ngày."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वॉल्ट के “coffre md viewer” फ़ोल्डर में, आज के फ़ोल्डर में रखे गए।"
-          }
-        }
-      }
-    },
     "Le coffre n’était pas toujours joignable : %d dans « Documents analysés ».": {
       "extractionState": "manual",
       "localizations": {
@@ -45859,6 +45669,196 @@
           "stringUnit": {
             "state": "translated",
             "value": "वॉल्ट हमेशा उपलब्ध नहीं था: %d “विश्लेषित दस्तावेज़” में।"
+          }
+        }
+      }
+    },
+    "Les documents Word, PDF, PowerPoint et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par année et par mois. Si le coffre n’est pas joignable, dans « Documents analysés ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les documents Word, PDF, PowerPoint et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par année et par mois. Si le coffre n’est pas joignable, dans « Documents analysés »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported Word, PDF and PowerPoint documents and web pages go to the “coffre md viewer” folder in the vault, sorted by year and month. If the vault can’t be reached, to “Analyzed Documents”."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importierte Word-, PDF- und PowerPoint-Dokumente und Webseiten kommen in den Ordner „coffre md viewer“ des Stores, nach Jahr und Monat geordnet. Ist der Store nicht erreichbar, in „Analysierte Dokumente“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los documentos Word, PDF y PowerPoint y las páginas web importados van a la carpeta «coffre md viewer» del Store, ordenados por año y mes. Si el Store no está disponible, a «Documentos analizados»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I documenti Word, PDF e PowerPoint e le pagine web importati vanno nella cartella «coffre md viewer» dello Store, ordinati per anno e mese. Se lo Store non è raggiungibile, in «Documenti analizzati»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み込んだWord、PDF、PowerPointの書類とWebページは、保管庫の「coffre md viewer」フォルダに年と月ごとに保存されます。保管庫に接続できないときは「分析済みの書類」に保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "가져온 Word, PDF, PowerPoint 문서와 웹 페이지는 보관함의 ‘coffre md viewer’ 폴더에 연도와 월별로 저장됩니다. 보관함에 연결할 수 없으면 ‘분석된 문서’에 저장됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入的 Word、PDF、PowerPoint 文稿和网页会按年份和月份存入资料库的“coffre md viewer”文件夹。无法访问资料库时，存入“已分析的文档”。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os documentos Word, PDF e PowerPoint e as páginas web importados vão para a pasta “coffre md viewer” do cofre, organizados por ano e mês. Se o cofre não estiver acessível, para “Documentos analisados”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geïmporteerde Word-, PDF- en PowerPoint-documenten en webpagina’s gaan naar de map ‘coffre md viewer’ in de kluis, per jaar en maand geordend. Is de kluis niet bereikbaar, dan naar ‘Geanalyseerde documenten’."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортированные документы Word, PDF, PowerPoint и веб-страницы попадают в папку «coffre md viewer» хранилища, по годам и месяцам. Если хранилище недоступно — в «Проанализированные документы»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Імпортовані документи Word, PDF, PowerPoint і вебсторінки потрапляють до папки «coffre md viewer» сховища, за роками й місяцями. Якщо сховище недоступне — до «Проаналізовані документи»."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İçe aktarılan Word, PDF ve PowerPoint belgeleri ile web sayfaları, kasadaki “coffre md viewer” klasörüne yıla ve aya göre kaydedilir. Kasaya ulaşılamazsa “Analiz Edilen Belgeler”e."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu Word, PDF, PowerPoint và trang web đã nhập được lưu vào thư mục “coffre md viewer” của kho, theo năm và tháng. Nếu không truy cập được kho, vào “Tài liệu đã phân tích”."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आयात किए गए Word, PDF, PowerPoint दस्तावेज़ और वेब पेज वॉल्ट के “coffre md viewer” फ़ोल्डर में वर्ष और महीने के अनुसार रखे जाते हैं। वॉल्ट उपलब्ध न हो तो “विश्लेषित दस्तावेज़” में।"
+          }
+        }
+      }
+    },
+    "rangés dans le coffre, dossier « coffre md viewer », au dossier du mois.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rangés dans le coffre, dossier « coffre md viewer », au dossier du mois."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stored in the vault, “coffre md viewer” folder, in this month’s folder."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "im Store abgelegt, Ordner „coffre md viewer“, im Ordner des Monats."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "guardados en el Store, carpeta «coffre md viewer», en la carpeta del mes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "archiviati nello Store, cartella «coffre md viewer», nella cartella del mese."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫の「coffre md viewer」フォルダ内、今月のフォルダに保存されました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함의 ‘coffre md viewer’ 폴더, 이번 달 폴더에 저장되었습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已存入资料库的“coffre md viewer”文件夹中当月的文件夹。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "guardados no cofre, pasta “coffre md viewer”, na pasta do mês."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bewaard in de kluis, map ‘coffre md viewer’, in de map van deze maand."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "сохранены в хранилище, папка «coffre md viewer», в папке месяца."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "збережено у сховищі, папка «coffre md viewer», у папці місяця."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kasada, “coffre md viewer” klasöründe, ayın klasörüne kaydedildi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đã lưu vào kho, thư mục “coffre md viewer”, trong thư mục của tháng."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट के “coffre md viewer” फ़ोल्डर में, इस महीने के फ़ोल्डर में रखे गए।"
           }
         }
       }

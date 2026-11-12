@@ -112,7 +112,7 @@ passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y e
     encore dans iCloud (`.nom.md.icloud`) comptés. Le dossier `coffre md viewer` est toujours lu,
     quel que soit le motif ;
   - **les imports de l'option** (Word, PDF, PowerPoint, pages web) y vont, dans
-    `coffre md viewer/AAAA/MM/JJ/` (réglage « Ranger les imports dans le coffre », actif par
+    `coffre md viewer/AAAA/MM/` (réglage « Ranger les imports dans le coffre », actif par
     défaut, dans les réglages du coffre) ; le coffre injoignable, dans « Documents analysés », et
     l'import le dit. Un document analysé passe dans le coffre par **« Mettre dans le coffre »**
     (menu de sa carte ou de sa ligne) : même nom, même contenu, ses annotations le suivent

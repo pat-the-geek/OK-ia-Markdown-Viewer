@@ -337,7 +337,7 @@ final class DocumentStore: ObservableObject {
         if let dernier = l.dernier { open(url: dernier) }
         let dansCoffre = RangementDocuments.importsDansCoffre && vault.hasFolder && l.replis < l.importes
         var bilan = tr("%d documents importés", l.importes) + " — "
-            + (dansCoffre ? tr("rangés dans le coffre, dossier « coffre md viewer », au dossier du jour.")
+            + (dansCoffre ? tr("rangés dans le coffre, dossier « coffre md viewer », au dossier du mois.")
                           : tr("rangés dans « Documents analysés », au dossier du jour."))
         if dansCoffre, l.replis > 0 {
             bilan += "\n\n" + tr("Le coffre n’était pas toujours joignable : %d dans « Documents analysés ».", l.replis)

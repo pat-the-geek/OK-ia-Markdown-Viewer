@@ -301,7 +301,7 @@ même lecteur » (option A : dans le coffre, sans autorisation de plus) ; « sur
 prévoir l'option mettre dans le coffre ».
 
 - [x] `RangementDocuments.ecrire` : un document de l'option (import Word, PDF, PowerPoint, fiche de
-      page web) va dans `coffre md viewer/AAAA/MM/JJ/` du coffre, sous le même nom lisible. Le signet
+      page web) va dans `coffre md viewer/AAAA/MM/` du coffre, sous le même nom lisible. Le signet
       du coffre est résolu sans monter de volume, hors du fil principal ; le coffre est relu après.
 - [x] Repli : coffre absent, racine introuvable (partage démonté : jamais de dossier créé sous
       /Volumes) ou écriture refusée → « Documents analysés », et l'import le dit (« Le coffre n'est
@@ -313,7 +313,7 @@ prévoir l'option mettre dans le coffre ».
 - [x] Réglage « Ranger les imports dans le coffre » (actif par défaut) dans le popover des réglages
       du coffre, avec l'option. Le popover a désormais une largeur fixe : ses textes étaient coupés.
 - [x] « Mettre dans le coffre » : menu de la carte, menu contextuel et balayage de la ligne d'un
-      document analysé, quand un coffre est choisi. Le document va au dossier de son jour de
+      document analysé, quand un coffre est choisi. Le document va au dossier du mois de sa
       création, même nom et même contenu (ses annotations le suivent) ; un document identique déjà
       là : celui de « Documents analysés » est seulement retiré. Il quitte les récents (son signet
       ne mène plus nulle part).
@@ -322,6 +322,9 @@ prévoir l'option mettre dans le coffre ».
       repli dans « Documents analysés » avec le message ; « Mettre dans le coffre » le déplace ; le
       réglage s'affiche entier. Compilation Mac réussie. 15 langues (« Store » en allemand,
       espagnol et italien, comme le reste de l'app).
+- [x] Par année et par mois, comme les rapports (Patrick, 12/11 : « on prévoit aussi une structure
+      année mois ») : `coffre md viewer/AAAA/MM/` ; vu au simulateur (`coffre md viewer/2026/11/`).
+      « Documents analysés » garde AAAA/MM/JJ.
 - [ ] À essayer avec le vrai coffre sur le partage de l'iMac (iPhone à travers Tailscale, Mac),
       partage endormi compris.
 - [ ] Pas fait : « Mettre dans le coffre » depuis le lecteur (seulement depuis l'accueil) ; la
