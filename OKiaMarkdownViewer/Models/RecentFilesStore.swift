@@ -21,6 +21,13 @@ final class RecentFilesStore: ObservableObject {
 
     @Published private(set) var items: [RecentFile] = []
 
+    /// Les signets déjà résolus, et leurs chemins. Résoudre un signet touche au disque : pour un
+    /// document d'un partage réseau (l'iMac à travers Tailscale), c'est un aller-retour, parfois
+    /// une attente de plusieurs secondes si le partage dort. L'accueil le faisait pour chaque carte,
+    /// sur le fil principal, à chaque affichage — il se figeait (Patrick, 12/11/2026).
+    private var resolus: [UUID: URL] = [:]
+    private var chemins: [UUID: String] = [:]
+
     private let key = "okia.recentFiles"
     private let maxItems = 12
 
@@ -61,6 +68,7 @@ final class RecentFilesStore: ObservableObject {
     /// Resolves a local recent entry back to a usable URL. Remote entries return nil
     /// (the caller reopens them via their `remoteURLString`).
     func resolve(_ item: RecentFile) -> URL? {
+        if let u = resolus[item.id] { return u }
         guard let bookmark = item.bookmark else { return nil }
         var stale = false
         guard let url = try? URL(resolvingBookmarkData: bookmark, options: [],
@@ -75,7 +83,22 @@ final class RecentFilesStore: ObservableObject {
                 save()
             }
         }
+        resolus[item.id] = url
         return url
+    }
+
+    /// Pour l'accueil : la résolution se fait hors du fil principal, sans jamais monter de volume (un
+    /// partage absent ne fait pas attendre une carte), et elle est gardée.
+    func resoudreHorsFil(_ item: RecentFile) async -> URL? {
+        if let u = resolus[item.id] { return u }
+        guard let b = item.bookmark else { return nil }
+        let u = await Task.detached(priority: .utility) { () -> URL? in
+            var perime = false
+            return try? URL(resolvingBookmarkData: b, options: [.withoutMounting], relativeTo: nil,
+                            bookmarkDataIsStale: &perime)
+        }.value
+        if let u { resolus[item.id] = u }
+        return u
     }
 
     /// Retire des récents le fichier qu'on va supprimer : son signet le suivrait jusqu'à la corbeille.
@@ -101,11 +124,15 @@ final class RecentFilesStore: ObservableObject {
 
     /// Le chemin d'un récent local, sans rafraîchir son signet (au contraire de `resolve`).
     private func cheminSansEffet(_ item: RecentFile) -> String? {
+        if let c = chemins[item.id] { return c }
         guard let b = item.bookmark else { return nil }
         var perime = false
-        guard let u = try? URL(resolvingBookmarkData: b, options: [], relativeTo: nil, bookmarkDataIsStale: &perime)
+        guard let u = resolus[item.id]
+                ?? (try? URL(resolvingBookmarkData: b, options: [], relativeTo: nil, bookmarkDataIsStale: &perime))
         else { return nil }
-        return Self.chemin(u)
+        let c = Self.chemin(u)
+        chemins[item.id] = c
+        return c
     }
 
     func remove(_ item: RecentFile) {

@@ -118,10 +118,16 @@ struct VaultSectionView: View {
     private func carte(_ report: VaultReport) -> some View {
         CarteDocument(nom: (report.name as NSString).deletingPathExtension,
                       mention: report.mentionDossier + DecoupageParDate.mention(pour: report.modified),
-                      resoudre: { report.downloaded ? vault.reportURL(report).map { ($0, vault.resolveFolder()) } : nil },
+                      resoudre: { await resoudre(report) },
                       action: { onOpen(report) }) {
             Button(role: .destructive) { onDelete(report) } label: { Label(tr("Supprimer"), systemImage: "trash") }
         }
+    }
+
+    /// Le fichier d'une carte et la racine dont il faut ouvrir l'accès, résolus hors du fil principal.
+    private func resoudre(_ report: VaultReport) async -> (url: URL, portee: URL?)? {
+        guard report.downloaded, let r = await vault.racineHorsFil() else { return nil }
+        return (r.appendingPathComponent(report.subfolder).appendingPathComponent(report.name), r)
     }
 
     private func ligne(_ report: VaultReport) -> some View {
@@ -138,7 +144,7 @@ struct VaultSectionView: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 4)
-                    MarqueAnnoteeLigne(resoudre: { report.downloaded ? vault.reportURL(report).map { ($0, vault.resolveFolder()) } : nil })
+                    MarqueAnnoteeLigne(resoudre: { await resoudre(report) })
                 }
             } icon: {
                 Image(systemName: report.downloaded ? "doc.text" : "arrow.down.doc")

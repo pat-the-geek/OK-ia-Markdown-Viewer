@@ -59,6 +59,10 @@ final class VaultStore: ObservableObject {
     nonisolated static let extensions: Set<String> = ["md", "markdown"]
 
     private var bookmark: Data?
+    /// La racine résolue, gardée : chaque carte du coffre la demandait deux fois, sur le fil
+    /// principal, et un partage réseau lent figeait l'accueil (Patrick, 12/11/2026). Oubliée quand
+    /// le dossier change ; recalculée hors du fil principal par une relecture forcée.
+    private var racine: URL?
 
     init() {
         bookmark = UserDefaults.standard.data(forKey: folderKey)
@@ -70,7 +74,9 @@ final class VaultStore: ObservableObject {
             pattern = VaultStore.defaultPattern
         }
         #endif
-        folderName = resolveFolder()?.lastPathComponent ?? UserDefaults.standard.string(forKey: nameKey)
+        // Le nom gardé d'abord : résoudre le signet d'un partage réseau au lancement, sur le fil
+        // principal, faisait attendre l'app.
+        folderName = UserDefaults.standard.string(forKey: nameKey) ?? resolveFolder()?.lastPathComponent
         chargerListe()
     }
 
@@ -116,6 +122,7 @@ final class VaultStore: ObservableObject {
         guard let data = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         else { return false }
         bookmark = data
+        racine = nil
         UserDefaults.standard.set(data, forKey: folderKey)
         UserDefaults.standard.set(url.lastPathComponent, forKey: nameKey)
         folderName = url.lastPathComponent
@@ -135,6 +142,7 @@ final class VaultStore: ObservableObject {
 
     func clearFolder() {
         bookmark = nil
+        racine = nil
         UserDefaults.standard.removeObject(forKey: folderKey)
         UserDefaults.standard.removeObject(forKey: nameKey)
         folderName = nil
@@ -144,6 +152,7 @@ final class VaultStore: ObservableObject {
 
     /// Resolve the stored bookmark to the vault root URL. Caller manages security scope when reading.
     func resolveFolder() -> URL? {
+        if let racine { return racine }
         guard let bookmark else { return nil }
         var stale = false
         // Sans monter le volume : un partage déconnecté ferait attendre le fil principal le temps
@@ -158,7 +167,21 @@ final class VaultStore: ObservableObject {
                 UserDefaults.standard.set(fresh, forKey: folderKey)
             }
         }
+        racine = url
         return url
+    }
+
+    /// La racine pour l'accueil : la gardée, ou résolue hors du fil principal, sans monter de volume.
+    func racineHorsFil() async -> URL? {
+        if let racine { return racine }
+        guard let marque = bookmark else { return nil }
+        let u = await Task.detached(priority: .utility) { () -> URL? in
+            var perime = false
+            return try? URL(resolvingBookmarkData: marque, options: [.withoutMounting], relativeTo: nil,
+                            bookmarkDataIsStale: &perime)
+        }.value
+        if racine == nil, bookmark == marque { racine = u }
+        return u
     }
 
     func reportURL(_ report: VaultReport) -> URL? {
@@ -212,11 +235,14 @@ final class VaultStore: ObservableObject {
         var monter = forcee
         repeat {
             relireEnsuite = false
-            let rapide = resolveFolder()
+            // Forcée, la racine gardée est oubliée et résolue de nouveau, hors du fil principal.
+            if monter { racine = nil }
+            let rapide = racine
             let motif = pattern
-            let lecture = await Task.detached(priority: monter ? .userInitiated : .utility) {
+            let (lecture, lue) = await Task.detached(priority: monter ? .userInitiated : .utility) {
                 Self.lire(rapide: rapide, marque: marque, motif: motif, monter: monter)
             }.value
+            if let lue, racine == nil { racine = lue }
             if let lecture { publier(lecture) } else { publierInjoignable() }
             monter = true
         } while relireEnsuite
@@ -226,14 +252,18 @@ final class VaultStore: ObservableObject {
     /// La lecture du dossier résolu sans montage ; s'il ne répond pas et que `monter`, le signet
     /// est résolu à nouveau en laissant le système monter le volume (un partage SMB de l'iMac,
     /// déconnecté), puis relu. Nil : le dossier reste introuvable.
-    nonisolated private static func lire(rapide: URL?, marque: Data, motif: String, monter: Bool) -> Lecture? {
-        var lecture: Lecture?
-        if let rapide { lecture = lire(racine: rapide, motif: motif) }
-        guard monter, lecture?.lu != true else { return lecture }
+    nonisolated private static func lire(rapide: URL?, marque: Data, motif: String,
+                                         monter: Bool) -> (Lecture?, URL?) {
         var perime = false
+        // Sans racine gardée, le signet se résout ici, hors du fil principal, sans monter.
+        let sansMonter = rapide ?? (try? URL(resolvingBookmarkData: marque, options: [.withoutMounting],
+                                             relativeTo: nil, bookmarkDataIsStale: &perime))
+        var lecture: Lecture?
+        if let sansMonter { lecture = lire(racine: sansMonter, motif: motif) }
+        guard monter, lecture?.lu != true else { return (lecture, sansMonter) }
         guard let monte = try? URL(resolvingBookmarkData: marque, options: [], relativeTo: nil,
-                                   bookmarkDataIsStale: &perime) else { return lecture }
-        return lire(racine: monte, motif: motif)
+                                   bookmarkDataIsStale: &perime) else { return (lecture, sansMonter) }
+        return (lire(racine: monte, motif: motif), monte)
     }
 
     private func publier(_ l: Lecture) {

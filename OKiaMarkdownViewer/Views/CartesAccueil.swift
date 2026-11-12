@@ -336,7 +336,7 @@ struct CarteDocument<Menu: View>: View {
     let nom: String
     let mention: String
     /// Le document et l'URL dont il faut ouvrir l'accès ; nil pour un rapport distant.
-    var resoudre: () -> (url: URL, portee: URL?)?
+    var resoudre: () async -> (url: URL, portee: URL?)?
     var action: () -> Void
     @ViewBuilder var menu: () -> Menu
 
@@ -370,7 +370,7 @@ struct CarteDocument<Menu: View>: View {
         .buttonStyle(.plain)
         .contextMenu(menuItems: menu)
         .task {
-            guard apercu == nil, let (url, portee) = resoudre() else { return }
+            guard apercu == nil, let (url, portee) = await resoudre() else { return }
             cleCadrage = url.path
             apercu = await ApercusDocuments.partage.apercu(url, portee: portee)
         }
@@ -446,14 +446,14 @@ struct MarqueAnnotee: View {
 /// La même marque au bout d'une ligne de l'accueil : la ligne ne calcule pas d'aperçu, la marque
 /// le demande (il est gardé, la carte le retrouve).
 struct MarqueAnnoteeLigne: View {
-    var resoudre: () -> (url: URL, portee: URL?)?
+    var resoudre: () async -> (url: URL, portee: URL?)?
     @State private var cle: String?
     @State private var cleAncienne: String?
 
     var body: some View {
         MarqueAnnotee(cle: cle, cleAncienne: cleAncienne)
             .task {
-                guard cle == nil, let (url, portee) = resoudre() else { return }
+                guard cle == nil, let (url, portee) = await resoudre() else { return }
                 let a = await ApercusDocuments.partage.apercu(url, portee: portee)
                 cle = a.cleAnnotations
                 cleAncienne = a.cleAncienne

@@ -212,3 +212,22 @@ erreur de syntaxe. Je pense le 1er. »
       « Veille hebdomadaire espace et environnement » : leur section Mermaid exige la palette, pas
       les guillemets des étiquettes (prompt à compléter avec l’accord de Patrick). `reparerXychart`
       à reprendre dans `MoteurMdViewer` de fornews (fornews 2.0, voir le sens de copie de render.js).
+
+## L'accueil qui se fige (signalé par Patrick le 12 novembre 2026)
+
+Patrick, capture de l'accueil sur iPhone à l'appui : « À certain moment l'écran principal de md
+Viewer colle ». Son coffre est le partage de l'iMac, à travers Tailscale.
+
+- [x] Cause probable, lue dans le code (pas reproduite : le simulateur n'a pas de partage lent) :
+      l'accueil résolvait des signets sur le fil principal. Chaque carte du coffre résolvait deux
+      fois celui du dossier ; chaque carte des récents le sien, en autorisant le montage du
+      volume ; le coffre aussi au lancement, pour son nom. Résoudre un signet touche au disque :
+      sur un partage réseau, c'est un aller-retour, et une longue attente si le partage dort.
+- [x] Le coffre garde sa racine résolue (`racine`), la résout hors du fil principal pour l'accueil
+      (`racineHorsFil`) et pour ses relectures, et montre au lancement le nom gardé.
+- [x] Les récents gardent leurs signets résolus et leurs chemins ; l'accueil les résout hors du fil
+      principal, sans monter de volume (`resoudreHorsFil`). Les cartes demandent leur document
+      de façon asynchrone (`CarteDocument.resoudre`).
+- [x] Vu au simulateur iPad (coffre de test, 300 ms par dossier) : cartes et vignettes du coffre et
+      des récents, ouverture d'une fiche du coffre, retour à l'accueil.
+- [ ] À essayer sur l'iPhone, avec le partage de l'iMac (build 159).

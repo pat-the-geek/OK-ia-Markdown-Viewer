@@ -279,7 +279,7 @@ struct EmptyStateView: View {
     private func carteRecente(_ item: RecentFile) -> some View {
         CarteDocument(nom: (item.name as NSString).deletingPathExtension,
                       mention: mentionRecente(item),
-                      resoudre: { recentsStore.resolve(item).map { ($0, $0) } },
+                      resoudre: { await recentsStore.resoudreHorsFil(item).map { ($0, $0) } },
                       action: { onRecent(item) }) {
             BoutonNouvelleFenetre {
                 DocumentAOuvrir(nom: item.name, signet: item.bookmark, adresse: item.remoteURLString)
@@ -325,7 +325,7 @@ struct EmptyStateView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 4)
-                    MarqueAnnoteeLigne(resoudre: { recentsStore.resolve(item).map { ($0, $0) } })
+                    MarqueAnnoteeLigne(resoudre: { await recentsStore.resoudreHorsFil(item).map { ($0, $0) } })
                 }
             } icon: {
                 Image(systemName: item.isRemote ? "arrow.down.doc" : "doc.richtext")
