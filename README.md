@@ -15,8 +15,9 @@ PowerPoint). Tout fonctionne **100 % hors-ligne** — `marked`, `mermaid` et `le
 dans l'app.
 
 Distribution : **App Store** (en vente : la **1.4** sur iPhone, iPad et Mac) ; les préversions
-passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y est en test depuis le
-11 novembre 2026 (build 155 sous le numéro 1.5).
+passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5** y est en test depuis le
+6 novembre 2026 (builds 156 à 164 sous le numéro 1.5.1, demandé par erreur, puis de nouveau 1.5
+dès le build 165).
 
 ---
 
@@ -104,7 +105,7 @@ passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y e
 - **Fichiers récents** : les derniers `.md` ouverts sont mémorisés (bookmarks security-scoped) et
   proposés sur l'écran d'accueil.
 - **Le coffre** : un dossier choisi une fois (signet security-scoped), dont les documents
-  s'affichent sur l'accueil (`Models/VaultStore.swift`). Depuis la 1.5.1 :
+  s'affichent sur l'accueil (`Models/VaultStore.swift`). Depuis la 1.5 :
   - **ce qu'il lit** : les `.md` et `.markdown` **de la racine**, et ceux de **tous les niveaux**
     des sous-dossiers de premier niveau que retient le **motif** des réglages (`*` par défaut,
     `rapports-*` jusqu'à la 1.5 — la forme du coffre de fornews). Une structure année / mois est
@@ -1510,7 +1511,7 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    - **Un rapport fornews est exploité d'abord** : sa section `## Entités`, ses balises de dates et
      de montants, ses cartes `leaflet`, ses sources. On ne va chercher sur **Wikidata** que ce que
      le document ne donne pas.
-   - *Depuis la 1.5.1* (`LecteurRapportFornews`, et `extractEntities` dans `render.js`) : la section
+   - *Depuis la 1.5* (`LecteurRapportFornews`, et `extractEntities` dans `render.js`) : la section
      se reconnaît à **tout niveau de titre**, ses genres au niveau suivant — une fiche
      « personnalité du jour » l'écrit en `### Entités` / `####` — et une ligne peut porter **toutes
      les entités d'un genre** (`[[Microsoft]] (1674) · [[OpenAI]] (1060)`). Les « Thèmes » ne sont
@@ -1553,7 +1554,7 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    nom et l'empreinte de son contenu), et passent d'un appareil à l'autre par l'iCloud privé
    (CloudKit). On annote dans le lecteur, **le livre** et **le diaporama** ; les annotations partent
    dans l'**export PDF** et dans l'**export Word** (surlignages de Word, notes en commentaires).
-   Sur l'accueil, **un stabilo orange marque les documents annotés** (B135). Depuis la 1.5.1, **la
+   Sur l'accueil, **un stabilo orange marque les documents annotés** (B135). Depuis la 1.5, **la
    liste de toutes les annotations** (le surligneur de la barre de l'accueil, ⇧⌘A sur Mac), document
    par document : toucher une annotation ouvre son document, qui défile jusqu'à elle et la signale
    d'un halo (`Views/ListeAnnotationsView.swift`). Les annotations d'un document introuvable se
@@ -1681,10 +1682,12 @@ ici `targetEnvironment(macCatalyst)`. Pas d'essai de 7 jours, un aperçu ; parta
 
 Liste des tâches : `TACHES-1.4.md`.
 
-### 1.5 — les notes de l'orateur (version 1.5.1)
+### 1.5 — les notes de l'orateur
 
 **Décidé par Patrick le 2026-11-06** : tous les points restants de la 1.4 vont à la 1.5. En test
-sur TestFlight depuis le 6 novembre (builds 152 à 155) ; version **1.5.1** depuis le 11 novembre.
+sur TestFlight depuis le 6 novembre (builds 152 à 155) ; numérotée **1.5.1** du 11 au 12 novembre
+(builds 156 à 164, par erreur, Patrick : « j'ai demandé avec erreur le 1.5.1 »), puis de nouveau
+**1.5**.
 
 - **Notes de l'orateur** (option Analytic) : écrites dans l'app, proposées par la conversion en
   présentation (jamais un chiffre absent du rapport), reprises dans l'export PowerPoint.
