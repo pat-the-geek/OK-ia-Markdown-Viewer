@@ -415,12 +415,106 @@ final class DocumentStore: ObservableObject {
             openRemote(url)
             return
         }
-        guard let url = recents.resolve(item) else {
-            errorMessage = tr("Ce fichier n’est plus accessible.")
-            recents.remove(item)
-            return
+        ouvrirHorsFil(nom: item.name, trouver: { [weak self] in
+            guard let self else { return nil }
+            guard let url = await self.recents.resoudrePourOuvrir(item) else {
+                self.errorMessage = tr("Ce fichier n’est plus accessible.")
+                self.recents.remove(item)
+                return nil
+            }
+            return (url, nil)
+        })
+    }
+
+    // MARK: Ouverture hors du fil principal (1.5.1)
+
+    /// Le nom du document en cours d'ouverture, montré par un bandeau « Ouverture de … » ; nil le
+    /// reste du temps. Patrick, 12/11/2026 : la liste collait au changement de document, sans rien
+    /// dire — le fichier se lisait sur le fil de l'écran, et un partage réseau (l'iMac à travers
+    /// Tailscale) ou un fichier iCloud encore dans le nuage met des secondes à répondre.
+    @Published private(set) var ouverture: String?
+    /// La dernière ouverture demandée : un autre document choisi entre-temps l'emporte.
+    private var jetonOuverture = UUID()
+
+    /// Trouve le fichier (`trouver`, qui dit lui-même ce qui manque), le lit hors du fil principal avec
+    /// son signet pour les récents, puis l'affiche. `portee` : le dossier qui détient l'accès (le
+    /// coffre), ouvert le temps de lire. Le bandeau n'apparaît qu'après un instant : un fichier local
+    /// s'ouvre avant, sans clignoter.
+    func ouvrirHorsFil(nom: String, echec: String? = nil,
+                       trouver: @escaping () async -> (url: URL, portee: URL?)?) {
+        let jeton = UUID()
+        jetonOuverture = jeton
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            guard let self, self.jetonOuverture == jeton else { return }
+            withAnimation(.easeOut(duration: 0.2)) { self.ouverture = nom }
         }
-        open(url: url)
+        Task { [weak self] in
+            guard let self else { return }
+            guard let trouve = await trouver(), self.jetonOuverture == jeton else {
+                if self.jetonOuverture == jeton { self.finOuverture() }
+                return
+            }
+            let url = trouve.url, portee = trouve.portee
+            let lu = await Task.detached(priority: .userInitiated) { () -> (Result<MarkdownDocument, Error>, Data?) in
+                let ouvert = portee?.startAccessingSecurityScopedResource() ?? false
+                let propre = url.startAccessingSecurityScopedResource()
+                defer {
+                    if propre { url.stopAccessingSecurityScopedResource() }
+                    if ouvert { portee?.stopAccessingSecurityScopedResource() }
+                }
+                #if DEBUG
+                // OKIA_LATENCE_COFFRE=<ms> : le fichier répond avec ce retard, comme sur un partage lointain.
+                if let ms = Double(ProcessInfo.processInfo.environment["OKIA_LATENCE_COFFRE"] ?? "") {
+                    Thread.sleep(forTimeInterval: ms / 1000)
+                }
+                #endif
+                // Un fichier iCloud pas encore descendu (le lecteur coordonné attend la suite).
+                if !FileManager.default.fileExists(atPath: url.path) {
+                    try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+                }
+                do {
+                    let doc = try MarkdownLoader.load(from: url)
+                    let signet = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+                    return (.success(doc), signet)
+                } catch {
+                    return (.failure(error), nil)
+                }
+            }.value
+            guard self.jetonOuverture == jeton else { return }
+            self.finOuverture()
+            switch lu.0 {
+            case .success(let doc):
+                self.document = doc
+                if let s = lu.1 { self.recents.add(url: url, signet: s) }
+                self.errorMessage = nil
+            case .failure(let e):
+                self.errorMessage = echec ?? e.localizedDescription
+            }
+        }
+    }
+
+    private func finOuverture() {
+        jetonOuverture = UUID()
+        withAnimation(.easeOut(duration: 0.2)) { ouverture = nil }
+    }
+
+    /// Un fichier choisi dans une liste (les documents analysés), lu hors du fil principal.
+    func ouvrirHorsFil(url: URL) {
+        ouvrirHorsFil(nom: url.lastPathComponent) { (url, nil) }
+    }
+
+    /// Un rapport du coffre, lu hors du fil principal : la liste du coffre à l'accueil, la fiche d'une
+    /// entité. Les Raccourcis et Spotlight gardent `openVaultReport`, qui rend la main avec le document.
+    func ouvrirRapportHorsFil(_ report: VaultReport) {
+        ouvrirHorsFil(nom: report.name,
+                      echec: tr("Impossible d’ouvrir « %@ » (synchronisation iCloud en cours ?).", report.name)) { [weak self] in
+            guard let self else { return nil }
+            guard let dossier = await self.vault.racineHorsFil() else {
+                self.errorMessage = tr("Le dossier du coffre n’est plus accessible.")
+                return nil
+            }
+            return (dossier.appendingPathComponent(report.subfolder).appendingPathComponent(report.name), dossier)
+        }
     }
 
     /// Opens a report from the watched vault folder (downloading from iCloud if needed).

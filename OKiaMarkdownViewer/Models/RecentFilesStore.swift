@@ -37,6 +37,12 @@ final class RecentFilesStore: ObservableObject {
     func add(url: URL) {
         guard let data = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         else { return }
+        add(url: url, signet: data)
+    }
+
+    /// Le même, avec un signet fait hors du fil principal (`DocumentStore.ouvrirHorsFil`) : sur un
+    /// partage réseau, le faire ici figeait l'écran.
+    func add(url: URL, signet data: Data) {
         let chemin = Self.chemin(url)
         insert(RecentFile(name: url.lastPathComponent, bookmark: data, remoteURLString: nil, openedAt: Date())) { item in
             guard item.bookmark != nil else { return false }
@@ -96,6 +102,19 @@ final class RecentFilesStore: ObservableObject {
             var perime = false
             return try? URL(resolvingBookmarkData: b, options: [.withoutMounting], relativeTo: nil,
                             bookmarkDataIsStale: &perime)
+        }.value
+        if let u { resolus[item.id] = u }
+        return u
+    }
+
+    /// Pour ouvrir un récent : la résolution se fait hors du fil principal, et peut monter le volume
+    /// (au contraire de `resoudreHorsFil`) — on attend ce document-là, le bandeau d'ouverture le dit.
+    func resoudrePourOuvrir(_ item: RecentFile) async -> URL? {
+        if let u = resolus[item.id] { return u }
+        guard let b = item.bookmark else { return nil }
+        let u = await Task.detached(priority: .userInitiated) { () -> URL? in
+            var perime = false
+            return try? URL(resolvingBookmarkData: b, options: [], relativeTo: nil, bookmarkDataIsStale: &perime)
         }.value
         if let u { resolus[item.id] = u }
         return u

@@ -246,3 +246,21 @@ la liste se rafraîchit et je ne peux pas bien naviguer. »
 - [x] Vu au simulateur du Duo (coffre de test, 42 documents) : après défilement, la barre reste
       entière, le résumé ne bouge plus.
 - [ ] À essayer sur le vrai Duo.
+
+## La liste des documents qui colle à l'ouverture (signalé par Patrick le 12 novembre 2026)
+
+Patrick, après le build 160 : « La liste des documents colle encore un peu. Lors du changement d'un
+document, peut-on avoir une information qui dise que le chargement est en cours ? »
+
+- [x] Cause : toucher un document de l'accueil (coffre, récents, documents analysés) ou de la fiche
+      d'une entité lisait le fichier sur le fil principal, puis en faisait le signet des récents.
+      Sur le partage de l'iMac ou un fichier iCloud encore dans le nuage, des secondes d'écran figé.
+- [x] `DocumentStore.ouvrirHorsFil` : le fichier est trouvé, lu et son signet fait hors du fil
+      principal ; le dernier document choisi l'emporte. Les Raccourcis, Spotlight et les fenêtres
+      restaurées gardent `openVaultReport` / `open(url:)`, qui rendent la main avec le document.
+- [x] Un bandeau « Ouverture de « … »… » en bas de l'écran (accueil comme lecteur), après 0,15 s
+      pour ne pas clignoter sur un fichier local ; traduit dans les 15 langues.
+- [x] Vu au simulateur iPad (`OKIA_LATENCE_COFFRE`, qui ralentit aussi la lecture d'un document,
+      en Debug) : le bandeau s'affiche, l'écran répond pendant le chargement, un second document
+      touché remplace le premier. Compilation Mac réussie.
+- [ ] À essayer sur l'iPhone et le Duo, avec le partage de l'iMac.

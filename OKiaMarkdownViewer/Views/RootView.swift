@@ -48,9 +48,18 @@ struct RootView: View {
                     onSample: { store.openSample() },
                     onRecent: { store.openRecent($0) },
                     onPickVault: { importFolder = true; importOffice = false; showImporter = true },
-                    onOpenVault: { store.openVaultReport($0) },
-                    onOpenAnalyse: { store.open(url: $0) }
+                    onOpenVault: { store.ouvrirRapportHorsFil($0) },
+                    onOpenAnalyse: { store.ouvrirHorsFil(url: $0) }
                 )
+            }
+        }
+        // Un document en cours d'ouverture (lu hors du fil principal) : on le dit, au lieu d'une liste
+        // qui semble coller (Patrick, 12/11/2026).
+        .overlay(alignment: .bottom) {
+            if let nom = store.ouverture {
+                BandeauOuverture(nom: nom)
+                    .padding(.bottom, 28)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         // One importer for both modes — `importFolder` selects file vs. vault folder.
@@ -128,7 +137,7 @@ struct RootView: View {
             // elle est encore vide.
             if !store.vault.reports.contains(where: { $0.id == id }) { store.vault.refresh() }
             guard let r = store.vault.reports.first(where: { $0.id == id }) else { return }
-            store.openVaultReport(r)
+            store.ouvrirRapportHorsFil(r)
         }
         // L'analyse de tout le coffre (option Analytic).
         .onReceive(NotificationCenter.default.publisher(for: .okiaAnalyseCoffre)) { n in
@@ -266,5 +275,29 @@ extension View {
         } else {
             sheet(isPresented: isPresented) { contenu().presentationSizing(.page) }
         }
+    }
+}
+
+/// « Ouverture de … » : le document choisi se lit (un partage réseau, un fichier iCloud encore dans le
+/// nuage). Une pastille en bas de l'écran, au-dessus de l'accueil comme du lecteur.
+private struct BandeauOuverture: View {
+    let nom: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+            // Le nom sans « .md », comme sur les cartes.
+            Text(tr("Ouverture de « %@ »…", (nom as NSString).deletingPathExtension))
+                .font(.callout)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.regularMaterial, in: Capsule())
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        .padding(.horizontal, 24)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
