@@ -455,6 +455,16 @@ struct PptxSlide {
     var notes: String = ""
 }
 
+/// Le thème « à vos couleurs » (1.6) dans le PowerPoint : fond, texte, accent et police dans le
+/// thème et le masque, le logo dans la disposition (sur toutes les diapositives). Couleurs sans « # ».
+struct MarquePptx {
+    var fond: String
+    var texte: String
+    var accent: String
+    var police: String
+    var logo: Data?
+}
+
 enum PptxBuilder {
     // 16:9 slide, EMU.
     static let slideW = 12192000, slideH = 6858000
@@ -471,7 +481,7 @@ enum PptxBuilder {
         case image(OOXMLImage)
     }
 
-    static func build(slides: [PptxSlide], transition: String? = nil) -> Data {
+    static func build(slides: [PptxSlide], transition: String? = nil, marque: MarquePptx? = nil) -> Data {
         let entree = transitionXML(transition)
         var zip = OOXMLZip()
         var slideOverrides = ""
@@ -486,7 +496,8 @@ enum PptxBuilder {
             let n = i + 1
             let rid = "rId\(n + 1)"
             var images: [(name: String, img: OOXMLImage)] = []
-            let xml = slideXML(slide, slideIndex: n, images: &images, transition: entree)
+            var xml = slideXML(slide, slideIndex: n, images: &images, transition: entree)
+            if let marque { xml = teinter(xml, marque) }
             zip.add("ppt/slides/slide\(n).xml", xml: xml)
 
             var rels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout\" Target=\"../slideLayouts/slideLayout1.xml\"/>"
@@ -515,19 +526,30 @@ enum PptxBuilder {
             zip.add("ppt/notesMasters/notesMaster1.xml", xml: notesMaster)
             zip.add("ppt/notesMasters/_rels/notesMaster1.xml.rels", xml: relsDoc(
                 "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"../theme/theme2.xml\"/>"))
-            zip.add("ppt/theme/theme2.xml", xml: theme1)
+            zip.add("ppt/theme/theme2.xml", xml: theme(marque))
         }
         zip.add("[Content_Types].xml", xml: contentTypes(slideOverrides))
         zip.add("_rels/.rels", xml: rootRels)
         zip.add("ppt/presentation.xml", xml: presentationXML(sldIdList, masqueNotes: avecNotes ? ridMasqueNotes : nil))
         zip.add("ppt/_rels/presentation.xml.rels", xml: relsDoc(presRels))
-        zip.add("ppt/slideMasters/slideMaster1.xml", xml: slideMaster)
+        zip.add("ppt/slideMasters/slideMaster1.xml", xml: masque(marque))
         zip.add("ppt/slideMasters/_rels/slideMaster1.xml.rels", xml: relsDoc(
             "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout\" Target=\"../slideLayouts/slideLayout1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"../theme/theme1.xml\"/>"))
-        zip.add("ppt/slideLayouts/slideLayout1.xml", xml: slideLayout)
+        // Le logo du thème « à vos couleurs », en bas à droite de chaque diapositive.
+        var logoXML = "", logoRel = ""
+        if let logo = marque?.logo, let image = UIImageTaille.taille(logo) {
+            zip.add("ppt/media/marque-logo.png", logo)
+            logoRel = "<Relationship Id=\"rIdLogo\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"../media/marque-logo.png\"/>"
+            let hMax = 560_000, wMax = 1_700_000
+            let ar = image.width / max(image.height, 1)
+            var w = Int(Double(hMax) * ar), h = hMax
+            if w > wMax { w = wMax; h = Int(Double(wMax) / max(ar, 0.01)) }
+            logoXML = pictureXML(rid: "rIdLogo", id: 90, x: slideW - marginX / 2 - w, y: slideH - 240_000 - h, w: w, h: h)
+        }
+        zip.add("ppt/slideLayouts/slideLayout1.xml", xml: slideLayout.replacingOccurrences(of: "</p:grpSpPr></p:spTree>", with: "</p:grpSpPr>" + logoXML + "</p:spTree>"))
         zip.add("ppt/slideLayouts/_rels/slideLayout1.xml.rels", xml: relsDoc(
-            "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster\" Target=\"../slideMasters/slideMaster1.xml\"/>"))
-        zip.add("ppt/theme/theme1.xml", xml: theme1)
+            "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster\" Target=\"../slideMasters/slideMaster1.xml\"/>" + logoRel))
+        zip.add("ppt/theme/theme1.xml", xml: theme(marque))
         return zip.finalize()
     }
 
@@ -827,6 +849,58 @@ enum PptxBuilder {
     </p:notesMaster>
     """
 
+    /// Le masque, aux couleurs et à la police du thème « à vos couleurs » quand il y en a un.
+    /// Les tableaux, avec un thème « à vos couleurs » : l'en-tête clair (EAE8E2) et les filets gris
+    /// (BFBFBF) deviennent des nuances entre le fond et le texte, sinon un texte clair sur un fond
+    /// sombre disparaissait dans l'en-tête.
+    private static func teinter(_ xml: String, _ m: MarquePptx) -> String {
+        // La couleur et la police sur chaque passage de texte : les zones de texte ne suivent pas le
+        // masque dans Keynote ni dans Aperçu (texte noir en Helvetica sur le fond choisi). Le code
+        // garde sa police à chasse fixe.
+        let couleur = "<a:solidFill><a:srgbClr val=\"\(m.texte)\"/></a:solidFill>"
+        return xml
+            .replacingOccurrences(of: "><a:latin typeface=\"Menlo\"/></a:rPr>", with: ">\(couleur)<a:latin typeface=\"Menlo\"/></a:rPr>")
+            .replacingOccurrences(of: "></a:rPr>", with: ">\(couleur)<a:latin typeface=\"\(XML.esc(m.police))\"/></a:rPr>")
+            .replacingOccurrences(of: "srgbClr val=\"EAE8E2\"", with: "srgbClr val=\"\(melange(m.fond, m.texte, 0.16))\"")
+            .replacingOccurrences(of: "srgbClr val=\"BFBFBF\"", with: "srgbClr val=\"\(melange(m.fond, m.texte, 0.35))\"")
+    }
+
+    /// Une couleur entre deux autres (« RRGGBB ») : `t` = 0 donne `a`, 1 donne `b`.
+    static func melange(_ a: String, _ b: String, _ t: Double) -> String {
+        func rvb(_ h: String) -> [Double] {
+            let v = UInt32(h, radix: 16) ?? 0
+            return [Double((v >> 16) & 0xFF), Double((v >> 8) & 0xFF), Double(v & 0xFF)]
+        }
+        let x = rvb(a), y = rvb(b)
+        return (0..<3).map { String(format: "%02X", Int((x[$0] + (y[$0] - x[$0]) * t).rounded())) }.joined()
+    }
+
+    private static func masque(_ m: MarquePptx?) -> String {
+        guard let m else { return slideMaster }
+        // Les zones de texte (pas les espaces réservés) suivent `otherStyle` : sans couleur ni police,
+        // Keynote et Aperçu les écrivaient en noir, en Helvetica, sur le fond choisi.
+        let autre = "<a:defRPr lang=\"fr-FR\"><a:solidFill><a:srgbClr val=\"\(m.texte)\"/></a:solidFill><a:latin typeface=\"\(XML.esc(m.police))\"/></a:defRPr>"
+        let niveaux = (1...3).map { "<a:lvl\($0)pPr>\(autre)</a:lvl\($0)pPr>" }.joined()
+        return slideMaster
+            .replacingOccurrences(of: "<p:otherStyle><a:defPPr><a:defRPr lang=\"fr-FR\"/></a:defPPr></p:otherStyle>",
+                                  with: "<p:otherStyle><a:defPPr>\(autre)</a:defPPr>\(niveaux)</p:otherStyle>")
+            .replacingOccurrences(of: "<a:srgbClr val=\"FFFFFF\"/></a:solidFill><a:effectLst/>", with: "<a:srgbClr val=\"\(m.fond)\"/></a:solidFill><a:effectLst/>")
+            .replacingOccurrences(of: "<a:srgbClr val=\"111111\"/>", with: "<a:srgbClr val=\"\(m.texte)\"/>")
+            .replacingOccurrences(of: "<a:srgbClr val=\"222222\"/>", with: "<a:srgbClr val=\"\(m.texte)\"/>")
+            .replacingOccurrences(of: "typeface=\"Helvetica Neue\"", with: "typeface=\"\(XML.esc(m.police))\"")
+    }
+
+    /// Le thème, idem : fond (lt1), texte (dk1), accent (accent1) et polices.
+    private static func theme(_ m: MarquePptx?) -> String {
+        guard let m else { return theme1 }
+        return theme1
+            .replacingOccurrences(of: "<a:dk1><a:srgbClr val=\"111111\"/>", with: "<a:dk1><a:srgbClr val=\"\(m.texte)\"/>")
+            .replacingOccurrences(of: "<a:lt1><a:srgbClr val=\"FFFFFF\"/>", with: "<a:lt1><a:srgbClr val=\"\(m.fond)\"/>")
+            .replacingOccurrences(of: "<a:accent1><a:srgbClr val=\"E8972E\"/>", with: "<a:accent1><a:srgbClr val=\"\(m.accent)\"/>")
+            .replacingOccurrences(of: "<a:hlink><a:srgbClr val=\"C9781A\"/>", with: "<a:hlink><a:srgbClr val=\"\(m.accent)\"/>")
+            .replacingOccurrences(of: "typeface=\"Helvetica Neue\"", with: "typeface=\"\(XML.esc(m.police))\"")
+    }
+
     private static let slideMaster = """
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\
@@ -1008,7 +1082,10 @@ enum OOXMLExportBridge {
     }
 
     /// Build a .pptx from the presentation export model ({slides:[{title,blocks}]}).
-    static func buildPptx(model: [String: Any], completion: @escaping (Data?) -> Void) {
+    @MainActor static func buildPptx(model: [String: Any], completion: @escaping (Data?) -> Void) {
+        // Le thème « à vos couleurs » (1.6), quand c'est celui du diaporama.
+        let marque = (model["theme"] as? String) == "marque" && AchatAnalytic.partage.acces
+            ? ThemeMarque.actuel?.pptx : nil
         let rawSlides = (model["slides"] as? [[String: Any]]) ?? []
         let allBlocks = rawSlides.flatMap { ($0["blocks"] as? [[String: Any]]) ?? [] }
         download(imageURLs(in: allBlocks)) { imgs in
@@ -1016,8 +1093,22 @@ enum OOXMLExportBridge {
                 let blocks = ((s["blocks"] as? [[String: Any]]) ?? []).compactMap { block($0, imgs) }
                 return PptxSlide(title: runs(s["title"]), blocks: blocks, notes: (s["notes"] as? String) ?? "")
             }
-            completion(PptxBuilder.build(slides: slides, transition: model["transition"] as? String))
+            completion(PptxBuilder.build(slides: slides, transition: model["transition"] as? String, marque: marque))
         }
     }
 }
 #endif
+
+/// La taille en pixels d'une image PNG ou JPEG (le logo du PowerPoint), sans UIKit.
+enum UIImageTaille {
+    static func taille(_ d: Data) -> (width: Double, height: Double)? {
+        let o = [UInt8](d.prefix(32))
+        // PNG : largeur et hauteur aux octets 16-23.
+        if o.count >= 24, o[0] == 0x89, o[1] == 0x50 {
+            let w = Int(o[16]) << 24 | Int(o[17]) << 16 | Int(o[18]) << 8 | Int(o[19])
+            let h = Int(o[20]) << 24 | Int(o[21]) << 16 | Int(o[22]) << 8 | Int(o[23])
+            return (Double(w), Double(h))
+        }
+        return nil
+    }
+}

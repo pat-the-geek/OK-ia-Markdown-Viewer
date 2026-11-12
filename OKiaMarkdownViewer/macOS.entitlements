@@ -8,6 +8,9 @@
 	<!-- Network client: map tiles (OSM/CARTO) + downloading a report over https. -->
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- La télécommande (1.6) : l'iPhone se connecte au diaporama du Mac (MultipeerConnectivity). -->
+	<key>com.apple.security.network.server</key>
+	<true/>
 	<!-- Open .md files the user selects, and the vault folder. -->
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>

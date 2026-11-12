@@ -1726,3 +1726,9 @@ site (OK-ia#585) : **1.6 — Présenter** (répétition chronométrée, l'iPhone
 polycopié PDF, thèmes à vos couleurs), **1.7 — Le coffre** (interroger tout le coffre, le point de
 la semaine, import Pages, Keynote, Numbers, Excel et CSV), et **pour tous** (un tableau devient un
 graphique, lecture à voix haute, widgets). Liste des tâches : `TACHES-1.6.md`.
+
+**1.6 faite le 2026-11-12 (option Analytic seulement)** : répétition chronométrée et son bilan,
+l'iPhone pour télécommande (avancer, lire ses notes, crayon, cercle, surligneur, pointeur ; Multipeer,
+sans serveur), polycopié PDF (1 à 3 diapositives par page, en 16:9), thème à vos couleurs (logo,
+fond, accent, police, repris dans l'export PowerPoint). Détails et ce qui reste à vérifier sur
+appareil : `TACHES-1.6.md`.

@@ -93,6 +93,8 @@ struct VuePublic: View {
                                     onExit: {}, onDiagram: { _ in }, onImage: { _ in },
                                     onExportReady: { _ in }, onAnnoter: {})
                     .id(d.id)
+                    // Les traits et le pointeur de la télécommande (1.6), pour le public aussi.
+                    .overlay { CalqueTelecommande() }
             }
         }
         .ignoresSafeArea()

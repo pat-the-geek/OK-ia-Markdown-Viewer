@@ -96,6 +96,17 @@
         ja: 'スライドを表示', ko: '슬라이드 보이기', 'zh-Hans': '显示幻灯片', 'pt-BR': 'Mostrar slide', nl: 'Toon dia', ru: 'Показать слайд', uk: 'Показати слайд', tr: 'Slaytı göster', vi: 'Hiện trang chiếu', hi: 'स्लाइड दिखाएँ' },
     'Notes de l’orateur': { en: 'Speaker notes', de: 'Sprechernotizen', es: 'Notas del orador', it: 'Note del relatore',
         ja: '発表者ノート', ko: '발표자 노트', 'zh-Hans': '演讲者备注', 'pt-BR': 'Notas do apresentador', nl: 'Sprekersnotities', ru: 'Заметки докладчика', uk: 'Нотатки доповідача', tr: 'Konuşmacı notları', vi: 'Ghi chú của người thuyết trình', hi: 'वक्ता के नोट्स' },
+    // Option Analytic (1.6) : présenter.
+    'Présenter':      { en: 'Present', de: 'Präsentieren', es: 'Presentar', it: 'Presenta',
+        ja: '発表', ko: '발표', 'zh-Hans': '演示', 'pt-BR': 'Apresentar', nl: 'Presenteren', ru: 'Показ', uk: 'Показ', tr: 'Sunum', vi: 'Trình bày', hi: 'प्रस्तुत करें' },
+    'Répéter…':       { en: 'Rehearse…', de: 'Proben…', es: 'Ensayar…', it: 'Prova…',
+        ja: 'リハーサル…', ko: '리허설…', 'zh-Hans': '排练…', 'pt-BR': 'Ensaiar…', nl: 'Repeteren…', ru: 'Репетиция…', uk: 'Репетиція…', tr: 'Prova…', vi: 'Tập dượt…', hi: 'रिहर्सल…' },
+    'Polycopié PDF…': { en: 'Handouts (PDF)…', de: 'Handzettel (PDF)…', es: 'Folletos (PDF)…', it: 'Dispense (PDF)…',
+        ja: '配布資料（PDF）…', ko: '유인물(PDF)…', 'zh-Hans': '讲义（PDF）…', 'pt-BR': 'Folhetos (PDF)…', nl: 'Hand-outs (PDF)…', ru: 'Раздаточный материал (PDF)…', uk: 'Роздатковий матеріал (PDF)…', tr: 'Dağıtım notları (PDF)…', vi: 'Tài liệu phát tay (PDF)…', hi: 'हैंडआउट (PDF)…' },
+    'Thème à vos couleurs…': { en: 'Theme in your colours…', de: 'Design in Ihren Farben…', es: 'Tema con sus colores…', it: 'Tema con i tuoi colori…',
+        ja: '独自カラーのテーマ…', ko: '나만의 색상 테마…', 'zh-Hans': '自定义颜色主题…', 'pt-BR': 'Tema com suas cores…', nl: 'Thema in je eigen kleuren…', ru: 'Тема в ваших цветах…', uk: 'Тема у ваших кольорах…', tr: 'Kendi renklerinizle tema…', vi: 'Chủ đề theo màu của bạn…', hi: 'आपके रंगों में थीम…' },
+    'Ma marque':      { en: 'My brand', de: 'Meine Marke', es: 'Mi marca', it: 'Il mio marchio',
+        ja: 'マイブランド', ko: '내 브랜드', 'zh-Hans': '我的品牌', 'pt-BR': 'Minha marca', nl: 'Mijn merk', ru: 'Мой бренд', uk: 'Мій бренд', tr: 'Markam', vi: 'Thương hiệu của tôi', hi: 'मेरा ब्रांड' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
     'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta',
         ja: '書き出し', ko: '내보내기', 'zh-Hans': '导出', 'pt-BR': 'Exportar', nl: 'Exporteer', ru: 'Экспорт', uk: 'Експорт', tr: 'Dışa aktar', vi: 'Xuất', hi: 'एक्सपोर्ट करें' }
@@ -880,8 +891,83 @@
     ex.textContent = 'PowerPoint (.pptx)';
     ex.onclick = function (e) { e.stopPropagation(); closeMenu(); post('exportPptx', {}); };
     menu.appendChild(ex);
+    // Option Analytic (1.6) : répéter, polycopié, thème à vos couleurs.
+    if (analytique) {
+      var hp = document.createElement('div');
+      hp.className = 'present-menu-title';
+      hp.textContent = TXT('Présenter');
+      menu.appendChild(hp);
+      [['Répéter…', 'repeter'], ['Polycopié PDF…', 'polycopie'], ['Thème à vos couleurs…', 'marque']].forEach(function (a) {
+        var b = document.createElement('button');
+        b.className = 'present-menu-item';
+        b.textContent = TXT(a[0]);
+        b.onclick = function (e) { e.stopPropagation(); closeMenu(); post(a[1], {}); };
+        menu.appendChild(b);
+      });
+    }
     syncMenu();
   }
+
+  /* ---- Option Analytic (1.6) ---------------------------------------------- */
+  var analytique = false;
+  function permettreAnalytic(oui) { analytique = !!oui; buildMenu(); }
+
+  // Le thème « Ma marque » : un logo, deux couleurs (fond, accent) et une police, choisis dans
+  // l'app (`ThemeMarque`). Le texte prend la couleur lisible sur le fond ; le reste s'en déduit.
+  var marque = null;
+  function setMarque(m) {
+    marque = m || null;
+    var i = THEMES.map(function (t) { return t.key; }).indexOf('marque');
+    if (marque && i < 0) THEMES.unshift({ key: 'marque', label: TXT('Ma marque') });
+    if (!marque && i >= 0) THEMES.splice(i, 1);
+    var st = el('okiaMarqueStyle');
+    if (!st) { st = document.createElement('style'); st.id = 'okiaMarqueStyle'; document.head.appendChild(st); }
+    var logo = el('okiaMarqueLogo');
+    if (!marque) {
+      st.textContent = '';
+      if (logo) logo.remove();
+      if (theme === 'marque') setTheme('light');
+      buildMenu();
+      return;
+    }
+    var police = (marque.police || '').replace(/["\\]/g, '');
+    st.textContent =
+      'body.present-body.theme-marque{--bg:' + marque.fond + ';--fg:' + marque.texte + ';--noir:' + marque.texte +
+      ';--orange:' + marque.accent + ';--muted:color-mix(in srgb,' + marque.texte + ' 68%,' + marque.fond + ')' +
+      ';--rule:color-mix(in srgb,' + marque.texte + ' 16%,' + marque.fond + ')' +
+      ';--card-bg:color-mix(in srgb,' + marque.texte + ' 4%,' + marque.fond + ')' +
+      ';--code-bg:color-mix(in srgb,' + marque.texte + ' 8%,' + marque.fond + ')' +
+      ';--gris-clair:color-mix(in srgb,' + marque.texte + ' 11%,' + marque.fond + ')}' +
+      (police ? 'body.present-body.theme-marque .slide-inner,body.present-body.theme-marque .slide-inner :is(h1,h2,h3,h4,h5,h6,p,li,td,th,blockquote){font-family:"' + police + '",-apple-system,"Helvetica Neue",sans-serif}' : '') +
+      'body.present-body.theme-marque .slide-inner :is(h1,h2){border-color:' + marque.accent + '}';
+    if (marque.logo) {
+      if (!logo) { logo = document.createElement('img'); logo.id = 'okiaMarqueLogo'; logo.className = 'present-marque-logo'; logo.alt = ''; document.body.appendChild(logo); }
+      logo.src = marque.logo;
+    } else if (logo) {
+      logo.remove();
+    }
+    if (marque.defaut && modeAffichage === 'complet') setTheme('marque');
+    buildMenu();
+  }
+
+  // Les titres de toutes les diapositives (la répétition, le polycopié).
+  function titres() { return sections.map(function (_, i) { return slideTitle(i); }); }
+
+  // Le polycopié photographie chaque diapositive : sans boutons ni barre, sans transition, une fois
+  // rendue.
+  function preparerCapture(index) {
+    document.body.classList.add('okia-capture');
+    aller(index, true);
+    return renderSlide(index).then(function () {
+      fitSlide(sections[index]);
+      return new Promise(function (r) { setTimeout(r, 450); });
+    }).then(function () {
+      // Le cadre de la diapositive, pour rogner la photo (16:9, voir presentation.css).
+      var b = sections[index] ? sections[index].getBoundingClientRect() : null;
+      return b ? { x: b.left, y: b.top, w: b.width, h: b.height } : null;
+    });
+  }
+  function finirCapture() { document.body.classList.remove('okia-capture'); }
 
   // Build the presentation export model: render each slide off-screen and collect
   // its blocks (the first heading becomes the slide title). Mermaid is rasterised
@@ -931,7 +1017,7 @@
     // La transition choisie voyage avec le modèle : le PowerPoint la rejoue sur chaque
     // diapositive. C'est le choix du présentateur, pas l'éventuel fondu de « Réduire les
     // animations » — ce réglage-là appartient à l'appareil qui projettera le fichier.
-    return chain.then(function () { try { document.body.removeChild(tmp); } catch (e) {} return { slides: out, transition: transition }; });
+    return chain.then(function () { try { document.body.removeChild(tmp); } catch (e) {} return { slides: out, transition: transition, theme: theme }; });
   }
 
   function openMenu()  { var m = el('presentMenu'); if (m) { m.hidden = false; syncMenu(); } }
@@ -1626,6 +1712,8 @@
                           collectAllSlidesExtras: collectAllSlidesExtras,
                           setTranslation: setTranslation,
                           setTransition: setTransition, setTheme: setTheme, escape: escape,
-                          toggleOverview: toggleOverview, exportModel: buildExportModel };
+                          toggleOverview: toggleOverview, exportModel: buildExportModel,
+                          permettreAnalytic: permettreAnalytic, setMarque: setMarque, titres: titres,
+                          preparerCapture: preparerCapture, finirCapture: finirCapture };
   post('presentReady', {});
 })();

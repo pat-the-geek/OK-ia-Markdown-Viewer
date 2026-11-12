@@ -1,0 +1,102 @@
+{
+  "sourceLanguage": "fr",
+  "version": "1.0",
+  "strings": {
+    "NSLocalNetworkUsageDescription": {
+      "comment": "Télécommande d'un diaporama (1.6)",
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer trouve le diaporama à piloter sur le Mac ou l’iPad, d’appareil à appareil, sans serveur."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer finds the slideshow to control on the Mac or iPad, device to device, with no server."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer findet die zu steuernde Diashow auf dem Mac oder iPad, von Gerät zu Gerät, ohne Server."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer encuentra la presentación que controlar en el Mac o el iPad, de dispositivo a dispositivo, sin servidor."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer trova la presentazione da controllare sul Mac o sull’iPad, da dispositivo a dispositivo, senza server."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewerは、操作するスライドショーをMacまたはiPad上でデバイス間で直接見つけます。サーバは使いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer는 제어할 슬라이드쇼를 Mac 또는 iPad에서 기기 간 직접 찾습니다. 서버를 사용하지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer 会在 Mac 或 iPad 上以设备直连方式查找要控制的幻灯片放映，不经过服务器。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O md Viewer encontra a apresentação a controlar no Mac ou iPad, de dispositivo para dispositivo, sem servidor."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer vindt de te bedienen diavoorstelling op de Mac of iPad, van apparaat tot apparaat, zonder server."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer находит слайд-шоу для управления на Mac или iPad напрямую между устройствами, без сервера."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer знаходить слайд-шоу для керування на Mac або iPad напряму між пристроями, без сервера."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer, yönetilecek slayt gösterisini Mac veya iPad’de cihazdan cihaza, sunucu olmadan bulur."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer tìm bản trình chiếu cần điều khiển trên Mac hoặc iPad, trực tiếp giữa các thiết bị, không qua máy chủ."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer Mac या iPad पर चलाने के लिए स्लाइडशो सीधे डिवाइस से डिवाइस खोजता है, बिना सर्वर के।"
+          }
+        }
+      }
+    }
+  }
+}

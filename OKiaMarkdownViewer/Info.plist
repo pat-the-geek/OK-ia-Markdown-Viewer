@@ -44,6 +44,14 @@
 			</array>
 		</dict>
 	</array>
+	<!-- La télécommande d'un diaporama (1.6) : d'appareil à appareil, sur le réseau local. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>md Viewer trouve le diaporama à piloter sur le Mac ou l’iPad, d’appareil à appareil, sans serveur.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_okia-telecom._tcp</string>
+		<string>_okia-telecom._udp</string>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

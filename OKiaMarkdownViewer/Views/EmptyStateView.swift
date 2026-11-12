@@ -22,6 +22,8 @@ struct EmptyStateView: View {
     @ObservedObject private var annotes = DocumentsAnnotes.partage
     @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
+    /// La télécommande d'un diaporama (1.6, option Analytic).
+    @State private var telecommande = false
     /// L'accueil montre des cartes avec vignettes, sauf aux tailles de texte d'accessibilité.
     @Environment(\.dynamicTypeSize) private var tailleTexte
     /// Le document dont on demande la suppression, en attente de confirmation.
@@ -104,6 +106,16 @@ struct EmptyStateView: View {
         }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        .fullScreenCover(isPresented: $telecommande) { TelecommandeView() }
+        #if DEBUG
+        // OKIA_TELECOMMANDE=1 : ouvre la télécommande au lancement (essai à deux simulateurs).
+        .task {
+            if ProcessInfo.processInfo.environment["OKIA_TELECOMMANDE"] != nil {
+                try? await Task.sleep(for: .seconds(2))
+                store.avecOption { telecommande = true }
+            }
+        }
+        #endif
     }
 
     /// « Mettre dans le coffre » (1.5.1) : le document analysé passe dans « coffre md viewer », hors du
@@ -239,6 +251,12 @@ struct EmptyStateView: View {
                 Button { ImportEnCours.demander(pour: store) } label: {
                     Label(tr("Importer un document…"), systemImage: "square.and.arrow.down.on.square")
                 }
+                #if !targetEnvironment(macCatalyst)
+                // Piloter le diaporama du Mac ou de l'iPad depuis cet appareil (1.6, option Analytic).
+                Button { store.avecOption { telecommande = true } } label: {
+                    Label(tr("Télécommande d’un diaporama…"), systemImage: "appletvremote.gen4")
+                }
+                #endif
             } label: {
                 Image(systemName: "folder")
             } primaryAction: {

@@ -546,6 +546,14 @@ struct ReaderView: View {
             annotationsDoc.charger(document)
             web.onEntite = { toucherEntite($0) }
         }
+        // Un document du coffre ouvert depuis la fiche d'une entité (« Dans le coffre ») : les feuilles
+        // des entités se ferment, sinon le document s'ouvre dessous, caché (Patrick, 12/11/2026 :
+        // « On devrait pouvoir ouvrir les documents »).
+        .modifier(SurOuvertureRapport(store: store) {
+            ficheTouchee = nil
+            showEntites = false
+            if panneauDuo == .entites { panneauDuo = nil }
+        })
         // La fiche d'une entité touchée dans la page, et celle qu'on attendait de l'analyse.
         .sheet(item: $ficheTouchee) { e in
             NavigationStack {
@@ -2055,12 +2063,35 @@ struct PresentationView: View {
     /// La note de l'orateur qu'on écrit (1.5), et ce qui l'a empêchée d'être enregistrée.
     @State private var noteEnCours: NoteEnCours?
     @State private var erreurNote: String?
+    /// Option Analytic (1.6) : répéter, polycopié, thème à vos couleurs, télécommande.
+    @StateObject private var repetition = RepetitionDiaporama()
+    @State private var reglageRepetition = false
+    @State private var reglagePolycopie = false
+    @State private var reglageMarque = false
+    @State private var polycopie: (fait: Int, total: Int)?
+    @ObservedObject private var hote = TelecommandeHote.partage
 
     var body: some View {
         // Le diaporama garde sa place (et son état) quand la colonne du présentateur s'ouvre.
         GeometryReader { geo in
             HStack(spacing: 0) {
                 diaporama
+                    .overlay { CalqueTelecommande() }
+                    .overlay(alignment: .bottom) {
+                        // En bas : en haut, le toucher partait au système, et les boutons du
+                        // diaporama y sont déjà.
+                        if repetition.active {
+                            BandeauRepetition(repetition: repetition, terminer: terminerRepetition).padding(.bottom, 34)
+                        }
+                    }
+                    .overlay {
+                        if let p = polycopie {
+                            Label(tr("Polycopié… %d / %d", p.fait, p.total), systemImage: "doc.richtext")
+                                .font(.headline.monospacedDigit())
+                                .padding(.horizontal, 18).padding(.vertical, 12)
+                                .glassEffect(.regular, in: .capsule)
+                        }
+                    }
                     .frame(width: seance.presentateur ? geo.size.width * 0.62 : geo.size.width)
                 if seance.presentateur {
                     PanneauPresentateur(seance: seance, arreter: { dismissWindow(id: "public") },
@@ -2089,6 +2120,21 @@ struct PresentationView: View {
             .sheet(item: $noteEnCours) { note in
                 EditeurNoteOrateur(note: note, enregistrer: { enregistrerNote(note.index, $0) })
             }
+            .sheet(isPresented: $reglageRepetition) {
+                RepetitionReglageView(total: seance.total) { commencerRepetition($0) }
+            }
+            .sheet(item: $repetition.rapport) { RapportRepetitionView(rapport: $0) }
+            .sheet(isPresented: $reglagePolycopie) {
+                PolycopieReglageView { creerPolycopie(parPage: $0, avecNotes: $1) }
+            }
+            .sheet(isPresented: $reglageMarque) { MarqueView() }
+            .alert(tr("Télécommande"), isPresented: Binding(get: { hote.demande != nil },
+                                                            set: { if !$0, let d = hote.demande { d.reponse(false) } })) {
+                Button(tr("Autoriser")) { hote.demande?.reponse(true) }
+                Button(tr("Refuser"), role: .cancel) { hote.demande?.reponse(false) }
+            } message: {
+                Text(tr("« %@ » demande à piloter ce diaporama : avancer, reculer, dessiner sur les diapositives et montrer un pointeur.", hote.demande?.nom ?? ""))
+            }
             .alert(tr("Note non enregistrée"), isPresented: Binding(get: { erreurNote != nil },
                                                                    set: { if !$0 { erreurNote = nil } })) {
                 Button(tr("OK"), role: .cancel) {}
@@ -2099,6 +2145,12 @@ struct PresentationView: View {
                 barreDeFenetre(visible: false)
                 seance.commencer(document)
                 seance.annotations = annotations
+                // La télécommande (1.6) : le diaporama s'annonce aux appareils proches.
+                if achat.acces {
+                    hote.surCommande = { diaporama($0) }
+                    hote.surConnexion = { envoyerTelecommande() }
+                    hote.demarrer(titre: (document.filename as NSString).deletingPathExtension)
+                }
                 #if DEBUG
                 // OKIA_PRESENTATEUR : sur iPad et iPhone, fait comme si un écran externe était branché
                 // (la colonne du présentateur sans second écran, au simulateur) ; sur Mac, ouvre la
@@ -2110,6 +2162,33 @@ struct PresentationView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         enregistrerNote(rang, String(essai[essai.index(after: barre)...]).replacingOccurrences(of: "\\n", with: "\n"))
                     }
+                }
+                // OKIA_OUTIL_DIAPO=repeter|polycopie|marque : ouvre l'outil (1.6) ; OKIA_POLYCOPIE=<1-3> :
+                // crée le polycopié, avec les notes ; OKIA_REPETER=<minutes> : lance la répétition.
+                let envD = ProcessInfo.processInfo.environment
+                switch envD["OKIA_OUTIL_DIAPO"] {
+                case "repeter": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglageRepetition = true }
+                case "polycopie": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglagePolycopie = true }
+                case "marque": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglageMarque = true }
+                default: break
+                }
+                if let n = envD["OKIA_POLYCOPIE"].flatMap(Int.init) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) { creerPolycopie(parPage: n, avecNotes: true) }
+                }
+                // OKIA_TELECOM_ESSAI : ce qu'enverrait une télécommande — un cercle, un trait, un coup
+                // de surligneur, le pointeur, puis la diapositive suivante.
+                if envD["OKIA_TELECOM_ESSAI"] != nil {
+                    let h = hote
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        h.essai(PaquetTelecommande(type: "trait", trait: TraitTelecommande(id: "c", points: [[0.08, 0.36], [0.62, 0.46]], outil: "cercle")))
+                        h.essai(PaquetTelecommande(type: "trait", trait: TraitTelecommande(id: "t", points: [[0.12, 0.62], [0.3, 0.6], [0.55, 0.61]], outil: "crayon")))
+                        h.essai(PaquetTelecommande(type: "trait", trait: TraitTelecommande(id: "s", points: [[0.11, 0.585], [0.7, 0.585]], outil: "surligneur")))
+                        h.essai(PaquetTelecommande(type: "pointeur", point: [0.8, 0.3]))
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 9) { h.essai(PaquetTelecommande(type: "suivante")) }
+                }
+                if let m = envD["OKIA_REPETER"].flatMap(Int.init) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { commencerRepetition(m) }
                 }
                 if ProcessInfo.processInfo.environment["OKIA_PRESENTATEUR"] != nil {
                     #if targetEnvironment(macCatalyst)
@@ -2126,6 +2205,8 @@ struct PresentationView: View {
                 calque = nil
                 if seance.fenetrePublique { dismissWindow(id: "public") }
                 seance.terminer()
+                hote.arreter()
+                repetition.abandonner()
             }
             .overlay { TranslationHostView(translator: trad) }
     }
@@ -2142,15 +2223,81 @@ struct PresentationView: View {
                             onExportReady: { sharePayload = SharePayload(url: $0) },
                             onAnnoter: { annoter.toggle() },
                             onDiapositive: { i, total in
+                                // Le polycopié parcourt les diapositives : ni le public ni la
+                                // répétition ne le suivent.
+                                guard polycopie == nil else { return }
                                 seance.index = i
                                 seance.total = total
+                                repetition.changer(i)
+                                // Les traits de la télécommande restent sur leur diapositive.
+                                hote.effacerCalque()
+                                if hote.actif { envoyerTelecommande() }
                                 annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
                                     seance.notes = (r as? String) ?? ""
                                 }
                             },
                             onChoix: { seance.choix = $0 },
                             onPresentateur: { openWindow(id: "public") },
-                            onNotes: { ouvrirNote($0) })
+                            onNotes: { ouvrirNote($0) },
+                            onRepeter: { reglageRepetition = true },
+                            onPolycopie: { reglagePolycopie = true },
+                            onMarque: { reglageMarque = true })
+    }
+
+    // MARK: Option Analytic (1.6)
+
+    private func commencerRepetition(_ minutes: Int) {
+        diaporamaJS("window.OKIA_PRESENT.aller(0, true)")
+        repetition.commencer(minutes: minutes, total: seance.total, depart: 0)
+    }
+
+    private func terminerRepetition() {
+        annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT.titres()") { r, _ in
+            repetition.terminer(titres: (r as? [String]) ?? [])
+        }
+    }
+
+    private func creerPolycopie(parPage: Int, avecNotes: Bool) {
+        guard let vue = annotations.diaporama else { return }
+        let total = seance.total
+        polycopie = (0, total)
+        Task {
+            let diapos = await Polycopie.capturer(vue, total: total) { polycopie = ($0, total) }
+            polycopie = nil
+            let nom = (document.filename as NSString).deletingPathExtension
+            let data = Polycopie.pdf(diapos, parPage: parPage, avecNotes: avecNotes, titre: nom)
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent(nom.replacingOccurrences(of: "/", with: "-") + " — " + tr("polycopié") + ".pdf")
+            if (try? data.write(to: url)) != nil { sharePayload = SharePayload(url: url) }
+        }
+    }
+
+    /// La diapositive en cours vers la télécommande : son image (réduite), son rang, ses notes.
+    private func envoyerTelecommande() {
+        guard let vue = annotations.diaporama else { return }
+        let i = seance.index, total = seance.total
+        let titre = (document.filename as NSString).deletingPathExtension
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            vue.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
+                let notes = (r as? String) ?? ""
+                vue.takeSnapshot(with: nil) { image, _ in
+                    hote.envoyerEtat(index: i, total: total, titre: titre, notes: notes,
+                                     image: image.flatMap { Self.reduire($0, largeur: 960)?.jpegData(compressionQuality: 0.6) })
+                }
+            }
+        }
+    }
+
+    private static func reduire(_ image: UIImage, largeur: CGFloat) -> UIImage? {
+        let echelle = min(1, largeur / max(image.size.width, 1))
+        let taille = CGSize(width: image.size.width * echelle, height: image.size.height * echelle)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: taille, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: taille)) }
+    }
+
+    private func diaporamaJS(_ js: String) {
+        annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT && " + js + ";")
     }
 
     /// Les notes s'écrivent avec l'option, dans un fichier Markdown (1.5).
@@ -2277,6 +2424,10 @@ struct PresentationWebView: UIViewRepresentable {
     var onPresentateur: (() -> Void)?
     /// Le bouton « Notes » (1.5) : écrire la note de la diapositive affichée.
     var onNotes: ((Int) -> Void)?
+    /// Option Analytic (1.6) : le menu « Présenter » du diaporama.
+    var onRepeter: (() -> Void)?
+    var onPolycopie: (() -> Void)?
+    var onMarque: (() -> Void)?
 
     enum ModeDiaporama: String { case complet, `public`, apercu }
 
@@ -2285,7 +2436,7 @@ struct PresentationWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
         for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered", "annoter",
-                     "diapositive", "choix", "presentateur", "notes"] {
+                     "diapositive", "choix", "presentateur", "notes", "repeter", "polycopie", "marque"] {
             controller.add(context.coordinator, name: name)
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
@@ -2337,7 +2488,22 @@ struct PresentationWebView: UIViewRepresentable {
         private var choixAppliques: [String: String] = [:]
         private var traductionAppliquee: [String: String]?
 
-        init(_ parent: PresentationWebView) { self.parent = parent }
+        private var observateurMarque: NSObjectProtocol?
+
+        init(_ parent: PresentationWebView) {
+            self.parent = parent
+            super.init()
+            // Le thème « à vos couleurs » change (1.6) : toutes les vues du diaporama le reprennent.
+            observateurMarque = NotificationCenter.default.addObserver(forName: .okiaMarqueChangee, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.appliquerMarque() }
+            }
+        }
+
+        deinit { if let o = observateurMarque { NotificationCenter.default.removeObserver(o) } }
+
+        @MainActor func appliquerMarque() {
+            webView?.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.setMarque && window.OKIA_PRESENT.setMarque(\(ThemeMarque.json));")
+        }
 
         /// L'écran du public et l'aperçu suivent le présentateur : la diapositive (avec sa
         /// transition pour le public, d'un coup pour l'aperçu), la transition et le thème choisis,
@@ -2365,6 +2531,7 @@ struct PresentationWebView: UIViewRepresentable {
                 // L'écran du public, l'aperçu : la diapositive seule, qui suit la séance.
                 startPresentation()
                 webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.mode('\(parent.mode.rawValue)');")
+                appliquerMarque()
                 pret = true
                 suivreSeance()
                 parent.annotations.suivre(webView)
@@ -2401,6 +2568,9 @@ struct PresentationWebView: UIViewRepresentable {
             // Markdown à retoucher.
             let notes = AchatAnalytic.partage.acces && parent.onNotes != nil && NotesOrateur.modifiable(parent.document)
             webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettreNotes(\(notes));")
+            // Option Analytic (1.6) : le menu « Présenter », et le thème « à vos couleurs ».
+            webView.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.permettreAnalytic && window.OKIA_PRESENT.permettreAnalytic(\(AchatAnalytic.partage.acces && parent.onRepeter != nil));")
+            appliquerMarque()
             #if DEBUG
             // OKIA_EXPORT_PPTX : exporte le PowerPoint au lancement (son fichier, dans le dossier
             // temporaire de l'app), pour en vérifier les pages de notes sans piloter le menu.
@@ -2563,6 +2733,9 @@ struct PresentationWebView: UIViewRepresentable {
                 if let d = message.body as? [String: String] { parent.onChoix?(d) }
             case "presentateur":
                 parent.onPresentateur?()
+            case "repeter": parent.onRepeter?()
+            case "polycopie": parent.onPolycopie?()
+            case "marque": parent.onMarque?()
             case "notes":
                 let d = message.body as? [String: Any]
                 parent.onNotes?((d?["index"] as? Int) ?? (d?["index"] as? Double).map(Int.init) ?? 0)
@@ -2676,6 +2849,17 @@ private struct DetecteurCharniere: UIViewRepresentable {
 #endif
 
 /// Ce que la seconde partie du Duo peut montrer à côté du document.
+/// Un document du coffre demandé depuis la fiche d'une entité (`.okiaOuvrirRapport`).
+private struct SurOuvertureRapport: ViewModifier {
+    let store: DocumentStore
+    let action: () -> Void
+    func body(content: Content) -> some View {
+        content.onReceive(NotificationCenter.default.publisher(for: .okiaOuvrirRapport)) { note in
+            if note.estPour(store) { action() }
+        }
+    }
+}
+
 enum PanneauDuo: Hashable {
     case sommaire, resume, discussion, conversion, entites
 }

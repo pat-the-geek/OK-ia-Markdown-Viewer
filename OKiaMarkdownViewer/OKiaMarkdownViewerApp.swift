@@ -664,6 +664,10 @@ struct OKiaMarkdownViewerApp: App {
             store.document = MarkdownDocument(filename: name, text: lu, sourceURL: URL(fileURLWithPath: chemin), integrees: integrees)
         }
         // OKIA_COFFRE=<dossier> : le coffre, sans le sélecteur (un dossier du conteneur au simulateur) ;
+        // OKIA_MARQUE=<fond>|<accent>|<police> : le thème « à vos couleurs » (1.6), sans sa feuille.
+        if let m = env["OKIA_MARQUE"]?.split(separator: "|").map(String.init), m.count == 3 {
+            ThemeMarque.actuel = ThemeMarque(fond: m[0], accent: m[1], police: m[2], defaut: true)
+        }
         // OKIA_ANALYSE_COFFRE : ouvre l'analyse de tout le coffre au lancement.
         if let dossier = env["OKIA_COFFRE"], !dossier.isEmpty {
             store.vault.setFolder(URL(fileURLWithPath: dossier, isDirectory: true))
