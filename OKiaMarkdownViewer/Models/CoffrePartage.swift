@@ -95,7 +95,7 @@ final class CoffrePartage: ObservableObject {
         #endif
         let d: [String: Any] = [
             "genre": (Self.estDansICloud(url) ? Emplacement.Genre.icloud : .dossier).rawValue,
-            "nom": url.lastPathComponent,
+            "nom": VaultStore.nomLisible(url),
             "lieu": Self.lieu(url),
             "appareil": Self.nomAppareil,
             "id": Self.idAppareil,

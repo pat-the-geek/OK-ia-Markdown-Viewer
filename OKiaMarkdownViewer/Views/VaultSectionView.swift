@@ -80,8 +80,12 @@ struct VaultSectionView: View {
                     BoutonDossier { [vault] in await vault.resolveFolder() }
                         .padding(.trailing, -4)
                 }
+                // Sur une ligne : un long nom se coupe au milieu plutôt que de passer sur trois.
                 Text(tr("Coffre") + (vault.folderName.map { " · \($0)" } ?? ""))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .layoutPriority(1)
                 Spacer()
                 if vault.hasFolder {
                     // Relire le coffre sans attendre la relecture suivante (Patrick, 12/11/2026) :

@@ -79,7 +79,7 @@ final class VaultStore: ObservableObject {
         #endif
         // Le nom gardé d'abord : résoudre le signet d'un partage réseau au lancement, sur le fil
         // principal, faisait attendre l'app.
-        folderName = UserDefaults.standard.string(forKey: nameKey) ?? resolveFolder()?.lastPathComponent
+        folderName = UserDefaults.standard.string(forKey: nameKey) ?? resolveFolder().map(Self.nomLisible)
         chargerListe()
     }
 
@@ -127,8 +127,8 @@ final class VaultStore: ObservableObject {
         bookmark = data
         racine = nil
         UserDefaults.standard.set(data, forKey: folderKey)
-        UserDefaults.standard.set(url.lastPathComponent, forKey: nameKey)
-        folderName = url.lastPathComponent
+        UserDefaults.standard.set(Self.nomLisible(url), forKey: nameKey)
+        folderName = Self.nomLisible(url)
         reports = []
         reseau = Self.estReseau(url)
         dansICloud = CoffrePartage.estDansICloud(url)
@@ -201,7 +201,29 @@ final class VaultStore: ObservableObject {
             }
         }
         racine = url
+        nommer(url)
         return url
+    }
+
+    /// Le nom du coffre tel qu'on le lit : un partage réseau monté par iOS s'appelle
+    /// `…/LiveFiles/com.apple.filesystems.smbclientd/JhgzeQ-Pat2TB` ; on n'en garde que « Pat2TB »
+    /// (Patrick, 12/11/2026 : « Le nom du coffre n'est pas beau »). Ailleurs, le nom du dossier.
+    nonisolated static func nomLisible(_ url: URL) -> String {
+        let nom = url.lastPathComponent
+        // Seulement à la racine d'un volume monté par iOS : un sous-dossier garde son nom, même s'il
+        // ressemble au motif (« Projet-2026 »).
+        guard url.deletingLastPathComponent().deletingLastPathComponent().lastPathComponent == "LiveFiles",
+              let r = nom.range(of: "^[A-Za-z0-9]{6}-", options: .regularExpression),
+              r.upperBound < nom.endIndex else { return nom }
+        return String(nom[r.upperBound...])
+    }
+
+    /// Le nom gardé d'un coffre déjà choisi se corrige dès que sa racine est connue.
+    private func nommer(_ url: URL) {
+        let nom = Self.nomLisible(url)
+        guard nom != folderName else { return }
+        folderName = nom
+        UserDefaults.standard.set(nom, forKey: nameKey)
     }
 
     /// La racine pour l'accueil : la gardée, ou résolue hors du fil principal, sans monter de volume.
@@ -213,7 +235,7 @@ final class VaultStore: ObservableObject {
             return try? URL(resolvingBookmarkData: marque, options: [.withoutMounting], relativeTo: nil,
                             bookmarkDataIsStale: &perime)
         }.value
-        if racine == nil, bookmark == marque { racine = u }
+        if racine == nil, bookmark == marque, let u { racine = u; nommer(u) }
         return u
     }
 
