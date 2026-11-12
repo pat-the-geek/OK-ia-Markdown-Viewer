@@ -439,3 +439,23 @@ devrait pouvoir corriger les entités aussi depuis la galerie analytique ».
       À essayer sur l'appareil : « Mauvais genre », « Ce n'est pas une entité » depuis la galerie.
 - [ ] Pendant la lecture des documents, la galerie se met à jour tous les dix documents et
       referme un menu contextuel ouvert.
+
+## Le coffre partagé entre les appareils (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « est-ce qu'on peut partager l'emplacement du coffre entre les appareils par icloud ? »,
+puis « on laisse ainsi le choix : mettre le coffre dans icloud ou mettre le coffre dans un partage
+réseau ».
+
+- [x] Deux places pour le coffre, dans l'accueil (sans coffre) et sous « Changer » : **dans iCloud
+      Drive** (le dossier « Coffre » de md Viewer, `VaultStore.mettreDansICloud`) ou **un dossier**
+      (partage réseau, disque), comme avant.
+- [x] L'emplacement voyage par le stockage clé-valeur d'iCloud (`CoffrePartage`, droit
+      `ubiquity-kvstore-identifier` ajouté, iOS et Mac) : genre, nom, chemin lisible, appareil.
+      Un coffre iCloud est pris aussitôt par un appareil qui n'en a pas ; un dossier est proposé
+      (« Sur votre iPhone, le coffre est « X » (chemin). Choisir ce dossier… · Ignorer »).
+- [x] Vu au simulateur iPad (harnais Debug `OKIA_SUGGESTION=dossier|icloud`) : la suggestion et les
+      deux choix ; sans compte iCloud, « iCloud Drive n'est pas disponible ». 15 langues.
+      Compilation Mac réussie, signée avec le nouveau droit.
+- [ ] À essayer sur les appareils : coffre iCloud choisi sur l'iPhone, retrouvé seul sur l'iPad et
+      le Mac ; partage de l'iMac choisi sur le Mac, proposé sur l'iPhone. Le build TestFlight dira
+      si le profil de distribution accepte le nouveau droit.

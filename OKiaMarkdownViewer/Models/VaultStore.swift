@@ -39,6 +39,9 @@ final class VaultStore: ObservableObject {
     @Published private(set) var enLecture = false
     /// Le coffre est sur un volume réseau : il ne se lit qu'en arrière-plan, et moins souvent.
     @Published private(set) var reseau = false
+    /// Le coffre est le dossier « Coffre » de md Viewer dans iCloud Drive (1.5) : les autres
+    /// appareils le trouvent d'eux-mêmes (`CoffrePartage`).
+    @Published private(set) var dansICloud = UserDefaults.standard.bool(forKey: "okia.vaultICloud")
     /// La fin de la dernière lecture : la surveillance du Mac espace celles d'un dossier réseau.
     private(set) var derniereLecture: Date = .distantPast
 
@@ -116,7 +119,7 @@ final class VaultStore: ObservableObject {
     /// Retient le dossier choisi. Faux si le système refuse d'en garder l'accès — on le disait
     /// pas : le choix restait sans effet.
     @discardableResult
-    func setFolder(_ url: URL) -> Bool {
+    func setFolder(_ url: URL, publier: Bool = true) -> Bool {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         guard let data = try? url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
@@ -128,8 +131,36 @@ final class VaultStore: ObservableObject {
         folderName = url.lastPathComponent
         reports = []
         reseau = Self.estReseau(url)
+        dansICloud = CoffrePartage.estDansICloud(url)
+        UserDefaults.standard.set(dansICloud, forKey: "okia.vaultICloud")
+        // Où est le coffre : les autres appareils de l'utilisateur l'apprennent par iCloud.
+        if publier { CoffrePartage.partage.publier(url) }
         refresh()
         return true
+    }
+
+    /// Les noms du dossier du coffre dans iCloud Drive, selon la langue ; un dossier déjà là, dans
+    /// une autre langue, reste celui qu'on emploie (comme « Documents analysés »).
+    nonisolated static let nomsCoffreICloud = ["fr": "Coffre", "de": "Store", "es": "Store", "it": "Store", "en": "Vault"]
+
+    /// Le coffre dans iCloud Drive : le dossier « Coffre » de md Viewer, créé au besoin. Faux sans
+    /// iCloud Drive (compte absent, iCloud Drive coupé).
+    @discardableResult
+    func mettreDansICloud(publier: Bool = true) async -> Bool {
+        let langue = UserDefaults.standard.string(forKey: "okia.language") ?? Localization.systemCode
+        // Le conteneur iCloud se cherche hors du fil principal : la première fois, il peut attendre.
+        let dossier: URL? = await Task.detached {
+            guard let base = FileManager.default.url(forUbiquityContainerIdentifier: SynchroICloud.conteneur)?
+                .appendingPathComponent("Documents", isDirectory: true) else { return nil }
+            let gestion = FileManager.default
+            let existant = Set(Self.nomsCoffreICloud.values).first { gestion.fileExists(atPath: base.appendingPathComponent($0).path) }
+            let nom = existant ?? Self.nomsCoffreICloud[langue] ?? "Vault"
+            let d = base.appendingPathComponent(nom, isDirectory: true)
+            try? gestion.createDirectory(at: d, withIntermediateDirectories: true)
+            return gestion.fileExists(atPath: d.path) ? d : nil
+        }.value
+        guard let dossier else { return false }
+        return setFolder(dossier, publier: publier)
     }
 
     func setPattern(_ newValue: String) {
@@ -141,6 +172,8 @@ final class VaultStore: ObservableObject {
     }
 
     func clearFolder() {
+        dansICloud = false
+        UserDefaults.standard.removeObject(forKey: "okia.vaultICloud")
         bookmark = nil
         racine = nil
         UserDefaults.standard.removeObject(forKey: folderKey)

@@ -33,6 +33,10 @@
 		<string>CloudKit</string>
 		<string>CloudDocuments</string>
 	</array>
+	<!-- L'emplacement du coffre, partagé entre les appareils (1.5, `CoffrePartage`). Le même
+	     identifiant sur iOS et sur Mac (même bundle) : les deux lisent le même stockage. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 	<key>com.apple.developer.ubiquity-container-identifiers</key>
 	<array>
 		<string>iCloud.ch.ok-ia.markdownviewer</string>

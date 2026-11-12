@@ -13,6 +13,9 @@ struct VaultSectionView: View {
     @ObservedObject private var loc = Localization.shared
     @ObservedObject private var achat = AchatAnalytic.partage
     @AppStorage(RangementDocuments.cleDansCoffre) private var importsDansCoffre = true
+    /// Le coffre choisi sur un autre appareil (1.5).
+    @ObservedObject private var partage = CoffrePartage.partage
+    @State private var erreurICloud = false
     @Environment(\.accueilEnGrille) private var enGrille
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
@@ -21,10 +24,25 @@ struct VaultSectionView: View {
     /// section par tranche de dates.
     var body: some View {
         Section {
+            if let e = partage.suggestion(coffreIci: vault.hasFolder ? vault.folderName : nil, dansICloud: vault.dansICloud) {
+                suggestion(e)
+            }
             if !vault.hasFolder {
-                Button(action: onPick) {
-                    Label(tr("Choisir le dossier du coffre…"), systemImage: "folder.badge.gearshape")
+                // Deux places pour le coffre (Patrick, 12/11/2026 : « on laisse ainsi le choix :
+                // mettre le coffre dans icloud ou mettre le coffre dans un partage réseau »).
+                VStack(alignment: .leading, spacing: 10) {
+                    Button { mettreDansICloud() } label: {
+                        Label(tr("Mettre le coffre dans iCloud Drive"), systemImage: "icloud")
+                    }
+                    Button(action: onPick) {
+                        Label(tr("Choisir un dossier (partage réseau, disque)…"), systemImage: "folder.badge.gearshape")
+                    }
+                    Text(tr("Dans iCloud Drive, tous vos appareils retrouvent le coffre d’eux-mêmes. Un dossier partagé se choisit une fois sur chaque appareil."))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
+                // Deux boutons dans une ligne de liste : sans bordure, chacun le sien.
+                .buttonStyle(.borderless)
                 .tint(orange)
                 .ligneAccueil()
             } else if vault.injoignable {
@@ -88,12 +106,26 @@ struct VaultSectionView: View {
                 .popover(isPresented: $showSettings) {
                     settingsControls.presentationCompactAdaptation(.popover)
                 }
-                Button(vault.hasFolder ? tr("Changer") : tr("Choisir…"), action: onPick)
-                    .fontWeight(.regular)
+                Menu {
+                    Button { mettreDansICloud() } label: {
+                        Label(tr("Dans iCloud Drive"), systemImage: "icloud")
+                    }
+                    .disabled(vault.dansICloud)
+                    Button(action: onPick) {
+                        Label(tr("Un dossier (partage réseau, disque)…"), systemImage: "folder")
+                    }
+                } label: {
+                    Text(vault.hasFolder ? tr("Changer") : tr("Choisir…")).fontWeight(.regular)
+                }
             }
             .tint(orange)
             .textCase(nil)
             .enTeteAccueil()
+        }
+        .alert(tr("iCloud Drive n’est pas disponible"), isPresented: $erreurICloud) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(tr("Vérifiez que vous êtes connecté à iCloud et qu’iCloud Drive est activé pour md Viewer."))
         }
         if vault.hasFolder {
             ForEach(groupes) { groupe in
@@ -108,6 +140,35 @@ struct VaultSectionView: View {
                 }
             }
         }
+    }
+
+    private func mettreDansICloud() {
+        Task { if !(await vault.mettreDansICloud()) { erreurICloud = true } }
+    }
+
+    /// Le coffre d'un autre appareil : dans iCloud Drive, un toucher le prend ; ailleurs, on le
+    /// nomme et l'on ouvre le sélecteur.
+    @ViewBuilder private func suggestion(_ e: CoffrePartage.Emplacement) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if e.genre == .icloud {
+                Label(tr("Sur votre %@, le coffre est dans iCloud Drive.", e.appareil), systemImage: "icloud")
+            } else {
+                Label(tr("Sur votre %@, le coffre est « %@ » (%@).", e.appareil, e.nom, e.lieu), systemImage: "folder")
+            }
+            HStack(spacing: 16) {
+                if e.genre == .icloud {
+                    Button(tr("Utiliser le même")) { mettreDansICloud() }
+                } else {
+                    Button(tr("Choisir ce dossier…"), action: onPick)
+                }
+                Button(tr("Ignorer")) { partage.ignorer(e) }
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+        }
+        .font(.footnote)
+        .tint(orange)
+        .ligneAccueil()
     }
 
     /// Les rapports du coffre, découpés comme les récents. Le coffre montre les quinze
