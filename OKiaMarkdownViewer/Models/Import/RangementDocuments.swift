@@ -122,10 +122,37 @@ enum RangementDocuments {
     /// Écrit un Markdown créé par md Viewer à sa place, sans écraser un document du même nom.
     /// `analyse` : un document de l'option (import, fiche) ; faux, le texte seul d'une page web, sans
     /// l'option — dans « Pages web », un dossier local de l'app, jamais dans « Documents analysés ».
+    ///
+    /// Depuis la 1.5.1, un document de l'option va dans le coffre, dossier « coffre md viewer »
+    /// (`importsDansCoffre`) ; le coffre injoignable (un partage qui dort), dans « Documents
+    /// analysés », et l'import le dit (`estRepli`).
     static func ecrire(_ markdown: String, titre: String, analyse: Bool = true) throws -> URL {
+        if analyse, importsDansCoffre, let racine = racineCoffre() {
+            let ouvert = racine.startAccessingSecurityScopedResource()
+            defer { if ouvert { racine.stopAccessingSecurityScopedResource() } }
+            if coffreJoignable(racine),
+               let u = try? ecrire(markdown, titre: titre, dans: dossierDansCoffre(racine)) {
+                Task { @MainActor in
+                    RechercheCoffre.partage.indexerSpotlight()
+                    await VaultStore.partage.rafraichirEnArrierePlan(forcee: true)
+                }
+                return u
+            }
+            let u = try ecrire(markdown, titre: titre, dans: dossier())
+            noterRepli(u)
+            Task { @MainActor in RechercheCoffre.partage.indexerSpotlight() }
+            return u
+        }
         let dossier = analyse ? dossier()
             : FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("Pages web", isDirectory: true)
+        let u = try ecrire(markdown, titre: titre, dans: dossier)
+        // Spotlight apprend le nouveau document (un lot n'envoie qu'une fois).
+        if analyse { Task { @MainActor in RechercheCoffre.partage.indexerSpotlight() } }
+        return u
+    }
+
+    private static func ecrire(_ markdown: String, titre: String, dans dossier: URL) throws -> URL {
         try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
         let base = nomNormalise(titre)
         var cible = dossier.appendingPathComponent(base + ".md")
@@ -141,8 +168,112 @@ enum RangementDocuments {
             do { try markdown.write(to: url, atomically: true, encoding: .utf8) } catch { erreurEcriture = error }
         }
         if let e = erreurCoordination ?? erreurEcriture { throw e }
-        // Spotlight apprend le nouveau document (un lot n'envoie qu'une fois).
-        if analyse { Task { @MainActor in RechercheCoffre.partage.indexerSpotlight() } }
+        return cible
+    }
+
+    // MARK: Le coffre (1.5.1)
+
+    // Patrick, 12/11/2026 : les documents importés peuvent aller dans le coffre, dans un dossier
+    // « coffre md viewer » au même niveau que les rapports, sur le même lecteur (le partage de l'iMac).
+    // Le coffre les lit toujours, quel que soit son motif (`VaultStore.lire`).
+
+    /// Le dossier des imports, à la racine du coffre.
+    static let dossierDuCoffre = "coffre md viewer"
+    /// Le réglage « Ranger les imports dans le coffre » (réglages du coffre) : vrai par défaut.
+    static let cleDansCoffre = "okia.importsDansCoffre"
+
+    static var importsDansCoffre: Bool {
+        UserDefaults.standard.object(forKey: cleDansCoffre) as? Bool ?? true
+    }
+
+    /// La racine du coffre, d'après le signet que garde `VaultStore`, sans monter de volume ; nil sans
+    /// coffre. Hors du fil principal : résoudre le signet d'un partage touche au réseau.
+    static func racineCoffre() -> URL? {
+        guard let signet = UserDefaults.standard.data(forKey: "okia.vaultFolder") else { return nil }
+        var perime = false
+        return try? URL(resolvingBookmarkData: signet, options: [.withoutMounting], relativeTo: nil,
+                        bookmarkDataIsStale: &perime)
+    }
+
+    /// Le coffre répond : sa racine existe. Sans ce garde-fou, un partage démonté laissait un chemin
+    /// sous /Volumes, et créer le dossier du jour y aurait fait un dossier local.
+    private static func coffreJoignable(_ racine: URL) -> Bool {
+        var dossier: ObjCBool = false
+        return FileManager.default.fileExists(atPath: racine.path, isDirectory: &dossier) && dossier.boolValue
+    }
+
+    /// `coffre md viewer/AAAA/MM/JJ` dans le coffre.
+    static func dossierDansCoffre(_ racine: URL, pour date: Date = Date()) -> URL {
+        let c = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
+        return racine.appendingPathComponent(dossierDuCoffre, isDirectory: true)
+            .appendingPathComponent(String(format: "%04d", c.year ?? 0), isDirectory: true)
+            .appendingPathComponent(String(format: "%02d", c.month ?? 0), isDirectory: true)
+            .appendingPathComponent(String(format: "%02d", c.day ?? 0), isDirectory: true)
+    }
+
+    /// Les documents rangés dans « Documents analysés » faute de coffre joignable : l'import le dit.
+    private static let verrou = NSLock()
+    nonisolated(unsafe) private static var replis: Set<String> = []
+
+    private static func noterRepli(_ url: URL) {
+        verrou.lock(); defer { verrou.unlock() }
+        replis.insert(url.standardizedFileURL.path)
+    }
+
+    /// Vrai si ce document a été rangé dans « Documents analysés » faute de coffre (une seule fois).
+    static func estRepli(_ url: URL) -> Bool {
+        verrou.lock(); defer { verrou.unlock() }
+        return replis.remove(url.standardizedFileURL.path) != nil
+    }
+
+    enum ErreurCoffre: LocalizedError {
+        case aucun, injoignable
+        var errorDescription: String? {
+            switch self {
+            case .aucun: return tr("Aucun coffre n’est choisi.")
+            case .injoignable: return tr("Le coffre n’est pas joignable. Le document reste dans « Documents analysés ».")
+            }
+        }
+    }
+
+    /// « Mettre dans le coffre » : déplace un document analysé dans `coffre md viewer`, au dossier de
+    /// son jour de création. Le même nom et le même contenu : ses annotations le suivent. Un document
+    /// identique déjà là : celui de « Documents analysés » est seulement retiré. Hors du fil principal.
+    static func mettreDansCoffre(_ source: URL) throws -> URL {
+        guard let racine = racineCoffre() else { throw ErreurCoffre.aucun }
+        let ouvert = racine.startAccessingSecurityScopedResource()
+        defer { if ouvert { racine.stopAccessingSecurityScopedResource() } }
+        guard coffreJoignable(racine) else { throw ErreurCoffre.injoignable }
+
+        // Lu par un coordinateur : un document venu d'un autre appareil peut être encore dans iCloud.
+        var erreurLecture: NSError?
+        var donnees: Data?
+        NSFileCoordinator().coordinate(readingItemAt: source, options: [], error: &erreurLecture) { u in
+            donnees = try? Data(contentsOf: u)
+        }
+        guard let donnees else { throw erreurLecture ?? CocoaError(.fileReadUnknown) }
+
+        let creation = (try? source.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date()
+        let dossier = dossierDansCoffre(racine, pour: creation)
+        try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
+        let base = source.deletingPathExtension().lastPathComponent
+        var cible = dossier.appendingPathComponent(source.lastPathComponent)
+        var n = 2
+        var dejaLa = false
+        while FileManager.default.fileExists(atPath: cible.path) {
+            if (try? Data(contentsOf: cible)) == donnees { dejaLa = true; break }
+            cible = dossier.appendingPathComponent("\(base) (\(n)).md"); n += 1
+        }
+        if !dejaLa {
+            try donnees.write(to: cible, options: .atomic)
+            // La date de création suit : l'accueil et la recherche datent le document par elle.
+            try? FileManager.default.setAttributes([.creationDate: creation], ofItemAtPath: cible.path)
+        }
+        // Retiré de « Documents analysés », par un coordinateur (iCloud Drive).
+        var erreurSuppression: NSError?
+        NSFileCoordinator().coordinate(writingItemAt: source, options: .forDeleting, error: &erreurSuppression) { u in
+            try? FileManager.default.removeItem(at: u)
+        }
         return cible
     }
 }

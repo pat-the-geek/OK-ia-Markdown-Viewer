@@ -292,3 +292,37 @@ concerné ? »
       paragraphe 34 avec le halo, ouverture à la note manuscrite. Compilation Mac réussie.
 - [ ] À essayer sur l'iPhone, l'iPad et le Mac, avec de vraies annotations (et celles venues d'un
       autre appareil par iCloud).
+
+## Les imports dans le coffre (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « Quelles sont les options pour enregistrer les nouveaux documents importés dans le
+coffre ? » ; choix : « un répertoire "coffre md viewer" au même niveau que les rapports et sur le
+même lecteur » (option A : dans le coffre, sans autorisation de plus) ; « sur les documents il faut
+prévoir l'option mettre dans le coffre ».
+
+- [x] `RangementDocuments.ecrire` : un document de l'option (import Word, PDF, PowerPoint, fiche de
+      page web) va dans `coffre md viewer/AAAA/MM/JJ/` du coffre, sous le même nom lisible. Le signet
+      du coffre est résolu sans monter de volume, hors du fil principal ; le coffre est relu après.
+- [x] Repli : coffre absent, racine introuvable (partage démonté : jamais de dossier créé sous
+      /Volumes) ou écriture refusée → « Documents analysés », et l'import le dit (« Le coffre n'est
+      pas joignable : … Vous pourrez le mettre dans le coffre depuis l'accueil. ») ; pour un lot,
+      le bilan donne le nombre.
+- [x] Le coffre lit toujours `coffre md viewer`, quel que soit son motif (`VaultStore.lire`).
+- [x] Un document du coffre s'ouvre avec l'accès du coffre (`VaultStore.portee(de:)`) : à la fin
+      d'un import, depuis les récents.
+- [x] Réglage « Ranger les imports dans le coffre » (actif par défaut) dans le popover des réglages
+      du coffre, avec l'option. Le popover a désormais une largeur fixe : ses textes étaient coupés.
+- [x] « Mettre dans le coffre » : menu de la carte, menu contextuel et balayage de la ligne d'un
+      document analysé, quand un coffre est choisi. Le document va au dossier de son jour de
+      création, même nom et même contenu (ses annotations le suivent) ; un document identique déjà
+      là : celui de « Documents analysés » est seulement retiré. Il quitte les récents (son signet
+      ne mène plus nulle part).
+- [x] Vu au simulateur iPad (coffre de test, `OKIA_LOT`) : un PDF importé va dans
+      `coffre md viewer/2026/11/12/` et apparaît dans le coffre ; dossier du jour en lecture seule →
+      repli dans « Documents analysés » avec le message ; « Mettre dans le coffre » le déplace ; le
+      réglage s'affiche entier. Compilation Mac réussie. 15 langues (« Store » en allemand,
+      espagnol et italien, comme le reste de l'app).
+- [ ] À essayer avec le vrai coffre sur le partage de l'iMac (iPhone à travers Tailscale, Mac),
+      partage endormi compris.
+- [ ] Pas fait : « Mettre dans le coffre » depuis le lecteur (seulement depuis l'accueil) ; la
+      description de l'action Raccourcis « Importer » parle encore de « Documents analysés ».

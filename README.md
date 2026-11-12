@@ -109,7 +109,14 @@ passent par **TestFlight** (`scripts/deploy-testflight.sh`) — la **1.5.1** y e
     des sous-dossiers de premier niveau que retient le **motif** des réglages (`*` par défaut,
     `rapports-*` jusqu'à la 1.5 — la forme du coffre de fornews). Une structure année / mois est
     donc lue entière. Dossiers cachés (`.obsidian`, `.git`) et paquets ignorés ; les fichiers
-    encore dans iCloud (`.nom.md.icloud`) comptés ;
+    encore dans iCloud (`.nom.md.icloud`) comptés. Le dossier `coffre md viewer` est toujours lu,
+    quel que soit le motif ;
+  - **les imports de l'option** (Word, PDF, PowerPoint, pages web) y vont, dans
+    `coffre md viewer/AAAA/MM/JJ/` (réglage « Ranger les imports dans le coffre », actif par
+    défaut, dans les réglages du coffre) ; le coffre injoignable, dans « Documents analysés », et
+    l'import le dit. Un document analysé passe dans le coffre par **« Mettre dans le coffre »**
+    (menu de sa carte ou de sa ligne) : même nom, même contenu, ses annotations le suivent
+    (`RangementDocuments.mettreDansCoffre`) ;
   - **ses bornes** : 8 niveaux, 3 000 fichiers, 4 s de lecture (20 s sur un volume réseau) ;
     l'accueil le dit quand une borne arrête la lecture ;
   - **un dossier réseau** (partage d'un autre Mac, y compris à travers Tailscale ; serveur ajouté
@@ -1694,6 +1701,8 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; version **1.5.1** depu
 - **Ouvrir un document sans figer l'écran** : lu hors du fil principal, avec un bandeau
   « Ouverture de … » (12/11).
 - **La liste de toutes les annotations**, qui ouvre chaque document à son annotation (12/11).
+- **Les imports dans le coffre** : dossier `coffre md viewer`, repli sur « Documents analysés »,
+  « Mettre dans le coffre » pour les documents déjà analysés (12/11).
 - **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
   coffre en `rapports-*`).
 

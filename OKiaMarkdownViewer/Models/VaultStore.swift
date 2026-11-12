@@ -184,6 +184,14 @@ final class VaultStore: ObservableObject {
         return u
     }
 
+    /// La racine du coffre si `url` s'y trouve — l'accès à ouvrir pour lire ce fichier (un document
+    /// importé dans « coffre md viewer », 1.5.1). Nil ailleurs.
+    func portee(de url: URL) -> URL? {
+        guard let r = resolveFolder() else { return nil }
+        let racine = r.standardizedFileURL.path
+        return url.standardizedFileURL.path.hasPrefix(racine.hasSuffix("/") ? racine : racine + "/") ? r : nil
+    }
+
     func reportURL(_ report: VaultReport) -> URL? {
         resolveFolder()?.appendingPathComponent(report.subfolder).appendingPathComponent(report.name)
     }
@@ -358,7 +366,9 @@ final class VaultStore: ObservableObject {
                         // Dossier caché ou paquet (une app, une bibliothèque Photos) : jamais lu.
                         if nom.hasPrefix(".") || valeurs?.isPackage == true { continue }
                         // Le motif choisit les sous-dossiers de premier niveau ; plus bas, tout est lu.
-                        if dossier.profondeur == 0 && !predicate.evaluate(with: nom) { continue }
+                        // Sauf « coffre md viewer », où vont les imports (1.5.1) : toujours lu.
+                        if dossier.profondeur == 0 && !predicate.evaluate(with: nom)
+                            && nom != RangementDocuments.dossierDuCoffre { continue }
                         if dossier.profondeur + 1 > profondeurMax { lecture.coupe = true; continue }
                         let relatif = dossier.relatif.isEmpty ? nom : dossier.relatif + "/" + nom
                         suivant.append((enfant, relatif, dossier.profondeur + 1))

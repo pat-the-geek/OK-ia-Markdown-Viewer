@@ -194,6 +194,10 @@ final class DocumentStore: ObservableObject {
 
     /// Opens a user-selected file (importer / open-in / cold launch) and remembers it.
     func open(url: URL) {
+        // Un document du coffre (un import rangé dans « coffre md viewer ») : l'accès est celui du coffre.
+        let coffre = vault.portee(de: url)
+        let dansCoffre = coffre?.startAccessingSecurityScopedResource() ?? false
+        defer { if dansCoffre { coffre?.stopAccessingSecurityScopedResource() } }
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -243,6 +247,8 @@ final class DocumentStore: ObservableObject {
         var importes = 0
         var dernier: URL?
         var echecs: [String] = []
+        /// Rangés dans « Documents analysés » faute de coffre joignable.
+        var replis = 0
         var choix: (consignes: Bool, rapport: Bool)?
     }
     private var lot: Lot?
@@ -312,8 +318,9 @@ final class DocumentStore: ObservableObject {
         switch issue {
         case .success(let r):
             l.importes += 1
-            recents.add(url: r.document)
-            if let a = r.rapport { recents.add(url: a) }
+            ajouterAuxRecents(r.document)
+            if let a = r.rapport { ajouterAuxRecents(a) }
+            if [r.document, r.rapport].compactMap({ $0 }).map(RangementDocuments.estRepli).contains(true) { l.replis += 1 }
             l.dernier = r.rapport ?? r.document
         case .failure:
             l.echecs.append(i.nomSource)
@@ -328,7 +335,13 @@ final class DocumentStore: ObservableObject {
         lot = nil
         fermerDossiers()
         if let dernier = l.dernier { open(url: dernier) }
-        var bilan = tr("%d documents importés", l.importes) + " — " + tr("rangés dans « Documents analysés », au dossier du jour.")
+        let dansCoffre = RangementDocuments.importsDansCoffre && vault.hasFolder && l.replis < l.importes
+        var bilan = tr("%d documents importés", l.importes) + " — "
+            + (dansCoffre ? tr("rangés dans le coffre, dossier « coffre md viewer », au dossier du jour.")
+                          : tr("rangés dans « Documents analysés », au dossier du jour."))
+        if dansCoffre, l.replis > 0 {
+            bilan += "\n\n" + tr("Le coffre n’était pas toujours joignable : %d dans « Documents analysés ».", l.replis)
+        }
         if !l.echecs.isEmpty { bilan += "\n\n" + tr("Pas importés : %@", l.echecs.joined(separator: ", ")) }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { self.bilanLot = bilan }
         pageSuivante()
@@ -347,10 +360,18 @@ final class DocumentStore: ObservableObject {
                 // Le rapport d'analyse s'ouvre s'il y en a un ; le document importé entre dans les
                 // récents, à un geste.
                 if let rapport = r.rapport {
-                    recents.add(url: r.document)
+                    ajouterAuxRecents(r.document)
                     open(url: rapport)
                 } else {
                     open(url: r.document)
+                }
+                // Le coffre injoignable : rangé dans « Documents analysés », on le dit.
+                let repli = [r.document, r.rapport].compactMap { $0 }.map(RangementDocuments.estRepli).contains(true)
+                if repli {
+                    let nom = (r.document.lastPathComponent as NSString).deletingPathExtension
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                        self.errorMessage = tr("Le coffre n’est pas joignable : « %@ » est rangé dans « Documents analysés ». Vous pourrez le mettre dans le coffre depuis l’accueil.", nom)
+                    }
                 }
             case .failure(let e):
                 // L'alerte attend que la fenêtre d'avancement soit refermée : présentée pendant
@@ -414,6 +435,15 @@ final class DocumentStore: ObservableObject {
         if lot != nil { terminerLot() }
     }
 
+    /// Un document importé entre dans les récents ; rangé dans le coffre, son signet se fait avec
+    /// l'accès du coffre.
+    private func ajouterAuxRecents(_ url: URL) {
+        let coffre = vault.portee(de: url)
+        let ouvert = coffre?.startAccessingSecurityScopedResource() ?? false
+        defer { if ouvert { coffre?.stopAccessingSecurityScopedResource() } }
+        recents.add(url: url)
+    }
+
     /// Reopens a previously stored recent entry (local file or remote report).
     func openRecent(_ item: RecentFile) {
         if let remote = item.remoteURLString, let url = URL(string: remote) {
@@ -459,7 +489,8 @@ final class DocumentStore: ObservableObject {
                 if self.jetonOuverture == jeton { self.finOuverture() }
                 return
             }
-            let url = trouve.url, portee = trouve.portee
+            // Un récent rangé dans le coffre : l'accès du coffre, en plus du sien.
+            let url = trouve.url, portee = trouve.portee ?? self.vault.portee(de: trouve.url)
             let lu = await Task.detached(priority: .userInitiated) { () -> (Result<MarkdownDocument, Error>, Data?) in
                 let ouvert = portee?.startAccessingSecurityScopedResource() ?? false
                 let propre = url.startAccessingSecurityScopedResource()

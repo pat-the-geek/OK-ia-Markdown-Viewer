@@ -27,6 +27,7 @@ struct EmptyStateView: View {
     /// Le document dont on demande la suppression, en attente de confirmation.
     @State private var aSupprimer: Suppression?
     @State private var erreurSuppression: String?
+    @State private var erreurCoffre: String?
     @ObservedObject private var loc = Localization.shared
     /// Sur Mac, la taille des cartes et de leur texte (`TailleAccueil`).
     @AppStorage(TailleAccueil.cle) private var taille = 1.0
@@ -89,6 +90,12 @@ struct EmptyStateView: View {
                  ? tr("Le rapport est retiré du coffre « %@ », sur tous vos appareils.", vault.folderName ?? "")
                  : tr("Le document est retiré du dossier « Documents analysés », sur tous vos appareils.")))
         }
+        .alert(tr("Impossible de mettre le document dans le coffre."),
+               isPresented: Binding(get: { erreurCoffre != nil }, set: { if !$0 { erreurCoffre = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text(erreurCoffre ?? "")
+        }
         .alert(tr("Impossible de supprimer le document."),
                isPresented: Binding(get: { erreurSuppression != nil }, set: { if !$0 { erreurSuppression = nil } })) {
             Button("OK") {}
@@ -97,6 +104,27 @@ struct EmptyStateView: View {
         }
         .sheet(isPresented: $showAbout) { AboutLibrariesView() }
         .sheet(isPresented: $showSettings) { SettingsView() }
+    }
+
+    /// « Mettre dans le coffre » (1.5.1) : le document analysé passe dans « coffre md viewer », hors du
+    /// fil principal (le coffre peut être un partage réseau) ; il quitte la liste des documents
+    /// analysés et le coffre est relu.
+    private func mettreDansCoffre(_ d: DocumentsAnalysesSection.DocumentAnalyse) {
+        Task {
+            let issue = await Task.detached(priority: .userInitiated) { () -> Result<URL, Error> in
+                Result { try RangementDocuments.mettreDansCoffre(d.url) }
+            }.value
+            switch issue {
+            case .success:
+                // Son ancien signet ne mène plus nulle part : il quitte les récents.
+                RecentFilesStore.partage.retirer(url: d.url)
+                analyses.removeAll { $0.url == d.url }
+                RechercheCoffre.partage.indexerSpotlight()
+                await vault.rafraichirEnArrierePlan(forcee: true)
+            case .failure(let e):
+                erreurCoffre = e.localizedDescription
+            }
+        }
     }
 
     /// La date entière d'un document, dans la confirmation de sa suppression.
@@ -130,7 +158,7 @@ struct EmptyStateView: View {
                 analyses.removeAll { $0.url == d.url }
                 RechercheCoffre.partage.indexerSpotlight()
             }
-        })
+        }, mettreDansCoffre: vault.hasFolder ? { d in mettreDansCoffre(d) } : nil)
         VaultSectionView(vault: vault, onPick: onPickVault, onOpen: onOpenVault, onDelete: { r in
             aSupprimer = Suppression(nom: (r.name as NSString).deletingPathExtension,
                                      precision: r.mentionDossier + dateComplete(r.modified),

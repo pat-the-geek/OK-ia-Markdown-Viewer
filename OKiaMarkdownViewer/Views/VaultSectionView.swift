@@ -11,6 +11,8 @@ struct VaultSectionView: View {
     @State private var showSettings = false
     @State private var patternDraft = ""
     @ObservedObject private var loc = Localization.shared
+    @ObservedObject private var achat = AchatAnalytic.partage
+    @AppStorage(RangementDocuments.cleDansCoffre) private var importsDansCoffre = true
     @Environment(\.accueilEnGrille) private var enGrille
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
@@ -167,6 +169,7 @@ struct VaultSectionView: View {
             Text(tr("Les fichiers à la racine du coffre sont toujours lus. Le motif choisit les sous-dossiers à lire, à tous leurs niveaux (jokers * et ? ; * : tous)."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             TextField(VaultStore.defaultPattern, text: $patternDraft)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -180,10 +183,25 @@ struct VaultSectionView: View {
                 Button(tr("Appliquer")) { apply() }
                     .buttonStyle(.borderedProminent)
             }
+            // Les imports de l'option dans le coffre (1.5.1).
+            if achat.acces {
+                Divider()
+                Toggle(isOn: $importsDansCoffre) {
+                    Text(tr("Ranger les imports dans le coffre"))
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text(tr("Les documents Word, PDF, PowerPoint et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par jour. Si le coffre n’est pas joignable, dans « Documents analysés »."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .tint(orange)
         .padding(16)
-        .frame(maxWidth: 320)
+        // Une largeur fixe : le popover s'ajuste à son contenu, et ses textes passent à la ligne au
+        // lieu d'être coupés.
+        .frame(width: 320)
     }
 
     private func apply() {

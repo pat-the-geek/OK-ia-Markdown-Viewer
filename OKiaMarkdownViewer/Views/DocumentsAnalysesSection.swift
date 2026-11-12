@@ -12,6 +12,8 @@ struct DocumentsAnalysesSection: View {
     var ouvrir: (URL) -> Void
     /// Demande la suppression d'un document (l'accueil confirme).
     var supprimer: (DocumentAnalyse) -> Void = { _ in }
+    /// Le met dans le coffre, dossier « coffre md viewer » (1.5.1) ; nil sans coffre.
+    var mettreDansCoffre: ((DocumentAnalyse) -> Void)?
     @ObservedObject private var achat = AchatAnalytic.partage
     @ObservedObject private var loc = Localization.shared
     @Environment(\.accueilEnGrille) private var enGrille
@@ -71,6 +73,7 @@ struct DocumentsAnalysesSection: View {
     private func carte(_ d: DocumentAnalyse) -> some View {
         CarteDocument(nom: d.nom, mention: DecoupageParDate.mention(pour: d.date),
                       resoudre: { (d.url, nil) }, action: { ouvrir(d.url) }) {
+            boutonCoffre(d)
             Button(role: .destructive) { supprimer(d) } label: { Label(tr("Supprimer"), systemImage: "trash") }
         }
     }
@@ -96,9 +99,20 @@ struct DocumentsAnalysesSection: View {
         // Supprimer : balayer vers la gauche, ou le menu contextuel (le clic droit sur Mac).
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) { supprimer(d) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+            if let mettreDansCoffre {
+                Button { mettreDansCoffre(d) } label: { Label(tr("Mettre dans le coffre"), systemImage: "folder") }
+                    .tint(Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255))
+            }
         }
         .contextMenu {
+            boutonCoffre(d)
             Button(role: .destructive) { supprimer(d) } label: { Label(tr("Supprimer"), systemImage: "trash") }
+        }
+    }
+
+    @ViewBuilder private func boutonCoffre(_ d: DocumentAnalyse) -> some View {
+        if let mettreDansCoffre {
+            Button { mettreDansCoffre(d) } label: { Label(tr("Mettre dans le coffre"), systemImage: "folder") }
         }
     }
 
