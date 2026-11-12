@@ -607,6 +607,13 @@ struct ReaderView: View {
         .onChange(of: store.rechercheDemandee) { _, q in
             if let q { store.rechercheDemandee = nil; chercher(q, apres: 1.2) }
         }
+        // Une annotation touchée dans la liste de toutes les annotations : la page y défile.
+        .onAppear {
+            if let id = store.annotationDemandee { store.annotationDemandee = nil; web.montrerAnnotation(id) }
+        }
+        .onChange(of: store.annotationDemandee) { _, id in
+            if let id { store.annotationDemandee = nil; web.montrerAnnotation(id) }
+        }
         // Les actions de Raccourcis (1.4) : analyser le document, l'exporter en PDF.
         .onAppear {
             if store.entitesDemandees { store.entitesDemandees = false; ouvrir(.entites) }

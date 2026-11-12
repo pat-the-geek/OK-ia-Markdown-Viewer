@@ -363,6 +363,9 @@
     Object.keys(groupes).forEach(function (cle) { CSS.highlights.set(cle, new Highlight(...groupes[cle])); });
     setTimeout(function () { occupe = false; }, 0);
     post('annotationsPosees', { orphelines: orphelines });
+    // Une annotation demandée par la liste, que le document vient d'apporter : la mise en page
+    // d'abord.
+    if (aMontrer) setTimeout(essayerDeMontrer, 350);
   }
 
   // Le surlignage ou la note sous un point (la gomme) : son identifiant, ou null.
@@ -491,9 +494,56 @@
   }
   observer();
 
+  /* ---- Montrer une annotation (la liste des annotations, 1.5.1) ------------------------ */
+
+  // Le document ouvert depuis la liste de toutes les annotations défile jusqu'à celle qu'on a
+  // touchée, et un halo la signale un instant. Elle reste en attente tant qu'elle n'est pas posée :
+  // le document peut arriver après la demande.
+  var aMontrer = null;
+  function montrer(id) { aMontrer = id; essayerDeMontrer(); }
+  function essayerDeMontrer() {
+    if (!aMontrer) return;
+    var a = annotations.find(function (x) { return x.id === aMontrer; });
+    if (!a) return;
+    var rect = null;
+    if (a.type === 'encre') {
+      var img = Array.from(document.querySelectorAll('.okia-encre')).find(function (i) {
+        return i.getAttribute('data-id') === a.id;
+      });
+      if (!img) return;
+      // Une note pas encore décodée n'a pas de hauteur : le halo n'était qu'un trait.
+      if (!img.complete || !img.naturalHeight) {
+        img.addEventListener('load', essayerDeMontrer, { once: true });
+        return;
+      }
+      rect = img.getBoundingClientRect();
+    } else {
+      var c = contenu();
+      var r = c ? resoudre(noeudsTexte(c), a.ancre) : null;
+      if (r) rect = r.getBoundingClientRect();
+    }
+    if (!rect || !rect.width || !rect.height) return;
+    aMontrer = null;
+    // En coordonnées de la page, relevées avant de défiler.
+    var gauche = rect.left + window.scrollX, haut = rect.top + window.scrollY;
+    // Au tiers de l'écran : on voit ce qui précède. Sans animation : un rendu qui suit (diagrammes)
+    // l'interrompait à mi-course.
+    window.scrollTo(0, Math.max(0, haut - window.innerHeight / 3));
+    var halo = document.createElement('div');
+    halo.className = 'okia-halo';
+    halo.setAttribute('aria-hidden', 'true');
+    halo.style.left = (gauche - 6) + 'px';
+    halo.style.top = (haut - 4) + 'px';
+    halo.style.width = (rect.width + 12) + 'px';
+    halo.style.height = (rect.height + 8) + 'px';
+    document.body.appendChild(halo);
+    setTimeout(function () { halo.remove(); }, 2600);
+  }
+
   window.OKIA_ANNOT = {
     // annotations : [{ id, type: 'surligne'|'souligne'|'encre', couleur, ancre, image? }]
     appliquer: function (liste) { annotations = liste || []; poser(); },
+    montrer: montrer,
     ancrerTexte: ancrerTexte,
     ancrerEncre: ancrerEncre,
     sousLePoint: sousLePoint,

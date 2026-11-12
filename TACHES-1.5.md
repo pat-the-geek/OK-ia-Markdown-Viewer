@@ -264,3 +264,31 @@ document, peut-on avoir une information qui dise que le chargement est en cours 
       en Debug) : le bandeau s'affiche, l'écran répond pendant le chargement, un second document
       touché remplace le premier. Compilation Mac réussie.
 - [ ] À essayer sur l'iPhone et le Duo, avec le partage de l'iMac.
+
+## La liste de toutes les annotations (demandé par Patrick le 12 novembre 2026)
+
+Patrick : « Peut-on avoir une liste de toutes les annotations prises qui permet d'ouvrir le document
+concerné ? »
+
+- [x] `ListeAnnotationsView` : les annotations document par document, le document annoté le plus
+      récemment d'abord. Pour chacune : sa couleur, le texte surligné ou souligné (rendu comme dans
+      le document), ou la note manuscrite elle-même ; son genre et sa date. Une recherche filtre
+      par texte annoté ou par nom de document.
+- [x] Ouvrir : toucher le nom d'un document l'ouvre ; toucher une annotation l'ouvre aussi, et la
+      page défile jusqu'à elle (au tiers de l'écran) et l'entoure d'un halo orange un instant
+      (`OKIA_ANNOT.montrer`, `ReaderWebController.montrerAnnotation`). La demande attend que
+      l'annotation soit posée, et une note manuscrite que son image soit décodée.
+- [x] Retrouver le document : une annotation connaît son nom et l'empreinte de son contenu, pas un
+      chemin valable partout (elles arrivent aussi d'autres appareils par iCloud). Il est cherché
+      dans le coffre, les documents analysés, les récents et là où il a été annoté, par le nom puis
+      par la clé de ses annotations (`ApercusDocuments`, hors du fil principal). Introuvable : le
+      document reste dans la liste, grisé, « Introuvable sur cet appareil ».
+- [x] Accès : le surligneur de la barre de l'accueil (à côté de la recherche et de l'analyse du
+      coffre), Fichier ▸ Toutes les annotations… (⇧⌘A) sur Mac. Réservé à l'option Analytic, comme
+      les annotations. Traduit dans les 15 langues.
+- [x] Vu au simulateur iPad (annotations d'essai : un long document du coffre avec surlignage,
+      soulignement et note manuscrite, « Compte rendu », un document absent ; `OKIA_ANNOTATIONS`
+      ouvre la liste au lancement, en Debug) : liste, document introuvable grisé, ouverture au
+      paragraphe 34 avec le halo, ouverture à la note manuscrite. Compilation Mac réussie.
+- [ ] À essayer sur l'iPhone, l'iPad et le Mac, avec de vraies annotations (et celles venues d'un
+      autre appareil par iCloud).

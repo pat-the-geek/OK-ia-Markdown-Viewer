@@ -207,6 +207,26 @@ enum AnnotationsStore {
         return f.annotations
     }
 
+    /// Un fichier d'annotations, pour la liste de toutes les annotations (`ListeAnnotationsView`).
+    struct Entree: Sendable {
+        let cle: String
+        let document: IdentiteDocument
+        let annotations: [Annotation]
+    }
+
+    /// Toutes les annotations, document par document — à lire hors du fil principal. Les fichiers
+    /// d'avant le 27/10/2026, sans identité de document, sont laissés de côté : on ne saurait pas
+    /// quel document ouvrir.
+    nonisolated static func toutes() -> [Entree] {
+        let genre = SynchroICloud.Genre.annotations
+        return genre.fichiers().compactMap { cle in
+            guard let data = try? Data(contentsOf: genre.url(cle)),
+                  let f = try? JSONDecoder().decode(Fichier.self, from: data),
+                  let document = f.document, !f.annotations.isEmpty else { return nil }
+            return Entree(cle: cle, document: document, annotations: f.annotations)
+        }
+    }
+
     static func ecrire(_ annotations: [Annotation], pour identite: IdentiteDocument) {
         let u = url(identite.cle)
         defer { SynchroICloud.partage.signaler(); DocumentsAnnotes.partage.rafraichir() }

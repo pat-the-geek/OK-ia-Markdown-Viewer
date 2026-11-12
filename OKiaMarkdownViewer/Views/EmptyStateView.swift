@@ -19,6 +19,7 @@ struct EmptyStateView: View {
     @State private var lectureAnalyses = 0
     @Environment(\.scenePhase) private var phase
     @ObservedObject private var achat = AchatAnalytic.partage
+    @ObservedObject private var annotes = DocumentsAnnotes.partage
     @EnvironmentObject private var store: DocumentStore
     @State private var showSettings = false
     /// L'accueil montre des cartes avec vignettes, sauf aux tailles de texte d'accessibilité.
@@ -180,7 +181,7 @@ struct EmptyStateView: View {
         // Option Analytic (1.4) : la recherche et l'analyse de tout le coffre, en vue dans la barre
         // plutôt que dans les en-têtes des listes (Patrick, 28/10/2026 : « les mettre en valeur »).
         // Sans l'option, elles mènent à la vitrine.
-        if !vault.reports.isEmpty || !analyses.isEmpty {
+        if !vault.reports.isEmpty || !analyses.isEmpty || !annotes.cles.isEmpty {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button { NotificationCenter.default.post(name: .okiaRechercheCoffre, object: store) } label: {
                     Image(systemName: "magnifyingglass")
@@ -192,6 +193,12 @@ struct EmptyStateView: View {
                 }
                 .teinteBarre()
                 .accessibilityLabel(tr("Analyser le coffre"))
+                // Toutes les annotations, et le document de chacune (1.5.1).
+                Button { NotificationCenter.default.post(name: .okiaAnnotations, object: store) } label: {
+                    Image(systemName: "highlighter")
+                }
+                .teinteBarre()
+                .accessibilityLabel(tr("Toutes les annotations"))
             }
             ToolbarSpacer(.fixed, placement: .primaryAction)
         }

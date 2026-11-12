@@ -196,6 +196,7 @@ struct RootView: View {
             #endif
         }
         .modifier(RepriseApresAchat(store: store, achat: achat))
+        .modifier(ListeDesAnnotations(store: store))
         // macOS: auto-open new reports landing in the vault folder.
         .task {
             store.startVaultWatch()
@@ -299,5 +300,29 @@ private struct BandeauOuverture: View {
         .padding(.horizontal, 24)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.updatesFrequently)
+    }
+}
+
+/// La liste de toutes les annotations (option Analytic, 1.5.1) : la barre de l'accueil, Fichier ▸
+/// Toutes les annotations sur Mac. Toucher une annotation ouvre son document, qui y défile.
+private struct ListeDesAnnotations: ViewModifier {
+    @ObservedObject var store: DocumentStore
+    @State private var ouverte = false
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .okiaAnnotations)) { n in
+                guard n.estPour(store) else { return }
+                store.avecOption { ouverte = true }
+            }
+            .sheet(isPresented: $ouverte) {
+                ListeAnnotationsView(vault: store.vault, recents: store.recents) { lieu, annotation in
+                    store.ouvrirHorsFil(nom: lieu.url.lastPathComponent, annotation: annotation) {
+                        (lieu.url, lieu.portee)
+                    }
+                }
+                // Une page entière sur iPad : les extraits ont besoin de largeur.
+                .presentationSizing(.page)
+            }
     }
 }

@@ -1546,8 +1546,11 @@ text ». La devise interne de Patrick, à garder pour nous : *md Viewer will be 
    nom et l'empreinte de son contenu), et passent d'un appareil à l'autre par l'iCloud privé
    (CloudKit). On annote dans le lecteur, **le livre** et **le diaporama** ; les annotations partent
    dans l'**export PDF** et dans l'**export Word** (surlignages de Word, notes en commentaires).
-   Sur l'accueil, **un stabilo orange marque les documents annotés** (B135). Détail et vérifications :
-   `TACHES-1.4.md`, lot ④ bis.
+   Sur l'accueil, **un stabilo orange marque les documents annotés** (B135). Depuis la 1.5.1, **la
+   liste de toutes les annotations** (le surligneur de la barre de l'accueil, ⇧⌘A sur Mac), document
+   par document : toucher une annotation ouvre son document, qui défile jusqu'à elle et la signale
+   d'un halo (`Views/ListeAnnotationsView.swift`). Détail et vérifications : `TACHES-1.4.md`, lot ④
+   bis, et `TACHES-1.5.md`.
 5. ~~**Des modèles plus poussés** (Private Cloud Compute)~~ — **écarté le 2026-10-25**, voir les
    décisions ci-dessous.
 6. **Le lien avec fornews** (base d'entités, ouverture par QID).
@@ -1688,6 +1691,9 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; version **1.5.1** depu
 - **Export PDF avec images** vérifié (12/11) : les trois formes d'image y sont ; une page à moitié
   vide avant une image et un `<svg>` collé à gauche corrigés.
 - **Recharger le coffre** : bouton ↻, ⌘R sur Mac (build 156).
+- **Ouvrir un document sans figer l'écran** : lu hors du fil principal, avec un bandeau
+  « Ouverture de … » (12/11).
+- **La liste de toutes les annotations**, qui ouvre chaque document à son annotation (12/11).
 - **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
   coffre en `rapports-*`).
 

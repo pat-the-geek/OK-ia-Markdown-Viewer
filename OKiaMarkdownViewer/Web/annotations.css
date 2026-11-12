@@ -59,3 +59,20 @@ mark.okia-fige.okia-souligne-bleu  { text-decoration-color: rgb(10, 110, 230); }
   max-width: none;
   margin: 0;
 }
+
+/* L'annotation touchée dans la liste de toutes les annotations (1.5.1) : un halo, le temps de la voir. */
+.okia-halo {
+  position: absolute;
+  border: 2.5px solid rgb(232, 151, 46);
+  border-radius: 7px;
+  pointer-events: none;
+  z-index: 2000;
+  animation: okia-halo 2.6s ease-out forwards;
+}
+@keyframes okia-halo {
+  0%   { opacity: 0; transform: scale(1.2); }
+  15%  { opacity: 1; transform: scale(1); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media print { .okia-halo { display: none; } }

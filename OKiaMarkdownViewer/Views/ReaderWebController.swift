@@ -508,7 +508,25 @@ final class ReaderWebController: ObservableObject {
     }
 
     func reposerAnnotations() {
-        eval("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(annotationsJSON))")
+        guard let id = annotationAMontrer else {
+            eval("window.OKIA_ANNOT && window.OKIA_ANNOT.appliquer(\(annotationsJSON))")
+            return
+        }
+        // La page garde la demande jusqu'à ce que l'annotation soit posée ; une fois la page prête à
+        // la recevoir, elle n'est plus à transmettre.
+        let cible = (try? String(data: JSONEncoder().encode(id), encoding: .utf8)) ?? "null"
+        webView?.evaluateJavaScript("window.OKIA_ANNOT ? (window.OKIA_ANNOT.appliquer(\(annotationsJSON)), window.OKIA_ANNOT.montrer(\(cible)), true) : false") { [weak self] pret, _ in
+            if pret as? Bool == true, self?.annotationAMontrer == id { self?.annotationAMontrer = nil }
+        }
+    }
+
+    /// L'annotation touchée dans la liste de toutes les annotations (1.5.1) : la page défile jusqu'à
+    /// elle et la signale, dès qu'elle est posée.
+    private var annotationAMontrer: String?
+
+    func montrerAnnotation(_ id: String) {
+        annotationAMontrer = id
+        reposerAnnotations()
     }
 
     private func eval(_ js: String) { webView?.evaluateJavaScript(js, completionHandler: nil) }

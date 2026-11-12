@@ -19,6 +19,9 @@ extension Notification.Name {
     /// La recherche dans tout le coffre (option Analytic) : Fichier ▸ Rechercher dans le coffre… sur
     /// Mac, l'en-tête du coffre ailleurs.
     static let okiaRechercheCoffre = Notification.Name("okia.rechercheCoffre")
+    /// La liste de toutes les annotations (option Analytic, 1.5.1) : Fichier ▸ Toutes les
+    /// annotations sur Mac, la barre de l'accueil ailleurs.
+    static let okiaAnnotations = Notification.Name("okia.annotations")
 }
 
 /// Holds the currently displayed document and any load error.
@@ -57,6 +60,8 @@ final class DocumentStore: ObservableObject {
     }
     /// Ce que le document qui s'ouvre doit chercher : un document trouvé par la recherche du coffre.
     @Published var rechercheDemandee: String?
+    /// L'annotation touchée dans la liste de toutes les annotations (1.5.1) : le lecteur y défile.
+    @Published var annotationDemandee: String?
     /// Une action de Raccourcis (1.4) demande au lecteur d'ouvrir les entités du document.
     @Published var entitesDemandees = false
     /// Une action de Raccourcis (1.4) attend le PDF du document : le lecteur l'exporte une fois rendu.
@@ -440,7 +445,7 @@ final class DocumentStore: ObservableObject {
     /// son signet pour les récents, puis l'affiche. `portee` : le dossier qui détient l'accès (le
     /// coffre), ouvert le temps de lire. Le bandeau n'apparaît qu'après un instant : un fichier local
     /// s'ouvre avant, sans clignoter.
-    func ouvrirHorsFil(nom: String, echec: String? = nil,
+    func ouvrirHorsFil(nom: String, echec: String? = nil, annotation: String? = nil,
                        trouver: @escaping () async -> (url: URL, portee: URL?)?) {
         let jeton = UUID()
         jetonOuverture = jeton
@@ -487,6 +492,7 @@ final class DocumentStore: ObservableObject {
                 self.document = doc
                 if let s = lu.1 { self.recents.add(url: url, signet: s) }
                 self.errorMessage = nil
+                self.annotationDemandee = annotation
             case .failure(let e):
                 self.errorMessage = echec ?? e.localizedDescription
             }
@@ -651,6 +657,12 @@ struct OKiaMarkdownViewerApp: App {
         if let id = env["OKIA_TROUVE"], !id.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { store.ouvrirTrouve(id) }
         }
+        // OKIA_ANNOTATIONS : ouvre la liste de toutes les annotations au lancement.
+        if env["OKIA_ANNOTATIONS"] != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                NotificationCenter.default.post(name: .okiaAnnotations, object: nil)
+            }
+        }
         if env["OKIA_ANALYSE_COFFRE"] != nil {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 NotificationCenter.default.post(name: .okiaAnalyseCoffre, object: nil)
@@ -702,6 +714,10 @@ struct OKiaMarkdownViewerApp: App {
                     NotificationCenter.default.post(name: .okiaRechercheCoffre, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
+                Button(tr("Toutes les annotations…")) {
+                    NotificationCenter.default.post(name: .okiaAnnotations, object: nil)
+                }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
                 // Relire le coffre sans attendre la relecture suivante (Patrick, 12/11/2026).
                 Button(tr("Recharger le coffre")) {
                     Task { await VaultStore.partage.rafraichirEnArrierePlan(forcee: true) }
