@@ -252,7 +252,7 @@ struct VaultSectionView: View {
                         .font(.headline)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(tr("Les documents Word, PDF, PowerPoint et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par année et par mois. Si le coffre n’est pas joignable, dans « Documents analysés »."))
+                Text(tr("Les documents et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par année et par mois. Si le coffre n’est pas joignable, dans « Documents analysés »."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

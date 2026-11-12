@@ -268,6 +268,9 @@ final class AnalyseCoffre: ObservableObject {
     /// La langue d'un document de l'index.
     func indexLangue(_ id: String) -> String? { index[id]?.langue }
 
+    /// Les documents de l'index (le point de la semaine).
+    func documentsIndexes() -> [DocumentIndexe] { Array(index.values) }
+
     /// Les entités situées, pour la carte.
     var situees: [EntiteDocument] { entites.map(\.entite).filter(\.aDesCoordonnees) }
 

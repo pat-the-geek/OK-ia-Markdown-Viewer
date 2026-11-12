@@ -33,6 +33,14 @@
 				<string>org.openxmlformats.wordprocessingml.document</string>
 				<string>org.openxmlformats.presentationml.presentation</string>
 				<string>com.adobe.pdf</string>
+				<string>org.openxmlformats.spreadsheetml.sheet</string>
+				<string>public.comma-separated-values-text</string>
+				<string>com.apple.iwork.pages.sffpages</string>
+				<string>com.apple.iwork.pages.pages</string>
+				<string>com.apple.iwork.keynote.sffkey</string>
+				<string>com.apple.iwork.keynote.key</string>
+				<string>com.apple.iwork.numbers.sffnumbers</string>
+				<string>com.apple.iwork.numbers.numbers</string>
 			</array>
 		</dict>
 	</array>

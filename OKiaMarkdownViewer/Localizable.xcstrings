@@ -47762,6 +47762,3046 @@
           }
         }
       }
+    },
+    "Ce tableur ne contient aucune cellule lisible.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce tableur ne contient aucune cellule lisible."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This spreadsheet has no readable cells."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Tabelle enthält keine lesbaren Zellen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta hoja de cálculo no tiene celdas legibles."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo foglio di calcolo non contiene celle leggibili."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このスプレッドシートには読み取れるセルがありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 스프레드시트에는 읽을 수 있는 셀이 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此电子表格没有可读取的单元格。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta planilha não tem células legíveis."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit spreadsheet bevat geen leesbare cellen."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В этой таблице нет читаемых ячеек."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У цій таблиці немає читабельних клітинок."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tabloda okunabilir hücre yok."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tính này không có ô nào đọc được."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस स्प्रेडशीट में कोई पढ़ने योग्य सेल नहीं है।"
+          }
+        }
+      }
+    },
+    "%d lignes de plus ne sont pas reprises.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d lignes de plus ne sont pas reprises."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d more rows are not included."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d weitere Zeilen werden nicht übernommen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se incluyen %d filas más."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altre %d righe non sono incluse."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残りの%d行は取り込まれていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나머지 %d개 행은 포함되지 않았습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另有 %d 行未导入。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais %d linhas não foram incluídas."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d rijen meer zijn niet overgenomen."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё %d строк не включены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ще %d рядків не включено."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d satır daha alınmadı."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hàng còn lại không được đưa vào."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d और पंक्तियाँ शामिल नहीं की गईं।"
+          }
+        }
+      }
+    },
+    "%d feuilles, %d lignes": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d feuilles, %2$d lignes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d sheets, %2$d rows"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d Blätter, %2$d Zeilen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d hojas, %2$d filas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d fogli, %2$d righe"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$dシート、%2$d行"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시트 %1$d개, 행 %2$d개"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d 个工作表，%2$d 行"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d planilhas, %2$d linhas"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d bladen, %2$d rijen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Листов: %1$d, строк: %2$d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Аркушів: %1$d, рядків: %2$d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d sayfa, %2$d satır"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d trang tính, %2$d hàng"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d शीट, %2$d पंक्तियाँ"
+          }
+        }
+      }
+    },
+    "%d lignes": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d lignes"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d rows"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Zeilen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d filas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d righe"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d行"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d개 행"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 行"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d linhas"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d rijen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Строк: %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рядків: %d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d satır"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hàng"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d पंक्तियाँ"
+          }
+        }
+      }
+    },
+    "« %@ » ne porte pas d’aperçu lisible. Exportez-le en PDF depuis Pages, Keynote ou Numbers, puis importez le PDF.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "« %@ » ne porte pas d’aperçu lisible. Exportez-le en PDF depuis Pages, Keynote ou Numbers, puis importez le PDF."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” has no readable preview. Export it as a PDF from Pages, Keynote or Numbers, then import the PDF."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ enthält keine lesbare Vorschau. Exportieren Sie es aus Pages, Keynote oder Numbers als PDF und importieren Sie dann das PDF."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» no tiene una vista previa legible. Expórtelo a PDF desde Pages, Keynote o Numbers y luego importe el PDF."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» non contiene un’anteprima leggibile. Esportalo in PDF da Pages, Keynote o Numbers, poi importa il PDF."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」には読み取れるプレビューがありません。Pages、Keynote、NumbersでPDFに書き出してから、そのPDFを読み込んでください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘%@’에는 읽을 수 있는 미리보기가 없습니다. Pages, Keynote 또는 Numbers에서 PDF로 내보낸 다음 PDF를 가져오세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”没有可读取的预览。请在 Pages、Keynote 或 Numbers 中将其导出为 PDF，然后导入该 PDF。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” não tem uma pré-visualização legível. Exporte-o em PDF no Pages, Keynote ou Numbers e depois importe o PDF."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘%@’ heeft geen leesbare voorvertoning. Exporteer het als pdf vanuit Pages, Keynote of Numbers en importeer dan de pdf."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У «%@» нет читаемого предпросмотра. Экспортируйте его в PDF из Pages, Keynote или Numbers, затем импортируйте PDF."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@» не має читабельного попереднього перегляду. Експортуйте його в PDF із Pages, Keynote чи Numbers, потім імпортуйте PDF."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” okunabilir bir önizleme içermiyor. Pages, Keynote veya Numbers’dan PDF olarak dışa aktarın, sonra PDF’yi içe aktarın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” không có bản xem trước đọc được. Hãy xuất sang PDF từ Pages, Keynote hoặc Numbers rồi nhập tệp PDF."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” में पढ़ने योग्य पूर्वावलोकन नहीं है। इसे Pages, Keynote या Numbers से PDF में एक्सपोर्ट करें, फिर PDF इंपोर्ट करें।"
+          }
+        }
+      }
+    },
+    "Aperçu de la première page : le reste du document ne s’importe pas de cette façon. Exportez-le en PDF pour l’importer en entier.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aperçu de la première page : le reste du document ne s’importe pas de cette façon. Exportez-le en PDF pour l’importer en entier."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview of the first page: the rest of the document can’t be imported this way. Export it as a PDF to import all of it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorschau der ersten Seite: Der Rest des Dokuments lässt sich so nicht importieren. Exportieren Sie es als PDF, um es vollständig zu importieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista previa de la primera página: el resto del documento no se puede importar así. Expórtelo a PDF para importarlo entero."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anteprima della prima pagina: il resto del documento non si importa in questo modo. Esportalo in PDF per importarlo per intero."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最初のページのプレビュー：この方法では残りのページは読み込めません。すべて読み込むにはPDFに書き出してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "첫 페이지 미리보기: 이 방법으로는 나머지 내용을 가져올 수 없습니다. 전체를 가져오려면 PDF로 내보내세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第一页的预览：文稿的其余部分无法以这种方式导入。请导出为 PDF 以完整导入。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pré-visualização da primeira página: o resto do documento não pode ser importado assim. Exporte-o em PDF para importá-lo inteiro."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voorvertoning van de eerste pagina: de rest van het document kan zo niet worden geïmporteerd. Exporteer het als pdf om alles te importeren."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предпросмотр первой страницы: остальную часть документа так не импортировать. Экспортируйте его в PDF, чтобы импортировать целиком."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній перегляд першої сторінки: решту документа так не імпортувати. Експортуйте його в PDF, щоб імпортувати повністю."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk sayfanın önizlemesi: belgenin geri kalanı bu yolla içe aktarılamaz. Tamamını içe aktarmak için PDF olarak dışa aktarın."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản xem trước trang đầu: phần còn lại của tài liệu không nhập được theo cách này. Hãy xuất sang PDF để nhập toàn bộ."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पहले पेज का पूर्वावलोकन: दस्तावेज़ का बाकी हिस्सा इस तरह इंपोर्ट नहीं होता। पूरा इंपोर्ट करने के लिए इसे PDF में एक्सपोर्ट करें।"
+          }
+        }
+      }
+    },
+    "La première page, telle que Pages l’a enregistrée :": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La première page, telle que Pages l’a enregistrée :"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first page, as Pages saved it:"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die erste Seite, wie Pages sie gespeichert hat:"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La primera página, tal como la guardó Pages:"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La prima pagina, come l’ha salvata Pages:"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagesが保存した最初のページ："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pages가 저장한 첫 페이지:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pages 存储的第一页："
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A primeira página, como o Pages a salvou:"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De eerste pagina, zoals Pages die heeft bewaard:"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Первая страница в том виде, в каком её сохранил Pages:"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перша сторінка в тому вигляді, як її зберіг Pages:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pages’ın kaydettiği hâliyle ilk sayfa:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đầu, như Pages đã lưu:"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पहला पेज, जैसा Pages ने सहेजा:"
+          }
+        }
+      }
+    },
+    "%d mots": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d mots"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d words"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Wörter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d palabras"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d parole"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d語"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d단어"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d 个词"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d palavras"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d woorden"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слов: %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Слів: %d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sözcük"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d từ"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d शब्द"
+          }
+        }
+      }
+    },
+    "md Viewer n’importe pas « %@ » : Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers seulement.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer n’importe pas « %@ » : Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers seulement."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer doesn’t import “%@”: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote or Numbers only."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer importiert „%@“ nicht: nur Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote oder Numbers."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer no importa «%@»: solo Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote o Numbers."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer non importa «%@»: solo Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote o Numbers."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewerは「%@」を読み込めません。読み込めるのはWord、PDF、PowerPoint、Excel、CSV、Pages、Keynote、Numbersのみです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer는 ‘%@’을(를) 가져오지 않습니다. Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers만 가능합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer 不导入“%@”：仅支持 Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote 或 Numbers。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O md Viewer não importa “%@”: apenas Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer importeert ‘%@’ niet: alleen Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote of Numbers."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer не импортирует «%@»: только Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote или Numbers."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer не імпортує «%@»: лише Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote або Numbers."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer “%@” dosyasını içe aktarmaz: yalnızca Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote veya Numbers."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer không nhập “%@”: chỉ Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote hoặc Numbers."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer “%@” इंपोर्ट नहीं करता: केवल Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote या Numbers."
+          }
+        }
+      }
+    },
+    "Rien de nouveau dans le coffre depuis le %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rien de nouveau dans le coffre depuis le %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing new in the vault since %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seit dem %@ nichts Neues im Store."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada nuevo en el Store desde el %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niente di nuovo nello Store dal %@."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@以降、保管庫に新しいものはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 이후 보관함에 새로운 것이 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自 %@ 以来资料库中没有新内容。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada de novo no cofre desde %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niets nieuws in de kluis sinds %@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С %@ в хранилище ничего нового."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Від %@ у сховищі нічого нового."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinden beri kasada yeni bir şey yok."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có gì mới trong kho kể từ %@."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ के बाद से वॉल्ट में कुछ नया नहीं।"
+          }
+        }
+      }
+    },
+    "Un document est entré dans le coffre depuis le %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un document est entré dans le coffre depuis le %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One document has come into the vault since %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seit dem %@ ist ein Dokument in den Store gekommen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ha entrado un documento en el Store desde el %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dal %@ è entrato un documento nello Store."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@以降、保管庫に書類が1件入りました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 이후 보관함에 문서 1개가 들어왔습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自 %@ 以来，有 1 份文稿进入了资料库。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um documento entrou no cofre desde %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinds %@ is er één document in de kluis gekomen."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С %@ в хранилище поступил один документ."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Від %@ до сховища надійшов один документ."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinden beri kasaya bir belge girdi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một tài liệu đã vào kho kể từ %@."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ के बाद से वॉल्ट में एक दस्तावेज़ आया है।"
+          }
+        }
+      }
+    },
+    "%d documents sont entrés dans le coffre depuis le %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documents sont entrés dans le coffre depuis le %2$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documents have come into the vault since %2$@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seit dem %2$@ sind %1$d Dokumente in den Store gekommen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Han entrado %1$d documentos en el Store desde el %2$@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dal %2$@ sono entrati %1$d documenti nello Store."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@以降、保管庫に書類が%1$d件入りました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@ 이후 보관함에 문서 %1$d개가 들어왔습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自 %2$@ 以来，有 %1$d 份文稿进入了资料库。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documentos entraram no cofre desde %2$@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinds %2$@ zijn er %1$d documenten in de kluis gekomen."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С %2$@ в хранилище поступило документов: %1$d."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Від %2$@ до сховища надійшло документів: %1$d."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@ tarihinden beri kasaya %1$d belge girdi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d tài liệu đã vào kho kể từ %2$@."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@ के बाद से वॉल्ट में %1$d दस्तावेज़ आए हैं।"
+          }
+        }
+      }
+    },
+    "Ils parlent surtout de %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ils parlent surtout de %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They are mostly about %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sie handeln vor allem von %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hablan sobre todo de %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parlano soprattutto di %@."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主な話題は%@です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주로 %@에 관한 내용입니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要涉及 %@。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falam sobretudo de %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ze gaan vooral over %@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В основном они о %@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переважно вони про %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çoğunlukla %@ hakkında."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chủ yếu nói về %@."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ये मुख्य रूप से %@ के बारे में हैं।"
+          }
+        }
+      }
+    },
+    "Nouveaux noms :": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveaux noms :"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New names:"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Namen:"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombres nuevos:"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovi nomi:"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい名前："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 이름:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新名称："
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novos nomes:"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe namen:"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые имена:"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нові імена:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni adlar:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên mới:"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नए नाम:"
+          }
+        }
+      }
+    },
+    "Plus souvent qu’avant :": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus souvent qu’avant :"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More often than before:"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Häufiger als zuvor:"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más a menudo que antes:"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più spesso di prima:"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以前より多く登場："
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전보다 자주:"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "比以前更常出现："
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais frequentes que antes:"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaker dan eerder:"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чаще, чем раньше:"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частіше, ніж раніше:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öncekinden daha sık:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thường xuyên hơn trước:"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पहले से अधिक बार:"
+          }
+        }
+      }
+    },
+    "Depuis votre dernière visite": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depuis votre dernière visite"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Since Your Last Visit"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seit Ihrem letzten Besuch"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desde su última visita"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dalla tua ultima visita"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前回の訪問以降"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 방문 이후"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自上次访问以来"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desde a sua última visita"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinds je laatste bezoek"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С вашего последнего визита"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Від вашого останнього візиту"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son ziyaretinizden beri"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kể từ lần ghé gần nhất"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपकी पिछली विज़िट के बाद से"
+          }
+        }
+      }
+    },
+    "Les 7 derniers jours": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les 7 derniers jours"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last 7 Days"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte 7 Tage"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos 7 días"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 7 giorni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去7日間"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 7일"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近 7 天"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos 7 dias"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgelopen 7 dagen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последние 7 дней"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останні 7 днів"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son 7 gün"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 ngày qua"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पिछले 7 दिन"
+          }
+        }
+      }
+    },
+    "Les 30 derniers jours": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les 30 derniers jours"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last 30 Days"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte 30 Tage"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos 30 días"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 30 giorni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去30日間"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 30일"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近 30 天"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos 30 dias"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afgelopen 30 dagen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последние 30 дней"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останні 30 днів"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son 30 gün"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 ngày qua"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पिछले 30 दिन"
+          }
+        }
+      }
+    },
+    "Période": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Période"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeitraum"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "期間"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기간"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "时段"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Período"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periode"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Период"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Період"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dönem"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoảng thời gian"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अवधि"
+          }
+        }
+      }
+    },
+    "Résumé sur l’appareil…": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Résumé sur l’appareil…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summarizing on device…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusammenfassung auf dem Gerät…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen en el dispositivo…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riepilogo sul dispositivo…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デバイス上で要約中…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기기에서 요약하는 중…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在设备上摘要…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumindo no dispositivo…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samenvatting op het apparaat…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сводка на устройстве…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підсумок на пристрої…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aygıtta özetleniyor…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tóm tắt trên thiết bị…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डिवाइस पर सारांश बन रहा है…"
+          }
+        }
+      }
+    },
+    "Calculé sur l’appareil, d’après l’index du coffre : rien ne quitte l’appareil.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculé sur l’appareil, d’après l’index du coffre : rien ne quitte l’appareil."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Computed on the device from the vault index: nothing leaves the device."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf dem Gerät aus dem Index des Stores berechnet: Nichts verlässt das Gerät."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculado en el dispositivo a partir del índice del Store: nada sale del dispositivo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calcolato sul dispositivo dall’indice dello Store: nulla lascia il dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保管庫のインデックスからデバイス上で計算：何もデバイスの外に出ません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보관함 색인으로 기기에서 계산됨: 아무것도 기기를 떠나지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根据资料库索引在设备上计算：任何内容都不会离开设备。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculado no dispositivo a partir do índice do cofre: nada sai do dispositivo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op het apparaat berekend uit de index van de kluis: niets verlaat het apparaat."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рассчитано на устройстве по индексу хранилища: ничего не покидает устройство."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обчислено на пристрої за індексом сховища: ніщо не залишає пристрій."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasa dizininden aygıtta hesaplandı: hiçbir şey aygıttan çıkmaz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tính trên thiết bị từ chỉ mục của kho: không gì rời khỏi thiết bị."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वॉल्ट के इंडेक्स से डिवाइस पर गणना: कुछ भी डिवाइस से बाहर नहीं जाता।"
+          }
+        }
+      }
+    },
+    "Nouveaux documents": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveaux documents"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Documents"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Dokumente"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentos nuevos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovi documenti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい書類"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 문서"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新文稿"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novos documentos"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe documenten"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые документы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нові документи"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni belgeler"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu mới"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नए दस्तावेज़"
+          }
+        }
+      }
+    },
+    "Nouveaux noms": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveaux noms"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Names"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Namen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombres nuevos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovi nomi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい名前"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 이름"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新名称"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novos nomes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe namen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новые имена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нові імена"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni adlar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên mới"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नए नाम"
+          }
+        }
+      }
+    },
+    "Plus souvent qu’avant": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus souvent qu’avant"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Often Than Before"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Häufiger als zuvor"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más a menudo que antes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più spesso di prima"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以前より多く登場"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전보다 자주"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "比以前更常出现"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais frequentes que antes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaker dan eerder"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чаще, чем раньше"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частіше, ніж раніше"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öncekinden daha sık"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thường xuyên hơn trước"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पहले से अधिक बार"
+          }
+        }
+      }
+    },
+    "%d documents, contre %d avant": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documents, contre %2$d avant"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documents, compared with %2$d before"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d Dokumente, zuvor %2$d"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documentos, frente a %2$d antes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documenti, contro %2$d prima"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d件（以前は%2$d件）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "문서 %1$d개(이전 %2$d개)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d 份文稿，之前为 %2$d 份"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documentos, contra %2$d antes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d documenten, tegen %2$d eerder"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документов: %1$d (раньше %2$d)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документів: %1$d (раніше %2$d)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d belge, önceden %2$d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d tài liệu, trước đây %2$d"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d दस्तावेज़, पहले %2$d"
+          }
+        }
+      }
+    },
+    "Voir les %d autres": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir les %d autres"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the Other %d"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die anderen %d anzeigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver los otros %d"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra gli altri %d"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残りの%d件を表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나머지 %d개 보기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看其他 %d 项"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver os outros %d"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De andere %d tonen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать остальные %d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати інші %d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer %d öğeyi göster"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem %d mục khác"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बाकी %d देखें"
+          }
+        }
+      }
+    },
+    "Semaine": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semaine"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Woche"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settimana"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "週"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주간"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本周"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неделя"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тиждень"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hafta"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuần"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सप्ताह"
+          }
+        }
+      }
+    },
+    "Importer un document…": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importer un document…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import a Document…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument importieren…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar un documento…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa un documento…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書類を読み込む…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "문서 가져오기…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入文稿…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar um documento…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document importeren…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортировать документ…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Імпортувати документ…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge içe aktar…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập tài liệu…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दस्तावेज़ इंपोर्ट करें…"
+          }
+        }
+      }
+    },
+    "Aucun document à importer : Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun document à importer : Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No document to import: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote or Numbers."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Dokument zum Importieren: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote oder Numbers."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún documento que importar: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote o Numbers."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun documento da importare: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote o Numbers."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み込める書類がありません：Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote、Numbers。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "가져올 문서가 없습니다: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote 또는 Numbers."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可导入的文稿：Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote 或 Numbers。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum documento para importar: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen document om te importeren: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote of Numbers."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет документов для импорта: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote или Numbers."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Немає документів для імпорту: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote або Numbers."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İçe aktarılacak belge yok: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote veya Numbers."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có tài liệu để nhập: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote hoặc Numbers."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इंपोर्ट करने के लिए कोई दस्तावेज़ नहीं: Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote या Numbers."
+          }
+        }
+      }
+    },
+    "Chaque document qui arrive dans ce dossier (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) est importé et rangé, tant que md Viewer est ouvert. Ce qui s’y trouve déjà n’est pas importé.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chaque document qui arrive dans ce dossier (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) est importé et rangé, tant que md Viewer est ouvert. Ce qui s’y trouve déjà n’est pas importé."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every document that arrives in this folder (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) is imported and filed while md Viewer is open. What’s already there isn’t imported."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedes Dokument, das in diesem Ordner ankommt (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers), wird importiert und abgelegt, solange md Viewer geöffnet ist. Was schon darin liegt, wird nicht importiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada documento que llega a esta carpeta (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) se importa y se guarda mientras md Viewer está abierto. Lo que ya está no se importa."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni documento che arriva in questa cartella (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) viene importato e archiviato finché md Viewer è aperto. Ciò che c’è già non viene importato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewerが開いている間、このフォルダに届いた書類（Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote、Numbers）はすべて読み込まれて整理されます。すでにある書類は読み込まれません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer가 열려 있는 동안 이 폴더에 들어오는 모든 문서(Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers)를 가져와 정리합니다. 이미 있는 문서는 가져오지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer 打开期间，进入此文件夹的每份文稿（Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote、Numbers）都会被导入并归档。已在其中的内容不会导入。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada documento que chega a esta pasta (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) é importado e arquivado enquanto o md Viewer estiver aberto. O que já está lá não é importado."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elk document dat in deze map binnenkomt (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) wordt geïmporteerd en opgeborgen zolang md Viewer open is. Wat er al staat, wordt niet geïmporteerd."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждый документ, попадающий в эту папку (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers), импортируется и раскладывается, пока md Viewer открыт. То, что уже лежит там, не импортируется."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кожен документ, що потрапляє до цієї папки (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers), імпортується й упорядковується, доки md Viewer відкрито. Те, що вже там лежить, не імпортується."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer açıkken bu klasöre gelen her belge (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) içe aktarılır ve yerleştirilir. Zaten orada olanlar içe aktarılmaz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mỗi tài liệu đến thư mục này (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) đều được nhập và sắp xếp khi md Viewer đang mở. Những gì đã có sẵn sẽ không được nhập."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer खुला रहने तक इस फ़ोल्डर में आने वाला हर दस्तावेज़ (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) इंपोर्ट और व्यवस्थित किया जाता है। जो पहले से है, वह इंपोर्ट नहीं होता।"
+          }
+        }
+      }
+    },
+    "Les documents et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par année et par mois. Si le coffre n’est pas joignable, dans « Documents analysés ».": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les documents et les pages web importés vont dans le dossier « coffre md viewer » du coffre, rangés par année et par mois. Si le coffre n’est pas joignable, dans « Documents analysés »."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported documents and web pages go to the “coffre md viewer” folder in the vault, sorted by year and month. If the vault can’t be reached, to “Analyzed Documents”."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importierte Dokumente und Webseiten kommen in den Ordner „coffre md viewer“ des Stores, nach Jahr und Monat geordnet. Ist der Store nicht erreichbar, in „Analysierte Dokumente“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los documentos y las páginas web importados van a la carpeta «coffre md viewer» del Store, ordenados por año y mes. Si el Store no está disponible, a «Documentos analizados»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I documenti e le pagine web importati vanno nella cartella «coffre md viewer» dello Store, ordinati per anno e mese. Se lo Store non è raggiungibile, in «Documenti analizzati»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み込んだ書類とWebページは、保管庫の「coffre md viewer」フォルダに年と月ごとに保存されます。保管庫に接続できないときは「分析済みの書類」に保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "가져온 문서와 웹 페이지는 보관함의 ‘coffre md viewer’ 폴더에 연도와 월별로 저장됩니다. 보관함에 연결할 수 없으면 ‘분석된 문서’에 저장됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入的文稿和网页会按年份和月份存入资料库的“coffre md viewer”文件夹。无法访问资料库时，存入“已分析的文档”。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os documentos e as páginas web importados vão para a pasta “coffre md viewer” do cofre, organizados por ano e mês. Se o cofre não estiver acessível, para “Documentos analisados”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geïmporteerde documenten en webpagina’s gaan naar de map ‘coffre md viewer’ in de kluis, per jaar en maand geordend. Is de kluis niet bereikbaar, dan naar ‘Geanalyseerde documenten’."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортированные документы и веб-страницы попадают в папку «coffre md viewer» хранилища, по годам и месяцам. Если хранилище недоступно — в «Проанализированные документы»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Імпортовані документи й вебсторінки потрапляють до папки «coffre md viewer» сховища, за роками й місяцями. Якщо сховище недоступне — до «Проаналізовані документи»."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İçe aktarılan belgeler ve web sayfaları, kasadaki “coffre md viewer” klasörüne yıla ve aya göre kaydedilir. Kasaya ulaşılamazsa “Analiz Edilen Belgeler”e."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu và trang web đã nhập được lưu vào thư mục “coffre md viewer” của kho, theo năm và tháng. Nếu không truy cập được kho, vào “Tài liệu đã phân tích”."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आयात किए गए दस्तावेज़ और वेब पेज वॉल्ट के “coffre md viewer” फ़ोल्डर में वर्ष और महीने के अनुसार रखे जाते हैं। वॉल्ट उपलब्ध न हो तो “विश्लेषित दस्तावेज़” में।"
+          }
+        }
+      }
+    },
+    "Importez vos documents Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote et Numbers, un à un ou par dossier entier : titres, listes, tableaux, images et commentaires repris en Markdown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importez vos documents Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote et Numbers, un à un ou par dossier entier : titres, listes, tableaux, images et commentaires repris en Markdown."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import your Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote and Numbers documents, one by one or a whole folder at a time: headings, lists, tables, images and comments carried over into Markdown."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importieren Sie Ihre Word-, PDF-, PowerPoint-, Excel-, CSV-, Pages-, Keynote- und Numbers-Dokumente einzeln oder ordnerweise: Überschriften, Listen, Tabellen, Bilder und Kommentare werden in Markdown übernommen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe sus documentos Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote y Numbers, uno a uno o por carpetas enteras: títulos, listas, tablas, imágenes y comentarios pasan a Markdown."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa i tuoi documenti Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote e Numbers, uno alla volta o per cartella intera: titoli, elenchi, tabelle, immagini e commenti ripresi in Markdown."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote、Numbersの書類を1件ずつ、またはフォルダごと読み込めます。見出し、リスト、表、画像、コメントがMarkdownに引き継がれます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers 문서를 하나씩 또는 폴더 단위로 가져오세요. 제목, 목록, 표, 이미지, 주석이 Markdown으로 옮겨집니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "逐份或按整个文件夹导入你的 Word、PDF、PowerPoint、Excel、CSV、Pages、Keynote 和 Numbers 文稿：标题、列表、表格、图片和批注都会转为 Markdown。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe seus documentos Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote e Numbers, um a um ou por pasta inteira: títulos, listas, tabelas, imagens e comentários passam para Markdown."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importeer je Word-, PDF-, PowerPoint-, Excel-, CSV-, Pages-, Keynote- en Numbers-documenten, één voor één of per hele map: koppen, lijsten, tabellen, afbeeldingen en opmerkingen gaan mee naar Markdown."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортируйте документы Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote и Numbers по одному или целыми папками: заголовки, списки, таблицы, изображения и комментарии переносятся в Markdown."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Імпортуйте документи Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote і Numbers по одному або цілими папками: заголовки, списки, таблиці, зображення й коментарі переносяться в Markdown."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ve Numbers belgelerinizi tek tek ya da klasör klasör içe aktarın: başlıklar, listeler, tablolar, görüntüler ve yorumlar Markdown’a aktarılır."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập tài liệu Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote và Numbers của bạn, từng tệp hoặc cả thư mục: tiêu đề, danh sách, bảng, hình ảnh và nhận xét được chuyển sang Markdown."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपने Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote और Numbers दस्तावेज़ एक-एक करके या पूरे फ़ोल्डर के साथ इंपोर्ट करें: शीर्षक, सूचियाँ, तालिकाएँ, चित्र और टिप्पणियाँ Markdown में आ जाती हैं।"
+          }
+        }
+      }
     }
   }
 }

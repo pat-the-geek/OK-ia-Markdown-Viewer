@@ -272,7 +272,7 @@ final class DocumentStore: ObservableObject {
         }
         guard !fichiers.isEmpty else {
             if lot == nil { fermerDossiers() }
-            errorMessage = tr("Aucun document Word, PDF ou PowerPoint à importer.")
+            errorMessage = tr("Aucun document à importer : Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers.")
             return
         }
         if lot == nil { lot = Lot() }
@@ -737,7 +737,7 @@ struct OKiaMarkdownViewerApp: App {
                 #if targetEnvironment(macCatalyst)
                 // Pour comparer (1.4) : une autre fenêtre, avec son propre document.
                 CommandeNouvelleFenetre()
-                Button(tr("Importer Word, PDF ou PowerPoint…")) {
+                Button(tr("Importer un document…")) {
                     NotificationCenter.default.post(name: .okiaImporter, object: nil)
                 }
                 .keyboardShortcut("i", modifiers: [.command, .shift])

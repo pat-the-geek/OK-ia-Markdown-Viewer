@@ -39,7 +39,12 @@ final class ImportEnCours: ObservableObject, Identifiable {
         .pdf,
         UTType("org.openxmlformats.wordprocessingml.document") ?? UTType(filenameExtension: "docx") ?? .data,
         UTType("org.openxmlformats.presentationml.presentation") ?? UTType(filenameExtension: "pptx") ?? .data,
-    ]
+        // 1.7 : les tableurs, et les documents d'iWork (fichier ou paquet).
+        UTType("org.openxmlformats.spreadsheetml.sheet") ?? UTType(filenameExtension: "xlsx") ?? .data,
+        .commaSeparatedText, .tabSeparatedText,
+    ] + ["com.apple.iwork.pages.sffpages", "com.apple.iwork.pages.pages",
+         "com.apple.iwork.keynote.sffkey", "com.apple.iwork.keynote.key",
+         "com.apple.iwork.numbers.sffnumbers", "com.apple.iwork.numbers.numbers"].compactMap { UTType($0) }
 
     /// Demande l'import : le sélecteur de fichiers s'ouvre, ou la vitrine sans l'option (RootView).
     static func demander(pour store: DocumentStore? = nil) {
@@ -47,7 +52,9 @@ final class ImportEnCours: ObservableObject, Identifiable {
     }
 
     static func estImportable(_ url: URL) -> Bool {
-        ["pdf", "docx", "pptx"].contains(url.pathExtension.lowercased())
+        let ext = url.pathExtension.lowercased()
+        return ["pdf", "docx", "pptx"].contains(ext) || ImportTableur.extensions.contains(ext)
+            || ImportIWork.extensions.contains(ext)
     }
 
     /// Le temps qui reste, d'après l'allure jusqu'ici ; nil tant qu'on n'en sait rien.
@@ -67,15 +74,22 @@ final class ImportEnCours: ObservableObject, Identifiable {
             do {
                 let scoped = url.startAccessingSecurityScopedResource()
                 defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                let donnees = try Data(contentsOf: url)
                 let nom = url.lastPathComponent
                 let suivi: SuiviImport = { [weak self] a in self?.avancement = a }
+                let ext = url.pathExtension.lowercased()
                 let doc: DocumentImporte
-                switch url.pathExtension.lowercased() {
+                // Un document d'iWork peut être un paquet (un dossier) : il se lit par son adresse.
+                if ImportIWork.extensions.contains(ext) {
+                    doc = try await ImportIWork.convertir(url, nom: nom, suivi: suivi)
+                } else {
+                let donnees = try Data(contentsOf: url)
+                switch ext {
+                case "xlsx", "csv", "tsv": doc = try await ImportTableur.convertir(donnees, nom: nom, suivi: suivi)
                 case "docx": doc = try await ImportWord.convertir(donnees, nom: nom, suivi: suivi)
                 case "pptx": doc = try await ImportPowerPoint.convertir(donnees, nom: nom, suivi: suivi)
                 case "pdf":  doc = try await ImportPDF.convertir(donnees, nom: nom, suivi: suivi)
                 default:     throw ErreurImport.formatInconnu(nom)
+                }
                 }
                 try Task.checkCancellation()
                 #if DEBUG
@@ -225,7 +239,7 @@ enum ErreurImport: LocalizedError {
     case pdfSansOption
     var errorDescription: String? {
         switch self {
-        case .formatInconnu(let nom): return tr("md Viewer n’importe pas « %@ » : Word, PDF ou PowerPoint seulement.", nom)
+        case .formatInconnu(let nom): return tr("md Viewer n’importe pas « %@ » : Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote ou Numbers seulement.", nom)
         case .pdfSansOption:          return tr("Cette adresse mène à un PDF : son import fait partie de l’option Analytic.")
         }
     }

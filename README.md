@@ -1711,6 +1711,9 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; numérotée **1.5.1** 
 - **Les annotations dans le document** : un commentaire `<!-- md-viewer-annotations … -->` à la
   fin du fichier, partout où l'app peut écrire ; le stockage local reste, et le plus récent des
   deux l'emporte (`AnnotationsIntegrees`, 12/11).
+- **Pris de la 1.7** (12/11) : le **point de la semaine** (segment « Semaine » de l'analyse du
+  coffre) et l'**import Excel, CSV, Pages, Keynote et Numbers** (option Analytic) — détails dans
+  `TACHES-1.6.md`.
 - **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
   coffre en `rapports-*`).
 

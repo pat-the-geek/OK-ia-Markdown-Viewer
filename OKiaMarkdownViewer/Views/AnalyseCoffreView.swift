@@ -13,6 +13,10 @@ struct AnalyseCoffreView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var tailleHorizontale
     @State private var vue: Vue = .galerie
+    /// La dernière visite, lue à l'ouverture : le point de la semaine part de là (1.7). Elle est
+    /// renouvelée à la fermeture, si le point a été regardé.
+    @State private var derniereVisite = PointSemaine.derniereVisite ?? Date().addingTimeInterval(-7 * 86_400)
+    @State private var semaineVue = false
     /// Le tri des entités dans chaque genre, retenu d'une ouverture à l'autre. Alphabétique d'abord
     /// (Patrick, 29/10/2026 : « il faut trier dans l'ordre alphabétique ») — clé nouvelle, pour que le
     /// tri par mentions, l'ancien défaut, ne reste pas retenu chez ceux qui ne l'ont jamais choisi.
@@ -29,10 +33,11 @@ struct AnalyseCoffreView: View {
     /// 28/10/2026 : « groupées par genre, triées dans l'ordre alphabétique ou du nombre d'occurrences,
     /// en mode galerie avec une image plus grande »).
     enum Vue: String, CaseIterable, Identifiable {
-        case liste, galerie, carte
+        case semaine, liste, galerie, carte
         var id: String { rawValue }
         var libelle: String {
             switch self {
+            case .semaine: return tr("Semaine")
             case .liste: return tr("Liste")
             case .galerie: return tr("Galerie")
             case .carte: return tr("Carte")
@@ -51,6 +56,10 @@ struct AnalyseCoffreView: View {
         NavigationStack(path: $chemin) {
             Group {
                 switch vue {
+                case .semaine:
+                    PointSemaineView(analyse: analyse, derniereVisite: derniereVisite,
+                                     ouvrir: { id in dismiss(); ouvrir(id) })
+                        .onAppear { semaineVue = true }
                 case .liste: liste
                 case .galerie: galerie
                 case .carte: carte
@@ -71,7 +80,12 @@ struct AnalyseCoffreView: View {
         }
         .sheet(item: $autreFiche) { e in ChoixFicheView(entite: e, analyse: analyse) }
         .sheet(item: $memeQue) { e in ChoixMemeEntiteView(entite: e, analyse: analyse) }
-        .onAppear { analyse.analyser(vault) }
+        .onAppear {
+            analyse.analyser(vault)
+            // Du nouveau depuis la dernière visite : l'analyse s'ouvre sur le point de la semaine.
+            if !analyse.pointDeLaSemaine(depuis: derniereVisite).vide { vue = .semaine }
+        }
+        .onDisappear { if semaineVue { PointSemaine.noterVisite() } }
         #if targetEnvironment(macCatalyst)
         .frame(minWidth: 640, minHeight: 620)
         #endif
@@ -123,7 +137,7 @@ struct AnalyseCoffreView: View {
             ForEach(Vue.allCases) { v in Text(v.libelle).tag(v) }
         }
         .pickerStyle(.segmented)
-        .frame(maxWidth: 320)
+        .frame(maxWidth: 420)
     }
 
     /// Ce que l'analyse couvre, et où elle en est.

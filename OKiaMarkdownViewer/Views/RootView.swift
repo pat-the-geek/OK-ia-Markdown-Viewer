@@ -125,7 +125,7 @@ struct RootView: View {
                 Button(tr("Arrêter la surveillance"), role: .destructive) { surveille.arreter() }
             }
         } message: {
-            Text(tr("Chaque Word, PDF ou PowerPoint qui arrive dans ce dossier est importé et rangé, tant que md Viewer est ouvert. Ce qui s’y trouve déjà n’est pas importé."))
+            Text(tr("Chaque document qui arrive dans ce dossier (Word, PDF, PowerPoint, Excel, CSV, Pages, Keynote, Numbers) est importé et rangé, tant que md Viewer est ouvert. Ce qui s’y trouve déjà n’est pas importé."))
         }
         // Un rapport du coffre demandé par la fiche d'une entité.
         .onReceive(NotificationCenter.default.publisher(for: .okiaOuvrirRapport)) { note in

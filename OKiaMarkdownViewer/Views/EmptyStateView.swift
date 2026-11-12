@@ -237,7 +237,7 @@ struct EmptyStateView: View {
             Menu {
                 Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
                 Button { ImportEnCours.demander(pour: store) } label: {
-                    Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
+                    Label(tr("Importer un document…"), systemImage: "square.and.arrow.down.on.square")
                 }
             } label: {
                 Image(systemName: "folder")
@@ -261,7 +261,7 @@ struct EmptyStateView: View {
                     .buttonStyle(.borderedProminent)
                 Button(tr("Voir un exemple"), action: onSample)
                 // Option Analytic : un Word, un PDF, un PowerPoint devient un document md Viewer.
-                Button(tr("Importer Word, PDF ou PowerPoint…")) { ImportEnCours.demander(pour: store) }
+                Button(tr("Importer un document…")) { ImportEnCours.demander(pour: store) }
                     .font(.subheadline)
             }
             .tint(orange)

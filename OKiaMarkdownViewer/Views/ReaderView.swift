@@ -1357,7 +1357,7 @@ struct ReaderView: View {
         Menu {
             Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
             Button { ImportEnCours.demander(pour: store) } label: {
-                Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
+                Label(tr("Importer un document…"), systemImage: "square.and.arrow.down.on.square")
             }
             // Pour comparer (1.4, iPad) : ce document dans une autre fenêtre, où en ouvrir un autre.
             BoutonNouvelleFenetre { store.reference() }
@@ -1435,7 +1435,7 @@ struct ReaderView: View {
             Menu { elementsPartage } label: { Label(tr("Partager"), systemImage: "square.and.arrow.up") }
             Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
             Button { ImportEnCours.demander(pour: store) } label: {
-                Label(tr("Importer Word, PDF ou PowerPoint…"), systemImage: "square.and.arrow.down.on.square")
+                Label(tr("Importer un document…"), systemImage: "square.and.arrow.down.on.square")
             }
         } label: {
             Image(systemName: "ellipsis")
