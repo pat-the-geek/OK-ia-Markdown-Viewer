@@ -329,6 +329,42 @@ main. Option Analytic, sur le Mac (là où vit le serveur).
 | `mdviewer_slide_set_notes` | La note de l'orateur d'une diapositive |
 | `mdviewer_insert_chart` | Un diagramme depuis un fichier de données du coffre et une spécification : **le calcul reste celui de md Viewer** (1 quater), l'assistant ne fournit pas les chiffres |
 | `mdviewer_present` | Lance le diaporama, depuis une diapositive (« lance la présentation à la diapo 3 ») |
+| `mdviewer_insert_image` | Insère une illustration que l'assistant a produite : SVG ou image PNG/JPEG en base64, rangée dans le document comme les images importées (voir ci-dessous) |
+
+**Une illustration de l'assistant, dans le document** (Patrick, 13/11/2026 : « on pourra demander à
+claude de générer une illustration et l'intégrer dans le document par MCP (avec notre système de
+stockage base64) ») :
+
+- **Ce que l'assistant fournit** :
+  - Claude dessine en **SVG**, du code. C'est sa façon de faire une illustration, un schéma, une
+    icône, une couverture ;
+  - un assistant qui produit des images (ChatGPT, par exemple) fournit un **PNG ou un JPEG en
+    base64** ;
+  - toujours avec un texte de remplacement, obligatoire (VoiceOver, point 15).
+- **Le stockage de md Viewer** : l'image est écrite en `data:` dans le fichier, comme celles des
+  imports Word, PDF et PowerPoint. Le document reste un seul fichier, lisible partout :
+  - par référence en fin de document, `![texte][illustration-1]`, puis
+    `[illustration-1]: data:image/png;base64,…` ;
+  - le texte reste lisible dans l'éditeur, où la ligne `data:` est repliée (point 1) ;
+  - le code sait déjà les retrouver (`premiereImage` des vignettes, export Word, PowerPoint et
+    PDF).
+  - Un SVG est rangé en `data:image/svg+xml;base64`, ou en clair s'il est court : les `<svg>` en
+    clair sont déjà bornés en largeur (1.5). Les exports le rastérisent comme aujourd'hui.
+  - Réglage : « Ranger les images à côté du document » (fichier `.png` ou `.svg` dans un dossier
+    `images/`, lien relatif), pour qui préfère des fichiers légers.
+- **Contrôles avant d'écrire** :
+  - le PNG/JPEG doit se décoder (ImageIO) ; jamais plus de 3 Mo, sinon réduit à 2 000 px de large ;
+  - le SVG est **assaini** : ni `<script>`, ni `on*=`, ni `<foreignObject>`, ni lien externe
+    (`href` vers http, `@import`) ; jamais plus de 500 Ko ;
+  - une légende discrète, réglable, dit d'où vient l'image (« illustration générée par Claude »),
+    et l'en-tête YAML le garde (`illustrations: claude`).
+- **Dans une présentation** : l'illustration peut devenir une diapositive pleine page, ou
+  s'insérer dans la diapositive en cours.
+- **Pendant une séance « Construire avec Claude »** : l'illustration apparaît dans l'aperçu dès
+  qu'elle est écrite, éclairée comme le reste.
+- **À vérifier** : la taille d'un message MCP que Claude Desktop et Codex acceptent pour un
+  paramètre base64. Sinon, l'outil prend l'image en plusieurs morceaux
+  (`mdviewer_insert_image_chunk`).
 
 **Montrer, puis appliquer :**
 - par défaut, chaque commande d'écriture arrive dans l'éditeur **en proposition** : les
