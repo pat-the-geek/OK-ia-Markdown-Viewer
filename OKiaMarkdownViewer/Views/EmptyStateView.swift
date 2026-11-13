@@ -243,6 +243,18 @@ struct EmptyStateView: View {
             ToolbarSpacer(.fixed, placement: .primaryAction)
         }
         ToolbarItemGroup(placement: .primaryAction) {
+            #if !targetEnvironment(macCatalyst)
+            // L'iPhone est la télécommande : un bouton en vue, et non plus seulement l'appui long sur
+            // le bouton dossier (Patrick, 13/11/2026 : « Je ne vois pas comment utiliser la
+            // télécommande »). Sans l'option Analytic, il mène à la vitrine.
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                Button { store.avecOption { telecommande = true } } label: {
+                    Image(systemName: "appletvremote.gen4")
+                }
+                .teinteBarre()
+                .accessibilityLabel(tr("Télécommande d’un diaporama…"))
+            }
+            #endif
             Button(action: onSample) { Image(systemName: "doc.text.image") }
                 .teinteBarre()
                 .accessibilityLabel(tr("Voir un exemple"))
