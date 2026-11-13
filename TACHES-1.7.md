@@ -342,6 +342,42 @@ main. Option Analytic, sur le Mac (là où vit le serveur).
   sont jamais réécrits par ces commandes. Les annotations suivent le texte (ancrage par citation,
   point 1).
 
+**Voir le document se fabriquer** (Patrick, 13/11/2026 : « au fur et à mesure des prompts dans
+claude, on verrait le document se fabriquer dans md viewer »). C'est le cœur de l'expérience :
+Claude à gauche, md Viewer à droite, et le document qui pousse à chaque consigne.
+
+- **Une séance « Construire avec Claude »** (ou Codex…) : ouverte par l'assistant
+  (`mdviewer_open_document`, `mdviewer_create_document`) ou depuis l'éditeur. Pendant la séance,
+  les changements **s'appliquent en direct**, sans proposition à valider, car on construit et on
+  regarde. Le mode « proposition » reste celui des retouches d'un document existant.
+- **Chaque changement se voit** :
+  - l'aperçu défile jusqu'au passage touché ;
+  - le texte ajouté s'éclaire brièvement (orange de l'app), le texte retiré s'efface en fondu ;
+  - une diapositive ajoutée glisse à sa place dans le plan ;
+  - un diagramme apparaît rendu, jamais en code Mermaid brut.
+- **Ça avance par morceaux** : les commandes d'écriture acceptent une suite de blocs, et
+  l'assistant est invité (description des outils, invite `construire_document`) à écrire section
+  par section plutôt qu'en un bloc. Le document se lit au fur et à mesure. Les notifications de
+  progression de MCP font avancer un fil « Claude écrit la section 3… ».
+- **Le fil de la séance**, en marge :
+  - chaque étape avec ce qu'elle a changé (« + section Contexte », « diapositive 4 réécrite », «
+    graphique des ventes ») ;
+  - toucher une étape y place l'aperçu ;
+  - « Revenir ici » défait tout ce qui suit.
+
+  En fin de séance, on garde, ou l'on revient au document d'avant (version gardée par
+  `NSFileVersion`).
+- **Le bandeau** « Claude construit ce document » pendant la séance, avec « Arrêter » qui coupe
+  les écritures de l'assistant. La frappe de l'utilisateur reste possible : ses propres
+  modifications passent avant, et une commande sur un passage qu'il vient de toucher est refusée
+  (`etag`).
+- **Sur les autres écrans** : le fichier est enregistré à chaque étape ; l'iPad ou l'iPhone qui
+  l'ont ouvert (coffre iCloud ou partage) le voient se mettre à jour, si le lecteur suit les
+  changements du fichier ouvert (`NSFilePresenter` : à vérifier, ou à ajouter). En présentation,
+  l'écran du public peut montrer le diaporama qui se construit : une démonstration en soi.
+- **La vitesse** : l'animation ne ralentit jamais l'écriture. Au-delà de trois changements par
+  seconde, on regroupe l'éclairage.
+
 **La voix, concrètement :**
 - **Claude Desktop sur le Mac** (mode vocal ou dictée), branché sur le serveur MCP : « dans le
   deuxième paragraphe, remplace "Q3" par "troisième trimestre" », « ajoute une diapositive de
