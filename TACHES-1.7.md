@@ -14,7 +14,7 @@ même Private Cloud Compute), pas de pistage. La lecture reste gratuite.
 | Version | Thème | Contenu |
 |---|---|---|
 | 1.6 | Le coffre ouvert à vos assistants | revue le 13/11/2026 : un coffre qui s'explique (`AGENTS.md`), un serveur MCP sur Mac, « Envoyer à un assistant », puis l'interrogation sur l'appareil (TACHES-1.6.md) |
-| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), les modèles (2), comparer deux versions (3) |
+| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), parler à l'IA (1 quinquies), les modèles (2), comparer deux versions (3) |
 | 1.8 | Le coffre qui veille | étiquettes (4), liens entre documents (5), surveiller un nom (6), frise (7), réseau des entités (8) |
 | 1.9 | De nouvelles sources | l'audio (9), l'EPUB et les e-mails (10) |
 | 2.0 | Présenter partout | la montre (11), SharePlay (12), le diaporama traduit (13), vidéo et page web autonome (14) |
@@ -242,6 +242,60 @@ code de calcul et d'écriture Mermaid (étape 3) ; on le fait une fois.
 - un JSON d'API ;
 - la consigne « organigramme » sur une section de rapport fornews ;
 - vérifier chaque chiffre du diagramme contre un calcul fait à la main dans Numbers.
+
+### 1 quinquies. Parler à l'IA
+
+Patrick, 13/11/2026 : « pour le 1.7 on pourra parler à l'IA par la voix ». Option Analytic, dans les
+deux éditeurs. Les consignes des points 1 ter et 1 quater se disent au lieu de s'écrire.
+
+**Le geste :**
+
+- un bouton micro dans la barre de l'IA. Tenir pour parler sur iPhone ; toucher pour commencer et
+  finir sur iPad et Mac, avec un raccourci clavier ;
+- la phrase s'écrit pendant qu'on parle ; on la corrige au clavier si besoin, puis elle part au
+  modèle comme une consigne écrite ;
+- le contexte est celui du curseur : « ce paragraphe », « cette diapositive », « la section
+  précédente » désignent la sélection, ou le bloc où se trouve le curseur ;
+- la proposition s'affiche en différences, comme toujours. On l'accepte ou la refuse du doigt, ou
+  à la voix : « garde », « annule », « encore plus court ».
+
+**Ce qu'on peut dire, par exemple :**
+
+- « raccourcis ce paragraphe » ;
+- « mets ça en liste » ;
+- « ajoute une diapositive sur les chiffres de 2025 après celle-ci » ;
+- « fais un graphique des ventes par mois avec le fichier ventes.xlsx » (point 1 quater) ;
+- « déplace cette diapositive à la fin » ;
+- « écris une note de l'orateur pour cette diapositive ».
+
+**Dicter le texte lui-même** : le même bouton, en mode « Dicter », insère ce qui est dit au curseur,
+ponctuation comprise. C'est la dictée de md Viewer, sur l'appareil, et non celle du clavier du
+système, dont on ne maîtrise pas où elle calcule.
+
+**Sur l'appareil, rien de gardé :**
+
+- la reconnaissance vocale d'Apple (`SpeechAnalyzer`, iOS 26 et macOS 26), modèles téléchargés sur
+  l'appareil ; jamais un serveur ;
+- l'audio n'est ni enregistré ni gardé : seul le texte reste ;
+- le micro ne s'ouvre que pendant le geste, avec l'indicateur orange du système ;
+- autorisation du micro et de la reconnaissance vocale demandées à la première utilisation, textes
+  en 15 langues.
+
+**Le même socle que l'audio (1.9)** : la transcription des consignes et celle des enregistrements
+importés (point 9) partagent le même code. On le fait une fois, dès la 1.7.
+
+**La réponse à voix haute, sur réglage** : la proposition du modèle peut être lue par les voix de
+l'appareil (`AVSpeechSynthesizer`). C'est le socle de « La lecture à voix haute », annoncée pour
+tous.
+
+**Limites et essais :**
+
+- les langues que `SpeechAnalyzer` reconnaît hors ligne. Pour une langue absente, le bouton ne
+  s'affiche pas, ou propose une langue voisine, comme pour Apple Intelligence ;
+- le bruit (salle de réunion) et les noms propres : les entités du coffre servent de vocabulaire
+  de contexte, si l'API le permet ;
+- essais en français, anglais et allemand, sur iPhone, Duo, iPad et Mac, avec des écouteurs et
+  sans.
 
 ### 2. Partir d'un modèle
 
