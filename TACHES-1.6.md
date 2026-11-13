@@ -111,6 +111,98 @@ Private Cloud Compute), pas de compte, pas de pistage.
       - iPhone et iPad : pas de serveur (iOS ne garde pas une app à l'écoute). À la place, des
         intentions (App Intents) — chercher, lire, entités — pour Raccourcis et Siri.
 
+      **B bis. Les outils MCP du coffre** (proposition du 13/11/2026 ; Patrick : « tu peux déjà
+      réfléchir à la liste des commandes disponibles par MCP »).
+
+      **Les conventions sont celles de fornews Agence** (`MCP.Outil`, `ExecutionOutilsMCP.swift`) :
+      - les noms en anglais, préfixés `mdviewer_`, jamais un nom qu'un autre serveur pourrait
+        porter. Un assistant branché sur fornews et md Viewer à la fois les distingue ;
+      - les descriptions en français ; les paramètres en anglais (`query`, `path`, `since`,
+        `limit`, `cursor`) ;
+      - chaque outil porte les annotations MCP : `readOnlyHint: true` pour la lecture,
+        `destructiveHint: false` partout. Aucun outil n'efface, ne déplace ni ne renomme.
+
+      **Chaque réponse cite** le `path` (chemin dans le coffre) et le `title` de chaque document,
+      pour qu'un assistant puisse citer ses sources et les rouvrir. Les entités portent leur
+      identifiant Wikidata (`qid`) quand il est connu : celui que rend `agence_get_entity` de
+      fornews. Un assistant peut ainsi croiser la presse (fornews) et les documents (md Viewer).
+
+      **Les longues réponses sont paginées** (`cursor`). Les documents se lisent par section, avec
+      `max_chars` (8 000 par défaut) ; les images `data:` sont remplacées par `[image : texte de
+      remplacement]` ; le bloc `md-viewer-annotations` n'est jamais rendu brut.
+
+      *Lot 1 — lecture (1.6), option Analytic :*
+
+      | Outil | Ce qu'il fait | Paramètres | Brique existante |
+      |---|---|---|---|
+      | `mdviewer_vault_info` | Le coffre : nom, emplacement (iCloud, dossier, partage), nombre de documents, dernière relecture, motif, ce que le serveur permet | — | `VaultStore` |
+      | `mdviewer_list_documents` | Les documents, du plus récent au plus ancien | `folder`, `since`, `until`, `origin` (web, pdf, word, powerpoint, excel, pages, analyse, fornews), `annotated`, `limit`, `cursor` | `VaultStore.reports`, `ApercusDocuments` (titre, origine) |
+      | `mdviewer_search` | Recherche plein texte : plusieurs mots, ou une expression entre guillemets, sans casse ni accents ; rend des passages | `query`*, `folder`, `since`, `limit` | `RechercheCoffre` |
+      | `mdviewer_get_outline` | Le plan d'un document : titres, niveaux, taille de chaque section | `path`* | `render.js` (sommaire) ou un découpage Swift des titres |
+      | `mdviewer_get_document` | Le document en Markdown, en-tête YAML à part ; entier ou une section | `path`*, `section`, `include_notes` (oui), `include_annotations` (non), `max_chars`, `cursor` | `MarkdownLoader`, `AnnotationsIntegrees` (retrait du bloc) |
+      | `mdviewer_get_slides` | Un diaporama diapositive par diapositive : titre, texte, notes de l'orateur, masquée ou non | `path`* | le découpage de `presentation.js` (`splitSlides`), lu par JavaScriptCore : jamais un second découpage |
+      | `mdviewer_list_entities` | Les entités du coffre, les plus présentes d'abord | `kind` (person, organization, place, product, event), `query`, `since`, `min_documents`, `limit`, `cursor` | `AnalyseCoffre` |
+      | `mdviewer_get_entity` | La fiche d'une entité : genre, description, `qid`, première et dernière apparition, ses documents avec la phrase où elle paraît, ses voisins les plus fréquents | `name` ou `qid`* | `AnalyseCoffre`, `FicheEntite`, corrections de l'utilisateur appliquées |
+      | `mdviewer_list_places` | Les lieux du coffre, avec coordonnées et documents | `since`, `limit` | la carte du coffre |
+      | `mdviewer_list_annotations` | Surlignages, soulignements et notes : texte cité, couleur, document, date ; une note manuscrite par son texte reconnu, sinon « note manuscrite » | `path`, `kind`, `query`, `since`, `limit` | `ListeAnnotationsView`, `AnnotationsStore` |
+      | `mdviewer_week_review` | Le point de la semaine : documents arrivés, noms nouveaux, noms en hausse, résumé | `period` (since_last_visit, 7d, 30d) | `PointSemaine` |
+      | `mdviewer_vault_stats` | Documents par mois et par origine, entités les plus citées, documents annotés | `since` | `AnalyseCoffre` |
+
+      `*` : obligatoire.
+
+      **Ressources** : `mdviewer://document/{path}` (text/markdown, le même contenu que
+      `mdviewer_get_document`), `mdviewer://entity/{qid ou nom}` ; un modèle de ressource pour que
+      l'assistant parcoure le coffre comme des fichiers.
+
+      **Invites (prompts)**, prêtes à choisir dans Claude Desktop :
+      - `synthese_sujet(sujet)` : une note de synthèse qui cite ses documents ;
+      - `qui_est(nom)` : la personne ou l'organisation, d'après le coffre seul ;
+      - `quoi_de_neuf(periode)` : le point de la semaine, commenté ;
+      - `preparer_diaporama(sujet)` : un plan de diapositives tiré du coffre (avec le lot 2 : écrit
+        dans le coffre).
+
+      *Lot 2 — écrire (1.6 ou 1.7), réglage à part « Permettre aux assistants d'écrire », coupé par
+      défaut :*
+
+      | Outil | Ce qu'il fait | Garde-fous |
+      |---|---|---|
+      | `mdviewer_create_document` | Crée un document Markdown | rangé dans `AAAA/MM` sauf `folder` donné ; en-tête `created_by: assistant`, date, titre ; refuse d'écraser un fichier existant |
+      | `mdviewer_append_to_document` | Ajoute une section à la fin d'un document | avant le bloc des annotations ; écriture coordonnée ; seulement si le fichier n'a pas changé depuis la lecture (`etag` rendu par `get_document`) ; refuse les documents non Markdown |
+      | `mdviewer_add_tags` | Ajoute des étiquettes à l'en-tête YAML (prépare la 1.8) | ajoute seulement, ne retire jamais |
+      | `mdviewer_set_speaker_notes` | Écrit la note de l'orateur d'une diapositive | le chemin de `NotesOrateur.enregistrer` et le découpage de `presentation.js` |
+
+      Chaque écriture est inscrite au journal « Ce que les assistants ont lu et écrit », avec
+      l'outil, le document et l'heure, et se défait depuis l'app (version précédente gardée avec
+      `NSFileVersion`).
+
+      *Lot 4 — piloter l'éditeur (1.7)* : les commandes qui agissent sur le document ouvert, pour
+      Claude ou Codex à la voix ; voir TACHES-1.7.md, point 1 sexies.
+
+      *Lot 3 — avec la 1.8 (le coffre qui veille) :*
+      - `mdviewer_get_links` : les liens sortants et les rétroliens d'un document ;
+      - `mdviewer_related_entities` : le réseau d'une entité, avec ses voisins et les documents
+        partagés ;
+      - `mdviewer_timeline` : la frise, pour tout le coffre ou une entité ;
+      - `mdviewer_list_watches`, `mdviewer_add_watch` : les noms surveillés ;
+      - `mdviewer_list_tags`, `mdviewer_list_collections`.
+
+      **Jamais** :
+      - effacer, déplacer ou renommer ;
+      - écrire hors du coffre ;
+      - faire une requête réseau sortante (pas de fiche de page web lancée par un assistant, pas de
+        Wikidata) ;
+      - lancer un calcul d'Apple Intelligence pour le compte d'un assistant : il a déjà son modèle ;
+      - rendre des données d'achat, des réglages ou des chemins hors du coffre.
+
+      **Les essais** :
+      - Claude Desktop, Claude Code, Codex CLI et VS Code (Copilot) branchés sur le même coffre de
+        test : « Qui est Jensen Huang dans mes documents ? » doit citer les bons fichiers ;
+      - « Fais une synthèse de ce que j'ai sur Tailscale » ;
+      - un document de 300 pages, lu par sections sans dépasser `max_chars` ;
+      - un coffre de 3 000 documents, `mdviewer_search` en moins d'une seconde ;
+      - le jeton faux ou absent est refusé ;
+      - la portée « ce Mac » refuse une autre machine du réseau.
+
       **C. « Envoyer à un assistant » (tous les appareils, pour tous).**
       - Des documents choisis, un résultat de recherche, une collection ou une entité deviennent un
         seul dossier Markdown : les sources, leurs dates et leurs chemins, sans les images `data:`,

@@ -14,7 +14,7 @@ même Private Cloud Compute), pas de pistage. La lecture reste gratuite.
 | Version | Thème | Contenu |
 |---|---|---|
 | 1.6 | Le coffre ouvert à vos assistants | revue le 13/11/2026 : un coffre qui s'explique (`AGENTS.md`), un serveur MCP sur Mac, « Envoyer à un assistant », puis l'interrogation sur l'appareil (TACHES-1.6.md) |
-| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), parler à l'IA (1 quinquies), les modèles (2), comparer deux versions (3) |
+| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), parler à l'IA (1 quinquies), piloter l'éditeur par MCP depuis Claude ou Codex (1 sexies), les modèles (2), comparer deux versions (3) |
 | 1.8 | Le coffre qui veille | étiquettes (4), liens entre documents (5), surveiller un nom (6), frise (7), réseau des entités (8) |
 | 1.9 | De nouvelles sources | l'audio (9), l'EPUB et les e-mails (10) |
 | 2.0 | Présenter partout | la montre (11), SharePlay (12), le diaporama traduit (13), vidéo et page web autonome (14) |
@@ -296,6 +296,72 @@ tous.
   de contexte, si l'API le permet ;
 - essais en français, anglais et allemand, sur iPhone, Duo, iPad et Mac, avec des écouteurs et
   sans.
+
+### 1 sexies. Piloter l'éditeur depuis Claude, Codex ou un autre assistant (MCP)
+
+Patrick, 13/11/2026 : « est-ce qu'on pourrait mettre à disposition des commandes MCP pour éditer le
+document et on utiliserait claude ou codex pour passer les commandes en vocal ». Oui : le serveur
+MCP du coffre (TACHES-1.6.md, B et B bis) gagne des commandes qui agissent sur **le document ouvert
+dans l'éditeur**. L'assistant est la voix et le raisonnement ; md Viewer exécute, montre et garde la
+main. Option Analytic, sur le Mac (là où vit le serveur).
+
+**Deux chemins pour la même envie, au choix de l'utilisateur :**
+- **Parler à l'IA de l'appareil (1 quinquies)** : rien ne sort de l'appareil ; marche sur
+  l'iPhone ; modèle plus petit.
+- **Piloter par un assistant (ici)** : Claude, Codex, ChatGPT ou Copilot, avec leur propre voix (mode
+  vocal de l'app Claude ou ChatGPT sur Mac) ou la dictée du Mac. Ils sont plus puissants, mais le
+  texte du document part chez leur éditeur, Anthropic ou OpenAI. C'est le choix de l'utilisateur,
+  et md Viewer le montre (bandeau « Claude modifie ce document »).
+
+**Les commandes (lot 4 du serveur MCP)** :
+
+| Outil | Ce qu'il fait |
+|---|---|
+| `mdviewer_editor_state` | Ce qui est ouvert : chemin, mode (document ou présentation), sélection, bloc du curseur, diapositive en cours, `etag` du texte |
+| `mdviewer_open_document` | Ouvre un document du coffre dans l'éditeur (ou en crée un depuis un modèle, point 2) |
+| `mdviewer_editor_read` | Le texte de l'éditeur : la sélection, une section, le bloc du curseur, ou tout, paginé |
+| `mdviewer_editor_replace` | Remplace un passage, désigné comme les annotations : citation exacte, texte avant et après (robuste aux retouches), ou une section par son titre |
+| `mdviewer_editor_insert` | Insère du Markdown : au curseur, après une section, après un passage cité |
+| `mdviewer_editor_delete` | Retire un passage désigné de même |
+| `mdviewer_editor_undo` | Annule la dernière modification de l'assistant |
+| `mdviewer_slides_list` | Les diapositives de la présentation ouverte : rang, titre, masquée, notes |
+| `mdviewer_slide_insert` / `_update` / `_move` / `_delete` / `_hide` | Ajouter, réécrire, déplacer, retirer ou masquer une diapositive |
+| `mdviewer_slide_set_notes` | La note de l'orateur d'une diapositive |
+| `mdviewer_insert_chart` | Un diagramme depuis un fichier de données du coffre et une spécification : **le calcul reste celui de md Viewer** (1 quater), l'assistant ne fournit pas les chiffres |
+| `mdviewer_present` | Lance le diaporama, depuis une diapositive (« lance la présentation à la diapo 3 ») |
+
+**Montrer, puis appliquer :**
+- par défaut, chaque commande d'écriture arrive dans l'éditeur **en proposition** : les
+  différences surlignées, et « Accepter » ou « Refuser » au clavier, à la souris ou à la voix
+  (si l'assistant appelle `accept`) ;
+- un réglage « Appliquer directement » pour qui veut enchaîner. Tout se défait alors en un geste
+  (`mdviewer_editor_undo`, ⌘Z) ; chaque modification est au journal ;
+- une commande sur un texte qui a changé depuis sa lecture (`etag` différent) est refusée, avec le
+  nouvel état : l'assistant relit avant de réécrire ;
+- le bloc des annotations, l'en-tête YAML (hors `mdviewer_add_tags`) et les images `data:` ne
+  sont jamais réécrits par ces commandes. Les annotations suivent le texte (ancrage par citation,
+  point 1).
+
+**La voix, concrètement :**
+- **Claude Desktop sur le Mac** (mode vocal ou dictée), branché sur le serveur MCP : « dans le
+  deuxième paragraphe, remplace "Q3" par "troisième trimestre" », « ajoute une diapositive de
+  conclusion avec trois points », « fais un graphique des ventes par mois depuis ventes.xlsx », «
+  lance la présentation ». md Viewer, à côté, montre chaque changement ;
+- **Codex CLI ou Claude Code** dans le Terminal, avec la dictée du Mac (touche de dictation) :
+  même chose, pour qui travaille déjà dans un terminal ;
+- **depuis l'iPhone** : les connecteurs de l'app Claude ou ChatGPT passent par les serveurs de
+  leur éditeur, qui ne peuvent pas joindre un Mac sur un réseau privé (Tailscale). Pas de tunnel
+  public fourni par nous. Sur l'iPhone, la voix passe par 1 quinquies.
+
+**Pourquoi le serveur et pas l'automatisation de l'interface** : les commandes connaissent le
+Markdown, les diapositives, les notes et les annotations. Un assistant qui « clique » dans l'app
+casserait le fichier.
+
+**À vérifier :**
+- le mode vocal de Claude Desktop et de ChatGPT sur Mac appelle-t-il les outils MCP en cours de
+  conversation vocale, ou seulement en texte ?
+- la latence d'une commande, de la parole au changement dans l'éditeur ; viser moins de 2
+  secondes hors temps du modèle.
 
 ### 2. Partir d'un modèle
 
