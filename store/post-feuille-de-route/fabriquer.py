@@ -16,7 +16,7 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 # (icône Lucide, titre FR, ligne FR, titre EN, ligne EN, pour tous)
 VERSIONS = [
-    ("1.5", "Présenter, et le coffre partout", "Presenting, and the vault everywhere", "test", [
+    ("1.5.1", "Présenter, et le coffre partout", "Presenting, and the vault everywhere", "test", [
         ("smartphone", "L'iPhone télécommande", "avancer, dessiner, pointer", "iPhone as a remote", "advance, draw, point", False),
         ("timer", "Répéter", "chaque diapositive chronométrée", "Rehearse", "every slide timed", False),
         ("message-square-text", "Notes de l'orateur", "écrites dans l'app, proposées par l'IA", "Speaker notes", "written in the app, suggested by AI", False),
@@ -101,7 +101,7 @@ def page(v, langue):
   .gauche{{position:absolute;left:72px;top:70px;bottom:70px;width:440px;display:flex;flex-direction:column}}
   .marque{{font-size:40px;font-weight:700;letter-spacing:-.5px}}
   .marque span{{color:#E8972E}}
-  .num{{font-size:250px;font-weight:800;line-height:.86;letter-spacing:-10px;color:#E8972E;margin-top:64px}}
+  .num{{font-size:{250 if len(num) <= 3 else 172}px;font-weight:800;line-height:.86;letter-spacing:{-10 if len(num) <= 3 else -7}px;color:#E8972E;margin-top:{64 if len(num) <= 3 else 96}px}}
   .nom{{font-size:42px;font-weight:700;line-height:1.15;margin-top:30px}}
   .statut{{align-self:flex-start;margin-top:24px;font-size:22px;font-weight:700;letter-spacing:.4px;
     padding:8px 18px;border-radius:999px;border:2px solid {"#E8972E" if statut == "test" else "#8f7be0"};
