@@ -122,7 +122,8 @@ Private Cloud Compute), pas de compte, pas de pistage.
       - chaque outil porte les annotations MCP : `readOnlyHint: true` pour la lecture,
         `destructiveHint: false` partout. Aucun outil n'efface, ne déplace ni ne renomme.
 
-      **Chaque réponse cite** le `path` (chemin dans le coffre) et le `title` de chaque document,
+      **Chaque réponse cite** le `path` (chemin dans le coffre), le `title` et le `link`
+      (`mdviewer://coffre/…?id=…`) de chaque document,
       pour qu'un assistant puisse citer ses sources et les rouvrir. Les entités portent leur
       identifiant Wikidata (`qid`) quand il est connu : celui que rend `agence_get_entity` de
       fornews. Un assistant peut ainsi croiser la presse (fornews) et les documents (md Viewer).
@@ -150,8 +151,9 @@ Private Cloud Compute), pas de compte, pas de pistage.
 
       `*` : obligatoire.
 
-      **Ressources** : `mdviewer://document/{path}` (text/markdown, le même contenu que
-      `mdviewer_get_document`), `mdviewer://entity/{qid ou nom}` ; un modèle de ressource pour que
+      **Ressources** : `mdviewer://coffre/{path}` (text/markdown, le même contenu que
+      `mdviewer_get_document`), `mdviewer://entite/{qid ou nom}` — les mêmes adresses que les liens
+      entre documents (TACHES-1.7.md, point 5) ; un modèle de ressource pour que
       l'assistant parcoure le coffre comme des fichiers.
 
       **Invites (prompts)**, prêtes à choisir dans Claude Desktop :

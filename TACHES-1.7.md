@@ -484,10 +484,64 @@ dans un dossier « Modèles » du coffre. Rangé dans le coffre au mois en cours
 
 ### 5. Les liens entre documents
 
-- `[[Titre du document]]` et `[[Titre|texte affiché]]`, comme Obsidian, résolus par nom de fichier
-  dans le coffre ; les liens Markdown ordinaires vers un `.md` du coffre aussi.
-- En bas de chaque document, « Cité dans » : les rétroliens, depuis l'index du coffre.
-- Dans l'analyse du coffre, une vue « Liens » : le graphe des documents.
+**Par un lien `mdviewer://`** (décidé par Patrick le 13/11/2026 : « le lien entre les documents se
+fera par un lien de type mdviewer »). L'app déclare déjà ce schéma (`Info.plist`,
+`CFBundleURLSchemes`) et le reçoit (`handleIncoming`, routes `open`, `render`, `fichier`, `page`).
+Une route s'y ajoute pour les documents du coffre, et le même format sert partout : dans les
+documents, dans Mail, Notes ou un terminal, et comme adresse des ressources MCP (TACHES-1.6.md).
+
+**Le format :**
+
+| Lien | Ouvre |
+|---|---|
+| `mdviewer://coffre/2026/11/rapport.md` | le document, par son chemin dans le coffre |
+| `…/rapport.md#chiffres-cles` | à une section (l'ancre du titre, comme le sommaire) |
+| `…/rapport.md?diapo=4` | une présentation à sa quatrième diapositive |
+| `…/rapport.md?annotation=<id>` | à une annotation, comme la liste des annotations |
+| `mdviewer://entite/Q182477` (ou `/entite/Jensen%20Huang`) | la fiche d'une entité du coffre |
+
+Dans un document, c'est un lien Markdown ordinaire :
+`[le rapport du 12](mdviewer://coffre/2026/11/rapport.md#chiffres-cles)`.
+
+**Résister aux déplacements** : un chemin casse quand on range un fichier ailleurs. Le lien porte
+donc aussi une empreinte courte du document, `?id=` : les 12 premiers caractères de la clé
+d'identité (`IdentiteDocument`, sans les commentaires), la même que celle des annotations.
+- **Le chemin d'abord.**
+- **S'il ne mène à rien**, le document du coffre de même empreinte.
+- **À défaut**, celui de même nom de fichier.
+- **Sinon**, « Document introuvable », avec « Relier à un document… », comme pour les annotations.
+
+Un lien réparé se réécrit, sur demande, avec le nouveau chemin.
+
+**Créer un lien sans le taper :**
+- « Copier le lien md Viewer » dans le menu d'une carte, du lecteur, d'un titre (lien vers la
+  section) et d'une annotation ;
+- dans l'éditeur, « Lier un document… » : un sélecteur qui cherche dans le coffre (titre, mots,
+  entités) et insère le lien ; taper `[[` ouvre le même sélecteur ;
+- par MCP : `mdviewer_insert_link` (un document, une section, une entité), et chaque réponse des
+  outils donne le lien `mdviewer://` de ses documents, que l'assistant peut recopier tel quel.
+
+**Lire les liens d'Obsidian aussi** : `[[Titre]]` et `[[Titre|texte]]` restent compris (résolus par
+nom de fichier), pour les coffres venus d'Obsidian. md Viewer, lui, écrit des liens `mdviewer://`.
+Le prix est connu : hors de md Viewer, un lien `mdviewer://` n'ouvre rien ; Obsidian et GitHub le
+montrent comme un lien inerte. Au besoin, l'éditeur propose de convertir.
+
+**Rétroliens et graphe :**
+- en bas de chaque document, « Cité dans » : les documents qui pointent vers lui, depuis l'index
+  du coffre (les liens `mdviewer://` et `[[ ]]` y sont relevés à chaque lecture) ;
+- dans l'analyse du coffre, une vue « Liens » : le graphe des documents ;
+- par MCP : `mdviewer_get_links`.
+
+**Sécurité** :
+- la route `coffre` ne lit **que dans le coffre** : chemin normalisé, sans `..`, refusé s'il sort
+  de la racine. C'est la règle de `BoiteAuxLettres` pour `fichier`.
+- un lien `mdviewer://coffre/…` venu d'ailleurs (Mail, une page web) ne fait qu'**ouvrir** un
+  document. Il n'écrit rien, n'importe rien, ne lance rien ;
+- un lien vers un document introuvable ne dit pas ce que contient le coffre.
+
+**Dans la vue web** : `MarkdownWebView` annule aujourd'hui tout lien qui n'est ni `file` ni web ;
+les liens `mdviewer://` y seront passés à `handleIncoming`, avec ouverture dans la même fenêtre,
+ou une nouvelle sur Mac et iPad avec ⌘ ou un appui long.
 
 ### 6. Surveiller un nom
 
