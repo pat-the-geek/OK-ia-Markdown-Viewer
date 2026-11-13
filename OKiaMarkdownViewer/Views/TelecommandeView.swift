@@ -32,28 +32,37 @@ struct TelecommandeView: View {
     @State private var traitEnCours: TraitTelecommande?
     @State private var dernierEnvoi = Date.distantPast
     @State private var debut = Date()
+    @State private var notesVisibles = false
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
+    private var connectee: Bool { if case .connecte = client.etat { return true } else { return false } }
+
     var body: some View {
-        NavigationStack {
-            Group {
-                if case .connecte = client.etat { pilote } else { recherche }
-            }
-            .navigationTitle(tr("Télécommande"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button(tr("Fermer")) { dismiss() } }
-                // Connectée : le titre du diaporama, le chronomètre et le rang dans la barre, une
-                // rangée de plus pour la diapositive.
-                if case .connecte = client.etat {
-                    ToolbarItem(placement: .principal) {
-                        Text(client.titre).font(.headline).lineLimit(1)
-                    }
-                    ToolbarItem(placement: .primaryAction) { compteurs }
+        GeometryReader { g in
+            // Tenue en largeur et connectée : la diapositive bord à bord, tout le reste en verre
+            // par-dessus (Patrick, 13/11/2026 : « on doit vraiment essayer de faire de bord à bord »).
+            if connectee && g.size.width > g.size.height {
+                immersif
+            } else {
+                NavigationStack {
+                    Group { if connectee { pilote } else { recherche } }
+                        .navigationTitle(tr("Télécommande"))
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button(tr("Fermer")) { dismiss() } }
+                            // Connectée : le titre du diaporama, le chronomètre et le rang dans la
+                            // barre, une rangée de plus pour la diapositive.
+                            if connectee {
+                                ToolbarItem(placement: .principal) {
+                                    Text(client.titre).font(.headline).lineLimit(1)
+                                }
+                                ToolbarItem(placement: .primaryAction) { compteurs }
+                            }
+                        }
                 }
             }
-            .tint(orange)
         }
+        .tint(orange)
         .onAppear {
             client.chercher(); UIApplication.shared.isIdleTimerDisabled = true
             #if DEBUG
@@ -98,36 +107,68 @@ struct TelecommandeView: View {
 
     // MARK: Piloter
 
-    /// La diapositive d'abord (Patrick, 13/11/2026 : « on doit donner plus de place à la
-    /// présentation », puis « les boutons peuvent être en liquide glass sur la présentation ») : les
-    /// flèches flottent en verre sur la diapositive ; en largeur, elle prend la hauteur entière à
-    /// gauche, les outils et les notes en colonne à droite ; en hauteur, toute la largeur, les notes
-    /// dans ce qui reste.
+    /// Tenue droite : la diapositive bord à bord sur toute la largeur, les flèches en verre sur elle,
+    /// les outils et les notes dessous (Patrick, 13/11/2026 : « on doit donner plus de place à la
+    /// présentation », « les boutons peuvent être en liquide glass sur la présentation »).
     private var pilote: some View {
-        GeometryReader { g in
-            // Colonne à droite seulement sur un écran très allongé (iPhone en largeur) : sur le Duo
-            // ouvert, presque carré, la diapositive est plus grande sur toute la largeur.
-            let large = g.size.width > g.size.height * 1.8
-            VStack(spacing: 10) {
-                if large {
-                    HStack(alignment: .top, spacing: 14) {
-                        diapositive
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        VStack(spacing: 10) {
-                            outils
-                            notes
-                        }
-                        .frame(width: min(300, g.size.width * 0.28))
-                    }
-                } else {
-                    diapositive.layoutPriority(1)
-                    outils
-                    notes.frame(minHeight: 60)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+        VStack(spacing: 12) {
+            diapositive
+                .overlay(alignment: .bottom) { navigation }
+            outilsVerre
+            ScrollView { texteNotes.padding(.horizontal) }
         }
+        .padding(.bottom, 8)
+    }
+
+    /// Tenue en largeur : la diapositive occupe tout l'écran ; fermer, chronomètre, outils, notes
+    /// et flèches flottent en verre par-dessus.
+    private var immersif: some View {
+        ZStack {
+            Color.black
+            diapositive
+        }
+        .ignoresSafeArea()
+        .overlay(alignment: .topLeading) {
+            Button { dismiss() } label: {
+                Image(systemName: "xmark").font(.headline).frame(width: 44, height: 44).contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .circle)
+            .accessibilityLabel(tr("Fermer"))
+            .padding(10)
+        }
+        .overlay(alignment: .topTrailing) {
+            compteurs.padding(.vertical, 10).padding(.horizontal, 6)
+                .glassEffect(.regular, in: .capsule)
+                .padding(10)
+        }
+        .overlay(alignment: .top) {
+            if notesVisibles {
+                ScrollView { texteNotes.padding(14) }
+                    .frame(maxWidth: 520, maxHeight: 160)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                    .padding(.top, 64)
+                    .padding(.horizontal, 70)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            HStack(alignment: .center) {
+                bouton("chevron.left", tr("Précédente")) { client.envoyer(PaquetTelecommande(type: "precedente")) }
+                Spacer(minLength: 8)
+                outilsVerre
+                Spacer(minLength: 8)
+                bouton("chevron.right", tr("Suivante")) { client.envoyer(PaquetTelecommande(type: "suivante")) }
+            }
+            .padding(10)
+        }
+        .statusBarHidden(true)
+    }
+
+    private var texteNotes: some View {
+        Text(client.notes.isEmpty ? tr("Pas de notes pour cette diapositive.") : client.notes)
+            .foregroundStyle(client.notes.isEmpty ? .secondary : .primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var compteurs: some View {
@@ -141,26 +182,40 @@ struct TelecommandeView: View {
         .padding(.horizontal, 6)
     }
 
-    private var outils: some View {
-        HStack(spacing: 10) {
-            Picker(tr("Outil"), selection: $outil) {
-                ForEach(Outil.allCases) { Image(systemName: $0.symbole).accessibilityLabel($0.libelle).tag($0) }
+    /// Les outils en verre : pointeur, crayon, cercle, surligneur, puis effacer et, en largeur, les
+    /// notes à afficher par-dessus la diapositive.
+    private var outilsVerre: some View {
+        HStack(spacing: 2) {
+            ForEach(Outil.allCases) { o in
+                Button { outil = o } label: {
+                    Image(systemName: o.symbole)
+                        .font(.title3)
+                        .foregroundStyle(outil == o ? Color.white : Color.primary)
+                        .frame(width: 44, height: 44)
+                        .background(Circle().fill(outil == o ? orange : Color.clear))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(o.libelle)
+                .accessibilityAddTraits(outil == o ? .isSelected : [])
             }
-            .pickerStyle(.segmented)
+            Divider().frame(height: 26).padding(.horizontal, 4)
             Button { client.envoyer(PaquetTelecommande(type: "effacer")) } label: {
-                Image(systemName: "eraser")
+                Image(systemName: "eraser").font(.title3).frame(width: 44, height: 44).contentShape(Circle())
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
             .accessibilityLabel(tr("Effacer les traits"))
+            Button { notesVisibles.toggle() } label: {
+                Image(systemName: notesVisibles ? "text.bubble.fill" : "text.bubble")
+                    .font(.title3)
+                    .foregroundStyle(client.notes.isEmpty ? Color.secondary : orange)
+                    .frame(width: 44, height: 44).contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("Notes de l’orateur"))
         }
-    }
-
-    private var notes: some View {
-        ScrollView {
-            Text(client.notes.isEmpty ? tr("Pas de notes pour cette diapositive.") : client.notes)
-                .foregroundStyle(client.notes.isEmpty ? .secondary : .primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        .padding(4)
+        .glassEffect(.regular.interactive(), in: .capsule)
     }
 
     /// Précédente et suivante, en verre, aux coins bas de la diapositive : le pouce les trouve sans
@@ -204,7 +259,6 @@ struct TelecommandeView: View {
                 .onEnded { v in toucher(v.location, cadre: cadreImage(geo.size), fin: true) })
         }
         .aspectRatio(image: client.image)
-        .overlay(alignment: .bottom) { navigation }
     }
 
     private func cadreImage(_ zone: CGSize) -> CGRect {

@@ -2179,6 +2179,8 @@ struct PresentationView: View {
                 // de surligneur, le pointeur, puis la diapositive suivante.
                 if envD["OKIA_TELECOM_ESSAI"] != nil {
                     let h = hote
+                    // La photo et le cadre, comme à la connexion d'une télécommande.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { envoyerTelecommande() }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                         h.essai(PaquetTelecommande(type: "trait", trait: TraitTelecommande(id: "c", points: [[0.08, 0.36], [0.62, 0.46]], outil: "cercle")))
                         h.essai(PaquetTelecommande(type: "trait", trait: TraitTelecommande(id: "t", points: [[0.12, 0.62], [0.3, 0.6], [0.55, 0.61]], outil: "crayon")))
@@ -2280,9 +2282,34 @@ struct PresentationView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             vue.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
                 let notes = (r as? String) ?? ""
-                vue.takeSnapshot(with: nil) { image, _ in
-                    hote.envoyerEtat(index: i, total: total, titre: titre, notes: notes,
-                                     image: image.flatMap { Self.reduire($0, largeur: 960)?.jpegData(compressionQuality: 0.6) })
+                // La diapositive seule, sans les boutons du diaporama (Patrick, 13/11/2026 : « il y a
+                // encore trop de place perdue ») ; ses dessins se posent dans le même cadre.
+                vue.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.cadreTelecommande ? window.OKIA_PRESENT.cadreTelecommande() : null") { c, _ in
+                    let reglage = WKSnapshotConfiguration()
+                    var cadre = CGRect(x: 0, y: 0, width: 1, height: 1)
+                    if let c = c as? [String: Any],
+                       let x = (c["x"] as? NSNumber)?.doubleValue, let y = (c["y"] as? NSNumber)?.doubleValue,
+                       let w = (c["w"] as? NSNumber)?.doubleValue, let h = (c["h"] as? NSNumber)?.doubleValue,
+                       let vw = (c["vw"] as? NSNumber)?.doubleValue, let vh = (c["vh"] as? NSNumber)?.doubleValue,
+                       w > 0, h > 0, vw > 0, vh > 0 {
+                        let r = CGRect(x: x, y: y, width: w, height: h).intersection(CGRect(x: 0, y: 0, width: vw, height: vh))
+                        if !r.isNull, r.width > 0, r.height > 0 {
+                            reglage.rect = r
+                            cadre = CGRect(x: r.minX / vw, y: r.minY / vh, width: r.width / vw, height: r.height / vh)
+                        }
+                    }
+                    // Le temps que les boutons cachés disparaissent de l'écran.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { vue.takeSnapshot(with: reglage) { image, _ in
+                        vue.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.finirCadreTelecommande && window.OKIA_PRESENT.finirCadreTelecommande(); 0")
+                        let donnees = image.flatMap { Self.reduire($0, largeur: 1280)?.jpegData(compressionQuality: 0.7) }
+                        #if DEBUG
+                        // OKIA_TELECOM_ESSAI : la photo envoyée, gardée pour la regarder (tmp/telecommande.jpg).
+                        if ProcessInfo.processInfo.environment["OKIA_TELECOM_ESSAI"] != nil {
+                            try? donnees?.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("telecommande.jpg"))
+                        }
+                        #endif
+                        hote.envoyerEtat(index: i, total: total, titre: titre, notes: notes, image: donnees, cadre: cadre)
+                    } }
                 }
             }
         }

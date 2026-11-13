@@ -804,6 +804,10 @@ body:not(.theme-marque) .present-marque-logo { display: none; }
 /* Le polycopié photographie la diapositive seule. */
 body.okia-capture button, body.okia-capture .present-progress, body.okia-capture .present-counter,
 body.okia-capture .present-menu { visibility: hidden !important; }
+/* La photo pour la télécommande : les boutons et la barre cachés le temps de la prise, la
+   diapositive telle que le public la voit. */
+body.okia-capture-ui button, body.okia-capture-ui .present-progress, body.okia-capture-ui .present-counter,
+body.okia-capture-ui .present-menu { visibility: hidden !important; }
 /* Le polycopié en 16:9, quelle que soit l'orientation de l'écran : un iPad tenu droit donnait des
    diapositives en portrait, étroites sur la page. La diapositive se pose en haut à gauche, à la
    plus grande taille 16:9 qui tient ; la photo est rognée à son cadre. */

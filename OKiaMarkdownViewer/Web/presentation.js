@@ -969,6 +969,18 @@
   }
   function finirCapture() { document.body.classList.remove('okia-capture'); }
 
+  // La télécommande : la diapositive affichée seule (son canevas 16:9), sans boutons ni barre, sans
+  // changer sa mise en page devant le public. Le cadre rapporté sert à rogner la photo et à poser
+  // les dessins de la télécommande au même endroit.
+  function cadreTelecommande() {
+    document.body.classList.add('okia-capture-ui');
+    var s = sections[current];
+    var c = s ? (s.querySelector('.slide-canvas') || s) : null;
+    var b = c ? c.getBoundingClientRect() : null;
+    return b ? { x: b.left, y: b.top, w: b.width, h: b.height, vw: window.innerWidth, vh: window.innerHeight } : null;
+  }
+  function finirCadreTelecommande() { document.body.classList.remove('okia-capture-ui'); }
+
   // Build the presentation export model: render each slide off-screen and collect
   // its blocks (the first heading becomes the slide title). Mermaid is rasterised
   // by OKIA.exportModel; maps become a marker list.
@@ -1714,6 +1726,7 @@
                           setTransition: setTransition, setTheme: setTheme, escape: escape,
                           toggleOverview: toggleOverview, exportModel: buildExportModel,
                           permettreAnalytic: permettreAnalytic, setMarque: setMarque, titres: titres,
-                          preparerCapture: preparerCapture, finirCapture: finirCapture };
+                          preparerCapture: preparerCapture, finirCapture: finirCapture,
+                          cadreTelecommande: cadreTelecommande, finirCadreTelecommande: finirCadreTelecommande };
   post('presentReady', {});
 })();

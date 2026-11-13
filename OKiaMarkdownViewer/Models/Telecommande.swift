@@ -59,6 +59,9 @@ final class TelecommandeHote: NSObject, ObservableObject {
     @Published private(set) var connectes: [String] = []
     @Published private(set) var traits: [TraitTelecommande] = []
     @Published private(set) var pointeur: CGPoint?
+    /// Où est la diapositive dans la vue du diaporama (de 0 à 1) : la télécommande ne voit qu'elle,
+    /// ses dessins se posent donc dans ce cadre.
+    @Published private(set) var cadre = CGRect(x: 0, y: 0, width: 1, height: 1)
     /// Suivante, précédente : le diaporama les exécute.
     var surCommande: ((String) -> Void)?
     /// Une télécommande vient de se connecter : le diaporama lui envoie la diapositive en cours.
@@ -101,9 +104,11 @@ final class TelecommandeHote: NSObject, ObservableObject {
         if pointeur != nil { pointeur = nil }
     }
 
-    func envoyerEtat(index: Int, total: Int, titre: String, notes: String, image: Data?) {
+    func envoyerEtat(index: Int, total: Int, titre: String, notes: String, image: Data?,
+                     cadre: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)) {
         traits = []
         pointeur = nil
+        self.cadre = cadre
         let p = PaquetTelecommande(type: "etat", index: index, total: total, titre: titre, notes: notes, image: image)
         dernierEtat = p
         envoyer(p)
@@ -181,7 +186,12 @@ struct CalqueTelecommande: View {
     @ObservedObject var hote = TelecommandeHote.partage
 
     var body: some View {
-        DessinTelecommande(traits: hote.traits, pointeur: hote.pointeur)
+        GeometryReader { g in
+            DessinTelecommande(traits: hote.traits, pointeur: hote.pointeur)
+                .frame(width: g.size.width * hote.cadre.width, height: g.size.height * hote.cadre.height)
+                .offset(x: g.size.width * hote.cadre.minX, y: g.size.height * hote.cadre.minY)
+        }
+        .allowsHitTesting(false)
     }
 }
 
