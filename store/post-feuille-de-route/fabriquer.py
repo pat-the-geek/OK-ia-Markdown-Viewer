@@ -45,7 +45,7 @@ VERSIONS = [
     ]),
     ("1.8", "Le coffre qui veille", "The vault keeps watch", "prevu", [
         ("tags", "Étiquettes et collections", "au format d'Obsidian", "Tags and collections", "in Obsidian's format", True),
-        ("link", "Liens entre documents", "[[liens]] et rétroliens", "Links between documents", "[[links]] and backlinks", False),
+        ("link", "Liens entre documents", "liens mdviewer:// et rétroliens", "Links between documents", "mdviewer:// links and backlinks", False),
         ("bell-ring", "Surveiller un nom", "une notification à chaque mention", "Watch a name", "a notification on every mention", False),
         ("calendar-range", "La frise", "les dates de vos documents", "The timeline", "the dates in your documents", False),
         ("network", "Le réseau des entités", "qui apparaît avec qui", "The entity network", "who appears with whom", False),
