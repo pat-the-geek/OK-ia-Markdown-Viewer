@@ -189,6 +189,8 @@ struct EmptyStateView: View {
         ToolbarItem(placement: .topBarLeading) {
             Menu {
                 Button { showSettings = true } label: { Label(tr("Réglages"), systemImage: "gearshape") }
+                // L'exemple quitte la barre pour faire place à la télécommande (Patrick, 13/11/2026).
+                Button(action: onSample) { Label(tr("Voir un exemple"), systemImage: "doc.text.image") }
                 Button { showAbout = true } label: {
                     Label(tr("Librairies & licences"), systemImage: "info.circle")
                 }
@@ -255,9 +257,6 @@ struct EmptyStateView: View {
                 .accessibilityLabel(tr("Télécommande d’un diaporama…"))
             }
             #endif
-            Button(action: onSample) { Image(systemName: "doc.text.image") }
-                .teinteBarre()
-                .accessibilityLabel(tr("Voir un exemple"))
             Menu {
                 Button(action: onOpen) { Label(tr("Ouvrir un fichier"), systemImage: "folder") }
                 Button { ImportEnCours.demander(pour: store) } label: {
