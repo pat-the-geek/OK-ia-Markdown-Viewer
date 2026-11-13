@@ -42,7 +42,7 @@ struct TelecommandeView: View {
             // Tenue en largeur et connectée : la diapositive bord à bord, tout le reste en verre
             // par-dessus (Patrick, 13/11/2026 : « on doit vraiment essayer de faire de bord à bord »).
             if connectee && g.size.width > g.size.height {
-                immersif
+                immersif(marge: max(g.safeAreaInsets.leading, g.safeAreaInsets.trailing))
             } else {
                 NavigationStack {
                     Group { if connectee { pilote } else { recherche } }
@@ -122,12 +122,20 @@ struct TelecommandeView: View {
 
     /// Tenue en largeur : la diapositive occupe tout l'écran ; fermer, chronomètre, outils, notes
     /// et flèches flottent en verre par-dessus.
-    private var immersif: some View {
-        ZStack {
-            Color.black
-            diapositive
-        }
-        .ignoresSafeArea()
+    private func immersif(marge: CGFloat) -> some View {
+        // Le noir jusqu'aux bords de l'écran ; la diapositive et les boutons dans la zone sûre, avec
+        // la même marge des deux côtés (la plus grande) pour rester centrés : sans quoi les bords de
+        // l'iPhone coupaient le compteur et la flèche de droite (Patrick, 13/11/2026 : « attention,
+        // mauvais cadrage horizontal »).
+        commandesImmersives(diapositive.frame(maxWidth: .infinity, maxHeight: .infinity))
+            .padding(.horizontal, marge)
+            .ignoresSafeArea(edges: .horizontal)
+        .background(Color.black.ignoresSafeArea())
+        .statusBarHidden(true)
+    }
+
+    private func commandesImmersives(_ fond: some View) -> some View {
+        fond
         .overlay(alignment: .topLeading) {
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.headline).frame(width: 44, height: 44).contentShape(Circle())
@@ -162,7 +170,6 @@ struct TelecommandeView: View {
             }
             .padding(10)
         }
-        .statusBarHidden(true)
     }
 
     private var texteNotes: some View {

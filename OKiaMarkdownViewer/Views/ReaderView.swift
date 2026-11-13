@@ -2188,6 +2188,8 @@ struct PresentationView: View {
                         h.essai(PaquetTelecommande(type: "pointeur", point: [0.8, 0.3]))
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 9) { h.essai(PaquetTelecommande(type: "suivante")) }
+                    // Retour à la première : ses traits doivent revenir.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 14) { h.essai(PaquetTelecommande(type: "precedente")) }
                 }
                 if let m = envD["OKIA_REPETER"].flatMap(Int.init) {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) { commencerRepetition(m) }
@@ -2231,8 +2233,9 @@ struct PresentationView: View {
                                 seance.index = i
                                 seance.total = total
                                 repetition.changer(i)
-                                // Les traits de la télécommande restent sur leur diapositive.
-                                hote.effacerCalque()
+                                // Les traits de la télécommande restent sur leur diapositive, et
+                                // reviennent avec elle.
+                                hote.changerDiapositive(i)
                                 if hote.actif { envoyerTelecommande() }
                                 annotations.diaporama?.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.notes(\(i)) : ''") { r, _ in
                                     seance.notes = (r as? String) ?? ""

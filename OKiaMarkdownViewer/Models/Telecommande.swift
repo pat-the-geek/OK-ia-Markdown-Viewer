@@ -26,6 +26,8 @@ struct PaquetTelecommande: Codable {
     var image: Data?
     var trait: TraitTelecommande?
     var point: [Double]?
+    /// Avec « etat » : les traits déjà posés sur cette diapositive.
+    var traits: [TraitTelecommande]?
 }
 
 struct TraitTelecommande: Codable, Identifiable, Equatable {
@@ -91,25 +93,37 @@ final class TelecommandeHote: NSObject, ObservableObject {
         session = nil
         connectes = []
         traits = []
+        parDiapositive = [:]
+        diapositive = nil
         pointeur = nil
         demande = nil
         dernierEtat = nil
     }
 
-    /// La diapositive change : la télécommande la reçoit ; les traits de la précédente s'effacent.
     var actif: Bool { !connectes.isEmpty }
 
-    func effacerCalque() {
-        if !traits.isEmpty { traits = [] }
+    /// Les traits de chaque diapositive, gardés tout le diaporama : en y revenant, on les retrouve
+    /// (Patrick, 13/11/2026 : « les annotations se perdent si je passe à une autre diapo », « elle
+    /// devrait rester active durant le diaporama »).
+    private var parDiapositive: [Int: [TraitTelecommande]] = [:]
+    private var diapositive: Int?
+
+    /// La diapositive change : on range ses traits, on ressort ceux de la nouvelle.
+    func changerDiapositive(_ i: Int) {
+        if let d = diapositive { parDiapositive[d] = traits.isEmpty ? nil : traits }
+        diapositive = i
+        let nouveaux = parDiapositive[i] ?? []
+        if traits != nouveaux { traits = nouveaux }
         if pointeur != nil { pointeur = nil }
     }
 
     func envoyerEtat(index: Int, total: Int, titre: String, notes: String, image: Data?,
                      cadre: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)) {
-        traits = []
+        if diapositive != index { changerDiapositive(index) }
         pointeur = nil
         self.cadre = cadre
-        let p = PaquetTelecommande(type: "etat", index: index, total: total, titre: titre, notes: notes, image: image)
+        var p = PaquetTelecommande(type: "etat", index: index, total: total, titre: titre, notes: notes, image: image)
+        p.traits = traits
         dernierEtat = p
         envoyer(p)
     }
@@ -332,8 +346,8 @@ final class TelecommandeClient: NSObject, ObservableObject {
 
     fileprivate func recevoir(_ p: PaquetTelecommande) {
         guard p.type == "etat" else { return }
-        // Une autre diapositive : les traits de la précédente s'effacent, comme sur l'écran.
-        traits = []
+        // Une autre diapositive : ses traits à elle, gardés par l'écran qui présente.
+        traits = p.traits ?? []
         pointeur = nil
         index = p.index ?? 0
         total = p.total ?? 0
