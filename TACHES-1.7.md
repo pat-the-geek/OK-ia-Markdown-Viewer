@@ -330,6 +330,17 @@ main. Option Analytic, sur le Mac (là où vit le serveur).
 | `mdviewer_insert_chart` | Un diagramme depuis un fichier de données du coffre et une spécification : **le calcul reste celui de md Viewer** (1 quater), l'assistant ne fournit pas les chiffres |
 | `mdviewer_present` | Lance le diaporama, depuis une diapositive (« lance la présentation à la diapo 3 ») |
 | `mdviewer_insert_image` | Insère une illustration que l'assistant a produite : SVG ou image PNG/JPEG en base64, rangée dans le document comme les images importées (voir ci-dessous) |
+| `mdviewer_insert_markdown` | Insère du Markdown que l'assistant a écrit (titres, listes, tableaux, citations, liens, notes), au curseur, après une section ou un passage cité. Le texte est vérifié avant d'entrer : rendu par `render.js` sans erreur, aucun bloc `md-viewer-annotations`, aucun `<script>` ni attribut `on*=` dans le HTML embarqué |
+| `mdviewer_insert_mermaid` | Insère un diagramme Mermaid écrit par l'assistant (organigramme, séquence, Gantt, frise, carte mentale, `xychart`…), en bloc ` ```mermaid `. **Validé avant d'entrer** : `mermaid.parse` dans la vue web, avec les réparations connues (`reparerXychart`). En cas d'erreur, rien n'est écrit, et l'outil rend à l'assistant le message de Mermaid et la ligne fautive, pour qu'il corrige et renvoie ; jamais un bloc cassé dans le document |
+
+Patrick, 13/11/2026 : « il y aura une fonction MCP pour insérer dans le document du code Markdown et
+des diagrammes mermaid ». Ce sont les deux commandes d'écriture les plus courantes d'une séance
+« Construire avec Claude ». `mdviewer_editor_insert` reste la commande générale ; ces deux-là
+ajoutent la vérification propre à leur contenu et un retour d'erreur utile à l'assistant.
+
+Les chiffres d'un diagramme tiré de données passent toujours par `mdviewer_insert_chart`, où
+md Viewer calcule (1 quater). `mdviewer_insert_mermaid` est pour les diagrammes de structure et
+ceux dont l'assistant a les chiffres d'une source qu'il cite.
 
 **Une illustration de l'assistant, dans le document** (Patrick, 13/11/2026 : « on pourra demander à
 claude de générer une illustration et l'intégrer dans le document par MCP (avec notre système de
