@@ -20,11 +20,15 @@ Private Cloud Compute), pas de compte, pas de pistage.
       diaporama… »), le présentateur autorise chaque appareil. L'iPhone reçoit l'image de la
       diapositive, son rang et ses notes ; il envoie suivante/précédente, **crayon, cercle,
       surligneur et pointeur** (Patrick : « faire des cercles, des traits, etc. montrer un
-      pointeur »), affichés sur le diaporama et sur l'écran du public, effacés au changement de
-      diapositive ; l'iPhone voit ce qu'il dessine. Mac : droit `network.server` ajouté au bac à
-      sable. **Non vérifié d'appareil à appareil** : deux simulateurs du même Mac ne se trouvent
-      pas ; le dessin et les commandes sont vérifiés au simulateur par `OKIA_TELECOM_ESSAI`. À
-      essayer sur l'iPhone et l'iPad (ou le Mac) réels.
+      pointeur »), affichés sur le diaporama et sur l'écran du public ; l'iPhone voit ce qu'il
+      dessine. Mac : droit `network.server` ajouté au bac à sable.
+      **Essayée par Patrick sur ses appareils le 13/11/2026 (builds 170 à 174)** ; ses retours :
+      bouton Télécommande en vue sur l'accueil de l'iPhone (170) ; la diapositive bord à bord, en
+      largeur plein écran avec fermer, chronomètre, outils, notes et flèches en verre par-dessus
+      (172–173, harnais `OKIA_TELECOMMANDE=pilote`) ; la photo rognée à la diapositive, sans les
+      boutons du diaporama, dessins recalés sur ce cadre (173) ; zone sûre, même marge des deux
+      côtés (174) ; **annotations gardées par diapositive tout le diaporama** (174, « Les
+      annotations restent bien, merci c'est parfait »).
 - [x] **Polycopié PDF** (fait le 12/11/2026, `Polycopie`) : menu › « Polycopié PDF… » ; une, deux
       ou trois diapositives par page, avec ou sans les notes (trois par page : les notes, ou des
       lignes pour en prendre, à côté) ; A4, titre et numéro de page ; les diapositives toujours en
