@@ -85,9 +85,10 @@ l'orateur), et plusieurs évolutions en dépendent (modèles, étiquettes, liens
   - « Nouveau document » dans le coffre (au mois en cours, comme les imports) ;
   - « Dupliquer pour modifier » sur une carte de l'accueil.
 
-**Option ou pour tous ?** Décision de Patrick. Proposition : **écrire un document est pour tous**
-(un lecteur Markdown qui ne permet pas de corriger une coquille déçoit) ; l'éditeur de
-présentations, les modèles et la comparaison sont dans l'option Analytic.
+**Pour tous** (décidé par Patrick le 13/11/2026 : « Pour tous ») : écrire un document ne demande pas
+l'option. Un lecteur Markdown qui ne permet pas de corriger une coquille déçoit. Restent proposés
+dans l'option Analytic, sauf avis contraire : l'éditeur de présentations, l'écriture avec l'IA, les
+modèles et la comparaison.
 
 **Les essais :**
 
@@ -320,7 +321,7 @@ haute, les widgets (TACHES-1.6.md).
 ## À décider par Patrick
 
 - La répartition ci-dessus, et l'ordre : l'éditeur d'abord ?
-- Écrire un document : pour tous, ou dans l'option Analytic ?
+- ~~Écrire un document : pour tous, ou dans l'option Analytic ?~~ **Pour tous** (13/11/2026).
 - Les outils d'écriture du système : les laisser actifs (après vérification) ou les remplacer par
   nos seules commandes ?
 - La 2.0 : un nouveau numéro majeur pour « Présenter partout », ou continuer en 1.x ?
