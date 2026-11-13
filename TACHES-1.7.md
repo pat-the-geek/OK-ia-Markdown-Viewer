@@ -14,7 +14,7 @@ même Private Cloud Compute), pas de pistage. La lecture reste gratuite.
 | Version | Thème | Contenu |
 |---|---|---|
 | 1.6 | Le coffre ouvert à vos assistants | revue le 13/11/2026 : un coffre qui s'explique (`AGENTS.md`), un serveur MCP sur Mac, « Envoyer à un assistant », puis l'interrogation sur l'appareil (TACHES-1.6.md) |
-| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), les modèles (2), comparer deux versions (3) |
+| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), les modèles (2), comparer deux versions (3) |
 | 1.8 | Le coffre qui veille | étiquettes (4), liens entre documents (5), surveiller un nom (6), frise (7), réseau des entités (8) |
 | 1.9 | De nouvelles sources | l'audio (9), l'EPUB et les e-mails (10) |
 | 2.0 | Présenter partout | la montre (11), SharePlay (12), le diaporama traduit (13), vidéo et page web autonome (14) |
@@ -173,6 +173,75 @@ la place. La promesse « pas d'IA distante » passe avant.
   quand Apple Intelligence ne parle pas celle choisie ;
 - sans Apple Intelligence (appareil trop ancien, désactivée), les commandes ne s'affichent pas ;
   l'éditeur reste entier.
+
+### 1 quater. Des diagrammes sur demande, depuis une consigne et des données
+
+Patrick, 13/11/2026 : « dans le cadre de l'éditeur de document ou de présentation, on pourra créer
+des diagrammes mermaid en donnant des instructions à l'IA et en important des fichiers de
+données ». Option Analytic, dans l'éditeur de documents comme dans celui des présentations.
+
+**Le geste :**
+
+- « Insérer un diagramme… » ;
+- une consigne : « l'évolution du chiffre d'affaires par trimestre », « les étapes du processus
+  décrit dans cette section », « qui dépend de qui » ;
+- et, si besoin, une source : un fichier de données (CSV, TSV, Excel, JSON), un tableau du
+  document, la sélection, ou la section en cours.
+
+Le diagramme arrive dans l'aperçu ; on le garde, on le retouche par une nouvelle consigne (« en
+barres », « seulement 2025 », « en français ») ou à la main dans son bloc ` ```mermaid `. Dans
+l'éditeur de présentations, il peut devenir une diapositive à lui seul.
+
+**La règle : le modèle choisit, le code calcule — jamais un chiffre inventé.** Le modèle de l'appareil
+est petit et compte mal. Il ne voit donc pas les données entières :
+
+1. md Viewer lit le fichier lui-même : `ImportTableur` sait déjà lire Excel, CSV et TSV ; JSON est
+   à ajouter, tableaux d'objets et objets de séries. Il en tire le **schéma** (colonnes, types
+   devinés : date, nombre, catégorie) et quelques lignes d'exemple.
+2. Le modèle reçoit la consigne, le schéma et l'exemple. Il rend une **spécification**, en sortie
+   guidée (`@Generable` de Foundation Models) :
+   - le type de diagramme ;
+   - les colonnes à prendre ;
+   - le regroupement (par mois, par catégorie) et le calcul (somme, moyenne, nombre) ;
+   - le filtre, le tri ;
+   - le titre et les libellés.
+3. Le **code Swift** applique la spécification à toutes les lignes : il regroupe, calcule, trie,
+   puis écrit le Mermaid (`xychart-beta` en barres ou en courbes, `pie`, `gantt`,
+   `quadrantChart`, `sankey-beta`…). Les chiffres du diagramme viennent du fichier, au calcul
+   près.
+4. Sous le diagramme, une ligne discrète dit d'où il vient (« données : ventes-2025.xlsx, feuille
+   T4, somme de Montant par Mois »), pour qu'on puisse vérifier.
+
+**Les diagrammes de structure** (organigramme, séquence, états, carte mentale, frise `timeline`,
+relations entre entités) se tirent d'un texte, pas d'un tableau. Là, le modèle écrit lui-même le
+Mermaid, section par section, avec le contrôle des inventions : chaque libellé doit se trouver dans
+le texte source, ou être signalé.
+
+**Valider avant de montrer :**
+
+- le Mermaid passe par `mermaid.parse` dans la vue web avant d'être proposé ;
+- en cas d'erreur, le message repart au modèle, deux essais au plus ;
+- les réparations connues s'appliquent (`reparerXychart`, les dates sans guillemets) ;
+- jamais un bloc cassé dans le document.
+
+**À ne pas confondre avec « Un tableau devient un graphique » (pour tous)** : ce point est sans IA,
+un geste sur un tableau déjà dans le document, en barres ou en courbes. Les deux partagent le même
+code de calcul et d'écriture Mermaid (étape 3) ; on le fait une fois.
+
+**Limites :**
+
+- au-delà de 50 000 lignes, un échantillon, et le diagramme le dit ;
+- un fichier Numbers passe par l'export CSV ou Excel (TACHES-1.6.md : on ne lit pas ses
+  cellules) ;
+- sans Apple Intelligence, la commande ne s'affiche pas ; le graphique d'un tableau reste.
+
+**Les essais :**
+
+- un classeur Excel de ventes ;
+- un CSV d'export bancaire, avec des dates au format suisse et des montants à virgule ;
+- un JSON d'API ;
+- la consigne « organigramme » sur une section de rapport fornews ;
+- vérifier chaque chiffre du diagramme contre un calcul fait à la main dans Numbers.
 
 ### 2. Partir d'un modèle
 
