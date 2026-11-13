@@ -232,11 +232,13 @@ final class VaultStore: ObservableObject {
         let ici = url.standardizedFileURL.path
         if let v = try? url.resourceValues(forKeys: [.volumeURLKey, .volumeLocalizedNameKey, .volumeNameKey]),
            v.volume?.standardizedFileURL.path == ici,
-           let n = v.volumeLocalizedName ?? v.volumeName, !n.isEmpty, n != "/" {
+           let n = v.volumeLocalizedName ?? v.volumeName, !n.isEmpty, n != "/", n != url.lastPathComponent {
             return n
         }
+        // Le nom affiché seulement s'il dit autre chose que le nom brut : sinon il écraserait la
+        // règle du préfixe (`nomLisible`), ce que faisait le build 171.
         let affiche = FileManager.default.displayName(atPath: ici)
-        return affiche.isEmpty ? nil : affiche
+        return affiche.isEmpty || affiche == url.lastPathComponent ? nil : affiche
     }
 
     /// Le nom gardé d'un coffre déjà choisi se corrige dès que sa racine est connue : d'abord la règle,

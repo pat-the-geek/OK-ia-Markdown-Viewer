@@ -80,12 +80,22 @@ struct VaultSectionView: View {
                     BoutonDossier { [vault] in await vault.resolveFolder() }
                         .padding(.trailing, -4)
                 }
-                // Sur une ligne : un long nom se coupe au milieu plutôt que de passer sur trois.
-                Text(tr("Coffre") + (vault.folderName.map { " · \($0)" } ?? ""))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .layoutPriority(1)
+                // « Coffre », et le nom du dossier sur la ligne du dessous, en plus petit (Patrick,
+                // 13/11/2026 : « place le sur la ligne du dessous ») : un long nom ne se coupe plus
+                // sur la même ligne que les boutons.
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(tr("Coffre"))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    if let nom = vault.folderName, !nom.isEmpty {
+                        Text(nom)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                .layoutPriority(1)
                 Spacer()
                 if vault.hasFolder {
                     // Relire le coffre sans attendre la relecture suivante (Patrick, 12/11/2026) :
