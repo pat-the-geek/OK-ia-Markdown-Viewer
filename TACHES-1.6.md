@@ -43,9 +43,88 @@ Private Cloud Compute), pas de compte, pas de pistage.
 
 ## 1.7 — Le coffre (option Analytic)
 
-- [ ] **Interroger tout le coffre.** La discussion d'un document étendue à tous : recherche dans
-      l'index du coffre (`AnalyseCoffre`, `RechercheCoffre`), réponse sur l'appareil qui cite ses
-      documents, jamais un chiffre absent des sources (même vérification que la conversion).
+- [ ] **Le coffre ouvert à vos assistants** — revu le 13/11/2026 (Patrick : « le point interroger
+      le coffre, on devrait le revoir : comment faciliter la lecture du coffre par claude, chatgpt,
+      codex, copilot, etc. », puis « on pourrait faire un serveur mcp adapté à cela »). Devient la
+      **1.6** sur la feuille de route. Le coffre est déjà ce que ces assistants lisent le mieux : un
+      dossier de fichiers Markdown. md Viewer le leur rend lisible, sans rien envoyer lui-même.
+      C'est vous qui ouvrez le coffre à l'assistant de votre choix, et rien n'est ouvert par défaut.
+
+      **A. Un coffre qui s'explique (pour tous, réglage coupé par défaut).** md Viewer écrit dans le
+      coffre ce qu'un assistant doit savoir :
+      - `AGENTS.md` à la racine : la convention que lisent Codex, Copilot, Cursor, Gemini CLI, etc.
+        Il décrit le rangement (année/mois, `coffre md viewer`, documents analysés), les champs
+        YAML, les diapositives `---`, les notes de l'orateur en commentaire, le bloc
+        `md-viewer-annotations` à ne pas toucher, la section « Entités » des rapports fornews, et
+        comment citer un document (chemin et titre).
+      - `CLAUDE.md` en une ligne qui renvoie à `AGENTS.md`, pour Claude Code.
+      - Dans `.mdviewer/` (caché, donc ignoré par la lecture du coffre) :
+        - `index.md` : un document par ligne, avec son titre, sa date, ses étiquettes, sa source et
+          ses entités principales ;
+        - `entites.md` et `entites.json` : chaque entité, ses documents et ses voisins ;
+        - `annotations.md` : tous les surlignages et notes, avec leur document et leur citation.
+      - Mis à jour après chaque relecture du coffre, par une écriture coordonnée, hors du fil
+        principal.
+      - Ouvrir ce dossier dans Claude Code, Codex, VS Code (Copilot) ou Cursor suffit alors.
+
+      **B. Le serveur MCP du coffre (Mac, option Analytic).**
+      - **Le modèle** : celui de fornews.ai, en reprenant le cœur MCP de l'édition Agence
+        (`FornewsServeurAgence/…/ProtocoleMCP.swift`, `ServeurMCPAgence`, ses tests). Il comprend :
+        - coupé par défaut ;
+        - HTTP sur `http://127.0.0.1:<port>/mcp` ;
+        - un **jeton** obligatoire ;
+        - une portée « ce Mac » par défaut, « mon réseau privé (Tailscale) » sur demande.
+
+        Pas le modèle de fornews 1.7.3, qui écoute toutes les interfaces sans authentification.
+        Le droit `network.server` est déjà dans `macOS.entitlements` (ajouté pour la télécommande).
+      - **Outils en lecture seule d'abord :**
+        - `chercher` : le moteur de `RechercheCoffre` (mots, expression entre guillemets, sans
+          casse ni accents) ; il rend des passages, avec leur document ;
+        - `lister_documents` : par dates, dossier, étiquettes, origine (web, PDF, Word…) ;
+        - `lire_document` : le Markdown, par section si le document est long, sans les images
+          `data:`, notes de l'orateur comprises ;
+        - `entites`, `fiche_entite` : où elle apparaît, avec qui, depuis quand ;
+        - `annotations` : par document ou toutes ;
+        - `point_de_la_semaine` ;
+        - `lieux` : la carte du coffre en liste.
+      - **Ressources** : chaque document en `coffre://chemin`.
+      - **Invites** : « Note de synthèse sur… », « Qui est… dans mes documents », « Ce qui a changé
+        cette semaine ».
+      - **Écrire, plus tard et sur réglage à part** :
+        - `creer_document`, rangé par année et mois, marqué « rédigé par un assistant » dans son
+          en-tête ;
+        - `ajouter_etiquette`.
+
+        Jamais d'effacement.
+      - **Ce que l'utilisateur voit** : le journal « Ce que les assistants ont lu » (outil, document,
+        heure), et un bouton pour couper le serveur.
+      - **Les clients à essayer** :
+        - Claude Desktop et Claude Code ;
+        - Codex CLI ;
+        - VS Code (Copilot en mode agent) ;
+        - ChatGPT : ses connecteurs MCP passent par une adresse publique en HTTPS. Pas de tunnel
+          fourni par nous : pour ChatGPT, la voie C.
+      - **À vérifier** :
+        - le serveur ne vit que tant que md Viewer est ouvert sur le Mac ; faut-il un mode dans la
+          barre des menus ?
+        - l'accès au coffre (signet à portée de sécurité) depuis le serveur, dans le bac à sable.
+      - iPhone et iPad : pas de serveur (iOS ne garde pas une app à l'écoute). À la place, des
+        intentions (App Intents) — chercher, lire, entités — pour Raccourcis et Siri.
+
+      **C. « Envoyer à un assistant » (tous les appareils, pour tous).**
+      - Des documents choisis, un résultat de recherche, une collection ou une entité deviennent un
+        seul dossier Markdown : les sources, leurs dates et leurs chemins, sans les images `data:`,
+        avec la taille estimée en mots.
+      - Il part par la feuille de partage (ChatGPT, Claude, Copilot…) ou se copie. C'est un geste de
+        l'utilisateur, jamais un envoi de md Viewer.
+
+      **D. Interroger sur l'appareil**, l'idée d'origine : la discussion d'un document étendue à
+      tout le coffre, répondue par le modèle de l'appareil, qui cite ses documents, jamais un
+      chiffre absent des sources. Gardée pour qui ne veut aucune IA extérieure, après A, B et C.
+
+      **La promesse publique** « pas d'IA distante » reste vraie pour md Viewer lui-même. La page
+      doit dire que l'ouverture à un assistant est un choix de l'utilisateur, coupé par défaut, et
+      que c'est l'assistant qui lit.
 - [x] **Le point de la semaine** (fait le 12/11/2026, `PointSemaine`, `PointSemaineView`) : un
       quatrième segment « Semaine » dans l'analyse du coffre, ouvert d'office quand il y a du
       nouveau. Depuis la dernière visite (retenue à la fermeture, si le point a été regardé), ou

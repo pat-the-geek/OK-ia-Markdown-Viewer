@@ -13,7 +13,7 @@ même Private Cloud Compute), pas de pistage. La lecture reste gratuite.
 
 | Version | Thème | Contenu |
 |---|---|---|
-| 1.6 | Interroger le coffre | déjà annoncée sur le site (TACHES-1.6.md, seul point restant de l'ancienne 1.7) |
+| 1.6 | Le coffre ouvert à vos assistants | revue le 13/11/2026 : un coffre qui s'explique (`AGENTS.md`), un serveur MCP sur Mac, « Envoyer à un assistant », puis l'interrogation sur l'appareil (TACHES-1.6.md) |
 | 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), les modèles (2), comparer deux versions (3) |
 | 1.8 | Le coffre qui veille | étiquettes (4), liens entre documents (5), surveiller un nom (6), frise (7), réseau des entités (8) |
 | 1.9 | De nouvelles sources | l'audio (9), l'EPUB et les e-mails (10) |
@@ -144,7 +144,7 @@ Oui, à trois règles, celles de la conversion en présentation et des imports :
   exécutée sur demande. C'est la généralisation de l'import, qui rédige déjà ce que demandent les
   commentaires de relecture. La consigne disparaît une fois la proposition acceptée.
 - **Relire** : les répétitions, les phrases trop longues, les incohérences (deux dates pour le même
-  fait), les chiffres sans source. Avec la 1.6 (interroger le coffre) : « ce chiffre ne se trouve
+  fait), les chiffres sans source. Avec la 1.6 (le coffre ouvert, interrogé sur l'appareil) : « ce chiffre ne se trouve
   dans aucun document du coffre ».
 - **Titres et chapeau** : proposer un titre, un sous-titre, un résumé d'en-tête.
 
