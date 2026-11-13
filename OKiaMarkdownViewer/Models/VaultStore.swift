@@ -206,14 +206,16 @@ final class VaultStore: ObservableObject {
     }
 
     /// Le nom du coffre tel qu'on le lit : un partage réseau monté par iOS s'appelle
-    /// `…/LiveFiles/com.apple.filesystems.smbclientd/JhgzeQ-Pat2TB` ; on n'en garde que « Pat2TB »
-    /// (Patrick, 12/11/2026 : « Le nom du coffre n'est pas beau »). Ailleurs, le nom du dossier.
+    /// `…/LiveFiles/com.apple.filesystems.smbclientd/JhgzeQPat2TB` : six caractères tirés au sort
+    /// collés au nom du partage, sans séparateur ; on n'en garde que « Pat2TB » (Patrick, 12/11/2026 :
+    /// « Le nom du coffre n'est pas beau » ; le « JhgzeQ- » de sa première capture n'était qu'une
+    /// coupure de mot à l'affichage). Ailleurs, le nom du dossier.
     nonisolated static func nomLisible(_ url: URL) -> String {
         let nom = url.lastPathComponent
         // Seulement à la racine d'un volume monté par iOS : un sous-dossier garde son nom, même s'il
         // ressemble au motif (« Projet-2026 »).
         guard url.deletingLastPathComponent().deletingLastPathComponent().lastPathComponent == "LiveFiles",
-              let r = nom.range(of: "^[A-Za-z0-9]{6}-", options: .regularExpression),
+              let r = nom.range(of: "^[A-Za-z0-9]{6}-?", options: .regularExpression),
               r.upperBound < nom.endIndex else { return nom }
         return String(nom[r.upperBound...])
     }

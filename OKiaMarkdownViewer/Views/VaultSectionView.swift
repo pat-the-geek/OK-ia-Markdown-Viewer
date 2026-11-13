@@ -121,6 +121,9 @@ struct VaultSectionView: View {
                 } label: {
                     Text(vault.hasFolder ? tr("Changer") : tr("Choisir…")).fontWeight(.regular)
                 }
+                // Le titre a la priorité pour la place : sans ceci, « Changer » s'écrase en une
+                // colonne d'une lettre (Patrick, 13/11/2026).
+                .fixedSize()
             }
             .tint(orange)
             .textCase(nil)
