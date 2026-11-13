@@ -129,6 +129,7 @@ final class VaultStore: ObservableObject {
         UserDefaults.standard.set(data, forKey: folderKey)
         UserDefaults.standard.set(Self.nomLisible(url), forKey: nameKey)
         folderName = Self.nomLisible(url)
+        nommer(url)
         reports = []
         reseau = Self.estReseau(url)
         dansICloud = CoffrePartage.estDansICloud(url)
@@ -220,9 +221,39 @@ final class VaultStore: ObservableObject {
         return String(nom[r.upperBound...])
     }
 
-    /// Le nom gardé d'un coffre déjà choisi se corrige dès que sa racine est connue.
+    /// Le nom que Fichiers et le Finder montrent, demandé au système : pour la racine d'un volume —
+    /// un partage réseau, un disque —, le nom du volume (« Pat2TB ») et non celui du dossier où iOS
+    /// le monte (« JhgzeQPat2TB »). Patrick, 13/11/2026 : « Le nom du coffre reste mauvais » — la
+    /// règle de `nomLisible` devinait un chemin jamais vu sur l'appareil. Touche le volume : jamais
+    /// sur le fil principal pour un coffre déjà choisi.
+    nonisolated static func nomSysteme(_ url: URL) -> String? {
+        let acces = url.startAccessingSecurityScopedResource()
+        defer { if acces { url.stopAccessingSecurityScopedResource() } }
+        let ici = url.standardizedFileURL.path
+        if let v = try? url.resourceValues(forKeys: [.volumeURLKey, .volumeLocalizedNameKey, .volumeNameKey]),
+           v.volume?.standardizedFileURL.path == ici,
+           let n = v.volumeLocalizedName ?? v.volumeName, !n.isEmpty, n != "/" {
+            return n
+        }
+        let affiche = FileManager.default.displayName(atPath: ici)
+        return affiche.isEmpty ? nil : affiche
+    }
+
+    /// Le nom gardé d'un coffre déjà choisi se corrige dès que sa racine est connue : d'abord la règle,
+    /// puis, hors du fil principal, le nom que donne le système.
     private func nommer(_ url: URL) {
-        let nom = Self.nomLisible(url)
+        appliquerNom(Self.nomLisible(url))
+        let marque = bookmark
+        Task.detached(priority: .utility) { [weak self] in
+            guard let nom = Self.nomSysteme(url) else { return }
+            await MainActor.run { [weak self] in
+                guard let self, self.bookmark == marque else { return }
+                self.appliquerNom(nom)
+            }
+        }
+    }
+
+    private func appliquerNom(_ nom: String) {
         guard nom != folderName else { return }
         folderName = nom
         UserDefaults.standard.set(nom, forKey: nameKey)
