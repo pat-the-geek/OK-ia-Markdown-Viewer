@@ -249,6 +249,23 @@ final class TelecommandeClient: NSObject, ObservableObject {
     private var session: MCSession?
     private var chercheur: MCNearbyServiceBrowser?
 
+    #if DEBUG
+    /// OKIA_TELECOMMANDE=pilote : la télécommande comme connectée, une image de diapositive factice
+    /// (la mise en page sans second appareil, au simulateur).
+    func essaiConnecte() {
+        let r = UIGraphicsImageRenderer(size: CGSize(width: 1600, height: 900))
+        image = r.image { c in
+            UIColor.systemTeal.setFill(); c.fill(CGRect(x: 0, y: 0, width: 1600, height: 900))
+            ("Diapositive d’essai" as NSString).draw(at: CGPoint(x: 120, y: 380),
+                withAttributes: [.font: UIFont.boldSystemFont(ofSize: 110), .foregroundColor: UIColor.white])
+        }
+        titre = "Johny Srouji, le nom que Nvidia cite — présentation"
+        index = 0; total = 10
+        notes = "Notes de l’orateur : rappeler le contexte, puis passer à la diapositive suivante."
+        etat = .connecte("iPad")
+    }
+    #endif
+
     func chercher() {
         let s = MCSession(peer: moi, securityIdentity: nil, encryptionPreference: .required)
         s.delegate = self

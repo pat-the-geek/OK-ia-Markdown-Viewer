@@ -41,10 +41,25 @@ struct TelecommandeView: View {
             }
             .navigationTitle(tr("Télécommande"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button(tr("Fermer")) { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(tr("Fermer")) { dismiss() } }
+                // Connectée : le titre du diaporama, le chronomètre et le rang dans la barre, une
+                // rangée de plus pour la diapositive.
+                if case .connecte = client.etat {
+                    ToolbarItem(placement: .principal) {
+                        Text(client.titre).font(.headline).lineLimit(1)
+                    }
+                    ToolbarItem(placement: .primaryAction) { compteurs }
+                }
+            }
             .tint(orange)
         }
-        .onAppear { client.chercher(); UIApplication.shared.isIdleTimerDisabled = true }
+        .onAppear {
+            client.chercher(); UIApplication.shared.isIdleTimerDisabled = true
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["OKIA_TELECOMMANDE"] == "pilote" { client.essaiConnecte() }
+            #endif
+        }
         .onDisappear { client.arreter(); UIApplication.shared.isIdleTimerDisabled = false }
     }
 
@@ -83,50 +98,92 @@ struct TelecommandeView: View {
 
     // MARK: Piloter
 
+    /// La diapositive d'abord (Patrick, 13/11/2026 : « on doit donner plus de place à la
+    /// présentation », puis « les boutons peuvent être en liquide glass sur la présentation ») : les
+    /// flèches flottent en verre sur la diapositive ; en largeur, elle prend la hauteur entière à
+    /// gauche, les outils et les notes en colonne à droite ; en hauteur, toute la largeur, les notes
+    /// dans ce qui reste.
     private var pilote: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text(client.titre).font(.headline).lineLimit(1)
-                Spacer()
-                TimelineView(.periodic(from: .now, by: 1)) { c in
-                    Text(RepetitionDiaporama.duree(c.date.timeIntervalSince(debut))).monospacedDigit().foregroundStyle(orange)
+        GeometryReader { g in
+            // Colonne à droite seulement sur un écran très allongé (iPhone en largeur) : sur le Duo
+            // ouvert, presque carré, la diapositive est plus grande sur toute la largeur.
+            let large = g.size.width > g.size.height * 1.8
+            VStack(spacing: 10) {
+                if large {
+                    HStack(alignment: .top, spacing: 14) {
+                        diapositive
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        VStack(spacing: 10) {
+                            outils
+                            notes
+                        }
+                        .frame(width: min(300, g.size.width * 0.28))
+                    }
+                } else {
+                    diapositive.layoutPriority(1)
+                    outils
+                    notes.frame(minHeight: 60)
                 }
-                Text("\(client.index + 1) / \(max(client.total, 1))").monospacedDigit().foregroundStyle(.secondary)
-            }
-            .padding(.horizontal)
-            diapositive
-            HStack(spacing: 10) {
-                Picker(tr("Outil"), selection: $outil) {
-                    ForEach(Outil.allCases) { Image(systemName: $0.symbole).accessibilityLabel($0.libelle).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                Button { client.envoyer(PaquetTelecommande(type: "effacer")) } label: {
-                    Image(systemName: "eraser")
-                }
-                .buttonStyle(.bordered)
-                .accessibilityLabel(tr("Effacer les traits"))
-            }
-            .padding(.horizontal)
-            ScrollView {
-                Text(client.notes.isEmpty ? tr("Pas de notes pour cette diapositive.") : client.notes)
-                    .foregroundStyle(client.notes.isEmpty ? .secondary : .primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-            }
-            HStack(spacing: 14) {
-                bouton("chevron.left", tr("Précédente")) { client.envoyer(PaquetTelecommande(type: "precedente")) }
-                bouton("chevron.right", tr("Suivante")) { client.envoyer(PaquetTelecommande(type: "suivante")) }
             }
             .padding(.horizontal)
             .padding(.bottom, 8)
         }
     }
 
+    private var compteurs: some View {
+        HStack(spacing: 10) {
+            TimelineView(.periodic(from: .now, by: 1)) { c in
+                Text(RepetitionDiaporama.duree(c.date.timeIntervalSince(debut))).monospacedDigit().foregroundStyle(orange)
+            }
+            Text("\(client.index + 1) / \(max(client.total, 1))").monospacedDigit().foregroundStyle(.secondary)
+        }
+        .fixedSize()
+        .padding(.horizontal, 6)
+    }
+
+    private var outils: some View {
+        HStack(spacing: 10) {
+            Picker(tr("Outil"), selection: $outil) {
+                ForEach(Outil.allCases) { Image(systemName: $0.symbole).accessibilityLabel($0.libelle).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Button { client.envoyer(PaquetTelecommande(type: "effacer")) } label: {
+                Image(systemName: "eraser")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityLabel(tr("Effacer les traits"))
+        }
+    }
+
+    private var notes: some View {
+        ScrollView {
+            Text(client.notes.isEmpty ? tr("Pas de notes pour cette diapositive.") : client.notes)
+                .foregroundStyle(client.notes.isEmpty ? .secondary : .primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Précédente et suivante, en verre, aux coins bas de la diapositive : le pouce les trouve sans
+    /// quitter l'image des yeux, et elles ne prennent plus de place sous elle.
+    private var navigation: some View {
+        HStack {
+            bouton("chevron.left", tr("Précédente")) { client.envoyer(PaquetTelecommande(type: "precedente")) }
+            Spacer()
+            bouton("chevron.right", tr("Suivante")) { client.envoyer(PaquetTelecommande(type: "suivante")) }
+        }
+        .padding(10)
+    }
+
     private func bouton(_ symbole: String, _ libelle: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbole).font(.largeTitle.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 74)
+            Image(systemName: symbole)
+                .font(.title.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 64, height: 64)
+                .contentShape(Circle())
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.plain)
+        .glassEffect(.regular.tint(orange.opacity(0.75)).interactive(), in: .circle)
         .accessibilityLabel(libelle)
     }
 
@@ -147,7 +204,7 @@ struct TelecommandeView: View {
                 .onEnded { v in toucher(v.location, cadre: cadreImage(geo.size), fin: true) })
         }
         .aspectRatio(image: client.image)
-        .padding(.horizontal)
+        .overlay(alignment: .bottom) { navigation }
     }
 
     private func cadreImage(_ zone: CGSize) -> CGRect {
