@@ -53,10 +53,21 @@ struct ApercuDocument {
 final class ApercusDocuments {
     static let partage = ApercusDocuments()
     private var memoire: [String: ApercuDocument] = [:]
+    /// Le document de chaque carte, pour la redessiner d'emblée : la grille recrée les cartes qui
+    /// sortent de l'écran et reviennent, et chacune repartait vide le temps d'un aller-retour
+    /// (Patrick, 13/11/2026 : « ça colle un peu dans la navigation dans la liste des fichiers »).
+    private var parCarte: [String: String] = [:]
+
+    /// L'aperçu déjà calculé pour cette carte, sans attendre.
+    func connu(carte: String) -> (apercu: ApercuDocument, chemin: String)? {
+        guard let chemin = parCarte[carte], let a = memoire[chemin] else { return nil }
+        return (a, chemin)
+    }
 
     /// `portee` : l'URL dont il faut ouvrir l'accès (le signet d'un récent, la racine du coffre).
-    func apercu(_ url: URL, portee: URL?) async -> ApercuDocument {
+    func apercu(_ url: URL, portee: URL?, carte: String? = nil) async -> ApercuDocument {
         let cle = url.path
+        if let carte { parCarte[carte] = cle }
         if let a = memoire[cle] { return a }
         // Le cadrage de la vignette avec elle, hors du fil principal (`Cadrage`).
         let a = await Task.detached(priority: .utility) {
@@ -95,7 +106,7 @@ final class ApercusDocuments {
         let fiche = dossierCache?.appendingPathComponent(empreinte + ".json")
         let vignette = dossierCache?.appendingPathComponent(empreinte + ".jpg")
         if let fiche, let d = try? Data(contentsOf: fiche), var f = try? JSONDecoder().decode(Fiche.self, from: d) {
-            let image = f.image ? vignette.flatMap { UIImage(contentsOfFile: $0.path) } : nil
+            let image = f.image ? vignette.flatMap { UIImage(contentsOfFile: $0.path) }.map(prete) : nil
             if f.cle == nil || f.regle != 2, let donnees = try? Data(contentsOf: url) {
                 f.cle = IdentiteDocument.cle(fichier: url, octets: donnees)
                 f.cleAncienne = IdentiteDocument.cleAncienne(fichier: url, octets: donnees)
@@ -114,7 +125,7 @@ final class ApercusDocuments {
         a.cleAncienne = IdentiteDocument.cleAncienne(fichier: url, octets: donnees)
         if let source = premiereImage(texte, dossier: url.deletingLastPathComponent()),
            let image = charger(source).flatMap(reduire) {
-            a.image = image
+            a.image = prete(image)
             if let vignette, let jpeg = image.jpegData(compressionQuality: 0.78) { try? jpeg.write(to: vignette) }
         }
         if let fiche, let d = try? JSONEncoder().encode(Fiche(titre: a.titre, extrait: a.extrait, origine: a.origine, image: a.image != nil, cle: a.cleAnnotations,
@@ -214,6 +225,18 @@ final class ApercusDocuments {
         URLSession.shared.dataTask(with: requete) { d, _, _ in resultat = d.flatMap(UIImage.init(data:)); fin.signal() }.resume()
         _ = fin.wait(timeout: .now() + 9)
         return resultat
+    }
+
+    /// L'image prête à dessiner : décodée ici, hors du fil principal, et à la taille d'une carte
+    /// (720 pixels de large, une carte de 240 points sur un écran 3x). `UIImage(contentsOfFile:)` ne
+    /// décode qu'au premier affichage, sur le fil principal, en pleine taille : chaque carte qui
+    /// entrait à l'écran faisait accrocher le défilement.
+    nonisolated private static func prete(_ image: UIImage) -> UIImage {
+        let w = image.size.width * image.scale, h = image.size.height * image.scale
+        guard w > 0, h > 0 else { return image }
+        let k = min(1, 720 / w)
+        return image.preparingThumbnail(of: CGSize(width: (w * k).rounded(), height: (h * k).rounded()))
+            ?? image.preparingForDisplay() ?? image
     }
 
     /// La vignette : 640 points de large au plus ; une icône (moins de 120 points) n'en est pas une.
@@ -343,6 +366,20 @@ struct CarteDocument<Menu: View>: View {
     @State private var apercu: ApercuDocument?
     /// La clé du cadrage de la vignette : le chemin du document.
     @State private var cleCadrage = ""
+
+    init(nom: String, mention: String, resoudre: @escaping () async -> (url: URL, portee: URL?)?,
+         action: @escaping () -> Void, @ViewBuilder menu: @escaping () -> Menu) {
+        self.nom = nom
+        self.mention = mention
+        self.resoudre = resoudre
+        self.action = action
+        self.menu = menu
+        // Une carte recréée par la grille retrouve d'emblée son aperçu.
+        if let c = ApercusDocuments.partage.connu(carte: nom + "|" + mention) {
+            _apercu = State(initialValue: c.apercu)
+            _cleCadrage = State(initialValue: c.chemin)
+        }
+    }
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
@@ -355,7 +392,13 @@ struct CarteDocument<Menu: View>: View {
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.primary.opacity(0.08)))
                     .overlay(alignment: .topLeading) { badge }
                     .overlay(alignment: .bottomTrailing) { MarqueAnnotee(cle: apercu?.cleAnnotations, cleAncienne: apercu?.cleAncienne, surVignette: true) }
-                    .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
+                    // L'ombre d'une forme, pas du contenu : celle de l'image entière se recalculait à
+                    // chaque image du défilement, pour chaque carte.
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                            .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
+                    }
                 Text(nom)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -372,7 +415,7 @@ struct CarteDocument<Menu: View>: View {
         .task {
             guard apercu == nil, let (url, portee) = await resoudre() else { return }
             cleCadrage = url.path
-            apercu = await ApercusDocuments.partage.apercu(url, portee: portee)
+            apercu = await ApercusDocuments.partage.apercu(url, portee: portee, carte: nom + "|" + mention)
         }
     }
 
