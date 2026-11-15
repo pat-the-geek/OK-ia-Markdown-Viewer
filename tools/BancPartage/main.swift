@@ -179,5 +179,35 @@ if case .success(.fichier(let f)) = await recevoir(v3(gros, M: 4 * 1024 * 1024),
     f.effacer()
 } else { verifie(false, "v3 : 60 Mo reçus") }
 
+// 6. L'épreuve croisée : un conteneur v3 écrit par le SITE (partager.py, scripts/essais/partage-v3-vecteur.py
+// du dépôt OK-ia), pas par ce banc. Contenu reproductible : sha256 en chaîne à partir de
+// "vecteur-v3-ok-ia", tronqué à 300 000 octets — refabriqué ici sans rien lire du site.
+let jv3 = try JSONSerialization.jsonObject(with: Data(contentsOf: ici.appendingPathComponent("partage-vecteur-v3.json"))) as! [String: Any]
+let fv3 = try Data(contentsOf: ici.appendingPathComponent("partage-vecteur-v3.okia"))
+let idv3 = jv3["id"] as! String, clev3 = PartageOKia.base64url(jv3["k"] as! String)!
+var attenduV3 = Data(), bloc = Data("vecteur-v3-ok-ia".utf8)
+while attenduV3.count < 300_000 { bloc = Data(SHA256.hash(data: bloc)); attenduV3 += bloc }
+attenduV3 = attenduV3.prefix(300_000)
+let hex = { (d: Data) in SHA256.hash(data: d).map { String(format: "%02x", $0) }.joined() }
+verifie(hex(attenduV3) == jv3["sha256"] as! String, "site v3 : le contenu refabriqué ici a le sha256 annoncé")
+verifie(idv3 != id && clev3 != cle, "site v3 : identifiant et clé distincts de ceux du vecteur v1")
+for paquet in [7_777, 65_536, fv3.count] {
+    do {
+        let r = try await PartageOKia.recevoir(FluxPartage(fv3, morceau: paquet), cle: clev3, id: idv3)
+        if case .fichier(let f) = r {
+            let lu = try Data(contentsOf: f.url)
+            verifie(lu == attenduV3 && f.url.lastPathComponent == jv3["nom"] as! String,
+                    "site v3 : lu par paquets de \(paquet) octets, identique à l'octet (\(lu.count) octets, \(f.url.lastPathComponent))")
+            f.effacer()
+        } else { verifie(false, "site v3 : un fichier") }
+    } catch { verifie(false, "site v3 : paquets de \(paquet) → \(error)") }
+}
+do {
+    _ = try await PartageOKia.recevoir(FluxPartage(fv3, morceau: 7_777), cle: clev3, id: id)
+    verifie(false, "site v3 : sous un autre identifiant → illisible")
+} catch let e as PartageOKia.Erreur {
+    verifie(e == .illisible, "site v3 : sous un autre identifiant → illisible")
+}
+
 print(echecs == 0 ? "\nTout est bon." : "\n\(echecs) échec(s).")
 exit(echecs == 0 ? 0 : 1)
