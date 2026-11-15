@@ -63,8 +63,8 @@ struct RootView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        // Un fichier reçu d'un partage (version 2) : le panneau d'enregistrement du système,
-        // Téléchargements d'abord sur Mac. La copie temporaire s'efface ensuite, quoi qu'il arrive.
+        // Un fichier reçu d'un partage (versions 2 et 3) : le panneau d'enregistrement du système,
+        // Téléchargements d'abord sur Mac, le dossier md Viewer de l'appareil sur iPhone et iPad. La copie temporaire s'efface ensuite, quoi qu'il arrive.
         // ⚠️ Chaque feuille efface SA copie, et seulement quand le panneau a fini : à la fermeture,
         // SwiftUI remet `fichierRecu` à nil avant tout rappel (un effacement passé par le store ne
         // trouvait plus rien), et le panneau disparaît AVANT d'avoir écrit (un effacement à
@@ -355,16 +355,18 @@ private struct ListeDesAnnotations: ViewModifier {
     }
 }
 
-/// Le panneau « Enregistrer » du système pour un fichier reçu d'un partage : il le copie là où
-/// l'utilisateur le veut (Téléchargements par défaut sur Mac). `fini` : enregistré ou annulé.
+/// Le panneau « Enregistrer » du système pour un fichier reçu d'un partage : il le déplace là où
+/// l'utilisateur le veut (Téléchargements d'abord sur Mac, le dossier md Viewer de l'appareil sur
+/// iPhone et iPad). `fini` : enregistré ou annulé.
 private struct EnregistrerFichier: UIViewControllerRepresentable {
     let url: URL
     let fini: () -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        // Une copie : le panneau l'a faite quand il rappelle, et la nôtre peut alors s'effacer.
-        let p = UIDocumentPickerViewController(forExporting: [url], asCopy: true)
-        p.directoryURL = FichierRecu.telechargements
+        // Déplacé, pas copié : jusqu'à 500 Mo, on n'en fait pas deux exemplaires. Le panneau a fini
+        // quand il rappelle ; le dossier temporaire s'efface alors.
+        let p = UIDocumentPickerViewController(forExporting: [url], asCopy: false)
+        p.directoryURL = FichierRecu.dossierPropose
         p.shouldShowFileExtensions = true
         p.delegate = context.coordinator
         return p

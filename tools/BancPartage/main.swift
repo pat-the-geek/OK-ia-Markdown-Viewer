@@ -36,8 +36,8 @@ verifie(erreur { _ = try PartageOKia.dechiffrer(fichier, cle: autreCle, id: id) 
 verifie(erreur { _ = try PartageOKia.dechiffrer(fichier, cle: cle, id: "BBECAwQFBgcICQoLDA0ODw") } == .illisible, "autre identifiant (AAD) → illisible")
 var abime = fichier; abime[abime.count - 20] ^= 1
 verifie(erreur { _ = try PartageOKia.dechiffrer(abime, cle: cle, id: id) } == .illisible, "texte chiffré modifié → illisible")
-var v3 = fichier; v3[4] = 3
-verifie(erreur { _ = try PartageOKia.dechiffrer(v3, cle: cle, id: id) } == .versionInconnue, "version 3 → version inconnue")
+var v4 = fichier; v4[4] = 4
+verifie(erreur { _ = try PartageOKia.dechiffrer(v4, cle: cle, id: id) } == .versionInconnue, "version 4 → version inconnue")
 var v2 = fichier; v2[4] = 2
 verifie(erreur { _ = try PartageOKia.dechiffrer(v2, cle: cle, id: id) } == .illisible, "document de version 1 relu en version 2 → illisible")
 verifie(erreur { _ = try PartageOKia.dechiffrer(Data("PDF-1.7".utf8), cle: cle, id: id) } == .versionInconnue, "autre en-tête → version inconnue")
@@ -100,14 +100,14 @@ struct Faux: TransportPartage {
         default: throw PartageOKia.Erreur.injoignable
         }
     }
-    func telecharger(id: String, progression: @escaping @Sendable (Double) -> Void) async throws -> Data {
-        await journal.note("document"); progression(1); return fichier
+    func telecharger(id: String) async throws -> FluxPartage {
+        await journal.note("document"); return FluxPartage(fichier)
     }
 }
 let l = lien("mdviewer://partage?id=\(id)&j=AAAAAAAAAAAAAAAAAAAAAA")!
 let j = Journal()
 let md = try await PartageOKia.ouvrir(l, transport: Faux(statutCle: 200, fichier: fichier, journal: j))
-verifie(md == .document(attendu), "ouvrir (200) rend le Markdown")
+if case .document(let t) = md { verifie(t == attendu, "ouvrir (200) rend le Markdown") } else { verifie(false, "ouvrir (200) rend le Markdown") }
 verifie(await j.appels == ["cle", "document"], "le jeton est échangé avant le téléchargement")
 for (statut, attenduErr) in [(410, PartageOKia.Erreur.codeExpire), (404, .partageRetire), (429, .tropDeTentatives), (500, .injoignable)] {
     let jj = Journal()
@@ -117,6 +117,67 @@ for (statut, attenduErr) in [(410, PartageOKia.Erreur.codeExpire), (404, .partag
     verifie(e == attenduErr, "jeton → \(statut) : \(attenduErr.errorDescription ?? "")")
     verifie(await jj.appels == ["cle"], "  … et le document n'est pas demandé")
 }
+
+// 5. La version 3 : découpée, déchiffrée au fil de l'eau.
+func u32(_ v: Int) -> Data { Data([UInt8(v >> 24 & 255), UInt8(v >> 16 & 255), UInt8(v >> 8 & 255), UInt8(v & 255)]) }
+func boite(_ clair: Data, _ aad: String) -> Data {
+    let b = try! AES.GCM.seal(clair, using: SymmetricKey(data: cle), authenticating: Data(aad.utf8))
+    return Data(b.nonce) + b.ciphertext + b.tag
+}
+/// Un conteneur v3 ; `retouche` modifie la liste des morceaux (0 = l'en-tête) avant l'assemblage.
+func v3(_ octets: Data, nom: String = "gros.zip", M: Int = 65_536, Nclair: Int? = nil, taille: Int? = nil,
+        retouche: (inout [Data]) -> Void = { _ in }) -> Data {
+    let N = octets.isEmpty ? 0 : (octets.count + M - 1) / M
+    let entete = Data(#"{"nom":"\#(nom)","type":"application/zip","taille":\#(taille ?? octets.count)}"#.utf8)
+    var morceaux = [boite(entete, "ok-ia.ch/p/\(id)#0/\(N)")]
+    for i in 0..<N {
+        morceaux.append(boite(octets[(i * M)..<min(octets.count, (i + 1) * M)], "ok-ia.ch/p/\(id)#\(i + 1)/\(N)"))
+    }
+    retouche(&morceaux)
+    return Data("OKIA".utf8) + [3] + u32(Nclair ?? N) + u32(M) + u32(entete.count) + morceaux.reduce(Data(), +)
+}
+func recevoir(_ d: Data, morceau: Int = 65_536) async -> Result<PartageOKia.Recu, PartageOKia.Erreur> {
+    do { return .success(try await PartageOKia.recevoir(FluxPartage(d, morceau: morceau), cle: cle, id: id)) }
+    catch let e as PartageOKia.Erreur { return .failure(e) } catch { return .failure(.injoignable) }
+}
+func temporaires() -> Int {
+    ((try? FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path)) ?? [])
+        .filter { $0.hasPrefix("partage-") }.count
+}
+func erreurV3(_ d: Data, morceau: Int = 65_536) async -> PartageOKia.Erreur? {
+    if case .failure(let e) = await recevoir(d, morceau: morceau) { return e }
+    if case .success(.fichier(let f)) = await recevoir(d, morceau: morceau) { f.effacer() }
+    return nil
+}
+let petit = Data((0..<200_000).map { UInt8(truncatingIfNeeded: $0 &* 7 &+ 3) })
+if case .success(.fichier(let f)) = await recevoir(v3(petit), morceau: 7) {
+    verifie((try? Data(contentsOf: f.url)) == petit, "v3 : 200 Ko en 4 morceaux, reçus 7 octets à la fois, intacts")
+    verifie(f.url.lastPathComponent == "gros.zip", "v3 : le nom de l'en-tête chiffré")
+    f.effacer()
+} else { verifie(false, "v3 : 200 Ko reçus") }
+if case .success(.fichier(let f)) = await recevoir(v3(Data())) {
+    verifie((try? Data(contentsOf: f.url)) == Data(), "v3 : un fichier vide (N = 0)")
+    f.effacer()
+} else { verifie(false, "v3 : un fichier vide") }
+let avant = temporaires()
+verifie(await erreurV3(v3(petit).dropLast(100)) == .illisible, "v3 : tronqué → illisible")
+verifie(await erreurV3(v3(petit) { m in m.removeLast() }) == .illisible, "v3 : dernier morceau retiré → illisible")
+verifie(await erreurV3(v3(petit) { m in m.swapAt(1, 2) }) == .illisible, "v3 : deux morceaux échangés → illisible")
+verifie(await erreurV3(v3(petit, Nclair: 3)) == .illisible, "v3 : N changé en clair → illisible")
+verifie(await erreurV3(v3(petit) + Data([0])) == .illisible, "v3 : un octet après le dernier morceau → illisible")
+verifie(await erreurV3(v3(petit, taille: 199_999)) == .illisible, "v3 : taille annoncée fausse → illisible")
+verifie(await erreurV3(v3(petit, M: 4096)) == .illisible, "v3 : morceaux de moins de 64 Kio → illisible")
+verifie(await erreurV3(v3(Data(), taille: 600 * 1024 * 1024)) == .tropGros, "v3 : 600 Mo annoncés → trop volumineux")
+verifie(await erreurV3(v3(petit) { m in m[3][20] ^= 1 }) == .illisible, "v3 : un morceau modifié → illisible")
+verifie(temporaires() == avant, "v3 : aucune copie déchiffrée ne reste après une erreur")
+// Plus de 50 Mo : la borne des versions 1 et 2 ne s'applique pas à la version 3.
+let gros = Data(count: 60 * 1024 * 1024)
+let debut = Date()
+if case .success(.fichier(let f)) = await recevoir(v3(gros, M: 4 * 1024 * 1024), morceau: 262_144) {
+    let t = (try? FileManager.default.attributesOfItem(atPath: f.url.path)[.size] as? Int) ?? -1
+    verifie(t == gros.count, String(format: "v3 : 60 Mo en morceaux de 4 Mio, écrits au fil de l'eau (%.1f s)", Date().timeIntervalSince(debut)))
+    f.effacer()
+} else { verifie(false, "v3 : 60 Mo reçus") }
 
 print(echecs == 0 ? "\nTout est bon." : "\n\(echecs) échec(s).")
 exit(echecs == 0 ? 0 : 1)

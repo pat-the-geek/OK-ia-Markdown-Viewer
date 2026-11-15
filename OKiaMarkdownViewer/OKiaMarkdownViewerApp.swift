@@ -194,18 +194,20 @@ final class DocumentStore: ObservableObject {
         }
         Task { [weak self] in
             do {
-                let contenu = try await PartageOKia.ouvrir(lien, transport: transport, progression: progression)
-                guard let self, self.jetonOuverture == jeton else { return }
-                switch contenu {
+                // Hors du fil de l'écran : jusqu'à 500 Mo à déchiffrer et à écrire.
+                let recu = try await Task.detached(priority: .userInitiated) {
+                    try await PartageOKia.ouvrir(lien, transport: transport, progression: progression)
+                }.value
+                guard let self, self.jetonOuverture == jeton else {
+                    if case .fichier(let f) = recu { f.effacer() }
+                    return
+                }
+                self.finPartage()
+                switch recu {
                 case .document(let markdown):
-                    self.finPartage()
                     self.document = MarkdownDocument(filename: self.sanitize(PartageOKia.titre(markdown)) + ".md", text: markdown)
                 case .fichier(let fichier):
-                    // Jusqu'à 50 Mo à écrire : hors du fil de l'écran.
-                    let recu = try? await Task.detached(priority: .userInitiated) { try FichierRecu.ecrire(fichier) }.value
-                    guard self.jetonOuverture == jeton else { recu?.effacer(); return }
-                    self.finPartage()
-                    if let recu { self.fichierRecu = recu } else { self.errorMessage = tr("Impossible d'enregistrer le fichier.") }
+                    self.fichierRecu = fichier
                 }
             } catch {
                 guard let self, self.jetonOuverture == jeton else { return }
