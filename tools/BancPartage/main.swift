@@ -167,7 +167,9 @@ verifie(await erreurV3(v3(petit, Nclair: 3)) == .illisible, "v3 : N changé en c
 verifie(await erreurV3(v3(petit) + Data([0])) == .illisible, "v3 : un octet après le dernier morceau → illisible")
 verifie(await erreurV3(v3(petit, taille: 199_999)) == .illisible, "v3 : taille annoncée fausse → illisible")
 verifie(await erreurV3(v3(petit, M: 4096)) == .illisible, "v3 : morceaux de moins de 64 Kio → illisible")
-verifie(await erreurV3(v3(Data(), taille: 600 * 1024 * 1024)) == .tropGros, "v3 : 600 Mo annoncés → trop volumineux")
+verifie(await erreurV3(v3(Data(), taille: 2 * 1024 * 1024 * 1024 + 1)) == .tropGros, "v3 : 2 Gio + 1 octet annoncés → trop volumineux")
+verifie(await erreurV3(v3(Data(), taille: 600 * 1024 * 1024)) == .illisible, "v3 : 600 Mo annoncés n'est plus trop gros (mais N faux → illisible)")
+verifie(PartageOKia.tailleMaxFichierV3 == 2_147_483_648, "v3 : la borne est 2 Gio")
 verifie(await erreurV3(v3(petit) { m in m[3][20] ^= 1 }) == .illisible, "v3 : un morceau modifié → illisible")
 verifie(temporaires() == avant, "v3 : aucune copie déchiffrée ne reste après une erreur")
 // Plus de 50 Mo : la borne des versions 1 et 2 ne s'applique pas à la version 3.

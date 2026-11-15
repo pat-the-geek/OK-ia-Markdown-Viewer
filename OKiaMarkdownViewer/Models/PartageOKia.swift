@@ -10,7 +10,7 @@ import CryptoKit
 /// l'appareil (AES-256-GCM). Trois versions du conteneur :
 /// - **1** : un document Markdown, affiché comme un document sans fichier ;
 /// - **2** : un FICHIER quelconque de 50 Mo au plus, d'un seul bloc ;
-/// - **3** : un FICHIER jusqu'à 500 Mo, découpé en morceaux authentifiés chacun avec son rang ET
+/// - **3** : un FICHIER jusqu'à 2 Go, découpé en morceaux authentifiés chacun avec son rang ET
 ///   le total — déchiffré et écrit au fil de la réception, sans tenir le fichier en mémoire. But
 ///   (Patrick, 15/11/2026) : envoyer de gros fichiers à des clients, qui les ouvrent dans md Viewer.
 /// Un fichier ne s'ouvre pas : md Viewer propose de l'enregistrer. Son nom et son type sont dans le
@@ -69,7 +69,7 @@ enum PartageOKia {
         case versionInconnue
         /// Échec de l'authentification AES-GCM, conteneur mal formé ou tronqué.
         case illisible
-        /// Plus que les bornes : 50 Mo (versions 1 et 2), 500 Mo (version 3).
+        /// Plus que les bornes : 50 Mo (versions 1 et 2), 2 Go (version 3).
         case tropGros
         /// Le fichier reçu n'a pas pu s'écrire sur l'appareil (place, droits).
         case ecriture
@@ -152,10 +152,13 @@ enum PartageOKia {
     /// Versions 1 et 2 : le site accepte 50 Mo de fichier ; le conteneur ajoute l'en-tête, le nonce,
     /// l'étiquette et la ligne JSON : 64 Kio de marge.
     static let tailleMax = 50 * 1024 * 1024 + 64 * 1024
-    /// Version 3 : 500 Mo de fichier (Patrick, 15/11/2026).
-    static let tailleMaxFichierV3 = 500 * 1024 * 1024
-    /// Version 3 : le conteneur entier, 28 octets par morceau en plus et l'en-tête — 1 Mio de marge.
-    static let tailleMax3 = tailleMaxFichierV3 + 1024 * 1024
+    /// Version 3 : 2 Go de fichier (Patrick, 15/11/2026 : 500 Mo d'abord, puis 2 Go après un essai
+    /// réussi à 400 Mo). Au-delà, ce n'est plus l'app qui coince mais l'envoi depuis la connexion
+    /// domestique et le CDN.
+    static let tailleMaxFichierV3 = 2 * 1024 * 1024 * 1024
+    /// Version 3 : le conteneur entier, 28 octets par morceau en plus et l'en-tête — 2 Mio de marge
+    /// (32 769 morceaux de 64 Kio au pire : 0,9 Mio).
+    static let tailleMax3 = tailleMaxFichierV3 + 2 * 1024 * 1024
     /// Version 3 : la taille d'un morceau en clair, bornée des deux côtés (trop petits, ils
     /// multiplient les étiquettes ; trop grands, ils pèsent en mémoire).
     static let morceauMin = 64 * 1024
@@ -256,7 +259,7 @@ enum PartageOKia {
 /// morceaux 1…N, le fichier : nonce (12) | chiffré (M, sauf le dernier) | étiquette (16)
 ///     le dernier fait taille − (N − 1) × M
 /// AAD du morceau i : « ok-ia.ch/p/<id>#<i>/<N> »
-/// N = ⌈taille / M⌉ (0 pour un fichier vide), 64 Kio ≤ M ≤ 16 Mio, 1 ≤ L ≤ 4096, taille ≤ 500 Mo
+/// N = ⌈taille / M⌉ (0 pour un fichier vide), 64 Kio ≤ M ≤ 16 Mio, 1 ≤ L ≤ 4096, taille ≤ 2 Gio
 /// ```
 /// Le rang ET le total dans chaque AAD : on ne peut ni réordonner les morceaux, ni en retirer à
 /// la fin, ni changer N en clair, sans qu'un déchiffrement échoue. Rien ne suit le morceau N.
@@ -478,7 +481,7 @@ struct FluxPartage: Sendable {
     }
 }
 
-/// La reprise d'un téléchargement coupé (Patrick, 15/11/2026 : 500 Mo par une connexion
+/// La reprise d'un téléchargement coupé (Patrick, 15/11/2026 : jusqu'à 2 Go par une connexion
 /// domestique). À chaque coupure, on redemande la suite à partir de l'octet atteint — `ouvrir(depuis)`
 /// —, jusqu'à 5 fois de suite sans progrès, en attendant 1, 2, 4, 8 puis 15 s. Le lecteur ne voit
 /// qu'un seul flux continu. La reprise ne survit pas à l'app quittée : la clé, échangée une seule
@@ -570,7 +573,7 @@ struct TransportOKia: TransportPartage {
         c.httpCookieAcceptPolicy = .never
         c.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         c.timeoutIntervalForRequest = 30      // 30 s sans un octet
-        c.timeoutIntervalForResource = 3600   // 500 Mo sur un réseau lent
+        c.timeoutIntervalForResource = 3600   // une heure par requête ; au-delà, la reprise enchaîne
         c.waitsForConnectivity = false
         return URLSession(configuration: c)
     }()

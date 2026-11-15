@@ -363,7 +363,7 @@ private struct EnregistrerFichier: UIViewControllerRepresentable {
     let fini: () -> Void
 
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        // Déplacé, pas copié : jusqu'à 500 Mo, on n'en fait pas deux exemplaires. Le panneau a fini
+        // Déplacé, pas copié : jusqu'à 2 Go, on n'en fait pas deux exemplaires. Le panneau a fini
         // quand il rappelle ; le dossier temporaire s'efface alors.
         let p = UIDocumentPickerViewController(forExporting: [url], asCopy: false)
         p.directoryURL = FichierRecu.dossierPropose

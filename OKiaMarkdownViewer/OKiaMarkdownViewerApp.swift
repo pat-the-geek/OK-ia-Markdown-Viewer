@@ -198,7 +198,7 @@ final class DocumentStore: ObservableObject {
         Task { [weak self] in
             defer { fond.finir() }
             do {
-                // Hors du fil de l'écran : jusqu'à 500 Mo à déchiffrer et à écrire.
+                // Hors du fil de l'écran : jusqu'à 2 Go à déchiffrer et à écrire.
                 let recu = try await Task.detached(priority: .userInitiated) {
                     try await PartageOKia.ouvrir(lien, transport: transport, progression: progression)
                 }.value
