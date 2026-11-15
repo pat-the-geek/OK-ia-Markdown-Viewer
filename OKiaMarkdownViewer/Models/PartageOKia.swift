@@ -531,6 +531,15 @@ enum Reprise {
         }
     }
 
+    /// Ce qu'on envoie dans `If-Range`. Un ETag FAIBLE (`W/"…"`, celui d'un proxy qui compresse) n'y
+    /// vaut rien : le serveur renverrait tout (200) et la reprise s'arrêterait. On prend alors la date
+    /// de modification ; sans elle, pas de reprise.
+    static func validateur(etag: String?, modifie: String?) -> String? {
+        if let e = etag?.trimmingCharacters(in: .whitespaces), !e.isEmpty, !e.hasPrefix("W/") { return e }
+        if let m = modifie?.trimmingCharacters(in: .whitespaces), !m.isEmpty { return m }
+        return nil
+    }
+
     /// `Content-Range: bytes 1234-5677/5678` → (1234, 5678).
     static func plage(_ entete: String?) -> (debut: Int64, total: Int64)? {
         guard let e = entete?.trimmingCharacters(in: .whitespaces), e.hasPrefix("bytes ") else { return nil }
@@ -621,7 +630,8 @@ struct TransportOKia: TransportPartage {
         if attendu > Int64(PartageOKia.tailleMax3) { throw PartageOKia.Erreur.tropGros }
         // Ce qui garantit qu'une reprise lit LE MÊME fichier : sans validateur, on ne reprend pas
         // (on mêlerait deux versions du conteneur — l'authentification le refuserait, mais trop tard).
-        let validateur = reponse.value(forHTTPHeaderField: "ETag") ?? reponse.value(forHTTPHeaderField: "Last-Modified")
+        let validateur = Reprise.validateur(etag: reponse.value(forHTTPHeaderField: "ETag"),
+                                            modifie: reponse.value(forHTTPHeaderField: "Last-Modified"))
         let premier = Premier(flux)
         let requete = r
         let morceaux = Reprise.flux(attendu: attendu) { depuis in

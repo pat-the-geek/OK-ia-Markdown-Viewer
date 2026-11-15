@@ -303,6 +303,9 @@ do {
         f.effacer()
     } else { verifie(false, "reprise : vecteur v3 coupé") }
 }
+verifie(Reprise.validateur(etag: "\"6af9e74d-78315b0\"", modifie: "Sun, 15 Nov 2026 17:09:33 GMT") == "\"6af9e74d-78315b0\"", "If-Range : l'ETag fort d'abord")
+verifie(Reprise.validateur(etag: "W/\"6af9e74d\"", modifie: "Sun, 15 Nov 2026 17:09:33 GMT") == "Sun, 15 Nov 2026 17:09:33 GMT", "If-Range : ETag faible écarté, date de modification à la place")
+verifie(Reprise.validateur(etag: "W/\"x\"", modifie: nil) == nil, "If-Range : ni ETag fort ni date → pas de reprise")
 verifie(Reprise.plage("bytes 1234-5677/5678")! == (1234, 5678), "Content-Range lu")
 verifie(Reprise.plage("bytes */5678") == nil && Reprise.plage(nil) == nil, "Content-Range invalide refusé")
 
