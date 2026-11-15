@@ -192,7 +192,11 @@ final class DocumentStore: ObservableObject {
                 self.progressionPartage = p
             }
         }
+        // Sur iPhone et iPad, l'app quittée garde la réception le temps qu'iOS accorde (une
+        // trentaine de secondes) ; une coupure au-delà est reprise au retour (`Reprise`).
+        let fond = TacheDeFond()
         Task { [weak self] in
+            defer { fond.finir() }
             do {
                 // Hors du fil de l'écran : jusqu'à 500 Mo à déchiffrer et à écrire.
                 let recu = try await Task.detached(priority: .userInitiated) {
@@ -215,6 +219,21 @@ final class DocumentStore: ObservableObject {
                 self.errorMessage = (error as? PartageOKia.Erreur)?.errorDescription
                     ?? PartageOKia.Erreur.injoignable.errorDescription
             }
+        }
+    }
+
+    /// Une tâche d'arrière-plan d'iOS, rendue une seule fois (fin normale ou délai écoulé).
+    private final class TacheDeFond {
+        private var id = UIBackgroundTaskIdentifier.invalid
+        init() {
+            #if !targetEnvironment(macCatalyst)
+            id = UIApplication.shared.beginBackgroundTask(withName: "Partage d'ok-ia.ch") { [weak self] in self?.finir() }
+            #endif
+        }
+        func finir() {
+            guard id != .invalid else { return }
+            UIApplication.shared.endBackgroundTask(id)
+            id = .invalid
         }
     }
 

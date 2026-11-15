@@ -225,5 +225,86 @@ do {
     verifie(e == .illisible, "site v3 : sous un autre identifiant → illisible")
 }
 
+// 7. La reprise d'un téléchargement coupé (`Reprise`), avec un faux serveur qui coupe.
+actor Appels { var depuis: [Int64] = []; func note(_ d: Int64) { depuis.append(d) } }
+/// Sert `d` à partir de `depuis`, par paquets de 10 000 octets ; l'appel n° i coupe après `coupures[i]`
+/// octets (nil : va jusqu'au bout). `finPropre` : la coupure ressemble à une fin normale.
+func serveur(_ d: Data, coupures: [Int?], finPropre: Bool = false, appels: Appels,
+             refus: Bool = false) -> @Sendable (Int64) async throws -> AsyncThrowingStream<Data, Error> {
+    let n = Compteur()
+    return { depuis in
+        await appels.note(depuis)
+        let i = await n.suivant()
+        if refus && depuis > 0 { throw Reprise.Impossible() }
+        let limite = i < coupures.count ? coupures[i] : nil
+        return AsyncThrowingStream { c in
+            var pos = Int(depuis), envoye = 0
+            while pos < d.count {
+                if let limite, envoye >= limite {
+                    if finPropre { c.finish() } else { c.finish(throwing: URLError(.networkConnectionLost)) }
+                    return
+                }
+                let fin = min(d.count, pos + 10_000, limite.map { pos + ($0 - envoye) } ?? Int.max)
+                c.yield(Data(d[pos..<fin])); envoye += fin - pos; pos = fin
+            }
+            c.finish()
+        }
+    }
+}
+actor Compteur { var n = 0; func suivant() -> Int { defer { n += 1 }; return n } }
+func lireTout(_ s: AsyncThrowingStream<Data, Error>) async -> Result<Data, PartageOKia.Erreur> {
+    var tout = Data()
+    do { for try await d in s { tout += d }; return .success(tout) }
+    catch let e as PartageOKia.Erreur { return .failure(e) } catch { return .failure(.injoignable) }
+}
+let corps = Data((0..<1_000_000).map { UInt8(truncatingIfNeeded: $0 &* 13 &+ 5) })
+do {
+    let a = Appels()
+    let r = await lireTout(Reprise.flux(attendu: Int64(corps.count), attendre: { _ in },
+                                        ouvrir: serveur(corps, coupures: [123_457, 250_001, 3], appels: a)))
+    verifie((try? r.get()) == corps, "reprise : trois coupures, fichier identique à l'octet")
+    verifie(await a.depuis == [0, 123_457, 373_458, 373_461], "reprise : chaque reprise part de l'octet atteint (\(await a.depuis))")
+}
+do {
+    let a = Appels()
+    let r = await lireTout(Reprise.flux(attendu: Int64(corps.count), attendre: { _ in },
+                                        ouvrir: serveur(corps, coupures: [400_000], finPropre: true, appels: a)))
+    verifie((try? r.get()) == corps, "reprise : une fin propre mais trop tôt est reprise aussi")
+}
+do {
+    let a = Appels()
+    let r = await lireTout(Reprise.flux(attendu: Int64(corps.count), attendre: { _ in },
+                                        ouvrir: serveur(corps, coupures: [100, 0, 0, 0, 0, 0, 0], appels: a)))
+    if case .failure(let e) = r { verifie(e == .injoignable, "reprise : abandon après 5 échecs de suite sans progrès") }
+    else { verifie(false, "reprise : abandon après 5 échecs de suite sans progrès") }
+    verifie(await a.depuis.count == 6, "reprise : 1 appel + 5 reprises, pas davantage (\(await a.depuis.count))")
+}
+do {
+    let a = Appels()
+    let r = await lireTout(Reprise.flux(attendu: Int64(corps.count), attendre: { _ in },
+                                        ouvrir: serveur(corps, coupures: [100, 100, 100, 100, 100, 100, 100, 100], appels: a)))
+    verifie((try? r.get()) == corps, "reprise : huit coupures qui progressent chacune ne font pas abandonner")
+}
+do {
+    let a = Appels()
+    let r = await lireTout(Reprise.flux(attendu: Int64(corps.count), attendre: { _ in },
+                                        ouvrir: serveur(corps, coupures: [5_000], appels: a, refus: true)))
+    if case .failure(let e) = r { verifie(e == .injoignable, "reprise : serveur qui ne sait pas reprendre → injoignable, sans insister") }
+    else { verifie(false, "reprise : serveur qui ne sait pas reprendre") }
+    verifie(await a.depuis == [0, 5_000], "reprise impossible : une seule tentative")
+}
+do {
+    // Un conteneur v3 coupé en route : le lecteur le reçoit entier et le déchiffre.
+    let a = Appels()
+    let flux = FluxPartage(taille: Int64(fv3.count), morceaux: Reprise.flux(attendu: Int64(fv3.count), attendre: { _ in },
+                           ouvrir: serveur(fv3, coupures: [77_777, 150_000], appels: a)))
+    if case .fichier(let f) = try await PartageOKia.recevoir(flux, cle: clev3, id: idv3) {
+        verifie((try? Data(contentsOf: f.url)) == attenduV3, "reprise : vecteur v3 du site coupé deux fois, fichier identique")
+        f.effacer()
+    } else { verifie(false, "reprise : vecteur v3 coupé") }
+}
+verifie(Reprise.plage("bytes 1234-5677/5678")! == (1234, 5678), "Content-Range lu")
+verifie(Reprise.plage("bytes */5678") == nil && Reprise.plage(nil) == nil, "Content-Range invalide refusé")
+
 print(echecs == 0 ? "\nTout est bon." : "\n\(echecs) échec(s).")
 exit(echecs == 0 ? 0 : 1)

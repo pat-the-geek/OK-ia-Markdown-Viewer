@@ -124,7 +124,7 @@ enum PartageOKia {
     /// Lit un flux de conteneur, quelle que soit sa version.
     static func recevoir(_ flux: FluxPartage, cle: Data, id: String,
                          progression: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> Recu {
-        if flux.taille > Int64(tailleMaxFlux) { throw Erreur.tropGros }
+        if flux.taille > Int64(tailleMax3) { throw Erreur.tropGros }
         let lecteur = LecteurPartage(cle: cle, id: id)
         var recu: Int64 = 0
         var dernier = -1
@@ -155,7 +155,7 @@ enum PartageOKia {
     /// Version 3 : 500 Mo de fichier (Patrick, 15/11/2026).
     static let tailleMaxFichierV3 = 500 * 1024 * 1024
     /// Version 3 : le conteneur entier, 28 octets par morceau en plus et l'en-tête — 1 Mio de marge.
-    static let tailleMaxFlux = tailleMaxFichierV3 + 1024 * 1024
+    static let tailleMax3 = tailleMaxFichierV3 + 1024 * 1024
     /// Version 3 : la taille d'un morceau en clair, bornée des deux côtés (trop petits, ils
     /// multiplient les étiquettes ; trop grands, ils pèsent en mémoire).
     static let morceauMin = 64 * 1024
@@ -478,6 +478,69 @@ struct FluxPartage: Sendable {
     }
 }
 
+/// La reprise d'un téléchargement coupé (Patrick, 15/11/2026 : 500 Mo par une connexion
+/// domestique). À chaque coupure, on redemande la suite à partir de l'octet atteint — `ouvrir(depuis)`
+/// —, jusqu'à 5 fois de suite sans progrès, en attendant 1, 2, 4, 8 puis 15 s. Le lecteur ne voit
+/// qu'un seul flux continu. La reprise ne survit pas à l'app quittée : la clé, échangée une seule
+/// fois, n'est gardée nulle part.
+enum Reprise {
+    /// Le serveur ne sait pas reprendre ce fichier (pas de plage, ou plus le même fichier).
+    struct Impossible: Error {}
+
+    static let attentes: [UInt64] = [1, 2, 4, 8, 15]
+
+    static func flux(attendu: Int64, essaisMax: Int = 5, plafond: Int64 = Int64(PartageOKia.tailleMax3),
+                     attendre: @escaping @Sendable (Int) async -> Void = { n in
+                         try? await Task.sleep(nanoseconds: Reprise.attentes[min(n, Reprise.attentes.count) - 1] * 1_000_000_000)
+                     },
+                     ouvrir: @escaping @Sendable (Int64) async throws -> AsyncThrowingStream<Data, Error>)
+        -> AsyncThrowingStream<Data, Error> {
+        AsyncThrowingStream { c in
+            let tache = Task {
+                var recu: Int64 = 0
+                var echecs = 0
+                while true {
+                    do {
+                        for try await d in try await ouvrir(recu) {
+                            recu += Int64(d.count)
+                            if recu > plafond { throw PartageOKia.Erreur.tropGros }
+                            if !d.isEmpty { echecs = 0 }
+                            c.yield(d)
+                        }
+                        // Une fin propre mais trop tôt est une coupure comme une autre.
+                        if attendu > 0, recu < attendu { throw PartageOKia.Erreur.injoignable }
+                        c.finish()
+                        return
+                    } catch is Impossible {
+                        c.finish(throwing: PartageOKia.Erreur.injoignable)
+                        return
+                    } catch let e as PartageOKia.Erreur where e != .injoignable {
+                        c.finish(throwing: e)
+                        return
+                    } catch {
+                        echecs += 1
+                        guard !Task.isCancelled, attendu > 0, recu < attendu, echecs <= essaisMax else {
+                            c.finish(throwing: PartageOKia.Erreur.injoignable)
+                            return
+                        }
+                        await attendre(echecs)
+                    }
+                }
+            }
+            c.onTermination = { _ in tache.cancel() }
+        }
+    }
+
+    /// `Content-Range: bytes 1234-5677/5678` → (1234, 5678).
+    static func plage(_ entete: String?) -> (debut: Int64, total: Int64)? {
+        guard let e = entete?.trimmingCharacters(in: .whitespaces), e.hasPrefix("bytes ") else { return nil }
+        let parties = e.dropFirst(6).split(separator: "/")
+        guard parties.count == 2, let total = Int64(parties[1]),
+              let debut = parties[0].split(separator: "-").first.flatMap({ Int64($0) }) else { return nil }
+        return (debut, total)
+    }
+}
+
 /// L'accès réseau du partage, derrière un protocole pour le tester sans serveur.
 protocol TransportPartage: Sendable {
     /// `POST https://ok-ia.ch/api/partage/<id>/cle` `{"jeton": …}` → la clé (32 octets).
@@ -555,34 +618,70 @@ struct TransportOKia: TransportPartage {
         default: throw PartageOKia.Erreur.injoignable
         }
         let attendu = reponse.expectedContentLength
-        if attendu > Int64(PartageOKia.tailleMaxFlux) { throw PartageOKia.Erreur.tropGros }
-        // Par morceaux de 256 Kio : le lecteur déchiffre et écrit à mesure, rien ne s'accumule.
-        let morceaux = AsyncThrowingStream<Data, Error> { c in
+        if attendu > Int64(PartageOKia.tailleMax3) { throw PartageOKia.Erreur.tropGros }
+        // Ce qui garantit qu'une reprise lit LE MÊME fichier : sans validateur, on ne reprend pas
+        // (on mêlerait deux versions du conteneur — l'authentification le refuserait, mais trop tard).
+        let validateur = reponse.value(forHTTPHeaderField: "ETag") ?? reponse.value(forHTTPHeaderField: "Last-Modified")
+        let premier = Premier(flux)
+        let requete = r
+        let morceaux = Reprise.flux(attendu: attendu) { depuis in
+            if let f = premier.prendre() { return Self.decouper(f) }
+            var r2 = requete
+            if depuis > 0 {
+                guard let validateur else { throw Reprise.Impossible() }
+                r2.setValue("bytes=\(depuis)-", forHTTPHeaderField: "Range")
+                r2.setValue(validateur, forHTTPHeaderField: "If-Range")
+            }
+            let (f2, rep2) = try await Self.demander(r2)
+            if depuis > 0 {
+                // 206 et la plage demandée, sur le même total ; un 200 renverrait tout depuis le début.
+                guard rep2.statusCode == 206, let p = Reprise.plage(rep2.value(forHTTPHeaderField: "Content-Range")),
+                      p.debut == depuis, p.total == attendu else { throw Reprise.Impossible() }
+            } else if rep2.statusCode != 200 {
+                throw Reprise.Impossible()
+            }
+            return Self.decouper(f2)
+        }
+        return FluxPartage(taille: attendu, morceaux: morceaux)
+    }
+
+    /// Le premier corps reçu, servi une seule fois.
+    private final class Premier: @unchecked Sendable {
+        private let verrou = NSLock()
+        private var flux: URLSession.AsyncBytes?
+        init(_ f: URLSession.AsyncBytes) { flux = f }
+        func prendre() -> URLSession.AsyncBytes? {
+            verrou.lock(); defer { verrou.unlock() }
+            let f = flux
+            flux = nil
+            return f
+        }
+    }
+
+    /// Un corps HTTP en morceaux de 256 Kio. Une coupure livre d'abord ce qui était reçu, puis
+    /// l'erreur : la reprise repart de là, rien n'est perdu ni compté deux fois.
+    private static func decouper(_ flux: URLSession.AsyncBytes) -> AsyncThrowingStream<Data, Error> {
+        AsyncThrowingStream { c in
             let tache = Task {
                 var morceau = [UInt8]()
                 morceau.reserveCapacity(262_144)
-                var total = 0
                 do {
                     for try await octet in flux {
                         morceau.append(octet)
                         if morceau.count == 262_144 {
-                            total += morceau.count
-                            if total > PartageOKia.tailleMaxFlux { throw PartageOKia.Erreur.tropGros }
                             c.yield(Data(morceau))
                             morceau.removeAll(keepingCapacity: true)
                         }
                     }
                     if !morceau.isEmpty { c.yield(Data(morceau)) }
                     c.finish()
-                } catch let e as PartageOKia.Erreur {
-                    c.finish(throwing: e)
                 } catch {
+                    if !morceau.isEmpty { c.yield(Data(morceau)) }
                     c.finish(throwing: PartageOKia.Erreur.injoignable)
                 }
             }
             c.onTermination = { _ in tache.cancel() }
         }
-        return FluxPartage(taille: attendu, morceaux: morceaux)
     }
 
     /// La requête, sans suivre une redirection hors d'ok-ia.ch : la réponse, et son corps à lire.
