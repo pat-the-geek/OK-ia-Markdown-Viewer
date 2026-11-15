@@ -202,6 +202,22 @@ for paquet in [7_777, 65_536, fv3.count] {
         } else { verifie(false, "site v3 : un fichier") }
     } catch { verifie(false, "site v3 : paquets de \(paquet) → \(error)") }
 }
+// Le vecteur est reproductible (nonces fixes « OKIA-V3- » + rang sur 4 octets, pour CE vecteur
+// seulement) : on le refabrique ici, octet pour octet, avec CryptoKit et notre lecture du contrat.
+verifie(hex(fv3) == jv3["sha256_conteneur"] as? String, "site v3 : le conteneur a le sha256 annoncé")
+do {
+    let M = jv3["morceau"] as! Int, N = jv3["morceaux"] as! Int
+    let entete = Data((jv3["entete_clair"] as! String).utf8)
+    func nonce(_ i: Int) -> AES.GCM.Nonce { try! AES.GCM.Nonce(data: Data("OKIA-V3-".utf8) + u32(i)) }
+    func sceller(_ c: Data, _ i: Int) -> Data {
+        let b = try! AES.GCM.seal(c, using: SymmetricKey(data: clev3), nonce: nonce(i),
+                                  authenticating: Data("ok-ia.ch/p/\(idv3)#\(i)/\(N)".utf8))
+        return Data(b.nonce) + b.ciphertext + b.tag
+    }
+    var refait = Data("OKIA".utf8) + [3] + u32(N) + u32(M) + u32(entete.count) + sceller(entete, 0)
+    for i in 1...N { refait += sceller(attenduV3[((i - 1) * M)..<min(attenduV3.count, i * M)], i) }
+    verifie(refait == fv3, "site v3 : refabriqué ici à l'octet près (\(refait.count) octets)")
+}
 do {
     _ = try await PartageOKia.recevoir(FluxPartage(fv3, morceau: 7_777), cle: clev3, id: id)
     verifie(false, "site v3 : sous un autre identifiant → illisible")

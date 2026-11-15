@@ -7,10 +7,12 @@
  "sha256": "931cb3fc3797a8b060cbfc007b7ebc34d793e3d26984163b0d5b9c6aa66423ce",
  "morceau": 65536,
  "morceaux": 5,
+ "sha256_conteneur": "9cf3c057de0a774be3cda2088ca60f0a898e015bc646942db52955b3dad96b57",
+ "nonces": "le morceau i porte le nonce b\"OKIA-V3-\" + i sur 4 octets gros-boutistes (l'en-tête est le morceau 0). ⛔ FIXES POUR CE VECTEUR SEULEMENT : la production les tire au hasard. Sans cela le conteneur changerait à chaque régénération, et un vecteur ne se comparerait plus octet par octet.",
  "dernier_morceau": 37856,
  "aad_entete": "ok-ia.ch/p/EBESExQVFhcYGRobHB0eHw#0/5",
  "aad_dernier": "ok-ia.ch/p/EBESExQVFhcYGRobHB0eHw#5/5",
  "entete_clair": "{\"nom\":\"livraison-trimestrielle.zip\",\"type\":\"application/zip\",\"taille\":300000}",
- "contenu": "chaîne de SHA-256 : bloc = sha256(bloc), à partir de b\"vecteur-v3-ok-ia\", tronquée à 300000 octets. Reproductible.",
+ "contenu": "chaîne de SHA-256, tronquée à 300000 octets : bloc = sha256(bloc) en partant de la graine b\"vecteur-v3-ok-ia\", et le PREMIER bloc écrit est sha256(graine) — la graine elle-même n'apparaît pas dans le fichier. Reproductible.",
  "note": "Écrit par scripts/essais/partage-v3-vecteur.py du dépôt OK-ia, par ecrire_conteneur_v3() — la même fonction que la production. La clé k n'est jamais dans un lien : md Viewer la reçoit de POST /api/partage/<id>/cle. Ici elle sert à éprouver le déchiffrement seul. ⚠️ id et k diffèrent de ceux du vecteur v1, pour qu'une confusion entre les deux se voie."
 }
