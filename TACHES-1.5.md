@@ -459,3 +459,28 @@ réseau ».
 - [ ] À essayer sur les appareils : coffre iCloud choisi sur l'iPhone, retrouvé seul sur l'iPad et
       le Mac ; partage de l'iMac choisi sur le Mac, proposé sur l'iPhone. Le build TestFlight dira
       si le profil de distribution accepte le nouveau droit.
+
+## Les partages chiffrés d'ok-ia.ch par QR code (demandé par Patrick le 15 novembre 2026, 1.5.1)
+
+Consigne : `docs/md-viewer/instructions-partage-qr.md` du dépôt fornews (contrat avec le site), transmise
+par la session « fornews.ai 1.8 ». Le service du site (`/api/partage/…`, `/p/<id>/document.okia`) est
+préparé par la session « Gestion de OK-ia.ch » ; il n'est pas encore en ligne (POST de la clé : 404).
+
+- [x] `PartageOKia.swift` : lien `mdviewer://partage?id=<22>&j=<22>` contrôlé (base64url, 22 caractères,
+      tout autre paramètre ignoré, jamais une URL suivie) ; échange du jeton d'abord, puis
+      téléchargement, puis déchiffrement AES-256-GCM (en-tête « OKIA » v1, AAD `ok-ia.ch/p/<id>`).
+- [x] `TransportOKia` : adresses bâties ici, toujours `https://ok-ia.ch` ; session éphémère (ni cache ni
+      cookie), 20 s, 20 Mo lus au plus, redirection hors d'ok-ia.ch refusée. Derrière le protocole
+      `TransportPartage`.
+- [x] Route `partage` dans `handleScheme` : bandeau « Ouverture de « Partage d'ok-ia.ch » … », document
+      sans fichier titré par son premier `#` ; ni récents, ni signet, ni journal (l'app n'a pas d'état
+      restauré). Messages 410 / 404 / 429 / réseau / version / illisible / trop gros en 15 langues.
+- [x] Banc `tools/BancPartage/banc.sh` : le vecteur redonne exactement `texte_clair` ; mauvaise clé, autre
+      identifiant (AAD), octet modifié, version 2, autre en-tête, fichier tronqué ; liens piégés ;
+      faux transport (200, 410, 404, 429, 500 : le document n'est jamais demandé après un refus).
+      27/27.
+- [x] Harnais Debug `OKIA_PARTAGE_VECTEUR=<dossier>` (refusé par le script d'envoi) : au simulateur du Duo,
+      le lien d'exemple ouvre « Partage de démonstration » (é ü ß ✓) ; sans harnais, ok-ia.ch répond 404 et
+      l'alerte dit « Ce partage a expiré ou a été retiré. ». Mac Catalyst compilé.
+- [ ] Essai de bout en bout avec le partage d'essai que publiera la session « Gestion de OK-ia.ch ».
+- [ ] Plus tard (consigne § 7) : lien universel `applinks:ok-ia.ch`, scanner intégré (VisionKit).

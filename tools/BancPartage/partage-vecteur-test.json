@@ -1,0 +1,10 @@
+{
+ "id": "AAECAwQFBgcICQoLDA0ODw",
+ "k": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+ "aad": "ok-ia.ch/p/AAECAwQFBgcICQoLDA0ODw",
+ "nonce_hex": "6465666768696a6b6c6d6e6f",
+ "fichier_hex": "4f4b4941016465666768696a6b6c6d6e6f6b3b8e070b9d37f95b423b8dfa01a9542fad6879ff1e9206cebec242f1e0c068f08623b52177f570dd9258fc543609663b71b283e3e322409397caa42c2885fa69fefb63b26b6d6cee1888313ba01fec6e043f77c8a9e2a8b19416b85b452f3deb04e05e1747c4539ed7a2e88f20c4e25e0b43b6e1ba051471e6b3cdfa56945412e392ea0b1f944615ad06d4012984fe494ec5",
+ "texte_clair": "# Partage de démonstration\n\nCe document a été **déchiffré par md Viewer**.\n\n| Colonne | Valeur |\n|---|---|\n| é ü ß | ✓ |\n",
+ "lien_exemple": "mdviewer://partage?id=AAECAwQFBgcICQoLDA0ODw&j=AAAAAAAAAAAAAAAAAAAAAA",
+ "note": "La clé k n'est jamais dans le lien : en production, md Viewer la reçoit de POST /api/partage/<id>/cle. Ici, elle sert à tester le déchiffrement seul."
+}

@@ -112,6 +112,7 @@ final class DocumentStore: ObservableObject {
     /// mdviewer://open?url=<https .md>   — fetch a remote report and render it
     /// mdviewer://render?name=<f>&content=<percent-encoded markdown>  — render inline
     /// mdviewer://fichier?nom=<f>          — read a drop from the shared mailbox (see BoiteAuxLettres)
+    /// mdviewer://partage?id=<22>&j=<22>   — un partage chiffré d'ok-ia.ch (voir `PartageOKia`)
     private func handleScheme(_ url: URL) {
         guard let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             errorMessage = tr("Lien invalide."); return
@@ -149,6 +150,20 @@ final class DocumentStore: ObservableObject {
                 // bien distinctes, toutes deux invisibles sans ce message.
                 errorMessage = tr("Document introuvable dans le dossier partagé : « %@ ».", nom)
             }
+        // Un partage chiffré d'ok-ia.ch, ouvert par son QR code ou son bouton (1.5.1). Le lien ne
+        // porte que deux identifiants contrôlés ; ni lui ni la clé ne s'écrivent nulle part.
+        case "partage":
+            if let lien = PartageOKia.Lien(composants: comps) {
+                #if DEBUG
+                if let dossier = ProcessInfo.processInfo.environment["OKIA_PARTAGE_VECTEUR"] {
+                    ouvrirPartage(lien, transport: TransportVecteur(dossier: URL(fileURLWithPath: dossier)))
+                    return
+                }
+                #endif
+                ouvrirPartage(lien)
+            } else {
+                errorMessage = PartageOKia.Erreur.lienInvalide.errorDescription
+            }
         case "render", "content":
             let name = value("name", "title") ?? tr("Rapport.md")
             if let content = value("content", "text"), !content.isEmpty {
@@ -159,6 +174,28 @@ final class DocumentStore: ObservableObject {
             }
         default:
             errorMessage = tr("Action inconnue : « %@ ».", action)
+        }
+    }
+
+    /// Échange le jeton tout de suite, télécharge et déchiffre le document sur l'appareil, puis
+    /// l'affiche comme un document sans fichier : ni récents, ni signet, ni trace de la clé.
+    private func ouvrirPartage(_ lien: PartageOKia.Lien, transport: TransportPartage = TransportOKia()) {
+        let jeton = UUID()
+        jetonOuverture = jeton
+        errorMessage = nil
+        ouverture = tr("Partage d'ok-ia.ch")
+        Task { [weak self] in
+            do {
+                let markdown = try await PartageOKia.ouvrir(lien, transport: transport)
+                guard let self, self.jetonOuverture == jeton else { return }
+                self.ouverture = nil
+                self.document = MarkdownDocument(filename: self.sanitize(PartageOKia.titre(markdown)) + ".md", text: markdown)
+            } catch {
+                guard let self, self.jetonOuverture == jeton else { return }
+                self.ouverture = nil
+                self.errorMessage = (error as? PartageOKia.Erreur)?.errorDescription
+                    ?? PartageOKia.Erreur.injoignable.errorDescription
+            }
         }
     }
 
