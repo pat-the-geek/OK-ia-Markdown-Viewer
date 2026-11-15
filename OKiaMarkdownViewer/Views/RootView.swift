@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct RootView: View {
     @EnvironmentObject private var store: DocumentStore
@@ -57,10 +58,21 @@ struct RootView: View {
         // qui semble coller (Patrick, 12/11/2026).
         .overlay(alignment: .bottom) {
             if let nom = store.ouverture {
-                BandeauOuverture(nom: nom)
+                BandeauOuverture(nom: nom, progression: store.progressionPartage)
                     .padding(.bottom, 28)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+        // Un fichier reçu d'un partage (version 2) : le panneau d'enregistrement du système,
+        // Téléchargements d'abord sur Mac. La copie temporaire s'efface ensuite, quoi qu'il arrive.
+        // ⚠️ Chaque feuille efface SA copie, et seulement quand le panneau a fini : à la fermeture,
+        // SwiftUI remet `fichierRecu` à nil avant tout rappel (un effacement passé par le store ne
+        // trouvait plus rien), et le panneau disparaît AVANT d'avoir écrit (un effacement à
+        // `onDisappear` perdait le fichier). Pas de geste pour fermer : Annuler, ou Enregistrer.
+        .sheet(item: $store.fichierRecu) { recu in
+            EnregistrerFichier(url: recu.url) { recu.effacer(); store.fichierRecu = nil }
+                .ignoresSafeArea()
+                .interactiveDismissDisabled()
         }
         // One importer for both modes — `importFolder` selects file vs. vault folder.
         .fileImporter(
@@ -283,15 +295,31 @@ extension View {
 /// nuage). Une pastille en bas de l'écran, au-dessus de l'accueil comme du lecteur.
 private struct BandeauOuverture: View {
     let nom: String
+    /// La part reçue d'un partage, quand le serveur annonce la taille.
+    var progression: Double? = nil
+
+    /// Le nom sans « .md », comme sur les cartes — mais seulement « .md » : « Partage d'ok-ia.ch »
+    /// perdait son « .ch ».
+    private var sansExtension: String {
+        let ext = (nom as NSString).pathExtension.lowercased()
+        return ["md", "markdown", "txt"].contains(ext) ? (nom as NSString).deletingPathExtension : nom
+    }
 
     var body: some View {
         HStack(spacing: 10) {
-            ProgressView()
-            // Le nom sans « .md », comme sur les cartes.
-            Text(tr("Ouverture de « %@ »…", (nom as NSString).deletingPathExtension))
-                .font(.callout)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            if progression == nil { ProgressView() }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("Ouverture de « %@ »…", sansExtension))
+                    .font(.callout)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                if let progression { ProgressView(value: progression) }
+            }
+            if let progression {
+                Text(progression, format: .percent.precision(.fractionLength(0)))
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -324,5 +352,32 @@ private struct ListeDesAnnotations: ViewModifier {
                 // Une page entière sur iPad : les extraits ont besoin de largeur.
                 .presentationSizing(.page)
             }
+    }
+}
+
+/// Le panneau « Enregistrer » du système pour un fichier reçu d'un partage : il le copie là où
+/// l'utilisateur le veut (Téléchargements par défaut sur Mac). `fini` : enregistré ou annulé.
+private struct EnregistrerFichier: UIViewControllerRepresentable {
+    let url: URL
+    let fini: () -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        // Une copie : le panneau l'a faite quand il rappelle, et la nôtre peut alors s'effacer.
+        let p = UIDocumentPickerViewController(forExporting: [url], asCopy: true)
+        p.directoryURL = FichierRecu.telechargements
+        p.shouldShowFileExtensions = true
+        p.delegate = context.coordinator
+        return p
+    }
+
+    func updateUIViewController(_ p: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinateur { Coordinateur(fini: fini) }
+
+    final class Coordinateur: NSObject, UIDocumentPickerDelegate {
+        let fini: () -> Void
+        init(fini: @escaping () -> Void) { self.fini = fini }
+        func documentPicker(_ c: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { fini() }
+        func documentPickerWasCancelled(_ c: UIDocumentPickerViewController) { fini() }
     }
 }

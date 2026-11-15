@@ -9,6 +9,10 @@ import CryptoKit
 /// md Viewer l'échange aussitôt contre la clé du document, télécharge le document chiffré, le
 /// déchiffre sur l'appareil (AES-256-GCM) et l'affiche comme un document sans fichier.
 ///
+/// Version 2 du conteneur (demandée le 15/11/2026 au soir) : un FICHIER quelconque (une archive
+/// ZIP…), que md Viewer n'ouvre pas mais propose d'enregistrer — Téléchargements par défaut. Son
+/// nom et son type sont dans le chiffré, jamais sur la page publique.
+///
 /// Ce qui ne doit jamais arriver :
 /// - aller chercher autre chose que `https://ok-ia.ch` : md Viewer construit lui-même les deux
 ///   adresses, le lien ne porte que deux identifiants contrôlés ;
@@ -61,7 +65,7 @@ enum PartageOKia {
         case versionInconnue
         /// Échec de l'authentification AES-GCM, ou texte qui n'est pas de l'UTF-8.
         case illisible
-        /// Plus de 20 Mo.
+        /// Plus de 50 Mo (la borne du site).
         case tropGros
 
         var errorDescription: String? {
@@ -78,41 +82,93 @@ enum PartageOKia {
         }
     }
 
+    /// Ce qu'un partage contient : un document à lire (version 1) ou un fichier à enregistrer
+    /// (version 2).
+    enum Contenu: Equatable {
+        case document(String)
+        case fichier(Fichier)
+    }
+
+    /// Un fichier de version 2 : son nom (déjà rendu sûr pour un disque), son type, ses octets.
+    struct Fichier: Equatable {
+        let nom: String
+        let type: String
+        let octets: Data
+    }
+
     // MARK: Ouvrir
 
-    /// Échange le jeton (tout de suite, avant toute autre chose), télécharge le document et le
-    /// déchiffre. Rend le Markdown ; la clé n'existe que dans cette fonction.
-    static func ouvrir(_ lien: Lien, transport: TransportPartage) async throws -> String {
+    /// Échange le jeton (tout de suite, avant toute autre chose), télécharge le partage et le
+    /// déchiffre. La clé n'existe que dans cette fonction. `progression` reçoit la part reçue
+    /// (0…1) quand le serveur annonce la taille.
+    static func ouvrir(_ lien: Lien, transport: TransportPartage,
+                       progression: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> Contenu {
         let cle = try await transport.echanger(id: lien.id, jeton: lien.jeton)
-        let fichier = try await transport.telecharger(id: lien.id)
+        let fichier = try await transport.telecharger(id: lien.id, progression: progression)
         return try dechiffrer(fichier, cle: cle, id: lien.id)
     }
 
-    // MARK: Le format `document.okia`, version 1
+    // MARK: Le format `document.okia`, versions 1 et 2
 
     static let entete = Data("OKIA".utf8)
-    static let version: UInt8 = 1
-    static let tailleMax = 20 * 1024 * 1024
+    /// 1 : le texte clair est le Markdown, en UTF-8. 2 : un en-tête JSON d'une ligne, puis le fichier.
+    static let versions: Set<UInt8> = [1, 2]
+    /// Le site accepte 50 Mo ; le conteneur ajoute l'en-tête, le nonce, l'étiquette et (version 2)
+    /// la ligne JSON : 64 Kio de marge. Au-delà, il faudra la version 3 découpée.
+    static let tailleMax = 50 * 1024 * 1024 + 64 * 1024
+    /// La ligne JSON d'une version 2 ne dépasse jamais cela : au-delà, le fichier est mal formé.
+    static let enteteMax = 4096
 
     /// `OKIA` (4 octets), version (1), nonce (12), texte chiffré, étiquette (16). AAD :
-    /// `ok-ia.ch/p/<id>` — un fichier déplacé sous un autre identifiant ne s'ouvre pas.
-    static func dechiffrer(_ fichier: Data, cle: Data, id: String) throws -> String {
+    /// `ok-ia.ch/p/<id>` — un fichier déplacé sous un autre identifiant ne s'ouvre pas. La version
+    /// est contrôlée AVANT le déchiffrement : une version inconnue n'est pas « modifiée ».
+    static func dechiffrer(_ fichier: Data, cle: Data, id: String) throws -> Contenu {
         let f = Data(fichier)   // indices à partir de 0, quel que soit le découpage reçu
-        guard f.count >= 5, f.prefix(4) == entete, f[4] == version else { throw Erreur.versionInconnue }
+        guard f.count >= 5, f.prefix(4) == entete, versions.contains(f[4]) else { throw Erreur.versionInconnue }
         guard f.count >= 5 + 12 + 16, cle.count == 32 else { throw Erreur.illisible }
+        let clair: Data
         do {
             let nonce = try AES.GCM.Nonce(data: f[5..<17])
             let corps = f[17...]
             let boite = try AES.GCM.SealedBox(nonce: nonce, ciphertext: corps.dropLast(16), tag: corps.suffix(16))
-            let clair = try AES.GCM.open(boite, using: SymmetricKey(data: cle),
-                                         authenticating: Data("ok-ia.ch/p/\(id)".utf8))
-            guard let texte = String(data: clair, encoding: .utf8) else { throw Erreur.illisible }
-            return texte
-        } catch let e as Erreur {
-            throw e
+            clair = try AES.GCM.open(boite, using: SymmetricKey(data: cle),
+                                     authenticating: Data("ok-ia.ch/p/\(id)".utf8))
         } catch {
             throw Erreur.illisible
         }
+        if f[4] == 2 { return .fichier(try lireFichier(clair)) }
+        guard let texte = String(data: clair, encoding: .utf8) else { throw Erreur.illisible }
+        return .document(texte)
+    }
+
+    /// `{"nom":"archive.zip","type":"application/zip","taille":13838}\n<octets>` : découpé au
+    /// PREMIER saut de ligne, tout ce qui suit est le fichier, quoi qu'il contienne. La taille
+    /// annoncée doit être celle reçue.
+    static func lireFichier(_ clair: Data) throws -> Fichier {
+        let c = Data(clair)
+        guard let fin = c.prefix(enteteMax).firstIndex(of: 0x0A),
+              let objet = try? JSONSerialization.jsonObject(with: c[..<fin]) as? [String: Any],
+              let nom = objet["nom"] as? String,
+              let taille = (objet["taille"] as? NSNumber)?.intValue else { throw Erreur.illisible }
+        let octets = c[(fin + 1)...]
+        guard taille == octets.count else { throw Erreur.illisible }
+        let type = (objet["type"] as? String).map { String($0.prefix(200)) } ?? "application/octet-stream"
+        return Fichier(nom: nomSur(nom), type: type, octets: Data(octets))
+    }
+
+    /// Un nom de fichier qui ne sort pas du dossier choisi : dernier composant seulement, sans
+    /// séparateur, caractère de contrôle ni point en tête ; « partage » s'il ne reste rien.
+    static func nomSur(_ nom: String) -> String {
+        let interdits = CharacterSet(charactersIn: "/\\:").union(.controlCharacters).union(.newlines)
+        var n = String(String.UnicodeScalarView(nom.unicodeScalars.filter { !interdits.contains($0) }))
+            .trimmingCharacters(in: .whitespaces)
+        while n.hasPrefix(".") { n.removeFirst() }
+        if n.count > 120 {
+            let ext = (n as NSString).pathExtension
+            let base = (n as NSString).deletingPathExtension
+            n = ext.isEmpty || ext.count > 10 ? String(n.prefix(120)) : String(base.prefix(110)) + "." + ext
+        }
+        return n.isEmpty ? tr("partage") : n
     }
 
     /// Base64url sans `=` (RFC 4648 §5) vers des octets.
@@ -135,15 +191,61 @@ enum PartageOKia {
     }
 }
 
+/// Un fichier de partage (version 2), écrit dans un dossier temporaire à lui le temps que
+/// l'utilisateur choisisse où l'enregistrer ; effacé ensuite, enregistré ou non.
+struct FichierRecu: Identifiable, Sendable {
+    let id = UUID()
+    let dossier: URL
+    let url: URL
+
+    static func ecrire(_ f: PartageOKia.Fichier) throws -> FichierRecu {
+        purger()
+        let dossier = FileManager.default.temporaryDirectory
+            .appendingPathComponent("partage-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
+        let url = dossier.appendingPathComponent(f.nom, isDirectory: false)
+        #if os(iOS) && !targetEnvironment(macCatalyst)
+        try f.octets.write(to: url, options: [.atomic, .completeFileProtection])
+        #else
+        try f.octets.write(to: url, options: .atomic)
+        #endif
+        return FichierRecu(dossier: dossier, url: url)
+    }
+
+    func effacer() { try? FileManager.default.removeItem(at: dossier) }
+
+    /// Les copies qu'une app quittée en plein enregistrement aurait laissées.
+    static func purger() {
+        let tmp = FileManager.default.temporaryDirectory
+        for nom in (try? FileManager.default.contentsOfDirectory(atPath: tmp.path)) ?? [] where nom.hasPrefix("partage-") {
+            try? FileManager.default.removeItem(at: tmp.appendingPathComponent(nom, isDirectory: true))
+        }
+    }
+
+    /// Le dossier proposé d'abord : Téléchargements sur Mac (le vrai, hors du conteneur de l'app ;
+    /// c'est le panneau du système qui y écrit). Sur iPhone et iPad, le dernier dossier de Fichiers.
+    static var telechargements: URL? {
+        #if targetEnvironment(macCatalyst)
+        if let pw = getpwuid(getuid()), let home = pw.pointee.pw_dir {
+            return URL(fileURLWithPath: String(cString: home), isDirectory: true)
+                .appendingPathComponent("Downloads", isDirectory: true)
+        }
+        #endif
+        return nil
+    }
+}
+
 /// L'accès réseau du partage, derrière un protocole pour le tester sans serveur.
 protocol TransportPartage: Sendable {
     /// `POST https://ok-ia.ch/api/partage/<id>/cle` `{"jeton": …}` → la clé (32 octets).
     func echanger(id: String, jeton: String) async throws -> Data
-    /// `GET https://ok-ia.ch/p/<id>/document.okia` → le fichier chiffré.
-    func telecharger(id: String) async throws -> Data
+    /// `GET https://ok-ia.ch/p/<id>/document.okia` → le fichier chiffré, lu par morceaux ;
+    /// `progression` reçoit la part reçue (0…1).
+    func telecharger(id: String, progression: @escaping @Sendable (Double) -> Void) async throws -> Data
 }
 
-/// Le vrai transport : toujours `https://ok-ia.ch`, session éphémère, 20 s, 20 Mo au plus.
+/// Le vrai transport : toujours `https://ok-ia.ch`, session éphémère, 20 s de silence au plus,
+/// 50 Mo au plus.
 struct TransportOKia: TransportPartage {
     static let hote = "ok-ia.ch"
 
@@ -154,8 +256,8 @@ struct TransportOKia: TransportPartage {
         c.httpShouldSetCookies = false
         c.httpCookieAcceptPolicy = .never
         c.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        c.timeoutIntervalForRequest = 20
-        c.timeoutIntervalForResource = 20
+        c.timeoutIntervalForRequest = 20      // 20 s sans un octet
+        c.timeoutIntervalForResource = 600    // 50 Mo sur un réseau lent
         c.waitsForConnectivity = false
         return URLSession(configuration: c)
     }()
@@ -192,12 +294,12 @@ struct TransportOKia: TransportPartage {
         }
     }
 
-    func telecharger(id: String) async throws -> Data {
+    func telecharger(id: String, progression: @escaping @Sendable (Double) -> Void) async throws -> Data {
         guard PartageOKia.Lien.valide(id),
               let url = Self.adresse("/p/\(id)/document.okia") else { throw PartageOKia.Erreur.lienInvalide }
         var r = URLRequest(url: url)
         r.httpMethod = "GET"
-        let (donnees, reponse) = try await Self.appeler(r)
+        let (donnees, reponse) = try await Self.appeler(r, progression: progression)
         switch reponse.statusCode {
         case 200:
             guard donnees.count <= PartageOKia.tailleMax else { throw PartageOKia.Erreur.tropGros }
@@ -208,8 +310,9 @@ struct TransportOKia: TransportPartage {
         }
     }
 
-    /// L'appel, sans suivre une redirection hors d'ok-ia.ch, et borné à 20 Mo avant d'être lu.
-    private static func appeler(_ r: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    /// L'appel, sans suivre une redirection hors d'ok-ia.ch, et borné à 50 Mo avant d'être lu.
+    private static func appeler(_ r: URLRequest,
+                                progression: (@Sendable (Double) -> Void)? = nil) async throws -> (Data, HTTPURLResponse) {
         let flux: URLSession.AsyncBytes
         let reponse: URLResponse
         do {
@@ -220,13 +323,29 @@ struct TransportOKia: TransportPartage {
         guard let http = reponse as? HTTPURLResponse, http.url?.host == hote, http.url?.scheme == "https" else {
             throw PartageOKia.Erreur.injoignable
         }
-        if http.expectedContentLength > Int64(PartageOKia.tailleMax) { throw PartageOKia.Erreur.tropGros }
+        let attendu = http.expectedContentLength
+        if attendu > Int64(PartageOKia.tailleMax) { throw PartageOKia.Erreur.tropGros }
         var donnees = Data()
+        if attendu > 0 { donnees.reserveCapacity(Int(attendu)) }
+        // Par morceaux de 64 Kio : un octet à la fois coûterait des secondes sur 50 Mo.
+        var morceau = [UInt8]()
+        morceau.reserveCapacity(65_536)
+        var dernier = -1
+        func verser() throws {
+            donnees.append(contentsOf: morceau)
+            morceau.removeAll(keepingCapacity: true)
+            if donnees.count > PartageOKia.tailleMax { throw PartageOKia.Erreur.tropGros }
+            if let progression, attendu > 0 {
+                let p = min(100, Int(Int64(donnees.count) * 100 / attendu))
+                if p != dernier { dernier = p; progression(Double(p) / 100) }
+            }
+        }
         do {
             for try await octet in flux {
-                donnees.append(octet)
-                if donnees.count > PartageOKia.tailleMax { throw PartageOKia.Erreur.tropGros }
+                morceau.append(octet)
+                if morceau.count == 65_536 { try verser() }
             }
+            try verser()
         } catch let e as PartageOKia.Erreur {
             throw e
         } catch {
@@ -259,9 +378,14 @@ struct TransportVecteur: TransportPartage {
         }
         return k
     }
-    func telecharger(id: String) async throws -> Data {
+    func telecharger(id: String, progression: @escaping @Sendable (Double) -> Void) async throws -> Data {
         guard let d = try? Data(contentsOf: dossier.appendingPathComponent("partage-vecteur-test.okia")) else {
             throw PartageOKia.Erreur.partageRetire
+        }
+        // Une réception lente, pour voir la progression au simulateur.
+        for p in stride(from: 0.1, through: 1.0, by: 0.1) {
+            try await Task.sleep(nanoseconds: 400_000_000)
+            progression(p)
         }
         return d
     }

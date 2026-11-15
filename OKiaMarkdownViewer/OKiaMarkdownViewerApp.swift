@@ -177,27 +177,55 @@ final class DocumentStore: ObservableObject {
         }
     }
 
-    /// Échange le jeton tout de suite, télécharge et déchiffre le document sur l'appareil, puis
-    /// l'affiche comme un document sans fichier : ni récents, ni signet, ni trace de la clé.
+    /// Échange le jeton tout de suite, télécharge et déchiffre le partage sur l'appareil. Un
+    /// document (version 1) s'affiche comme un document sans fichier : ni récents, ni signet, ni
+    /// trace de la clé. Un fichier (version 2) ne s'ouvre pas : il se propose à l'enregistrement.
     private func ouvrirPartage(_ lien: PartageOKia.Lien, transport: TransportPartage = TransportOKia()) {
         let jeton = UUID()
         jetonOuverture = jeton
         errorMessage = nil
+        progressionPartage = nil
         ouverture = tr("Partage d'ok-ia.ch")
+        let progression: @Sendable (Double) -> Void = { p in
+            Task { @MainActor [weak self] in
+                guard let self, self.jetonOuverture == jeton else { return }
+                self.progressionPartage = p
+            }
+        }
         Task { [weak self] in
             do {
-                let markdown = try await PartageOKia.ouvrir(lien, transport: transport)
+                let contenu = try await PartageOKia.ouvrir(lien, transport: transport, progression: progression)
                 guard let self, self.jetonOuverture == jeton else { return }
-                self.ouverture = nil
-                self.document = MarkdownDocument(filename: self.sanitize(PartageOKia.titre(markdown)) + ".md", text: markdown)
+                switch contenu {
+                case .document(let markdown):
+                    self.finPartage()
+                    self.document = MarkdownDocument(filename: self.sanitize(PartageOKia.titre(markdown)) + ".md", text: markdown)
+                case .fichier(let fichier):
+                    // Jusqu'à 50 Mo à écrire : hors du fil de l'écran.
+                    let recu = try? await Task.detached(priority: .userInitiated) { try FichierRecu.ecrire(fichier) }.value
+                    guard self.jetonOuverture == jeton else { recu?.effacer(); return }
+                    self.finPartage()
+                    if let recu { self.fichierRecu = recu } else { self.errorMessage = tr("Impossible d'enregistrer le fichier.") }
+                }
             } catch {
                 guard let self, self.jetonOuverture == jeton else { return }
-                self.ouverture = nil
+                self.finPartage()
                 self.errorMessage = (error as? PartageOKia.Erreur)?.errorDescription
                     ?? PartageOKia.Erreur.injoignable.errorDescription
             }
         }
     }
+
+    private func finPartage() {
+        ouverture = nil
+        progressionPartage = nil
+    }
+
+    /// La part reçue d'un partage (0…1), montrée dans le bandeau ; nil hors réception.
+    @Published private(set) var progressionPartage: Double?
+    /// Un fichier de partage (version 2), déchiffré dans un dossier temporaire, en attente du
+    /// dossier où l'enregistrer. La feuille d'enregistrement efface la copie en se fermant.
+    @Published var fichierRecu: FichierRecu?
 
     /// Downloads a remote Markdown report (HTTPS) and renders it.
     func openRemote(_ url: URL) {
@@ -668,6 +696,8 @@ struct OKiaMarkdownViewerApp: App {
         DocumentStore.principal = store
         // Share the running store with App Intents (Siri / Spotlight / Shortcuts).
         AppDependencyManager.shared.add(dependency: store)
+        // Un fichier de partage resté en clair dans tmp (app quittée pendant l'enregistrement).
+        DispatchQueue.global(qos: .utility).async { FichierRecu.purger() }
         // Option Analytic (1.4) : ce qui est acheté, et les achats qui arrivent d'ailleurs.
         AchatAnalytic.partage.demarrer()
         // La recherche dans le coffre et Spotlight lisent le coffre de l'app.
