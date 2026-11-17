@@ -17,6 +17,11 @@ struct VaultSectionView: View {
     @ObservedObject private var partage = CoffrePartage.partage
     @State private var erreurICloud = false
     @Environment(\.accueilEnGrille) private var enGrille
+    @Environment(\.scenePhase) private var phase
+    @Environment(\.openURL) private var ouvrirURL
+
+    /// L'app Fichiers (iPhone, iPad).
+    static let appFichiers = URL(string: "shareddocuments://")!
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
@@ -47,10 +52,33 @@ struct VaultSectionView: View {
                 .ligneAccueil()
             } else if vault.injoignable {
                 // Le plus souvent un dossier partagé d'un autre Mac, déconnecté (Patrick, 11/11/2026).
-                Text(tr("Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis rechargez le coffre (↻)."))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .ligneAccueil()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(tr("Le dossier du coffre ne répond pas. S’il est partagé par un autre ordinateur, vérifiez que celui-ci est allumé et que le partage est connecté, puis rechargez le coffre (↻)."))
+                        .foregroundStyle(.secondary)
+                    // Le repli (Patrick, 17/11/2026 : « Ajouter le repli ») : sur iPhone et iPad,
+                    // c'est Fichiers qui tient la connexion au serveur, et ↻ peut ne pas suffire à
+                    // la rétablir. Un toucher sur le serveur, dans Fichiers, la rétablit ; au retour
+                    // dans md Viewer, le coffre est relu de lui-même.
+                    HStack(spacing: 16) {
+                        Button { Task { await vault.rafraichirEnArrierePlan(forcee: true) } } label: {
+                            Label(tr("Reconnecter"), systemImage: "arrow.clockwise")
+                        }
+                        .disabled(vault.enLecture)
+                        #if !targetEnvironment(macCatalyst)
+                        Button { ouvrirURL(VaultSectionView.appFichiers) } label: {
+                            Label(tr("Ouvrir Fichiers"), systemImage: "folder")
+                        }
+                        #endif
+                    }
+                    .buttonStyle(.borderless)
+                    #if !targetEnvironment(macCatalyst)
+                    Text(tr("Dans Fichiers, touchez le serveur pour le reconnecter, puis revenez ici."))
+                        .foregroundStyle(.secondary)
+                    #endif
+                }
+                .font(.footnote)
+                .tint(orange)
+                .ligneAccueil()
             } else if vault.reports.isEmpty && vault.enLecture {
                 // Un partage lointain met du temps à répondre : on le dit, plutôt qu'un coffre vide.
                 HStack(spacing: 8) {
@@ -138,6 +166,13 @@ struct VaultSectionView: View {
             .tint(orange)
             .textCase(nil)
             .enTeteAccueil()
+        }
+        // De retour au premier plan (depuis Fichiers, le plus souvent), un coffre qui ne répondait
+        // pas est relu, en laissant le système remonter le partage : l'utilisateur n'a plus à
+        // toucher ↻.
+        .onChange(of: phase) { _, p in
+            guard p == .active, vault.hasFolder, vault.injoignable else { return }
+            Task { await vault.rafraichirEnArrierePlan(forcee: true) }
         }
         .alert(tr("iCloud Drive n’est pas disponible"), isPresented: $erreurICloud) {
             Button("OK", role: .cancel) {}

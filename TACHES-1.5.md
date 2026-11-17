@@ -193,6 +193,11 @@ Patrick : « il faut ajouter un bouton pour forcer le rechargement du coffre. »
 - [x] Au simulateur (iPad, 300 ms par dossier) : un fichier ajouté au coffre de test apparaît sous
       « Aujourd'hui » après ↻ ; à 2 s par dossier, la roue remplace ↻ pendant la lecture.
 - [ ] À essayer : le remontage d'un partage de l'iMac déconnecté (Mac, puis iPad).
+- [x] Repli (Patrick, 17/11/2026 : « Ajouter le repli ») : sous « ne répond pas », « Reconnecter »
+      et, sur iPhone et iPad, « Ouvrir Fichiers » (on y touche le serveur pour le reconnecter) ; au
+      retour au premier plan, un coffre injoignable est relu en laissant le système le remonter.
+      Au simulateur : coffre rendu illisible → message et boutons ; Fichiers s'ouvre ; coffre
+      rétabli → au retour, la liste revient sans toucher ↻.
 
 ## Un graphique Mermaid en erreur de syntaxe (signalé par Patrick le 12 novembre 2026)
 
