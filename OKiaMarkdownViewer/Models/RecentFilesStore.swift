@@ -107,6 +107,14 @@ final class RecentFilesStore: ObservableObject {
         return u
     }
 
+    /// Pour la vignette d'une carte : le fichier résolu, sinon le chemin noté dans son signet (un
+    /// partage déconnecté) — assez pour retrouver la vignette gardée.
+    func cheminPourVignette(_ item: RecentFile) async -> URL? {
+        if let u = await resoudreHorsFil(item) { return u }
+        return item.bookmark.flatMap { URL.resourceValues(forKeys: [.pathKey], fromBookmarkData: $0)?.path }
+            .map { URL(fileURLWithPath: $0) }
+    }
+
     /// Pour ouvrir un récent : la résolution se fait hors du fil principal, et peut monter le volume
     /// (au contraire de `resoudreHorsFil`) — on attend ce document-là, le bandeau d'ouverture le dit.
     func resoudrePourOuvrir(_ item: RecentFile) async -> URL? {

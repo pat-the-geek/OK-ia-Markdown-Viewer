@@ -489,3 +489,17 @@ préparé par la session « Gestion de OK-ia.ch » ; il n'est pas encore en lign
       l'alerte dit « Ce partage a expiré ou a été retiré. ». Mac Catalyst compilé.
 - [ ] Essai de bout en bout avec le partage d'essai que publiera la session « Gestion de OK-ia.ch ».
 - [ ] Plus tard (consigne § 7) : lien universel `applinks:ok-ia.ch`, scanner intégré (VisionKit).
+
+## Les vignettes gardées (Patrick, 18 novembre 2026)
+
+Patrick : « Est-ce que on conserve les vignettes en cache », puis « Corrige ».
+
+- [x] Une fiche et une vignette par chemin (`Caches/Vignettes-2`), la date de modification du
+      document dans la fiche : un document modifié remplace sa vignette au lieu d'en ajouter une.
+- [x] Un document qui ne répond pas (partage déconnecté) garde sa dernière vignette ; une carte du
+      coffre ou un récent qu'on ne peut résoudre prend le chemin noté dans son signet.
+- [x] Ménage au lancement : l'ancien dossier `Vignettes` retiré (recalcul une fois), les vignettes
+      qu'aucune carte n'a montrées depuis 60 jours effacées.
+- [x] Au simulateur : coffre illisible au lancement → vignette et titre gardés ; document modifié →
+      nouvelle vignette, même fichier ; vieille fiche et ancien dossier effacés.
+- [ ] À essayer : l'iPad avec le partage de l'iMac déconnecté au lancement.

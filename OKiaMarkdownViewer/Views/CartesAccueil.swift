@@ -48,7 +48,10 @@ struct ApercuDocument {
 }
 
 /// Les aperçus, calculés hors du fil principal et gardés : en mémoire, et sur le disque (le dossier
-/// des caches, par chemin et date de modification) — un document qui change est relu.
+/// des caches, une fiche et une vignette par chemin). La fiche garde la date de modification du
+/// document : un document qui change est relu, et sa vignette remplace l'ancienne. Un document
+/// qu'on ne peut pas lire — un partage réseau déconnecté — garde sa dernière vignette (Patrick,
+/// 18/11/2026 : « Est-ce que on conserve les vignettes en cache », puis « Corrige »).
 @MainActor
 final class ApercusDocuments {
     static let partage = ApercusDocuments()
@@ -87,25 +90,64 @@ final class ApercusDocuments {
         /// La règle de la clé : 2 depuis la 1.5, où les commentaires ne comptent plus. Absente,
         /// la clé gardée est à recalculer.
         var regle: Int?
+        /// La date de modification du document lu (secondes depuis 1970).
+        var modif: Double?
     }
 
+    nonisolated private static var caches: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+    }
+
+    /// « Vignettes-2 » : une fiche par chemin. « Vignettes », l'ancien dossier, en avait une par
+    /// chemin et date de modification, jamais effacée ; `menage()` le retire.
     nonisolated private static var dossierCache: URL? {
-        guard let d = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("Vignettes", isDirectory: true) else { return nil }
+        guard let d = caches?.appendingPathComponent("Vignettes-2", isDirectory: true) else { return nil }
         try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
         return d
+    }
+
+    /// Une vignette qu'aucune carte n'a montrée depuis ce temps est effacée : son document a été
+    /// supprimé, déplacé ou renommé.
+    nonisolated static let dureeOubli: TimeInterval = 60 * 24 * 3600
+
+    /// Au lancement, hors du fil principal : l'ancien dossier, puis les vignettes oubliées.
+    nonisolated static func menage() {
+        let fm = FileManager.default
+        if let ancien = caches?.appendingPathComponent("Vignettes", isDirectory: true),
+           fm.fileExists(atPath: ancien.path) {
+            try? fm.removeItem(at: ancien)
+        }
+        guard let d = dossierCache,
+              let fichiers = try? fm.contentsOfDirectory(at: d, includingPropertiesForKeys: [.contentModificationDateKey]) else { return }
+        let limite = Date().addingTimeInterval(-dureeOubli)
+        for f in fichiers where f.pathExtension == "json" {
+            guard let vue = (try? f.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate,
+                  vue < limite else { continue }
+            try? fm.removeItem(at: f)
+            try? fm.removeItem(at: f.deletingPathExtension().appendingPathExtension("jpg"))
+        }
+    }
+
+    /// Une fiche lue reste « vue » : sa date est rafraîchie, au plus une fois par jour.
+    nonisolated private static func marquerVue(_ fiche: URL) {
+        let vue = (try? fiche.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+        guard Date().timeIntervalSince(vue) > 24 * 3600 else { return }
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: fiche.path)
     }
 
     nonisolated private static func calculer(_ url: URL, portee: URL?) -> ApercuDocument {
         let acces = portee?.startAccessingSecurityScopedResource() ?? false
         defer { if acces { portee?.stopAccessingSecurityScopedResource() } }
         let nom = url.deletingPathExtension().lastPathComponent
-        let modif = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-        let empreinte = SHA256.hash(data: Data((url.path + "|\(modif.timeIntervalSince1970)").utf8))
-            .map { String(format: "%02x", $0) }.joined()
+        // Nil : le document ne répond pas (un partage déconnecté) — la fiche gardée vaut alors.
+        let modif = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)?
+            .timeIntervalSince1970
+        let empreinte = SHA256.hash(data: Data(url.path.utf8)).map { String(format: "%02x", $0) }.joined()
         let fiche = dossierCache?.appendingPathComponent(empreinte + ".json")
         let vignette = dossierCache?.appendingPathComponent(empreinte + ".jpg")
-        if let fiche, let d = try? Data(contentsOf: fiche), var f = try? JSONDecoder().decode(Fiche.self, from: d) {
+        if let fiche, let d = try? Data(contentsOf: fiche), var f = try? JSONDecoder().decode(Fiche.self, from: d),
+           modif == nil || f.modif == modif {
+            marquerVue(fiche)
             let image = f.image ? vignette.flatMap { UIImage(contentsOfFile: $0.path) }.map(prete) : nil
             if f.cle == nil || f.regle != 2, let donnees = try? Data(contentsOf: url) {
                 f.cle = IdentiteDocument.cle(fichier: url, octets: donnees)
@@ -116,7 +158,9 @@ final class ApercusDocuments {
             return ApercuDocument(image: image, titre: f.titre, extrait: f.extrait, origine: f.origine,
                                   cleAnnotations: f.cle, cleAncienne: f.cleAncienne)
         }
-        // Un document encore dans iCloud (pas téléchargé) : son nom seul.
+        // Un document encore dans iCloud (pas téléchargé) : son nom seul. La vignette d'une version
+        // précédente est retirée : elle ne correspond plus.
+        if let vignette { try? FileManager.default.removeItem(at: vignette) }
         guard let donnees = try? Data(contentsOf: url), let texte = String(data: donnees, encoding: .utf8) else {
             return ApercuDocument(image: nil, titre: nom, extrait: "", origine: nil)
         }
@@ -129,7 +173,7 @@ final class ApercusDocuments {
             if let vignette, let jpeg = image.jpegData(compressionQuality: 0.78) { try? jpeg.write(to: vignette) }
         }
         if let fiche, let d = try? JSONEncoder().encode(Fiche(titre: a.titre, extrait: a.extrait, origine: a.origine, image: a.image != nil, cle: a.cleAnnotations,
-                                                                 cleAncienne: a.cleAncienne, regle: 2)) {
+                                                                 cleAncienne: a.cleAncienne, regle: 2, modif: modif)) {
             try? d.write(to: fiche)
         }
         return a

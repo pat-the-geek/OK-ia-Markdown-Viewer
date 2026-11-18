@@ -241,7 +241,7 @@ struct VaultSectionView: View {
 
     /// Le fichier d'une carte et la racine dont il faut ouvrir l'accès, résolus hors du fil principal.
     private func resoudre(_ report: VaultReport) async -> (url: URL, portee: URL?)? {
-        guard report.downloaded, let r = await vault.racineHorsFil() else { return nil }
+        guard report.downloaded, let r = await vault.racinePourVignettes() else { return nil }
         return (r.appendingPathComponent(report.subfolder).appendingPathComponent(report.name), r)
     }
 

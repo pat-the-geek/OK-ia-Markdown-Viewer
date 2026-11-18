@@ -719,6 +719,7 @@ struct OKiaMarkdownViewerApp: App {
         AppDependencyManager.shared.add(dependency: store)
         // Un fichier de partage resté en clair dans tmp (app quittée pendant l'enregistrement).
         DispatchQueue.global(qos: .utility).async { FichierRecu.purger() }
+        DispatchQueue.global(qos: .background).async { ApercusDocuments.menage() }
         // Option Analytic (1.4) : ce qui est acheté, et les achats qui arrivent d'ailleurs.
         AchatAnalytic.partage.demarrer()
         // La recherche dans le coffre et Spotlight lisent le coffre de l'app.

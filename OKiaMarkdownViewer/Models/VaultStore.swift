@@ -274,6 +274,20 @@ final class VaultStore: ObservableObject {
         return u
     }
 
+    /// La racine pour les vignettes de l'accueil : la résolue, sinon le chemin noté dans le signet.
+    /// Un partage déconnecté ne se résout pas sans être monté ; son chemin suffit à retrouver les
+    /// vignettes gardées (`ApercusDocuments`), sans toucher au réseau.
+    func racinePourVignettes() async -> URL? {
+        if let r = await racineHorsFil() { return r }
+        return bookmark.flatMap(Self.cheminNote)
+    }
+
+    /// Le chemin que le signet a noté, lu sans le résoudre.
+    nonisolated static func cheminNote(_ signet: Data) -> URL? {
+        URL.resourceValues(forKeys: [.pathKey], fromBookmarkData: signet)?.path
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+    }
+
     /// La racine du coffre si `url` s'y trouve — l'accès à ouvrir pour lire ce fichier (un document
     /// importé dans « coffre md viewer », 1.5.1). Nil ailleurs.
     func portee(de url: URL) -> URL? {
