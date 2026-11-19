@@ -148,7 +148,10 @@ dès le build 165).
   passe par titre (le premier saut décale la suite), sauf s'il ouvre sa page ou si quelque chose
   est dessiné sous lui — une image n'a pas de texte, les pixels de la page le disent
   (`ReaderWebController.strandedHeadingIDs`). Images `data:`, SVG en base64 et `<svg>` en clair y
-  sont, centrés.
+  sont, centrés. Depuis la 1.5.1 (build 185), les **liens restent cliquables** dans le PDF
+  (`LiensPDF`) et les sections repliées (`<details>`) sont dépliées le temps de l'impression.
+- **Export ePub** (1.5.1, pour tous) : menu **Partager → « Exporter en ePub »**, un livre ePub 3
+  à lire dans Livres — voir « Export Word, PowerPoint et ePub ».
 - **Export Office (Word / PowerPoint)** : le **Rapport** s'exporte en **`.docx`** (titres, gras/italique,
   citations, listes, **tableaux éditables**, images + diagrammes) ; le **Diaporama** s'exporte en
   **`.pptx` mixte** (texte éditable + **tableaux éditables** + images/diagrammes rasterisés). Générateur
@@ -201,7 +204,7 @@ dans `ReaderView.swift`.
 
 ---
 
-## Export Word (.docx) & PowerPoint (.pptx)
+## Export Word (.docx), PowerPoint (.pptx) et ePub
 
 Deux exports « bureautique », via un **générateur OOXML maison sans dépendance**
 ([`Models/OOXMLExport.swift`](OKiaMarkdownViewer/Models/OOXMLExport.swift) — écriture ZIP + builders
@@ -223,6 +226,19 @@ télécharge les images distantes (natif, sans souci CORS), **décode les images
 documents importés (1.5 : elles disparaissaient de l'export), les dimensionne, puis appelle
 `DocxBuilder` / `PptxBuilder` ; le fichier part dans la share sheet. Bancs :
 `tools/render-tests/export-images.html`, `notes.html`.
+
+- **Rapport → ePub 3 (`.epub`)** (1.5.1, build 185, pour tous) : menu **Partager → « Exporter en
+  ePub »**. Tiré des mêmes blocs que l'export Word ([`Models/EPUBExport.swift`](OKiaMarkdownViewer/Models/EPUBExport.swift)) :
+  table des matières des titres `#` et `##`, images téléchargées et embarquées, diagrammes en PNG,
+  cartes `leaflet` en JPEG avec leur légende, liens gardés ; une image introuvable laisse son texte
+  alternatif. Métadonnées : l'en-tête YAML (`titre`, `langue`, `date`, `auteur`), sinon le titre, la
+  langue détectée et le jour. Le livre s'ouvre dans Livres sur iPhone, iPad et Mac.
+- **Les cartes HTML des dossiers fornews** (bandeau, sources, coupures, échéances, déroulé) passent
+  dans l'ePub et le Word : une carte qui ne porte que du texte devient un paragraphe, ses morceaux
+  séparés par « · » dans une rangée et par un retour à la ligne ailleurs ; les pastilles d'initiales
+  et ce qui porte `aria-hidden="true"` sont ignorés ; l'image d'un fond CSS est embarquée.
+- **Où le fichier arrive** : sur Mac, PDF, Word et ePub s'enregistrent par un panneau ; sur iPhone
+  et iPad, par la feuille de partage.
 
 > **Couverture des 4 cibles** : `.docx` s'ouvre dans **Word et Pages** ; `.pptx` s'ouvre dans
 > **PowerPoint et Keynote** (import OOXML d'Apple). Les formats Apple natifs `.key`/`.pages` (fermés)
@@ -1714,6 +1730,10 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; numérotée **1.5.1** 
 - **Pris de la 1.7** (12/11) : le **point de la semaine** (segment « Semaine » de l'analyse du
   coffre) et l'**import Excel, CSV, Pages, Keynote et Numbers** (option Analytic) — détails dans
   `TACHES-1.6.md`.
+- **Export ePub et liens cliquables du PDF** (19/11, build 185, pour tous) : demandés par la
+  session fornews pour ses dossiers ; essayés sur trois vrais dossiers (rapport de veille, revue de
+  presse, présentation) — voir « Export Word, PowerPoint et ePub ». Reste à essayer : l'ePub dans
+  Livres et le panneau d'enregistrement sur Mac.
 - **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
   coffre en `rapports-*`).
 
