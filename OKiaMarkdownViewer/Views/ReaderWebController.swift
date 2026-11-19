@@ -348,13 +348,38 @@ final class ReaderWebController: ObservableObject {
                         return (id, text)
                     }
                 }
-                self.renderPass(webView, headings: headings, attempt: 0) { url in
-                    webView.evaluateJavaScript("window.OKIA && window.OKIA.unfreezeMaps();") { _, _ in
-                        completion(url)
+                self.liensDuDocument(webView) { liens in
+                    self.renderPass(webView, headings: headings, attempt: 0) { url in
+                        webView.evaluateJavaScript("window.OKIA && window.OKIA.unfreezeMaps();") { _, _ in
+                            completion(url.map { Self.avecLiens($0, liens) })
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// Les liens du document (texte et adresse, dans l'ordre), à reposer dans le PDF (`LiensPDF`).
+    private func liensDuDocument(_ webView: WKWebView, completion: @escaping ([LiensPDF.Lien]) -> Void) {
+        let js = """
+            return JSON.stringify(Array.prototype.slice.call(document.querySelectorAll('#content a[href]'))
+              .filter(function (a) { return /^(https?:|mailto:)/i.test(a.getAttribute('href')) && !a.closest('.fn-ref'); })
+              .map(function (a) { return [a.textContent.replace(/\\s+/g, ' ').trim(), a.href]; }));
+            """
+        webView.callAsyncJavaScript(js, in: nil, in: .page) { result in
+            guard case .success(let value) = result, let json = value as? String,
+                  let paires = (try? JSONSerialization.jsonObject(with: Data(json.utf8))) as? [[String]]
+            else { completion([]); return }
+            completion(paires.compactMap { $0.count == 2 && !$0[0].isEmpty ? LiensPDF.Lien(texte: $0[0], adresse: $0[1]) : nil })
+        }
+    }
+
+    /// Le PDF final, avec ses liens cliquables : le moteur d'impression les dessine sans leurs
+    /// adresses (1.5.1). En cas d'échec, le PDF tel quel.
+    private static func avecLiens(_ url: URL, _ liens: [LiensPDF.Lien]) -> URL {
+        guard !liens.isEmpty, let doc = PDFDocument(url: url), LiensPDF.poser(liens, dans: doc) > 0 else { return url }
+        _ = doc.write(to: url)
+        return url
     }
 
     /// Draw the PDF, look for headings left stranded at the foot of a page, mark those for a
@@ -407,15 +432,26 @@ final class ReaderWebController: ObservableObject {
             let lines = text.components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-            guard let last = lines.last, lines.count > 1 else { continue }
-            // The PDF may wrap a long heading, so compare on a prefix rather than equality.
-            guard let item = headings.first(where: { headingMatches($0.text, last) }) else { continue }
-            if lines.first.map({ headingMatches(item.text, $0) }) == true { continue }
-            let range = (text as NSString).range(of: last, options: .backwards)
-            if range.location != NSNotFound,
-               let bounds = page.selection(for: range)?.bounds(for: page),
-               Self.dessinSous(bounds.minY, page: page) { continue }
-            ids.append(item.id)
+            guard lines.count > 1 else { continue }
+            // Le dernier titre dessiné sur la page, cherché par sa position et non comme la dernière
+            // ligne du texte : PDFKit lit un tableau colonne par colonne, et un titre placé sous un
+            // tableau n'en sortait pas dernier (19/11/2026 : « Carte des lieux » resté seul en bas
+            // de page sous la frise d'un dossier fornews).
+            let haut = page.bounds(for: .mediaBox).height
+            var dernier: (id: String, minY: CGFloat)?
+            for item in headings {
+                // Le début du titre suffit : le PDF peut le couper sur deux lignes.
+                let debut = String(item.text.prefix(40)).trimmingCharacters(in: .whitespaces)
+                guard debut.count > 3 else { continue }
+                let range = (text as NSString).range(of: debut, options: .backwards)
+                guard range.location != NSNotFound,
+                      let bounds = page.selection(for: range)?.bounds(for: page) else { continue }
+                // Un titre qui ouvre sa page n'est jamais isolé.
+                if bounds.maxY > haut - 70 { continue }
+                if dernier == nil || bounds.minY < dernier!.minY { dernier = (item.id, bounds.minY) }
+            }
+            // Isolé : rien de dessiné sous lui jusqu'à la marge du bas (ni texte, ni image).
+            if let d = dernier, !Self.dessinSous(d.minY, page: page) { ids.append(d.id) }
         }
         return ids
     }
@@ -453,13 +489,6 @@ final class ReaderWebController: ObservableObject {
             }
         }
         return false
-    }
-
-    private func headingMatches(_ heading: String, _ line: String) -> Bool {
-        let a = heading.trimmingCharacters(in: .whitespacesAndNewlines)
-        let b = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard a.count > 3, b.count > 3 else { return a == b }
-        return a == b || a.hasPrefix(b) || b.hasPrefix(a)
     }
 
     private func renderPDF(_ webView: WKWebView, completion: @escaping (URL?) -> Void) {

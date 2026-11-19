@@ -2333,10 +2333,14 @@
     if (!text) return;
     var last = out[out.length - 1];
     // Un appel de note reste seul dans son run : il deviendra une note de fin.
-    if (last && !last.note && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code) {
+    if (last && !last.note && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code
+        && (last.lien || '') === (fmt.lien || '')) {
       last.text += text;
     } else {
-      out.push({ text: text, bold: !!fmt.bold, italic: !!fmt.italic, code: !!fmt.code });
+      var run = { text: text, bold: !!fmt.bold, italic: !!fmt.italic, code: !!fmt.code };
+      // L'adresse d'un lien (ePub, 1.5.1) : Word et PowerPoint l'ignorent.
+      if (fmt.lien) run.lien = fmt.lien;
+      out.push(run);
     }
   }
 
@@ -2355,7 +2359,8 @@
         continue;
       }
       if (tag === 'A' && c.classList.contains('fn-back')) continue;
-      var f = { bold: fmt.bold, italic: fmt.italic, code: fmt.code };
+      var f = { bold: fmt.bold, italic: fmt.italic, code: fmt.code, lien: fmt.lien };
+      if (tag === 'A' && /^(https?:|mailto:)/i.test(c.getAttribute('href') || '')) f.lien = c.getAttribute('href');
       if (tag === 'STRONG' || tag === 'B') f.bold = true;
       if (tag === 'EM' || tag === 'I') f.italic = true;
       if (tag === 'CODE' && node.tagName !== 'PRE') f.code = true;
@@ -2720,7 +2725,8 @@
     // un SVG, un PNG dessiné ici.
     function blocImage(img) {
       var src = img.currentSrc || img.src || '';
-      var bloc = { t: 'image', src: src, w: img.naturalWidth, h: img.naturalHeight, caption: [] };
+      var bloc = { t: 'image', src: src, w: img.naturalWidth, h: img.naturalHeight, caption: [],
+                   alt: (img.getAttribute('alt') || img.getAttribute('title') || '').trim() };
       if (estSVG(src)) {
         bloc.src = /^https?:/i.test(src) ? src : null;
         tasks.push(imgToPng(img).then(function (res) {
@@ -2824,7 +2830,7 @@
 
     return Promise.all(tasks).then(function () {
       // drop images that failed to rasterise and have no src
-      return blocks.filter(function (b) { return b.t !== 'image' || b.png || b.jpeg || b.src; });
+      return blocks.filter(function (b) { return b.t !== 'image' || b.png || b.jpeg || b.src || b.alt; });
     });
   }
 

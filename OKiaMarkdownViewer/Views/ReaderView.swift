@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import StoreKit
+import NaturalLanguage
 #if canImport(FoundationModels)
 import FoundationModels   // Apple Intelligence on-device model (iOS 26 / macOS 26+)
 #endif
@@ -421,6 +422,17 @@ struct ReaderView: View {
                     }
                 }
             }
+            // OKIA_EXPORT_EPUB : de même pour l'ePub (1.5.1), dans export-essai.epub.
+            if ProcessInfo.processInfo.environment["OKIA_EXPORT_EPUB"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                    exportEpub { url in
+                        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+                        let cible = docs.appendingPathComponent("export-essai.epub")
+                        try? FileManager.default.removeItem(at: cible)
+                        try? FileManager.default.copyItem(at: url, to: cible)
+                    }
+                }
+            }
             // OKIA_EXPORT_PDF : exporte le document en PDF dans les documents de l'app, sans la feuille
             // de partage — pour vérifier ce que le PDF garde (les annotations, 1.4).
             if ProcessInfo.processInfo.environment["OKIA_EXPORT_PDF"] != nil {
@@ -499,7 +511,7 @@ struct ReaderView: View {
             EntitesView(document: document, analyse: analyseEntites, surChoix: chercherEntite)
         }
         .sheet(item: $sharePayload) { payload in
-            ShareSheet(items: [payload.url])
+            ShareSheet(items: [payload.url], enregistrer: payload.enregistrer) { sharePayload = nil }
         }
         .sheet(isPresented: $showSummary) {
             DocumentSummaryView(sourceTitle: title.isEmpty ? document.filename : title,
@@ -1351,6 +1363,7 @@ struct ReaderView: View {
     @ViewBuilder private var elementsPartage: some View {
         Button { exportPDF() } label: { Label(tr("Exporter en PDF"), systemImage: "doc.richtext") }
         Button { exportWord() } label: { Label(tr("Exporter en Word (.docx)"), systemImage: "doc.text") }
+        Button { exportEpub() } label: { Label(tr("Exporter en ePub"), systemImage: "book") }
         Button { shareMarkdown() } label: { Label(tr("Partager le Markdown (.md)"), systemImage: "number") }
     }
 
@@ -1588,7 +1601,7 @@ struct ReaderView: View {
         web.avecMentionExport(mentionExport) { fini in
             web.exportPDF { url in
                 fini()
-                if let url { sharePayload = SharePayload(url: url) }
+                if let url { sharePayload = SharePayload(url: url, enregistrer: true) }
             }
         }
     }
@@ -1604,10 +1617,46 @@ struct ReaderView: View {
                     guard let data else { return }
                     let safe = name.replacingOccurrences(of: "/", with: "-")
                     let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).docx")
-                    do { try data.write(to: url); sharePayload = SharePayload(url: url) } catch { /* ignore */ }
+                    do { try data.write(to: url); sharePayload = SharePayload(url: url, enregistrer: true) } catch { /* ignore */ }
                 }
             }
         }
+    }
+
+    /// Un livre ePub 3 (1.5.1 ; Patrick, 19/11/2026, pour les dossiers de fornews) : les blocs de
+    /// l'export Word, images embarquées, table des matières tirée des # et des ##. Titre, langue,
+    /// date et auteur viennent de l'en-tête YAML s'il y en a un. Une traduction affichée porte la
+    /// langue de la traduction.
+    private func exportEpub(vers fin: ((URL) -> Void)? = nil) {
+        let base = title.isEmpty ? document.filename.replacingOccurrences(of: ".md", with: "") : title
+        let name = base + suffixeLangue
+        let traduit = mentionExport != nil
+        let texte = document.text
+        web.avecMentionExport(mentionExport) { fini in
+            web.buildExportModel { model in
+                fini()
+                guard let model else { return }
+                var meta = EpubMeta.depuis(markdown: texte, titre: base,
+                                           langue: Self.langueDominante(texte) ?? Localization.shared.code)
+                if traduit { meta.langue = Localization.shared.code; meta.titre = base }
+                OOXMLExportBridge.buildEpub(meta: meta, model: model) { data in
+                    guard let data else { return }
+                    let safe = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+                    let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safe).epub")
+                    do {
+                        try data.write(to: url)
+                        if let fin { fin(url) } else { sharePayload = SharePayload(url: url, enregistrer: true) }
+                    } catch { /* ignore */ }
+                }
+            }
+        }
+    }
+
+    /// La langue du texte (code ISO 639-1), pour l'ePub d'un document sans en-tête.
+    private static func langueDominante(_ texte: String) -> String? {
+        let r = NLLanguageRecognizer()
+        r.processString(String(texte.prefix(4000)))
+        return r.dominantLanguage.map { $0.rawValue }.flatMap { $0 == "und" ? nil : $0 }
     }
 
     /// Le Markdown partagé reste la source, toujours : c'est le fichier lui-même, et il

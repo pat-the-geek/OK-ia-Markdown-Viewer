@@ -26,6 +26,8 @@ struct OOXMLRun: Equatable {
     /// `green`, `magenta`, `cyan`), et la couleur d'un soulignement (hexadécimal).
     var surligne: String? = nil
     var souligne: String? = nil
+    /// L'adresse d'un lien (`https:`, `mailto:`) : l'ePub la garde cliquable (1.5.1).
+    var lien: String? = nil
 }
 
 /// Un commentaire de relecture (1.4) : une note manuscrite de l'utilisateur, ancrée à un bloc.
@@ -48,6 +50,8 @@ struct OOXMLImage: Equatable {
     var widthPx: Int
     var heightPx: Int
     var isPNG: Bool            // true → png, false → jpeg
+    /// Le texte alternatif de l'image du document (l'ePub le garde, 1.5.1).
+    var alt = ""
 }
 
 /// A document/slide block in reading order.
@@ -966,7 +970,8 @@ enum OOXMLExportBridge {
                                 bold: $0["bold"] as? Bool ?? false,
                                 italic: $0["italic"] as? Bool ?? false,
                                 code: $0["code"] as? Bool ?? false,
-                                note: $0["note"] as? String) }
+                                note: $0["note"] as? String,
+                                lien: $0["lien"] as? String) }
     }
 
     private static func image(_ d: [String: Any], _ downloaded: [String: OOXMLImage]) -> OOXMLImage? {
@@ -1029,7 +1034,10 @@ enum OOXMLExportBridge {
             let rows = (d["rows"] as? [Any] ?? []).map { row in (row as? [Any] ?? []).map { runs($0) } }
             return .table(rows: rows)
         case "image":
-            if let img = image(d, downloaded) { return .image(img, caption: runs(d["caption"])) }
+            if var img = image(d, downloaded) {
+                img.alt = d["alt"] as? String ?? ""
+                return .image(img, caption: runs(d["caption"]))
+            }
             return nil
         case "notes":
             let items = (d["items"] as? [[String: Any]] ?? []).map {
@@ -1078,6 +1086,21 @@ enum OOXMLExportBridge {
             let blocks = model.compactMap { block($0, imgs) }
             let annote = AnnotationsWord.appliquer(annotations, a: blocks, texteNote: tr("Note manuscrite (md Viewer)"))
             completion(DocxBuilder.build(title: title, blocks: annote.blocs, commentaires: annote.commentaires))
+        }
+    }
+
+    /// Un ePub 3 (1.5.1) : les mêmes blocs que le Word, images téléchargées et embarquées. Une
+    /// image qu'on n'a pas pu obtenir laisse son texte alternatif, en italique.
+    static func buildEpub(meta: EpubMeta, model: [[String: Any]], completion: @escaping (Data?) -> Void) {
+        download(imageURLs(in: model)) { imgs in
+            let blocks: [OOXMLBlock] = model.compactMap { d in
+                if let b = block(d, imgs) { return b }
+                if (d["t"] as? String) == "image", let alt = d["alt"] as? String, !alt.isEmpty {
+                    return .paragraph(runs: [OOXMLRun(text: alt, italic: true)])
+                }
+                return nil
+            }
+            completion(EpubBuilder.build(meta: meta, blocks: blocks))
         }
     }
 

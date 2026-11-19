@@ -503,3 +503,27 @@ Patrick : « Est-ce que on conserve les vignettes en cache », puis « Corrige �
 - [x] Au simulateur : coffre illisible au lancement → vignette et titre gardés ; document modifié →
       nouvelle vignette, même fichier ; vieille fiche et ancien dossier effacés.
 - [ ] À essayer : l'iPad avec le partage de l'iMac déconnecté au lancement.
+
+## Export ePub et PDF des dossiers fornews (Patrick, 19 novembre 2026, par la session fornews)
+
+fornews compose le Markdown du « dossier » (histoire, frise en tableau, carte, articles) ; md Viewer
+produit les fichiers. Cahier des charges : `fornews.ai/docs/md-viewer/DEMANDE-EXPORT-EPUB-PDF.md`.
+
+- [x] « Exporter en ePub » dans le menu Partager : ePub 3 tiré des blocs de l'export Word
+      (`EPUBExport.swift`), images téléchargées et embarquées, diagrammes en PNG, cartes en JPEG ;
+      une image introuvable laisse son texte alternatif. Table des matières des # et ##.
+      Métadonnées : l'en-tête YAML (`titre`, `langue`, `date`, `auteur`), sinon le titre, la langue
+      détectée et le jour. Libellé en 15 langues.
+- [x] `exportModel` (render.js) porte l'adresse des liens (`lien`) et le texte alternatif des
+      images (`alt`) ; Word et PowerPoint les ignorent.
+- [x] PDF : liens cliquables reposés après l'impression (`LiensPDF`, y compris les liens coupés
+      sur deux lignes ou deux pages) ; titre isolé repéré par sa position (un titre sous un tableau
+      n'était pas vu).
+- [x] Sur Mac, PDF, Word et ePub s'enregistrent par un panneau ; sur iPhone et iPad, la feuille
+      de partage.
+- [x] Au simulateur, dossier d'essai de 30 lignes de frise : ePub bien formé (xmllint), 64 liens
+      dans le PDF A4 de 6 pages, carte et diagramme entiers.
+- [ ] Limite connue : le moteur d'impression d'iOS peut couper une ligne de tableau entre deux
+      pages (il ignore `break-inside: avoid`).
+- [ ] À essayer : l'ePub dans Livres (iPhone, Mac) ; le panneau d'enregistrement sur Mac ;
+      un vrai dossier de fornews.
