@@ -2331,6 +2331,20 @@
 
   function pushRun(out, text, fmt) {
     if (!text) return;
+    // Un séparateur en attente (entre deux blocs d'une carte HTML) se pose devant le texte
+    // suivant, jamais à la fin : rien n'est posé si plus rien ne vient.
+    if (out._sep && text.trim()) {
+      var sep = out._sep;
+      out._sep = null;
+      var avant = out[out.length - 1];
+      if (avant && !avant.note) {
+        avant.text = avant.text.replace(/[ \t]+$/, '');
+        if (!avant.text) out.pop();
+      }
+      avant = out[out.length - 1];
+      if (avant && !(avant.text && /\n$/.test(avant.text))) pushRun(out, sep, {});
+      text = text.replace(/^\s+/, '');
+    }
     var last = out[out.length - 1];
     // Un appel de note reste seul dans son run : il deviendra une note de fin.
     if (last && !last.note && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code
@@ -2344,14 +2358,84 @@
     }
   }
 
-  function collectRuns(node, fmt, out) {
+  /* Les cartes HTML des rapports fornews (bandeau, coupures, échéances, sources) empilent des
+     <div> et des <span> mis en page par flex et grid. Lues comme du texte suivi, leurs
+     morceaux se collaient (« 36 articles6 sources ») : chaque bloc est donc séparé du
+     précédent — par « · » dans une rangée flex ou grid, par une espace dans une pile de
+     morceaux courts (« DÉC. 15 mar. »), par un retour à la ligne ailleurs. */
+  var EN_LIGNE_SUR = /^(STRONG|B|EM|I|CODE|MARK|SUB|SUP|S|DEL|INS|U|KBD|SMALL|ABBR|TIME|Q|CITE|DFN|VAR|SAMP|BDI|BDO|WBR)$/;
+
+  function enLigne(el) {
+    if (EN_LIGNE_SUR.test(el.tagName)) return true;
+    var cs = getComputedStyle(el);
+    if (cs.position === 'absolute' || cs.position === 'fixed') return false;
+    return /^inline/.test(cs.display) || cs.display === 'contents';
+  }
+
+  function enRangee(el) {
+    if (!el || el.nodeType !== 1) return false;
+    var cs = getComputedStyle(el);
+    if (/flex$/.test(cs.display)) return !/column/.test(cs.flexDirection);
+    return /grid$/.test(cs.display);
+  }
+
+  function separateurDans(parent, enfant) {
+    // Une grille à plusieurs colonnes (date | fait) se lit ligne par ligne : retour à la
+    // ligne au début de chaque rangée, « · » entre ses cellules.
+    if (enfant && parent && parent.nodeType === 1) {
+      var cs = getComputedStyle(parent);
+      if (/grid$/.test(cs.display)) {
+        var cols = (cs.gridTemplateColumns || '').replace(/\[[^\]]*\]/g, ' ').split(/\s+/).filter(Boolean).length;
+        if (cols > 1) return Array.prototype.indexOf.call(parent.children, enfant) % cols === 0 ? '\n' : ' · ';
+      }
+    }
+    if (enRangee(parent)) return ' · ';
+    var kids = parent && parent.children ? Array.prototype.slice.call(parent.children) : [];
+    if (kids.length > 1 && kids.every(function (k) { return k.textContent.trim().length <= 6; })) return ' ';
+    return '\n';
+  }
+
+  function poserSeparateur(out, sep) {
+    if (!out.length) return;
+    if (!out._sep || sep === '\n' || (sep === ' · ' && out._sep === ' ')) out._sep = sep;
+  }
+
+  // Ce que l'export ne lit pas : ce qui est caché aux lecteurs d'écran, et les pastilles
+  // d'initiales des médias (« NC », « VF »), rondes et décoratives — le nom du média suit.
+  function horsExport(el) {
+    if (el.getAttribute('aria-hidden') === 'true') return true;
+    var t = el.textContent.trim();
+    if (!t.length || t.length > 3 || EN_LIGNE_SUR.test(el.tagName)) return false;
+    var b = el.getBoundingClientRect();
+    if (!(b.width > 0 && b.width <= 44 && Math.abs(b.width - b.height) <= 2)) return false;
+    var r = getComputedStyle(el).borderTopLeftRadius || '';
+    var v = parseFloat(r) || 0;
+    return /%$/.test(r) ? v >= 40 : v >= b.width * 0.4;
+  }
+
+  function collectRuns(node, fmt, out) { collectNodes(node.childNodes, node, fmt, out); }
+
+  function collectNodes(nodes, node, fmt, out) {
     fmt = fmt || {};
-    for (var i = 0; i < node.childNodes.length; i++) {
-      var c = node.childNodes[i];
+    for (var i = 0; i < nodes.length; i++) {
+      var c = nodes[i];
       if (c.nodeType === 3) { pushRun(out, c.nodeValue.replace(/\s+/g, ' '), fmt); continue; }
       if (c.nodeType !== 1) continue;
       var tag = c.tagName;
       if (tag === 'IMG' || tag === 'BR') { if (tag === 'BR') pushRun(out, '\n', fmt); continue; }
+      if (tag !== 'SUP' && horsExport(c)) continue;
+      var bloc = !enLigne(c);
+      if (bloc && !c.textContent.trim()) {
+        // Une barre de graphique sans texte dit sa valeur par son infobulle (« 6 juil. : 8
+        // articles ») ; un bloc vide (une jauge, un filet) ne pose rien, pas même un séparateur.
+        if (c.getAttribute('title')) {
+          poserSeparateur(out, separateurDans(node, c));
+          pushRun(out, c.getAttribute('title'), fmt);
+          poserSeparateur(out, separateurDans(node));
+        }
+        continue;
+      }
+      if (bloc) poserSeparateur(out, separateurDans(node, c));
       // Un appel de note devient une note de fin à l'export : un run à part, qui porte l'id.
       if (tag === 'SUP' && c.classList.contains('fn-ref')) {
         var lienNote = c.querySelector('a');
@@ -2369,6 +2453,7 @@
       if (tag === 'MARK' && /--ner-rgb:\s*(100,\s*116,\s*139|67,\s*56,\s*202|101,\s*163,\s*13)/
           .test(c.getAttribute('style') || '')) f.bold = true;
       collectRuns(c, f, out);
+      if (bloc) poserSeparateur(out, separateurDans(node));
     }
   }
   function runsOf(el) { var o = []; collectRuns(el, {}, o); return o.filter(function (r) { return r.text.trim().length || r.text === '\n'; }); }
@@ -2633,6 +2718,10 @@
 
   function freezeMapsForPrint() {
     keepHeadingsWithContent();
+    // Une section repliée (« Autres articles (13) ») ne s'imprimait pas : sur papier, on ne
+    // déplie rien. Toutes sont ouvertes le temps de l'export, puis refermées.
+    Array.prototype.slice.call(document.querySelectorAll('#content details:not([open])'))
+      .forEach(function (d) { d.setAttribute('open', ''); d.setAttribute('data-okia-replie', ''); });
     var maps = Array.prototype.slice.call(document.querySelectorAll('.okia-map'));
     return Promise.all(maps.map(function (el) {
       return mapToImage(el).then(function (res) {
@@ -2687,6 +2776,8 @@
 
   function unfreezeMaps() {
     unwrapHeadings();
+    Array.prototype.slice.call(document.querySelectorAll('#content details[data-okia-replie]'))
+      .forEach(function (d) { d.removeAttribute('open'); d.removeAttribute('data-okia-replie'); });
     clearBreakBefore();
     restoreLazyImages();
     var imgs = Array.prototype.slice.call(document.querySelectorAll('.okia-map-print'));
@@ -2819,12 +2910,35 @@
         if (contentEl) runs = runs.concat(runsOf(contentEl));
         if (runs.length) blocks.push({ t: 'quote', runs: runs });
       } else if (/^(DIV|SECTION|DETAILS|SUMMARY|FIGURE)$/.test(tag)) {
-        // Les blocs HTML des rapports fornews (cadres, cartes de chiffres, sources repliées) :
-        // on descend dans ceux qui portent des blocs, on garde en paragraphe ceux qui ne
-        // portent que du texte. Sans quoi la synthèse, logée dans un cadre, disparaissait.
-        var enfants = Array.prototype.slice.call(el.children);
-        if (enfants.some(function (k) { return BLOC.test(k.tagName); })) enfants.forEach(visit);
-        else { var rr = runsOf(el); if (rr.length) blocks.push({ t: 'paragraph', runs: rr }); }
+        // Les blocs HTML des rapports fornews (cadres, cartes, coupures, sources repliées).
+        if (horsExport(el)) return;
+        // L'image d'une carte « à la une » est un fond CSS, sans <img>.
+        var fond = !el.textContent.trim() && (el.getAttribute('style') || '').match(/url\(\s*['"]?(https?:[^'")\s]+)/i);
+        if (fond) { blocks.push({ t: 'image', src: fond[1], w: 0, h: 0, caption: [], alt: '' }); return; }
+        // Une carte qui ne porte que du texte (une coupure, une échéance, le bandeau) devient
+        // UN paragraphe, ses morceaux séparés : découpée en autant de paragraphes que de <div>,
+        // elle se lisait « DÉC. » / « 15 » / « mar. » ligne par ligne.
+        var structure = el.querySelector('p,h1,h2,h3,h4,h5,h6,ul,ol,table,blockquote,pre,img,figure,hr,svg,.okia-map,.callout,.footnotes,[style*="url("]');
+        if (!structure && el.textContent.replace(/\s+/g, ' ').length <= 1200) {
+          var rr = runsOf(el); if (rr.length) blocks.push({ t: 'paragraph', runs: rr });
+          return;
+        }
+        // Sinon on descend : les blocs reconnus sont visités, et le texte qui court entre eux
+        // (un lien, un <span>, du texte nu) est gardé en paragraphe. Il était perdu : le titre
+        // et le lien des articles d'une revue de presse disparaissaient de l'export.
+        var groupe = [];
+        var vider = function () {
+          if (!groupe.length) return;
+          var o = []; collectNodes(groupe, el, {}, o); groupe = [];
+          o = o.filter(function (r) { return r.text.trim().length || r.text === '\n'; });
+          if (o.length) blocks.push({ t: 'paragraph', runs: o });
+        };
+        Array.prototype.slice.call(el.childNodes).forEach(function (n) {
+          var reconnu = n.nodeType === 1 && (BLOC.test(n.tagName) || /^SUMMARY$/.test(n.tagName) ||
+            (n.classList && (n.classList.contains('okia-map') || n.classList.contains('callout') || n.classList.contains('footnotes'))));
+          if (reconnu) { vider(); visit(n); } else if (n.nodeType === 1 || n.nodeType === 3) groupe.push(n);
+        });
+        vider();
       }
     });
 

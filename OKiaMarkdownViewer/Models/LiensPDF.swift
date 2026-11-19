@@ -75,15 +75,30 @@ enum LiensPDF {
                     return (n, lignes(s))
                 }
             } else {
+                // Deux titres qui commencent pareil (« Nicole Kidman et Sandra Bullock se… »,
+                // « Nicole Kidman et Sandra Bullock : leur film… ») : le plus long début trouvé
+                // peut appartenir à l'AUTRE lien. On ne retient une occurrence que si le mot
+                // suivant du lien se trouve juste en dessous ; sinon, un début plus court.
                 let k = dejaPris[q, default: 0]
                 if k < trouves.count {
-                    dejaPris[q] = k + 1
-                    return (n, lignes(trouves[k]))
+                    let l = lignes(trouves[k])
+                    if n == mots.count || suiteExiste(mots[mots.startIndex + n], apres: trouves[k], derniere: l.last, doc: doc) {
+                        dejaPris[q] = k + 1
+                        return (n, l)
+                    }
                 }
             }
             n -= 1
         }
         return nil
+    }
+
+    /// Le mot qui suit `apres` dans le texte du PDF est-il `mot`, en tête de la ligne suivante ?
+    /// (La prochaine occurrence seulement : un mot courant, « de », se trouve des centaines de fois.)
+    private static func suiteExiste(_ mot: String, apres: PDFSelection, derniere: (PDFPage, CGRect)?,
+                                    doc: PDFDocument) -> Bool {
+        guard let derniere, let s = doc.findString(mot, fromSelection: apres, withOptions: []) else { return false }
+        return suite(s, de: (derniere.0, derniere.1), doc: doc)
     }
 
     private static func lignes(_ s: PDFSelection) -> [(PDFPage, CGRect)] {

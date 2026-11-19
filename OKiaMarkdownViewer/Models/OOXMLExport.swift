@@ -203,7 +203,11 @@ enum DocxBuilder {
             if let c = r.souligne { props += "<w:u w:val=\"single\" w:color=\"\(c)\"/>" }
             if let h = r.surligne { props += "<w:highlight w:val=\"\(h)\"/>" }
             let rPr = props.isEmpty ? "" : "<w:rPr>\(props)</w:rPr>"
-            return "<w:r>\(rPr)<w:t xml:space=\"preserve\">\(XML.esc(r.text))</w:t></w:r>"
+            // Un retour à la ligne (un <br>, ou les blocs d'une carte HTML fornews) : un vrai saut
+            // de ligne Word ; écrit tel quel dans <w:t>, Word l'affichait comme une espace.
+            let texte = r.text.components(separatedBy: "\n").map(XML.esc)
+                .joined(separator: "</w:t><w:br/><w:t xml:space=\"preserve\">")
+            return "<w:r>\(rPr)<w:t xml:space=\"preserve\">\(texte)</w:t></w:r>"
         }
         func runsXML(_ runs: [OOXMLRun]) -> String { runs.map(runXML).joined() }
 

@@ -525,5 +525,23 @@ produit les fichiers. Cahier des charges : `fornews.ai/docs/md-viewer/DEMANDE-EX
       dans le PDF A4 de 6 pages, carte et diagramme entiers.
 - [ ] Limite connue : le moteur d'impression d'iOS peut couper une ligne de tableau entre deux
       pages (il ignore `break-inside: avoid`).
-- [ ] À essayer : l'ePub dans Livres (iPhone, Mac) ; le panneau d'enregistrement sur Mac ;
-      un vrai dossier de fornews.
+- [x] Trois vrais dossiers de fornews (rapport de veille, revue de presse, présentation ; hors
+      dépôts, dans `~/fornews-bancs/exemples-md-viewer/`), passés au simulateur :
+  - ePub : les cartes HTML de fornews (bandeau, sources, coupures, échéances, déroulé)
+    perdaient le texte qui court entre deux blocs, dont le titre et le lien de chaque
+    article d'une revue de presse ; leurs morceaux se collaient (« 36 articles6 sources »)
+    ou partaient en un paragraphe par `<div>` (« DÉC. » / « 15 » / « mar. »). Désormais une
+    carte qui ne porte que du texte fait un paragraphe, ses blocs séparés par « · » dans une
+    rangée flex ou grid et par un retour à la ligne ailleurs ; les pastilles d'initiales et
+    ce qui porte `aria-hidden="true"` sont ignorés ; une barre de graphique sans texte dit
+    son infobulle ; l'image « à la une », un fond CSS, est embarquée. Vaut aussi pour Word.
+  - Word : les retours à la ligne s'écrivaient tels quels dans le texte (une espace pour
+    Word) ; ce sont maintenant des sauts de ligne `<w:br/>`.
+  - PDF : les sections repliées (`<details>`, « Autres articles (13) ») ne s'imprimaient
+    pas ; elles sont dépliées le temps de l'export. Deux liens au même début (« Nicole
+    Kidman et Sandra Bullock se… » / « … : leur film… ») : le premier se posait sur le
+    second ; un début n'est retenu que si la suite du lien est juste en dessous. Revue de
+    presse : 15 adresses sur 15 posées.
+  - La carte `leaflet` passe en image dans l'ePub et le PDF, comme les diagrammes ; elle
+    suit le thème de l'écran (sombre si l'appareil l'est).
+- [ ] À essayer : l'ePub dans Livres (iPhone, Mac) ; le panneau d'enregistrement sur Mac.
