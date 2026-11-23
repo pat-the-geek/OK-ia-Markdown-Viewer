@@ -105,7 +105,9 @@ final class DocumentStore: ObservableObject {
             // sans elle, l'option se présente.
             avecOption { [weak self] in self?.importer(url: url) }
         } else {
-            open(url: url)
+            // Lu hors du fil principal, comme un récent : un fichier sur un partage lent, ou le
+            // coffre sur un partage injoignable, ne fige plus l'app (build 185, 0x8BADF00D).
+            ouvrirHorsFil(url: url)
         }
     }
 
@@ -576,7 +578,9 @@ final class DocumentStore: ObservableObject {
                 return
             }
             // Un récent rangé dans le coffre : l'accès du coffre, en plus du sien.
-            let url = trouve.url, portee = trouve.portee ?? self.vault.portee(de: trouve.url)
+            let url = trouve.url
+            let portee: URL?
+            if let p = trouve.portee { portee = p } else { portee = await self.vault.porteeHorsFil(de: url) }
             let lu = await Task.detached(priority: .userInitiated) { () -> (Result<MarkdownDocument, Error>, Data?) in
                 let ouvert = portee?.startAccessingSecurityScopedResource() ?? false
                 let propre = url.startAccessingSecurityScopedResource()

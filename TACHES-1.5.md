@@ -545,3 +545,20 @@ produit les fichiers. Cahier des charges : `fornews.ai/docs/md-viewer/DEMANDE-EX
   - La carte `leaflet` passe en image dans l'ePub et le PDF, comme les diagrammes ; elle
     suit le thème de l'écran (sombre si l'appareil l'est).
 - [ ] À essayer : l'ePub dans Livres (iPhone, Mac) ; le panneau d'enregistrement sur Mac.
+
+## Blocages sur iPhone au build 185 (Patrick, 23 novembre 2026)
+
+Deux retours TestFlight « Bloque » / « Blocage » (iPhone, iOS 27.2.1) ; les journaux, sans
+journal dans TestFlight, lus sur l'iPhone (`devicectl … systemCrashLogs`) et symbolisés avec
+l'archive du build 185 : deux fois `0x8BADF00D`, le fil principal arrêté dans
+`URL(resolvingBookmarkData:)` ← `VaultStore.resolveFolder` ← `VaultStore.portee(de:)` ←
+`DocumentStore.open(url:)` ← `onOpenURL`. Un fichier confié à md Viewer faisait résoudre le
+signet du coffre, sur un partage réseau ; même `.withoutMounting`, la résolution attend le service
+Fichiers, et iOS tuait l'app (10 s).
+
+- [x] `portee(de:)` reconnaît un fichier hors du coffre au chemin noté dans le signet, sans le
+      résoudre ; `porteeHorsFil(de:)` résout hors du fil principal.
+- [x] Un fichier confié à l'app (`handleIncoming`) s'ouvre par `ouvrirHorsFil`, comme un récent.
+- [x] Une seconde fenêtre (`FenetreDocument.ouvrir`) passe par `portee(de:)`.
+- [ ] À essayer sur l'iPhone : coffre sur le partage de l'iMac déconnecté, « Ouvrir dans md Viewer »
+      depuis Fichiers et depuis fornews.

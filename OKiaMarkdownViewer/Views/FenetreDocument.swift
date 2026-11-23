@@ -50,7 +50,7 @@ extension DocumentStore {
                 errorMessage = tr("Ce fichier n’est plus accessible."); return
             }
             // Un rapport du coffre s'ouvre par le coffre, qui en détient l'accès.
-            if let dossier = vault.resolveFolder(), url.standardizedFileURL.path.hasPrefix(dossier.standardizedFileURL.path + "/"),
+            if let dossier = vault.portee(de: url),
                let r = vault.reports.first(where: { dossier.appendingPathComponent($0.subfolder).appendingPathComponent($0.name).standardizedFileURL.path == url.standardizedFileURL.path }) {
                 openVaultReport(r)
             } else {

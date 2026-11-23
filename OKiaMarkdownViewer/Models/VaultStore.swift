@@ -290,10 +290,40 @@ final class VaultStore: ObservableObject {
 
     /// La racine du coffre si `url` s'y trouve — l'accès à ouvrir pour lire ce fichier (un document
     /// importé dans « coffre md viewer », 1.5.1). Nil ailleurs.
+    ///
+    /// Un fichier hors du coffre (le cas courant : confié par Fichiers, par fornews) se reconnaît au
+    /// chemin noté dans le signet, sans le résoudre. Build 185 : la résolution, même sans monter le
+    /// volume, attend le service Fichiers ; un coffre sur un partage réseau injoignable figeait l'app
+    /// à chaque « Ouvrir dans md Viewer », jusqu'à ce qu'iOS la tue (0x8BADF00D, iPhone de Patrick,
+    /// 22/11/2026).
     func portee(de url: URL) -> URL? {
+        if horsDuCoffre(url) { return nil }
         guard let r = resolveFolder() else { return nil }
-        let racine = r.standardizedFileURL.path
-        return url.standardizedFileURL.path.hasPrefix(racine.hasSuffix("/") ? racine : racine + "/") ? r : nil
+        return Self.dans(url, r) ? r : nil
+    }
+
+    /// `portee(de:)`, la racine résolue hors du fil principal.
+    func porteeHorsFil(de url: URL) async -> URL? {
+        if horsDuCoffre(url) { return nil }
+        guard let r = await racineHorsFil() else { return nil }
+        return Self.dans(url, r) ? r : nil
+    }
+
+    /// Le fichier n'est sûrement pas dans le coffre : son chemin n'est pas sous celui du signet.
+    /// Faux quand on ne peut pas le dire (racine déjà résolue, signet sans chemin).
+    private func horsDuCoffre(_ url: URL) -> Bool {
+        guard racine == nil, let note = bookmark.flatMap(Self.cheminNote) else { return false }
+        return !Self.dans(url, note)
+    }
+
+    /// `url` est-il sous `dossier` ? (« /private/var » et « /var » sont le même dossier.)
+    nonisolated static func dans(_ url: URL, _ dossier: URL) -> Bool {
+        func chemin(_ u: URL) -> String {
+            let p = u.standardizedFileURL.path
+            return p.hasPrefix("/private/") ? String(p.dropFirst(8)) : p
+        }
+        let d = chemin(dossier)
+        return chemin(url).hasPrefix(d.hasSuffix("/") ? d : d + "/")
     }
 
     func reportURL(_ report: VaultReport) -> URL? {
