@@ -47,6 +47,9 @@
 	<!-- La télécommande d'un diaporama (1.6) : d'appareil à appareil, sur le réseau local. -->
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>md Viewer trouve le diaporama à piloter sur le Mac ou l’iPad, d’appareil à appareil, sans serveur.</string>
+	<!-- Les diapositives en images (25/11/2026) : « Enregistrer les images » dans Photos. -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>md Viewer enregistre dans Photos les images de vos diapositives, quand vous le lui demandez.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_okia-telecom._tcp</string>

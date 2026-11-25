@@ -811,12 +811,36 @@ body.okia-capture-ui .present-menu { visibility: hidden !important; }
 /* Le polycopié en 16:9, quelle que soit l'orientation de l'écran : un iPad tenu droit donnait des
    diapositives en portrait, étroites sur la page. La diapositive se pose en haut à gauche, à la
    plus grande taille 16:9 qui tient ; la photo est rognée à son cadre. */
+body.okia-capture { --cap-w: min(100vw, 177.78vh); --cap-h: min(56.25vw, 100vh); }
+/* Les images (25/11/2026) : carrée, ou en portrait 4:5 ; la diapositive se recompose dans ce cadre. */
+body.okia-capture.okia-format-carre { --cap-w: min(100vw, 100vh); --cap-h: min(100vw, 100vh); }
+body.okia-capture.okia-format-portrait { --cap-w: min(100vw, 80vh); --cap-h: min(125vw, 100vh); }
 body.okia-capture .slide {
   inset: 0 auto auto 0 !important;
-  width: min(100vw, 177.78vh) !important;
-  height: min(56.25vw, 100vh) !important;
+  width: var(--cap-w) !important;
+  height: var(--cap-h) !important;
 }
 body.okia-capture .present-marque-logo {
-  right: auto; left: calc(min(100vw, 177.78vh) - 2.2vmin); transform: translateX(-100%);
-  bottom: auto; top: calc(min(56.25vw, 100vh) - 2.6vmin - 7vmin);
+  right: auto; left: calc(var(--cap-w) - 2.2vmin); transform: translateX(-100%);
+  bottom: auto; top: calc(var(--cap-h) - 2.6vmin - 7vmin);
+}
+/* La durée estimée, au lancement (pour tous) : jamais sur l'écran du public ni sur une photo. */
+.present-duree {
+  /* En bas, au milieu : en haut, elle couvrait les boutons d'un écran étroit. */
+  position: fixed; left: 50%; bottom: calc(max(2.6vmin, env(safe-area-inset-bottom)) + 34px); z-index: 6;
+  transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
+  padding: 7px 14px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.62); color: #fff;
+  font: 600 14px/1.2 -apple-system, "Helvetica Neue", sans-serif; font-variant-numeric: tabular-nums;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.present-duree.visible { opacity: 1; transform: translate(-50%, 0); }
+body.present-public .present-duree, body.present-apercu .present-duree,
+body.okia-capture .present-duree, body.okia-capture-ui .present-duree { display: none; }
+/* La durée de chaque diapositive, dans la vue d'ensemble (option Analytic). */
+.overview-duree {
+  position: absolute; right: 8px; bottom: 8px; z-index: 2;
+  padding: 1px 7px; border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55); color: #fff;
+  font-size: 12px; font-variant-numeric: tabular-nums;
 }

@@ -97,6 +97,101 @@
           }
         }
       }
+    },
+    "NSPhotoLibraryAddUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer enregistre dans Photos les images de vos diapositives, quand vous le lui demandez."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer saves your slide images to Photos when you ask it to."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer sichert die Bilder Ihrer Folien in Fotos, wenn Sie es wünschen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer guarda las imágenes de sus diapositivas en Fotos cuando usted lo pide."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer salva le immagini delle tue diapositive in Foto quando lo richiedi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer は、指示があったときにスライドの画像を写真に保存します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer는 요청할 때 슬라이드 이미지를 사진에 저장합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer 会在你要求时将幻灯片图像存储到“照片”。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O md Viewer salva as imagens dos seus slides no app Fotos quando você pede."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer bewaart de afbeeldingen van je dia's in Foto's wanneer je daarom vraagt."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer сохраняет изображения ваших слайдов в «Фото», когда вы об этом просите."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer зберігає зображення ваших слайдів у «Фото», коли ви про це просите."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer, istediğinizde slaytlarınızın görüntülerini Fotoğraflar'a kaydeder."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer lưu hình ảnh trang chiếu của bạn vào Ảnh khi bạn yêu cầu."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जब आप कहते हैं, md Viewer आपकी स्लाइड के चित्र Photos में सहेजता है।"
+          }
+        }
+      }
     }
   }
 }

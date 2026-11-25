@@ -216,19 +216,27 @@ enum Polycopie {
         let notes: String
     }
 
-    static func capturer(_ vue: WKWebView, total: Int, avancement: @escaping (Int) -> Void) async -> [Diapo] {
+    /// `format` : « 16:9 » (le polycopié), « carre » ou « portrait » (les images, 25/11/2026).
+    /// `largeur` : la largeur voulue de chaque photo, en pixels (les images) ; sinon celle de l'écran.
+    static func capturer(_ vue: WKWebView, total: Int, format: String = "16:9", largeur: CGFloat? = nil,
+                         avancement: @escaping (Int) -> Void) async -> [Diapo] {
         let depart = (try? await vue.evaluateJavaScript("window.OKIA_PRESENT ? window.OKIA_PRESENT.courante() : 0")) as? Int ?? 0
         var diapos: [Diapo] = []
         for i in 0..<total {
             avancement(i + 1)
-            let cadre = (try? await vue.callAsyncJavaScript("return await window.OKIA_PRESENT.preparerCapture(i);",
-                                                            arguments: ["i": i], in: nil, contentWorld: .page)) as? [String: Any]
+            let cadre = (try? await vue.callAsyncJavaScript("return await window.OKIA_PRESENT.preparerCapture(i, f);",
+                                                            arguments: ["i": i, "f": format], in: nil, contentWorld: .page)) as? [String: Any]
             let notes = (try? await vue.evaluateJavaScript("window.OKIA_PRESENT.notes(\(i))")) as? String ?? ""
-            // La diapositive seule, en 16:9 (le cadre que le diaporama a posé pour la photo).
+            // La diapositive seule, dans le cadre que le diaporama a posé pour la photo.
             let reglage = WKSnapshotConfiguration()
             if let c = cadre, let w = (c["w"] as? NSNumber)?.doubleValue, let h = (c["h"] as? NSNumber)?.doubleValue, w > 0, h > 0 {
                 reglage.rect = CGRect(x: (c["x"] as? NSNumber)?.doubleValue ?? 0, y: (c["y"] as? NSNumber)?.doubleValue ?? 0,
                                       width: w, height: h)
+                if let largeur {
+                    // En points : la photo sort à `largeur` pixels, quelle que soit la taille de l'écran.
+                    let echelle = vue.window?.screen.scale ?? vue.traitCollection.displayScale
+                    reglage.snapshotWidth = NSNumber(value: Double(largeur / max(echelle, 1)))
+                }
             }
             if let image = try? await vue.takeSnapshot(configuration: reglage) {
                 diapos.append(Diapo(image: image, notes: notes.trimmingCharacters(in: .whitespacesAndNewlines)))
@@ -238,10 +246,10 @@ enum Polycopie {
         return diapos
     }
 
-    /// Le PDF A4. Une par page : la diapositive en grand, les notes dessous. Deux : l'une sous l'autre,
-    /// chacune avec ses notes. Trois : la diapositive à gauche, ses notes (ou des lignes pour en
-    /// prendre) à droite.
-    static func pdf(_ diapos: [Diapo], parPage: Int, avecNotes: Bool, titre: String) -> Data {
+    /// Le PDF A4, selon la disposition (`DispositionPolycopie`) : les notes sous la diapositive, à
+    /// côté, des lignes pour en prendre, ou les diapositives seules ; une, deux ou trois par page.
+    static func pdf(_ diapos: [Diapo], parPage: Int, disposition demandee: DispositionPolycopie, titre: String) -> Data {
+        let disposition = demandee.pour(parPage)
         let page = CGRect(x: 0, y: 0, width: 595.2, height: 841.8)
         let marge: CGFloat = 40
         let corps = UIFont.systemFont(ofSize: parPage == 1 ? 12 : 10)
@@ -262,19 +270,28 @@ enum Polycopie {
                 for (k, d) in lot.enumerated() {
                     let case_ = CGRect(x: zone.minX, y: zone.minY + CGFloat(k) * hauteur, width: zone.width, height: hauteur - 10)
                     let ar = d.image.size.width / max(d.image.size.height, 1)
-                    if parPage == 3 {
+                    switch disposition {
+                    case .cote, .lignes where parPage > 1:
+                        // La diapositive à gauche ; à droite, ses notes, ou des lignes pour en prendre.
                         let w = case_.width * 0.52
                         let r = ajuster(ar, CGRect(x: case_.minX, y: case_.minY, width: w, height: case_.height))
                         cadre(d.image, r)
                         let droite = CGRect(x: case_.minX + w + 14, y: case_.minY, width: case_.width - w - 14, height: case_.height)
-                        if avecNotes && !d.notes.isEmpty { texte(d.notes, droite, corps) } else { lignes(droite) }
-                    } else {
+                        if disposition == .cote && !d.notes.isEmpty { texte(d.notes, droite, corps) } else { lignes(droite) }
+                    case .lignes:
+                        // Une par page : la diapositive en haut, des lignes sur le reste de la page.
+                        var r = ajuster(ar, CGRect(x: case_.minX, y: case_.minY, width: case_.width, height: case_.height * 0.45))
+                        r.origin.x = case_.midX - r.width / 2
+                        cadre(d.image, r)
+                        lignes(CGRect(x: case_.minX, y: r.maxY + 6, width: case_.width, height: case_.maxY - r.maxY - 6))
+                    default:
                         // La diapositive sur toute la largeur quand la place le permet, les notes dessous.
-                        let hImage = avecNotes && !d.notes.isEmpty ? case_.height * (parPage == 1 ? 0.6 : 0.78) : case_.height
+                        let avecNotes = disposition == .dessous && !d.notes.isEmpty
+                        let hImage = avecNotes ? case_.height * (parPage == 1 ? 0.6 : 0.78) : case_.height
                         var r = ajuster(ar, CGRect(x: case_.minX, y: case_.minY, width: case_.width, height: hImage))
                         r.origin.x = case_.midX - r.width / 2
                         cadre(d.image, r)
-                        if avecNotes && !d.notes.isEmpty {
+                        if avecNotes {
                             texte(d.notes, CGRect(x: case_.minX, y: r.maxY + 10, width: case_.width, height: case_.maxY - r.maxY - 10), corps)
                         }
                     }
@@ -319,12 +336,43 @@ enum Polycopie {
     }
 }
 
-/// Avant le polycopié : combien de diapositives par page, avec ou sans les notes.
+/// Ce qui accompagne chaque diapositive du polycopié (25/11/2026 : les notes à côté et les lignes
+/// pour tous les formats, plus seulement à trois par page).
+enum DispositionPolycopie: String, CaseIterable, Identifiable {
+    case dessous, cote, lignes, seules
+    var id: String { rawValue }
+
+    var titre: String {
+        switch self {
+        case .dessous: tr("Notes sous chaque diapositive")
+        case .cote: tr("Notes à côté de chaque diapositive")
+        case .lignes: tr("Lignes pour prendre des notes")
+        case .seules: tr("Diapositives seules")
+        }
+    }
+
+    /// Ce que permet ce nombre par page : pas de notes dessous à trois (trop étroit), pas à côté
+    /// à une seule (la diapositive y serait minuscule).
+    static func possibles(_ parPage: Int) -> [DispositionPolycopie] {
+        switch parPage {
+        case 1: [.dessous, .lignes, .seules]
+        case 3: [.cote, .lignes, .seules]
+        default: allCases
+        }
+    }
+
+    func pour(_ parPage: Int) -> DispositionPolycopie {
+        if Self.possibles(parPage).contains(self) { return self }
+        return self == .dessous ? .cote : .dessous
+    }
+}
+
+/// Avant le polycopié : combien de diapositives par page, et ce qui les accompagne.
 struct PolycopieReglageView: View {
-    var creer: (Int, Bool) -> Void
+    var creer: (Int, DispositionPolycopie) -> Void
     @Environment(\.dismiss) private var dismiss
     @AppStorage("okia.polycopie.parPage") private var parPage = 2
-    @AppStorage("okia.polycopie.notes") private var avecNotes = true
+    @AppStorage("okia.polycopie.disposition") private var disposition = DispositionPolycopie.dessous
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
@@ -334,17 +382,89 @@ struct PolycopieReglageView: View {
                     ForEach(1...3, id: \.self) { Text("\($0)").tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Toggle(tr("Avec les notes de l’orateur"), isOn: $avecNotes)
-                Text(parPage == 3 ? tr("Trois par page : les notes, ou des lignes pour en prendre, à côté de chaque diapositive.")
-                                  : tr("Les notes sous chaque diapositive."))
-                    .font(.footnote).foregroundStyle(.secondary)
+                Picker(tr("Notes de l’orateur"), selection: $disposition) {
+                    ForEach(DispositionPolycopie.possibles(parPage)) { Text($0.titre).tag($0) }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
             }
+            .onAppear { disposition = disposition.pour(parPage) }
+            .onChange(of: parPage) { _, n in disposition = disposition.pour(n) }
             .navigationTitle(tr("Polycopié PDF"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(tr("Annuler")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(tr("Créer")) { dismiss(); creer(parPage, avecNotes) }.fontWeight(.semibold)
+                    Button(tr("Créer")) { dismiss(); creer(parPage, disposition.pour(parPage)) }.fontWeight(.semibold)
+                }
+            }
+            .tint(orange)
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+// MARK: - Les diapositives en images
+
+/// Pour tous (25/11/2026) : une image PNG par diapositive, en 16:9, carrée ou en portrait 4:5. La
+/// diapositive est remise en page dans le format choisi (le diaporama compose sa toile au cadre),
+/// pas rognée ; prête pour un carrousel sur Mastodon ou LinkedIn.
+enum FormatImages: String, CaseIterable, Identifiable {
+    case large = "16:9", carre, portrait
+    var id: String { rawValue }
+
+    var titre: String {
+        switch self {
+        case .large: "16:9"
+        case .carre: tr("Carré")
+        case .portrait: tr("Portrait 4:5")
+        }
+    }
+
+    /// La largeur des images, en pixels : 1920 × 1080, 1440 × 1440, 1440 × 1800.
+    var largeur: CGFloat { self == .large ? 1920 : 1440 }
+
+    /// Les images écrites dans un dossier temporaire, numérotées dans l'ordre du diaporama.
+    static func ecrire(_ diapos: [Polycopie.Diapo], nom: String) -> (dossier: URL, fichiers: [URL])? {
+        let propre = nom.replacingOccurrences(of: "/", with: "-")
+        let dossier = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            .appendingPathComponent(propre + " — " + tr("images"), isDirectory: true)
+        guard (try? FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)) != nil else { return nil }
+        let chiffres = max(2, String(diapos.count).count)
+        var fichiers: [URL] = []
+        for (i, d) in diapos.enumerated() {
+            let n = String(i + 1)
+            let url = dossier.appendingPathComponent(propre + " " + String(repeating: "0", count: max(0, chiffres - n.count)) + n + ".png")
+            if let png = d.image.pngData(), (try? png.write(to: url)) != nil { fichiers.append(url) }
+        }
+        return fichiers.isEmpty ? nil : (dossier, fichiers)
+    }
+}
+
+/// Avant les images : le format.
+struct ImagesReglageView: View {
+    var creer: (FormatImages) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("okia.images.format") private var format = FormatImages.large
+    private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Picker(tr("Format"), selection: $format) {
+                    ForEach(FormatImages.allCases) { Text($0.titre).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Text(tr("Une image PNG par diapositive, remise en page au format choisi, pas rognée."))
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            .navigationTitle(tr("Images PNG"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(tr("Annuler")) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(tr("Créer")) { dismiss(); creer(format) }.fontWeight(.semibold)
                 }
             }
             .tint(orange)

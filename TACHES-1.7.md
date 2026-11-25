@@ -164,6 +164,27 @@ souhaite toucher le plus grand nombre d'utilisateurs ») :
 | | le pied de page (« Vos couleurs ») |
 | | les deux variantes du polycopié |
 
+**Avancement** (commencé le 25/11/2026, Patrick : « commence les travaux ») :
+
+- [x] **L'export en images** (pour tous) : diaporama › ⚙ › Export › « Images (PNG)… » ; 16:9
+      (1920 × 1080), carré (1440 × 1440) ou portrait 4:5 (1440 × 1800) ; la toile se recompose au
+      format (`preparerCapture(i, format)`, classes `okia-format-*`), la photo sort à la largeur
+      voulue (`snapshotWidth`). Partage des images sur iPhone et iPad (Photos : permission
+      `NSPhotoLibraryAddUsageDescription` ajoutée), dossier à enregistrer sur Mac. Vu au simulateur
+      (Duo plié) dans les trois formats ; harnais `OKIA_IMAGES=16:9|carre|portrait`.
+- [x] **La durée estimée** : `dureeEstimee()` dans `presentation.js` (130 mots/min, 280 signes/min
+      pour le japonais et le chinois, 30 s sans notes, 8 s par page de suite). Pour tous : annoncée
+      au lancement (« Durée estimée : ≈ 2 min », 5 s, jamais sur l'écran du public) et dans le
+      titre de la vue d'ensemble ; avec l'option : sur chaque vignette. Seulement si le diaporama a
+      des notes. Vu au simulateur.
+- [x] **Les dispositions du polycopié** : notes dessous, notes à côté, lignes, diapositives seules,
+      selon le nombre par page (`DispositionPolycopie`) ; harnais `OKIA_POLYCOPIE_DISPO`. Vu au
+      simulateur (deux par page avec les notes à côté, une par page avec les lignes).
+- [ ] Sur Mac : l'enregistrement du dossier d'images (compilé, pas essayé).
+- [ ] La couleur du temps, le pied de page, les formules (point 16) : à suivre.
+- [ ] Plus tard : agrandir le texte des images carrées et portrait (la toile ne grossit jamais
+      le contenu ; une diapositive courte y paraît petite).
+
 La règle suivie : lire et faire sortir un document est pour tous (comme les exports PDF, Word,
 PowerPoint et ePub) ; préparer et présenter devant un public est dans l'option (comme le mode
 présentateur, la répétition, la télécommande, le polycopié et « Vos couleurs »). Les prix restent

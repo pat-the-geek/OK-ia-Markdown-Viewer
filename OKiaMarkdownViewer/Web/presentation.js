@@ -107,6 +107,13 @@
         ja: '独自カラーのテーマ…', ko: '나만의 색상 테마…', 'zh-Hans': '自定义颜色主题…', 'pt-BR': 'Tema com suas cores…', nl: 'Thema in je eigen kleuren…', ru: 'Тема в ваших цветах…', uk: 'Тема у ваших кольорах…', tr: 'Kendi renklerinizle tema…', vi: 'Chủ đề theo màu của bạn…', hi: 'आपके रंगों में थीम…' },
     'Ma marque':      { en: 'My brand', de: 'Meine Marke', es: 'Mi marca', it: 'Il mio marchio',
         ja: 'マイブランド', ko: '내 브랜드', 'zh-Hans': '我的品牌', 'pt-BR': 'Minha marca', nl: 'Mijn merk', ru: 'Мой бренд', uk: 'Мій бренд', tr: 'Markam', vi: 'Thương hiệu của tôi', hi: 'मेरा ब्रांड' },
+    // Les diapositives en images, la durée estimée (25/11/2026).
+    'Images (PNG)…':  { en: 'Images (PNG)…', de: 'Bilder (PNG)…', es: 'Imágenes (PNG)…', it: 'Immagini (PNG)…',
+        ja: '画像（PNG）…', ko: '이미지(PNG)…', 'zh-Hans': '图像（PNG）…', 'pt-BR': 'Imagens (PNG)…', nl: 'Afbeeldingen (PNG)…', ru: 'Изображения (PNG)…', uk: 'Зображення (PNG)…', tr: 'Görüntüler (PNG)…', vi: 'Hình ảnh (PNG)…', hi: 'चित्र (PNG)…' },
+    'Durée estimée':  { en: 'Estimated length', de: 'Geschätzte Dauer', es: 'Duración estimada', it: 'Durata stimata',
+        ja: '推定所要時間', ko: '예상 소요 시간', 'zh-Hans': '预计时长', 'pt-BR': 'Duração estimada', nl: 'Geschatte duur', ru: 'Примерная длительность', uk: 'Орієнтовна тривалість', tr: 'Tahmini süre', vi: 'Thời lượng ước tính', hi: 'अनुमानित अवधि' },
+    'd’après les notes de l’orateur': { en: 'from the speaker notes', de: 'nach den Sprechernotizen', es: 'según las notas del orador', it: 'in base alle note del relatore',
+        ja: '発表者ノートから', ko: '발표자 노트 기준', 'zh-Hans': '根据演讲者备注', 'pt-BR': 'pelas notas do apresentador', nl: 'op basis van de sprekersnotities', ru: 'по заметкам докладчика', uk: 'за нотатками доповідача', tr: 'konuşmacı notlarına göre', vi: 'theo ghi chú của người trình bày', hi: 'वक्ता के नोट्स के आधार पर' },
     // « PowerPoint (.pptx) » reste tel quel : nom de produit + extension.
     'Export':         { en: 'Export', de: 'Export', es: 'Exportar', it: 'Esporta',
         ja: '書き出し', ko: '내보내기', 'zh-Hans': '导出', 'pt-BR': 'Exportar', nl: 'Exporteer', ru: 'Экспорт', uk: 'Експорт', tr: 'Dışa aktar', vi: 'Xuất', hi: 'एक्सपोर्ट करें' }
@@ -891,6 +898,12 @@
     ex.textContent = 'PowerPoint (.pptx)';
     ex.onclick = function (e) { e.stopPropagation(); closeMenu(); post('exportPptx', {}); };
     menu.appendChild(ex);
+    // Pour tous (25/11/2026) : une image par diapositive, en 16:9, carrée ou en portrait.
+    var im = document.createElement('button');
+    im.className = 'present-menu-item';
+    im.textContent = TXT('Images (PNG)…');
+    im.onclick = function (e) { e.stopPropagation(); closeMenu(); post('images', {}); };
+    menu.appendChild(im);
     // Option Analytic (1.6) : répéter, polycopié, thème à vos couleurs.
     if (analytique) {
       var hp = document.createElement('div');
@@ -955,8 +968,12 @@
 
   // Le polycopié photographie chaque diapositive : sans boutons ni barre, sans transition, une fois
   // rendue.
-  function preparerCapture(index) {
+  // `format` : '16:9' (le polycopié, par défaut), 'carre' ou 'portrait' (4:5) pour les images ;
+  // la diapositive est remise en page dans ce cadre (`fitSlide` suit sa taille), pas rognée.
+  var FORMATS_CAPTURE = ['carre', 'portrait'];
+  function preparerCapture(index, format) {
     document.body.classList.add('okia-capture');
+    FORMATS_CAPTURE.forEach(function (f) { document.body.classList.toggle('okia-format-' + f, f === format); });
     aller(index, true);
     return renderSlide(index).then(function () {
       fitSlide(sections[index]);
@@ -967,7 +984,64 @@
       return b ? { x: b.left, y: b.top, w: b.width, h: b.height } : null;
     });
   }
-  function finirCapture() { document.body.classList.remove('okia-capture'); }
+  function finirCapture() {
+    document.body.classList.remove('okia-capture');
+    FORMATS_CAPTURE.forEach(function (f) { document.body.classList.remove('okia-format-' + f); });
+    if (sections[current]) fitSlide(sections[current]);
+  }
+
+  /* ---- la durée estimée (25/11/2026) ------------------------------------------------------- */
+  // Tirée des notes de l'orateur : environ 130 mots par minute ; les écritures sans espaces
+  // (japonais, chinois) comptent leurs signes, à peu près 280 par minute. Une diapositive sans
+  // notes compte 30 secondes ; la page de suite d'un long tableau, 8 secondes de plus. La durée
+  // totale est pour tous, au lancement et dans la vue d'ensemble ; celle de chaque diapositive,
+  // dans la vue d'ensemble, avec l'option.
+  var MOTS_MINUTE = 130, SIGNES_MINUTE = 280, SANS_NOTES = 30, PAGE_DE_SUITE = 8;
+  function secondesDe(texte) {
+    if (!texte) return 0;
+    var signes = (texte.match(/[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/g) || []).length;
+    var mots = texte.replace(/[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/g, ' ').split(/\s+/).filter(Boolean).length;
+    return mots * 60 / MOTS_MINUTE + signes * 60 / SIGNES_MINUTE;
+  }
+  function dureeEstimee() {
+    var vues = {}, par = [], avecNotes = false;
+    rawSlides.forEach(function (_, i) {
+      var o = origineDe[i] != null ? origineDe[i] : i;
+      if (vues[o]) { par.push(PAGE_DE_SUITE); return; }
+      vues[o] = true;
+      var s = secondesDe(notes(i));
+      if (s > 0) avecNotes = true;
+      par.push(s > 0 ? Math.max(10, Math.round(s)) : SANS_NOTES);
+    });
+    var total = par.reduce(function (a, b) { return a + b; }, 0);
+    return { total: total, parDiapo: par, avecNotes: avecNotes };
+  }
+  // « 45 s », « 1,5 min », « 12 min », dans la langue de l'app.
+  function formatDuree(sec) {
+    function unite(v, u, dec) {
+      try {
+        return new Intl.NumberFormat(LANG, { style: 'unit', unit: u, unitDisplay: 'short',
+                                             maximumFractionDigits: dec }).format(v);
+      } catch (e) { return v + (u === 'second' ? ' s' : ' min'); }
+    }
+    if (sec < 60) return unite(Math.max(5, Math.round(sec / 5) * 5), 'second', 0);
+    var min = sec / 60;
+    return min < 10 ? unite(Math.round(min * 2) / 2, 'minute', 1) : unite(Math.round(min), 'minute', 0);
+  }
+  // Au lancement, quelques secondes, sur l'écran du présentateur seulement : seulement si le
+  // diaporama a des notes, l'estimation n'ayant sinon rien sur quoi s'appuyer.
+  function annoncerDuree() {
+    if (modeAffichage !== 'complet' || chantierEl || sections.length < 2) return;
+    var d = dureeEstimee();
+    if (!d.avecNotes) return;
+    var p = el('presentDuree');
+    if (!p) { p = document.createElement('div'); p.id = 'presentDuree'; p.className = 'present-duree'; document.body.appendChild(p); }
+    p.textContent = TXT('Durée estimée') + ' : ≈ ' + formatDuree(d.total);
+    p.title = TXT('d’après les notes de l’orateur');
+    p.classList.add('visible');
+    clearTimeout(annoncerDuree.minuteur);
+    annoncerDuree.minuteur = setTimeout(function () { p.classList.remove('visible'); }, 5000);
+  }
 
   // La télécommande : la diapositive affichée seule (son canevas 16:9), sans boutons ni barre, sans
   // changer sa mise en page devant le public. Le cadre rapporté sert à rogner la photo et à poser
@@ -1089,6 +1163,12 @@
     if (!grid) return;
     grid.innerHTML = '';
     var thumbs = [];
+    var duree = dureeEstimee();
+    var titreOv = document.querySelector('.overview-title');
+    if (titreOv) {
+      titreOv.textContent = TXT('Diapositives') + (duree.avecNotes ? ' · ≈ ' + formatDuree(duree.total) : '');
+      titreOv.title = duree.avecNotes ? TXT('Durée estimée') + ', ' + TXT('d’après les notes de l’orateur') : '';
+    }
     rawSlides.forEach(function (_, i) {
       var item = document.createElement('button');
       item.className = 'overview-item' + (i === current ? ' current' : '');
@@ -1103,6 +1183,12 @@
       num.className = 'overview-num';
       num.textContent = (i + 1);
       frame.appendChild(num);
+      if (analytique && duree.avecNotes) {
+        var dd = document.createElement('span');
+        dd.className = 'overview-duree';
+        dd.textContent = '≈ ' + formatDuree(duree.parDiapo[i]);
+        frame.appendChild(dd);
+      }
       item.appendChild(frame);
 
       var label = document.createElement('div');
@@ -1368,6 +1454,8 @@
 
     try { window.focus(); } catch (e) {}
     post('presentStarted', { count: sections.length });
+    // Après le mode (public, aperçu) que l'hôte pose juste après le lancement.
+    setTimeout(annoncerDuree, 900);
   }
 
   /* ---- chantier : la présentation qui se construit -------------------------- */
@@ -1727,6 +1815,7 @@
                           toggleOverview: toggleOverview, exportModel: buildExportModel,
                           permettreAnalytic: permettreAnalytic, setMarque: setMarque, titres: titres,
                           preparerCapture: preparerCapture, finirCapture: finirCapture,
+                          dureeEstimee: dureeEstimee,
                           cadreTelecommande: cadreTelecommande, finirCadreTelecommande: finirCadreTelecommande };
   post('presentReady', {});
 })();

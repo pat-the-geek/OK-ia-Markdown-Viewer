@@ -1734,6 +1734,14 @@ sur TestFlight depuis le 6 novembre (builds 152 à 155) ; numérotée **1.5.1** 
   session fornews pour ses dossiers ; essayés sur trois vrais dossiers (rapport de veille, revue de
   presse, présentation) — voir « Export Word, PowerPoint et ePub ». Reste à essayer : l'ePub dans
   Livres et le panneau d'enregistrement sur Mac.
+- **Repris d'iA Presenter** (25/11, Patrick : « Ok on fait les 7 », puis « commence les travaux ») :
+  - **les diapositives en images** (pour tous) : diaporama › ⚙ › Export › « Images (PNG)… », en
+    16:9, carré ou portrait 4:5, la diapositive recomposée au format, pas rognée ;
+  - **la durée estimée** d'après les notes de l'orateur : au lancement et dans la vue d'ensemble
+    (pour tous), sur chaque vignette (option Analytic) ;
+  - **le polycopié** : notes dessous, à côté, lignes pour prendre des notes, ou diapositives
+    seules (option Analytic).
+  Le reste (couleur du temps, pied de page, formules) et le détail : `TACHES-1.7.md`, point 1 bis.
 - **Reste** : la page du site et la base du Terminal IA à la sortie (la base décrit encore le
   coffre en `rapports-*`).
 

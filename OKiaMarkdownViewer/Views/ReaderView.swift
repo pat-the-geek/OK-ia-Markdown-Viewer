@@ -2118,6 +2118,11 @@ struct PresentationView: View {
     @State private var reglagePolycopie = false
     @State private var reglageMarque = false
     @State private var polycopie: (fait: Int, total: Int)?
+    /// Pour tous (25/11/2026) : les diapositives en images. La photo passe par le même chemin que
+    /// le polycopié (`polycopie` en suit l'avancement).
+    @State private var reglageImages = false
+    @State private var captureImages = false
+    @State private var imagesExportees: ImagesExportees?
     @ObservedObject private var hote = TelecommandeHote.partage
 
     var body: some View {
@@ -2135,7 +2140,8 @@ struct PresentationView: View {
                     }
                     .overlay {
                         if let p = polycopie {
-                            Label(tr("Polycopié… %d / %d", p.fait, p.total), systemImage: "doc.richtext")
+                            Label(captureImages ? tr("Images… %d / %d", p.fait, p.total) : tr("Polycopié… %d / %d", p.fait, p.total),
+                                  systemImage: captureImages ? "photo.on.rectangle" : "doc.richtext")
                                 .font(.headline.monospacedDigit())
                                 .padding(.horizontal, 18).padding(.vertical, 12)
                                 .glassEffect(.regular, in: .capsule)
@@ -2174,7 +2180,19 @@ struct PresentationView: View {
             }
             .sheet(item: $repetition.rapport) { RapportRepetitionView(rapport: $0) }
             .sheet(isPresented: $reglagePolycopie) {
-                PolycopieReglageView { creerPolycopie(parPage: $0, avecNotes: $1) }
+                PolycopieReglageView { creerPolycopie(parPage: $0, disposition: $1) }
+            }
+            .sheet(isPresented: $reglageImages) {
+                ImagesReglageView { creerImages($0) }
+            }
+            .sheet(item: $imagesExportees) { lot in
+                #if targetEnvironment(macCatalyst)
+                // Sur Mac : le dossier des images, à enregistrer où l'on veut.
+                ShareSheet(items: [lot.dossier], enregistrer: true, fini: { imagesExportees = nil })
+                #else
+                // Sur iPhone et iPad : les images elles-mêmes, pour Photos, Mastodon ou Fichiers.
+                ShareSheet(items: lot.fichiers)
+                #endif
             }
             .sheet(isPresented: $reglageMarque) { MarqueView() }
             .alert(tr("Télécommande"), isPresented: Binding(get: { hote.demande != nil },
@@ -2212,17 +2230,24 @@ struct PresentationView: View {
                         enregistrerNote(rang, String(essai[essai.index(after: barre)...]).replacingOccurrences(of: "\\n", with: "\n"))
                     }
                 }
-                // OKIA_OUTIL_DIAPO=repeter|polycopie|marque : ouvre l'outil (1.6) ; OKIA_POLYCOPIE=<1-3> :
-                // crée le polycopié, avec les notes ; OKIA_REPETER=<minutes> : lance la répétition.
+                // OKIA_OUTIL_DIAPO=repeter|polycopie|marque|images : ouvre l'outil (1.6) ; OKIA_POLYCOPIE=<1-3> :
+                // crée le polycopié (OKIA_POLYCOPIE_DISPO=dessous|cote|lignes|seules, les notes dessous
+                // sinon) ; OKIA_IMAGES=16:9|carre|portrait : crée les images ; OKIA_REPETER=<minutes> :
+                // lance la répétition.
                 let envD = ProcessInfo.processInfo.environment
                 switch envD["OKIA_OUTIL_DIAPO"] {
                 case "repeter": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglageRepetition = true }
                 case "polycopie": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglagePolycopie = true }
                 case "marque": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglageMarque = true }
+                case "images": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglageImages = true }
                 default: break
                 }
                 if let n = envD["OKIA_POLYCOPIE"].flatMap(Int.init) {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) { creerPolycopie(parPage: n, avecNotes: true) }
+                    let dispo = envD["OKIA_POLYCOPIE_DISPO"].flatMap(DispositionPolycopie.init(rawValue:)) ?? .dessous
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) { creerPolycopie(parPage: n, disposition: dispo) }
+                }
+                if let f = envD["OKIA_IMAGES"].flatMap(FormatImages.init(rawValue:)) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) { creerImages(f) }
                 }
                 // OKIA_TELECOM_ESSAI : ce qu'enverrait une télécommande — un cercle, un trait, un coup
                 // de surligneur, le pointeur, puis la diapositive suivante.
@@ -2295,7 +2320,8 @@ struct PresentationView: View {
                             onNotes: { ouvrirNote($0) },
                             onRepeter: { reglageRepetition = true },
                             onPolycopie: { reglagePolycopie = true },
-                            onMarque: { reglageMarque = true })
+                            onMarque: { reglageMarque = true },
+                            onImages: { reglageImages = true })
     }
 
     // MARK: Option Analytic (1.6)
@@ -2311,18 +2337,38 @@ struct PresentationView: View {
         }
     }
 
-    private func creerPolycopie(parPage: Int, avecNotes: Bool) {
-        guard let vue = annotations.diaporama else { return }
+    private func creerPolycopie(parPage: Int, disposition: DispositionPolycopie) {
+        guard let vue = annotations.diaporama, polycopie == nil else { return }
         let total = seance.total
+        captureImages = false
         polycopie = (0, total)
         Task {
             let diapos = await Polycopie.capturer(vue, total: total) { polycopie = ($0, total) }
             polycopie = nil
             let nom = (document.filename as NSString).deletingPathExtension
-            let data = Polycopie.pdf(diapos, parPage: parPage, avecNotes: avecNotes, titre: nom)
+            let data = Polycopie.pdf(diapos, parPage: parPage, disposition: disposition, titre: nom)
             let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent(nom.replacingOccurrences(of: "/", with: "-") + " — " + tr("polycopié") + ".pdf")
             if (try? data.write(to: url)) != nil { sharePayload = SharePayload(url: url) }
+        }
+    }
+
+    /// Pour tous (25/11/2026) : chaque diapositive photographiée au format choisi, en PNG.
+    private func creerImages(_ format: FormatImages) {
+        guard let vue = annotations.diaporama, polycopie == nil else { return }
+        let total = seance.total
+        captureImages = true
+        polycopie = (0, total)
+        Task {
+            let diapos = await Polycopie.capturer(vue, total: total, format: format.rawValue, largeur: format.largeur) {
+                polycopie = ($0, total)
+            }
+            polycopie = nil
+            captureImages = false
+            let nom = (document.filename as NSString).deletingPathExtension
+            if let lot = FormatImages.ecrire(diapos, nom: nom) {
+                imagesExportees = ImagesExportees(dossier: lot.dossier, fichiers: lot.fichiers)
+            }
         }
     }
 
@@ -2507,6 +2553,8 @@ struct PresentationWebView: UIViewRepresentable {
     var onRepeter: (() -> Void)?
     var onPolycopie: (() -> Void)?
     var onMarque: (() -> Void)?
+    /// Pour tous (25/11/2026) : « Export › Images (PNG)… ».
+    var onImages: (() -> Void)?
 
     enum ModeDiaporama: String { case complet, `public`, apercu }
 
@@ -2515,7 +2563,7 @@ struct PresentationWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let controller = WKUserContentController()
         for name in ["presentReady", "presentStarted", "presentExit", "diagramTapped", "imageTapped", "exportPptx", "slideRendered", "annoter",
-                     "diapositive", "choix", "presentateur", "notes", "repeter", "polycopie", "marque"] {
+                     "diapositive", "choix", "presentateur", "notes", "repeter", "polycopie", "marque", "images"] {
             controller.add(context.coordinator, name: name)
         }
         // Hand the app language to the slideshow engine (menu labels, aria labels).
@@ -2815,6 +2863,7 @@ struct PresentationWebView: UIViewRepresentable {
             case "repeter": parent.onRepeter?()
             case "polycopie": parent.onPolycopie?()
             case "marque": parent.onMarque?()
+            case "images": parent.onImages?()
             case "notes":
                 let d = message.body as? [String: Any]
                 parent.onNotes?((d?["index"] as? Int) ?? (d?["index"] as? Double).map(Int.init) ?? 0)
@@ -2972,4 +3021,11 @@ extension View {
         }
         #endif
     }
+}
+
+/// Les images d'un diaporama, prêtes à partager (iPhone, iPad) ou à enregistrer (Mac).
+struct ImagesExportees: Identifiable {
+    let id = UUID()
+    let dossier: URL
+    let fichiers: [URL]
 }
