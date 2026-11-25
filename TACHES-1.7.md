@@ -153,6 +153,22 @@ fait les 7 ». La septième, les formules, est au point 16, pour tous) :
 Ces six-là ne dépendent pas de l'éditeur, sauf la première : la durée, la couleur du temps, le pied
 de page, les images et le polycopié peuvent sortir avant lui, dans une 1.6.x.
 
+**Le partage** (décidé par Patrick le 25/11/2026 : « On prend la nouvelle version », après « je
+souhaite toucher le plus grand nombre d'utilisateurs ») :
+
+| Pour tous | Option Analytic |
+|---|---|
+| l'export en images | la vue « Texte suivi » |
+| la durée totale estimée, au lancement du diaporama (« environ 12 min ») | la durée de chaque diapositive, dans le plan |
+| les formules mathématiques (point 16) | la couleur du temps (mode présentateur, télécommande) |
+| | le pied de page (« Vos couleurs ») |
+| | les deux variantes du polycopié |
+
+La règle suivie : lire et faire sortir un document est pour tous (comme les exports PDF, Word,
+PowerPoint et ePub) ; préparer et présenter devant un public est dans l'option (comme le mode
+présentateur, la répétition, la télécommande, le polycopié et « Vos couleurs »). Les prix restent
+bas : pas de hausse ni d'abonnement au motif que l'option vaut plus.
+
 ### 1 ter. Écrire avec l'IA de l'appareil
 
 Patrick, 13/11/2026 : « on pourrait utiliser l'ia pour editer les documents. qu'en penses-tu ? »
@@ -701,6 +717,5 @@ diapositives.
   nos seules commandes ?
 - La 2.0 : un nouveau numéro majeur pour « Présenter partout », ou continuer en 1.x ?
 - Annoncer ou non ces versions sur la feuille de route publique, et quand.
-- Les idées reprises d'iA Presenter (1 bis) : la durée, la couleur du temps, le pied de page, les
-  images et le polycopié pour tous ou dans l'option Analytic ? Et les sortir avant l'éditeur, dans
-  une 1.6.x ?
+- ~~Les idées reprises d'iA Presenter (1 bis) : pour tous ou dans l'option Analytic ?~~ Partagées
+  (25/11/2026, voir 1 bis). Reste : les sortir avant l'éditeur, dans une 1.6.x ?
