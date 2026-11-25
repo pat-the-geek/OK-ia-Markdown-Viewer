@@ -14,11 +14,11 @@ même Private Cloud Compute), pas de pistage. La lecture reste gratuite.
 | Version | Thème | Contenu |
 |---|---|---|
 | 1.6 | Le coffre ouvert à vos assistants | revue le 13/11/2026 : un coffre qui s'explique (`AGENTS.md`), un serveur MCP sur Mac, « Envoyer à un assistant », puis l'interrogation sur l'appareil (TACHES-1.6.md) |
-| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), parler à l'IA (1 quinquies), piloter l'éditeur par MCP depuis Claude ou Codex (1 sexies), les modèles (2), comparer deux versions (3) |
+| 1.7 | Écrire | l'éditeur de documents (1), l'éditeur de présentations (1 bis, avec six idées reprises d'iA Presenter), écrire avec l'IA de l'appareil (1 ter), des diagrammes sur demande (1 quater), parler à l'IA (1 quinquies), piloter l'éditeur par MCP depuis Claude ou Codex (1 sexies), les modèles (2), comparer deux versions (3) |
 | 1.8 | Le coffre qui veille | étiquettes (4), liens entre documents (5), surveiller un nom (6), frise (7), réseau des entités (8) |
 | 1.9 | De nouvelles sources | l'audio (9), l'EPUB et les e-mails (10) |
 | 2.0 | Présenter partout | la montre (11), SharePlay (12), le diaporama traduit (13), vidéo et page web autonome (14) |
-| au fil des versions | Pour tous | VoiceOver (15), avec le graphique d'un tableau, la voix et les widgets déjà annoncés |
+| au fil des versions | Pour tous | VoiceOver (15), les formules mathématiques (16), avec le graphique d'un tableau, la voix et les widgets déjà annoncés |
 
 L'éditeur passe en tête : c'est le manque le plus visible (on ne peut écrire que les notes de
 l'orateur), et plusieurs évolutions en dépendent (modèles, étiquettes, liens, diapositives).
@@ -120,6 +120,38 @@ commentaire. L'éditeur de présentations est une autre façon de regarder le m�
   l'enregistrer.
 - Le découpage est celui de `splitSlides` (`presentation.js`) : un seul découpage, jamais un second
   côté Swift (même règle que pour les notes, voir le commentaire de `avecNote`).
+
+**Repris d'iA Presenter** (analyse de https://ia.net/presenter le 25/11/2026 ; Patrick : « Ok on
+fait les 7 ». La septième, les formules, est au point 16, pour tous) :
+
+- **Écrire son discours d'un seul tenant.** Une vue « Texte suivi » de l'éditeur : toute la
+  présentation comme un seul texte, ce qui est dit (les notes) en clair, ce qui est montré (les
+  diapositives) en retrait et en couleur. On écrit d'abord ce qu'on dira, puis on choisit ce qui
+  s'affiche : une ligne passée de « dit » à « montré » sort du commentaire et entre dans la
+  diapositive. **Le fichier ne change pas** : diapositives séparées par `---`, notes en commentaire
+  `<!-- -->`. Pas de syntaxe à la iA (tabulation pour montrer, `//` pour l'auteur) : nos fichiers
+  doivent rester lisibles partout.
+- **La durée estimée.** Pour chaque diapositive et pour le total, tirée du nombre de mots des notes
+  (environ 130 mots par minute, à régler), affichée dans le plan des diapositives et au lancement
+  (« environ 12 min »). Une diapositive sans notes compte un temps fixe. Quand une répétition existe
+  (1.5), ses temps réels passent devant l'estimation.
+- **Le temps qui se voit sans chronomètre.** En mode présentateur (et sur la télécommande), une
+  barre ou un liseré dont la couleur passe du calme à l'alerte à mesure qu'on approche du temps
+  prévu de la diapositive (répétition, sinon estimation), puis du total. Couleurs lisibles par les
+  daltoniens (pas seulement vert → rouge), et jamais sur l'écran du public.
+- **Le pied de page des diapositives.** Dans « Vos couleurs » : numéro de la diapositive (« 3 / 12
+  »), date, texte libre (nom, événement), logo ; chacun activable, masqué sur la diapositive de
+  titre. Repris tel quel dans l'export PowerPoint (champs de pied de page du masque), le PDF et le
+  polycopié.
+- **L'export en images.** Une image PNG par diapositive, dans un dossier ou à partager : 16:9, carré
+  ou portrait 4:5 (la diapositive est remise en page, pas rognée), pour un carrousel sur Mastodon
+  ou LinkedIn. La photo d'une diapositive existe déjà pour la télécommande : la même capture, en
+  pleine définition.
+- **Deux variantes du polycopié.** En plus d'une à trois diapositives par page : la diapositive et
+  ses notes côte à côte, ou la diapositive et des lignes vides pour que le public prenne des notes.
+
+Ces six-là ne dépendent pas de l'éditeur, sauf la première : la durée, la couleur du temps, le pied
+de page, les images et le polycopié peuvent sortir avant lui, dans une 1.6.x.
 
 ### 1 ter. Écrire avec l'IA de l'appareil
 
@@ -642,6 +674,23 @@ ou une nouvelle sur Mac et iPad avec ⌘ ou un appui long.
 À tenir avec ce qui est déjà annoncé pour tous : le graphique d'un tableau, la lecture à voix
 haute, les widgets (TACHES-1.6.md).
 
+### 16. Les formules mathématiques
+
+Repris d'iA Presenter (Patrick, 25/11/2026 : « Ok on fait les 7 »). md Viewer n'affiche pas
+aujourd'hui les formules : `$…$` et `$$…$$` restent en clair, dans les documents comme dans les
+diapositives.
+
+- Le rendu par KaTeX, embarqué dans l'app (comme Mermaid) : hors ligne, rien n'est chargé du web.
+  À vérifier d'abord : `vendor/mermaid.min.js` contient déjà KaTeX (pour les formules des
+  diagrammes) ; s'il est exposé, pas de seconde copie.
+- La syntaxe habituelle de GitHub et d'Obsidian : `$…$` dans la ligne, `$$…$$` en bloc, et les blocs
+  ```` ```math ````. Un `$` de prix (« 5 $ et 10 $ ») ne doit pas devenir une formule : mêmes règles
+  que GitHub (pas d'espace juste après le `$` ouvrant ni juste avant le fermant).
+- Partout où le Markdown est rendu : lecteur, diaporama, PDF, polycopié, livre. Dans les exports
+  Word, PowerPoint et ePub : la formule en image (ou en MathML pour l'ePub), jamais le code brut.
+- Pour VoiceOver (point 15) : la formule lue à partir de sa source.
+- Pour tous.
+
 ---
 
 ## À décider par Patrick
@@ -652,3 +701,6 @@ haute, les widgets (TACHES-1.6.md).
   nos seules commandes ?
 - La 2.0 : un nouveau numéro majeur pour « Présenter partout », ou continuer en 1.x ?
 - Annoncer ou non ces versions sur la feuille de route publique, et quand.
+- Les idées reprises d'iA Presenter (1 bis) : la durée, la couleur du temps, le pied de page, les
+  images et le polycopié pour tous ou dans l'option Analytic ? Et les sortir avant l'éditeur, dans
+  une 1.6.x ?
