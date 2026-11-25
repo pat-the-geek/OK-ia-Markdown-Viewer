@@ -216,6 +216,10 @@ Oui, à trois règles, celles de la conversion en présentation et des imports :
   fait), les chiffres sans source. Avec la 1.6 (le coffre ouvert, interrogé sur l'appareil) : « ce chiffre ne se trouve
   dans aucun document du coffre ».
 - **Titres et chapeau** : proposer un titre, un sous-titre, un résumé d'en-tête.
+- **Une formule dite en mots** (Patrick, 25/11/2026 : « Pour l'éditeur on pourra générer du ktex
+  par ia ») : « la racine carrée de x au carré plus y au carré », « la somme de i égale 1 à n de
+  i » devient `$\sqrt{x^2 + y^2}$`, `$\sum_{i=1}^{n} i$`. Aussi à la voix (1 quinquies), et
+  dans l'autre sens : « expliquer cette formule » en une phrase. Voir le point 16.
 
 **Pour une présentation (option Analytic) :**
 
@@ -727,6 +731,27 @@ diapositives.
   Word, PowerPoint et ePub : la formule en image (ou en MathML pour l'ePub), jamais le code brut.
 - Pour VoiceOver (point 15) : la formule lue à partir de sa source.
 - Pour tous.
+
+**Écrire une formule par l'IA** (Patrick, 25/11/2026 : « Pour l'éditeur on pourra générer du ktex
+par ia ») — dans l'éditeur (1), avec l'option Analytic comme le reste de l'écriture par l'IA
+(1 ter) :
+
+- **Décrire, pas coder** : une phrase (« l'intérêt composé sur n années »), et l'IA de l'appareil
+  propose le LaTeX ; la formule rendue s'affiche avant d'entrer dans le texte, à côté de sa source,
+  modifiable.
+- **KaTeX juge** : la proposition est d'abord passée à `katex.renderToString` avec
+  `throwOnError`. Une formule que KaTeX refuse n'est jamais insérée : une seconde demande au modèle
+  avec l'erreur, puis, à défaut, « Formule non reconnue, à écrire à la main ».
+- **Le modèle de l'appareil est petit** : fiable pour les formules courantes (fractions, racines,
+  puissances, sommes, intégrales, matrices simples), pas pour une démonstration. Une consigne
+  serrée (le LaTeX seul, sans texte autour, seulement les commandes que KaTeX connaît), et des
+  exemples dans la consigne.
+- **Pas de calcul** : l'IA écrit la formule, elle ne donne pas de résultat chiffré (même règle que
+  les diagrammes du point 1 quater : jamais un chiffre de l'IA).
+- **Par Claude ou Codex** (1 sexies) : par le serveur MCP du Mac, l'assistant écrit lui-même le
+  LaTeX ; le même contrôle par KaTeX s'applique avant l'écriture dans le fichier.
+- **Expliquer une formule** : sélectionner une formule d'un document, « Expliquer », une phrase
+  qui dit ce qu'elle calcule ; jamais écrite dans le fichier sans accord.
 
 ---
 
