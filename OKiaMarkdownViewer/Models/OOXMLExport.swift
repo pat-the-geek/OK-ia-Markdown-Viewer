@@ -28,6 +28,13 @@ struct OOXMLRun: Equatable {
     var souligne: String? = nil
     /// L'adresse d'un lien (`https:`, `mailto:`) : l'ePub la garde cliquable (1.5.1).
     var lien: String? = nil
+    /// Une formule (26/11/2026) : `text` en garde la source (`$…$`), qui reste ce que lit
+    /// PowerPoint dans une ligne de texte ; Word pose l'image dans la ligne, l'ePub le MathML.
+    var formule: OOXMLImage? = nil
+    var mathml: String? = nil
+    var formuleBloc = false
+    /// La formule entière, pas un morceau d'elle coupé par une annotation.
+    var formuleEntiere: Bool { text.hasPrefix("$") && text.hasSuffix("$") && text.count > 1 }
 }
 
 /// Un commentaire de relecture (1.4) : une note manuscrite de l'utilisateur, ancrée à un bloc.
@@ -52,6 +59,10 @@ struct OOXMLImage: Equatable {
     var isPNG: Bool            // true → png, false → jpeg
     /// Le texte alternatif de l'image du document (l'ePub le garde, 1.5.1).
     var alt = ""
+    /// L'image d'une formule (26/11/2026) : à sa taille (le texte de Word), jamais étirée ;
+    /// `profondeurPx`, ce qui descend sous la ligne de base.
+    var formule = false
+    var profondeurPx: Double = 0
 }
 
 /// A document/slide block in reading order.
@@ -183,7 +194,35 @@ enum DocxBuilder {
         for case .notes(_, let items) in blocks { for n in items { notesParId[n.id] = n } }
         var notesDeFin: [String] = []
 
+        /// Une image posée dans la ligne : celle d'une formule.
+        func dessinDansLaLigne(_ img: OOXMLImage) -> String {
+            relId += 1
+            let rid = "rId\(relId)"
+            let name = "image\(images.count + 1).png"
+            images.append((name, img))
+            rels += "<Relationship Id=\"\(rid)\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/\(name)\"/>"
+            let maxW = EMU.perInch * 6
+            var w = EMU.px(img.widthPx), h = EMU.px(img.heightPx)
+            if w > maxW { h = h * maxW / max(w, 1); w = maxW }
+            let docPrId = 2000 + images.count
+            // La ligne de base : Word pose le bas de l'image sur elle ; on l'abaisse de ce qui
+            // doit descendre dessous (en demi-points).
+            let descente = Int((img.profondeurPx * 1.5).rounded())
+            let rPr = descente > 0 ? "<w:rPr><w:position w:val=\"-\(descente)\"/></w:rPr>" : ""
+            return "<w:r>\(rPr)<w:drawing><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">"
+                + "<wp:extent cx=\"\(w)\" cy=\"\(h)\"/><wp:docPr id=\"\(docPrId)\" name=\"Formule\(docPrId)\"/>"
+                + "<a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\">"
+                + "<a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
+                + "<pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
+                + "<pic:nvPicPr><pic:cNvPr id=\"\(docPrId)\" name=\"Formule\(docPrId)\"/><pic:cNvPicPr/></pic:nvPicPr>"
+                + "<pic:blipFill><a:blip r:embed=\"\(rid)\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>"
+                + "<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"\(w)\" cy=\"\(h)\"/></a:xfrm>"
+                + "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>"
+                + "</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>"
+        }
+
         func runXML(_ r: OOXMLRun) -> String {
+            if let img = r.formule, r.formuleEntiere { return dessinDansLaLigne(img) }
             if let id = r.note {
                 guard let note = notesParId[id] else {
                     return "<w:r><w:rPr><w:vertAlign w:val=\"superscript\"/></w:rPr><w:t>\(XML.esc(r.text))</w:t></w:r>"
@@ -308,7 +347,12 @@ enum DocxBuilder {
             case .heading(let level, let runs):
                 body += para(runs, style: "Heading\(min(max(level, 1), 4))")
             case .paragraph(let runs):
-                body += para(runs)
+                // Une formule seule, en bloc : centrée, comme à l'écran.
+                if runs.count == 1, runs[0].formuleBloc, runs[0].formule != nil {
+                    body += "<w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr>\(encadrer(runsXML(runs)))</w:p>"
+                } else {
+                    body += para(runs)
+                }
             case .quote(let runs):
                 body += para(runs, style: "Quote")
             case .list(let ordered, let items):
@@ -488,6 +532,9 @@ enum PptxBuilder {
     static var contentW: Int { slideW - marginX * 2 }
     static var contentBottom: Int { slideH - 365760 }
     static var contentH: Int { contentBottom - contentTop }
+    /// Une formule arrive à la taille du texte de Word (11 pt) ; sur une diapositive, le texte
+    /// est d'environ 20 pt.
+    static let echelleFormule = 1.8
 
     private enum Item {
         case text([OOXMLBlock])           // contiguous paragraph/list/quote
@@ -635,6 +682,10 @@ enum PptxBuilder {
         func flush() { if !textRun.isEmpty { items.append(.text(textRun)); textRun = [] } }
         for b in slide.blocks {
             switch b {
+            // Une formule seule, en bloc : une image, à sa taille (dans une ligne de texte, elle
+            // reste écrite : PowerPoint ne pose pas d'image dans un texte).
+            case .paragraph(let r) where r.count == 1 && r[0].formuleBloc && r[0].formule != nil:
+                flush(); items.append(.image(r[0].formule!))
             case .heading, .paragraph, .quote, .list: textRun.append(b)
             case .notes(let title, let notes):
                 if !title.isEmpty { textRun.append(.heading(level: 2, runs: title)) }
@@ -661,6 +712,7 @@ enum PptxBuilder {
                 return max(1, lines) * 430000 + 120000
             case .table(let rows): return rows.count * 430000 + 80000
             case .image(let img):
+                if img.formule { return Int(Double(EMU.px(img.heightPx)) * echelleFormule) }
                 let ar = Double(img.widthPx) / Double(max(img.heightPx, 1))
                 return Int(Double(contentW) / max(ar, 0.1))
             }
@@ -682,6 +734,11 @@ enum PptxBuilder {
                 let ar = Double(img.widthPx) / Double(max(img.heightPx, 1))
                 var w = Int(Double(h) * ar)
                 var hh = h
+                if img.formule {
+                    // Jamais plus grande que sa taille (le texte d'une diapositive), ni étirée.
+                    hh = min(h, Int(Double(EMU.px(img.heightPx)) * echelleFormule))
+                    w = Int(Double(hh) * ar)
+                }
                 if w > contentW { w = contentW; hh = Int(Double(contentW) / max(ar, 0.1)) }
                 let x = marginX + (contentW - w) / 2
                 let name = "image\(slideIndex)_\(images.count + 1).\(img.isPNG ? "png" : "jpeg")"
@@ -1019,12 +1076,26 @@ enum OOXMLExportBridge {
 
     private static func runs(_ v: Any?) -> [OOXMLRun] {
         guard let a = v as? [[String: Any]] else { return [] }
-        return a.map { OOXMLRun(text: $0["text"] as? String ?? "",
-                                bold: $0["bold"] as? Bool ?? false,
-                                italic: $0["italic"] as? Bool ?? false,
-                                code: $0["code"] as? Bool ?? false,
-                                note: $0["note"] as? String,
-                                lien: $0["lien"] as? String) }
+        return a.map { d in
+            var r = OOXMLRun(text: d["text"] as? String ?? "",
+                             bold: d["bold"] as? Bool ?? false,
+                             italic: d["italic"] as? Bool ?? false,
+                             code: d["code"] as? Bool ?? false,
+                             note: d["note"] as? String,
+                             lien: d["lien"] as? String)
+            if let f = d["formule"] as? [String: Any] {
+                r.formuleBloc = f["bloc"] as? Bool ?? false
+                r.mathml = f["mathml"] as? String
+                if let b64 = f["png"] as? String, let data = Data(base64Encoded: b64) {
+                    var img = OOXMLImage(data: data, widthPx: max(intOf(f["w"]), 1), heightPx: max(intOf(f["h"]), 1), isPNG: true)
+                    img.formule = true
+                    img.profondeurPx = (f["prof"] as? NSNumber)?.doubleValue ?? 0
+                    img.alt = r.text
+                    r.formule = img
+                }
+            }
+            return r
+        }
     }
 
     private static func image(_ d: [String: Any], _ downloaded: [String: OOXMLImage]) -> OOXMLImage? {

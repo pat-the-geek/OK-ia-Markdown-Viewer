@@ -2402,7 +2402,7 @@
     }
     var last = out[out.length - 1];
     // Un appel de note reste seul dans son run : il deviendra une note de fin.
-    if (last && !last.note && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code
+    if (last && !last.note && !last.formule && !!last.bold === !!fmt.bold && !!last.italic === !!fmt.italic && !!last.code === !!fmt.code
         && (last.lien || '') === (fmt.lien || '')) {
       last.text += text;
     } else {
@@ -2483,8 +2483,20 @@
       if (c.classList && c.classList.contains('katex')) {
         var formuleEl = c.closest('.okia-math');
         var tex = formuleEl ? formuleEl.getAttribute('data-tex') || '' : c.textContent;
-        var enBloc = formuleEl && formuleEl.classList.contains('okia-math-bloc');
-        pushRun(out, enBloc ? '$$' + tex + '$$' : '$' + tex + '$', { bold: fmt.bold, italic: fmt.italic, code: true, lien: fmt.lien });
+        var enBloc = !!(formuleEl && formuleEl.classList.contains('okia-math-bloc'));
+        var runFormule = { text: enBloc ? '$$' + tex + '$$' : '$' + tex + '$', bold: false, italic: false, code: true,
+                           formule: { bloc: enBloc } };
+        var mathEl = c.querySelector('math');
+        if (mathEl) {
+          var mm = mathEl.cloneNode(true);
+          mm.querySelectorAll('annotation').forEach(function (a) { a.remove(); });
+          runFormule.formule.mathml = new XMLSerializer().serializeToString(mm);
+        }
+        out.push(runFormule);
+        formulesEnAttente.push(formuleEnImage(c).then(function (res) {
+          if (res) { runFormule.formule.png = res.png; runFormule.formule.w = res.w; runFormule.formule.h = res.h;
+                     runFormule.formule.prof = res.prof; }
+        }));
         continue;
       }
       if (tag !== 'SUP' && horsExport(c)) continue;
@@ -2521,6 +2533,58 @@
     }
   }
   function runsOf(el) { var o = []; collectRuns(el, {}, o); return o.filter(function (r) { return r.text.trim().length || r.text === '\n'; }); }
+
+  /* Une formule pour Word et PowerPoint (26/11/2026) : son MathML dessiné dans une image, par
+     un SVG qui l'embarque (foreignObject), comme les étiquettes des diagrammes. La taille est
+     ramenée à celle du texte de Word (11 pt, soit 14,67 px) ; `prof` dit de combien l'image
+     descend sous la ligne de base, pour que Word l'y pose juste. Une formule cachée (section
+     repliée) ou que le dessin refuse garde sa source, écrite. */
+  var formulesEnAttente = [];
+  function formuleEnImage(katexEl) {
+    return new Promise(function (resolve) {
+      try {
+        var math = katexEl.querySelector('math');
+        if (!math) return resolve(null);
+        // Une formule en bloc occupe toute la largeur de la colonne : on la mesure à sa taille.
+        var styleAvant = math.getAttribute('style');
+        math.style.display = 'inline-block';
+        var r = math.getBoundingClientRect();
+        var repere = document.createElement('span');
+        repere.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+        math.parentNode.insertBefore(repere, math.nextSibling);
+        var base = repere.getBoundingClientRect().top;
+        repere.remove();
+        if (styleAvant === null) math.removeAttribute('style'); else math.setAttribute('style', styleAvant);
+        if (r.width < 2 || r.height < 2) return resolve(null);
+        var w = Math.ceil(r.width) + 4, h = Math.ceil(r.height) + 4;
+        var prof = math.getAttribute('display') === 'block' ? 0 : Math.max(0, r.bottom - base) + 2;
+        var taille = parseFloat(getComputedStyle(math).fontSize) || 16;
+        var clone = math.cloneNode(true);
+        clone.setAttribute('xmlns', 'http://www.w3.org/1998/Math/MathML');
+        clone.setAttribute('style', 'margin:0;display:inline-block');
+        clone.querySelectorAll('annotation').forEach(function (a) { a.remove(); });
+        var xml = new XMLSerializer().serializeToString(clone);
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+          '<foreignObject x="0" y="0" width="' + w + '" height="' + h + '">' +
+          '<div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:2px;font-size:' + taille +
+          'px;line-height:normal;color:#111111;white-space:nowrap">' + xml + '</div></foreignObject></svg>';
+        var img = new Image();
+        img.onload = function () {
+          try {
+            var echelle = 3;
+            var cv = document.createElement('canvas');
+            cv.width = w * echelle; cv.height = h * echelle;
+            cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+            var mot = 14.67 / taille;
+            resolve({ png: cv.toDataURL('image/png').split(',')[1],
+                      w: Math.round(w * mot), h: Math.round(h * mot), prof: Math.round(prof * mot * 10) / 10 });
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = function () { resolve(null); };
+        img.src = 'data:image/svg+xml;base64,' + b64encode(svg);
+      } catch (e) { resolve(null); }
+    });
+  }
 
   function svgToPng(svg) {
     return new Promise(function (resolve) {
@@ -2871,6 +2935,7 @@
   // Returns a Promise of an array of block objects.
   function exportModel(container) {
     retirerBoutonsAgrandir(container);
+    formulesEnAttente = [];
     var tasks = [];     // async image tasks
     var blocks = [];
     var kids = Array.prototype.slice.call(container.children);
@@ -3006,7 +3071,7 @@
       }
     });
 
-    return Promise.all(tasks).then(function () {
+    return Promise.all(tasks.concat(formulesEnAttente)).then(function () {
       // drop images that failed to rasterise and have no src
       return blocks.filter(function (b) { return b.t !== 'image' || b.png || b.jpeg || b.src || b.alt; });
     });

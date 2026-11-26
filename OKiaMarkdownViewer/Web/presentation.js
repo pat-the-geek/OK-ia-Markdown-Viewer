@@ -551,6 +551,21 @@
     // réduit (Patrick, 31/10/2026). Pas sur une toile debout : une colonne y ferait quinze signes.
     if (inner.scrollHeight > availH && availW >= 880) deuxColonnes(section, inner, availH);
 
+    // 0 quater. Les images carrées et en portrait (26/11/2026) : une diapositive courte y flottait
+    // au milieu d'un grand blanc. On l'agrandit (zoom, qui remet le texte en page) au plus grand
+    // des trois paliers qui tient sans déborder ; jamais à l'écran ni en 16:9.
+    inner.style.zoom = '';
+    if (document.body.classList.contains('okia-capture') &&
+        /\bokia-format-(carre|portrait)\b/.test(document.body.className) && inner.scrollHeight <= availH) {
+      [1.5, 1.35, 1.2].some(function (f) {
+        inner.style.zoom = String(f);
+        var r = inner.getBoundingClientRect();
+        if (r.height <= availH && inner.scrollWidth <= inner.clientWidth + 1) return true;
+        inner.style.zoom = '';
+        return false;
+      });
+    }
+
     // 1. Shrink content if it overflows the design canvas (never enlarge here).
     var h = inner.scrollHeight, w = inner.scrollWidth;
     if (h > 0 && w > 0) {

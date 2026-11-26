@@ -120,7 +120,8 @@ enum EpubBuilder {
             </container>
             """)
         zip.add("OEBPS/content.opf", xml: opf(meta: meta, images: images.map { ($0.nom, $0.image.isPNG) },
-                                              identifiant: identifiant, maintenant: maintenant))
+                                              identifiant: identifiant, maintenant: maintenant,
+                                              mathml: corps.contains("<math")))
         zip.add("OEBPS/nav.xhtml", xml: nav(meta: meta, toc: toc))
         zip.add("OEBPS/style.css", xml: style)
         zip.add("OEBPS/texte.xhtml", xml: page(titre: meta.titre, langue: meta.langue, corps: corps))
@@ -130,7 +131,8 @@ enum EpubBuilder {
 
     // MARK: - Parties
 
-    private static func opf(meta: EpubMeta, images: [(String, Bool)], identifiant: String, maintenant: Date) -> String {
+    private static func opf(meta: EpubMeta, images: [(String, Bool)], identifiant: String, maintenant: Date,
+                            mathml: Bool = false) -> String {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         let modifie = f.string(from: maintenant)
@@ -151,7 +153,7 @@ enum EpubBuilder {
               </metadata>
               <manifest>
                 <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
-                <item id="texte" href="texte.xhtml" media-type="application/xhtml+xml"/>
+                <item id="texte" href="texte.xhtml" media-type="application/xhtml+xml"\(mathml ? " properties=\"mathml\"" : "")/>
                 <item id="style" href="style.css" media-type="text/css"/>
             \(manifesteImages)  </manifest>
               <spine>
@@ -245,6 +247,8 @@ enum EpubBuilder {
             if let note = r.note {
                 return "<sup><a href=\"#note-\(attr(note))\" epub:type=\"noteref\" role=\"doc-noteref\">\(esc(r.text))</a></sup>"
             }
+            // Une formule (26/11/2026) : son MathML, que Livres affiche et que VoiceOver lit.
+            if let m = r.mathml, r.formuleEntiere, m.hasPrefix("<math") { return m }
             var s = esc(r.text).replacingOccurrences(of: "\n", with: "<br/>")
             if r.code { s = "<code>\(s)</code>" }
             if r.italic { s = "<em>\(s)</em>" }

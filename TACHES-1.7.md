@@ -195,10 +195,12 @@ souhaite toucher le plus grand nombre d'utilisateurs ») :
       avant se relisent sans lui. Harnais `OKIA_PIED=numero,date|<texte>`. Vu au simulateur
       (diaporama, image carrée) ; le PowerPoint est produit et son XML valide, **pas encore ouvert
       dans PowerPoint ni Keynote**.
+- [x] Le pied de page vu dans le rendu Quick Look du PowerPoint (date, texte, « 2 / 4 ») ; dans
+      PowerPoint et Keynote eux-mêmes, pas encore (les deux n'ont pas répondu à l'automatisation).
+- [x] **Agrandir le texte des images carrées et portrait** (26/11/2026) : une diapositive courte
+      y est agrandie (`zoom`, qui remet le texte en page) au plus grand de 1,5, 1,35 ou 1,2 qui
+      tient sans déborder ; jamais à l'écran, en 16:9 ni dans le polycopié. Vu au simulateur.
 - [ ] Sur Mac : l'enregistrement du dossier d'images (compilé, pas essayé).
-- [ ] Le pied de page : ouvrir l'export dans PowerPoint et Keynote.
-- [ ] Plus tard : agrandir le texte des images carrées et portrait (la toile ne grossit jamais
-      le contenu ; une diapositive courte y paraît petite).
 
 La règle suivie : lire et faire sortir un document est pour tous (comme les exports PDF, Word,
 PowerPoint et ePub) ; préparer et présenter devant un public est dans l'option (comme le mode
@@ -757,8 +759,15 @@ diapositives.
       (« 5 $ et 10 $ », « $5 à $10 »), le code reste du code, `\$` reste un dollar. Une formule
       que KaTeX refuse reste en clair, en rouge, l'erreur au survol. La source est gardée
       (`data-tex`) ; la traduction et la recherche passent à côté. Vu au simulateur.
-- [ ] Les exports Word, PowerPoint et ePub : la formule y part encore en source (`$…$`) ; en
-      image ou en MathML, à faire.
+- [x] Les exports (26/11/2026) : chaque formule part avec sa source, son MathML et son image
+      (`formuleEnImage` : le MathML dessiné par un SVG `foreignObject`, ramené au texte de Word).
+      Word : l'image dans la ligne, posée sur la ligne de base (`w:position`), un bloc centré.
+      PowerPoint : un bloc devient une image à sa taille (×1,8) ; dans une ligne de texte, la
+      formule reste écrite, PowerPoint ne posant pas d'image dans un texte. ePub : le MathML
+      (`properties="mathml"`). Une formule cachée ou refusée par KaTeX garde sa source. Vu par
+      Quick Look (Word, PowerPoint) ; le XHTML de l'ePub est bien formé.
+- [ ] Plus tard : des équations Word natives (OMML), modifiables dans Word ; et dans les lignes de
+      texte du PowerPoint.
 - [ ] VoiceOver : lit le MathML ; à écouter sur un appareil.
 
 **Écrire une formule par l'IA** (Patrick, 25/11/2026 : « Pour l'éditeur on pourra générer du ktex
