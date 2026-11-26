@@ -902,8 +902,9 @@
     var menu = el('presentMenu');
     if (!menu) return;
     menu.innerHTML = '';
-    menu.appendChild(menuSection(TXT('Thème'), THEMES, 'theme'));
-    menu.appendChild(menuSection(TXT('Transition'), TRANSITIONS, 'transition'));
+    // Les actions d'abord (26/11/2026) : derrière les douze transitions, « Images (PNG)… » et le
+    // menu « Présenter » tombaient sous le bord d'un iPhone, le menu coupé pile sous
+    // « PowerPoint » — rien ne disait qu'il défilait. Thème et transition viennent ensuite.
     // Export section.
     var h = document.createElement('div');
     h.className = 'present-menu-title';
@@ -934,6 +935,8 @@
         menu.appendChild(b);
       });
     }
+    menu.appendChild(menuSection(TXT('Thème'), THEMES, 'theme'));
+    menu.appendChild(menuSection(TXT('Transition'), TRANSITIONS, 'transition'));
     syncMenu();
   }
 
@@ -1150,7 +1153,7 @@
     return chain.then(function () { try { document.body.removeChild(tmp); } catch (e) {} return { slides: out, transition: transition, theme: theme }; });
   }
 
-  function openMenu()  { var m = el('presentMenu'); if (m) { m.hidden = false; syncMenu(); } }
+  function openMenu()  { var m = el('presentMenu'); if (m) { m.hidden = false; m.scrollTop = 0; syncMenu(); } }
   function closeMenu() { var m = el('presentMenu'); if (m) m.hidden = true; }
   function toggleMenu(ev) {
     if (ev) ev.stopPropagation();
