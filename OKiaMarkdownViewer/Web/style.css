@@ -903,3 +903,16 @@ body.okia-map-has-fullscreen { overflow: hidden; }
   margin: -0.4rem 0 1.1rem;
   font-style: italic;
 }
+
+/* Les formules (26/11/2026, pour tous) : KaTeX en MathML, dessiné par WebKit. Un bloc défile en
+   largeur plutôt que de déborder ; une formule que KaTeX refuse reste en clair, signalée. */
+.okia-math-bloc { display: block; margin: 0.9em 0; overflow-x: auto; overflow-y: hidden; text-align: center; }
+.okia-math math { font-size: 1.08em; }
+.okia-math-erreur, .okia-math-brut {
+  font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; white-space: pre-wrap;
+  border-radius: 4px; padding: 0 0.2em;
+}
+.okia-math-erreur { color: #b3261e; background: rgba(179, 38, 30, 0.08); }
+@media (prefers-color-scheme: dark) {
+  body:not(.present-body) .okia-math-erreur { color: #ff8a80; background: rgba(255, 138, 128, 0.12); }
+}

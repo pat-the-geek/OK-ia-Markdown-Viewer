@@ -2165,6 +2165,8 @@ struct PresentationView: View {
                 }
             }
             .onChange(of: annoter) { _, actif in basculerAnnotation(actif) }
+            // Une pause du chronomètre : la télécommande se recale sur lui.
+            .onChange(of: seance.pause) { _, _ in if hote.actif { envoyerTelecommande() } }
             .onChange(of: annotations.outil) { _, _ in calque?.outilChange() }
             .onChange(of: annotations.couleur) { _, _ in calque?.outilChange() }
             .statusBarHidden(true)
@@ -2235,6 +2237,15 @@ struct PresentationView: View {
                 // sinon) ; OKIA_IMAGES=16:9|carre|portrait : crée les images ; OKIA_REPETER=<minutes> :
                 // lance la répétition.
                 let envD = ProcessInfo.processInfo.environment
+                // OKIA_PIED=numero,date|<texte> : le thème à vos couleurs, avec ce pied de page.
+                if let pied = envD["OKIA_PIED"] {
+                    var t = ThemeMarque.actuel ?? ThemeMarque()
+                    t.piedNumero = pied.contains("numero")
+                    t.piedDate = pied.contains("date")
+                    if let b = pied.firstIndex(of: "|") { t.piedTexte = String(pied[pied.index(after: b)...]) }
+                    t.defaut = true
+                    ThemeMarque.actuel = t
+                }
                 switch envD["OKIA_OUTIL_DIAPO"] {
                 case "repeter": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglageRepetition = true }
                 case "polycopie": DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reglagePolycopie = true }
@@ -2304,8 +2315,8 @@ struct PresentationView: View {
                                 // Le polycopié parcourt les diapositives : ni le public ni la
                                 // répétition ne le suivent.
                                 guard polycopie == nil else { return }
-                                seance.index = i
-                                seance.total = total
+                                seance.changerDiapo(i)
+                                if seance.total != total { seance.total = total; prevoirTemps() }
                                 repetition.changer(i)
                                 // Les traits de la télécommande restent sur leur diapositive, et
                                 // reviennent avec elle.
@@ -2329,6 +2340,22 @@ struct PresentationView: View {
     private func commencerRepetition(_ minutes: Int) {
         diaporamaJS("window.OKIA_PRESENT.aller(0, true)")
         repetition.commencer(minutes: minutes, total: seance.total, depart: 0)
+        // La durée visée devient le temps prévu de ce document, pour la couleur du temps.
+        UserDefaults.standard.set(minutes * 60, forKey: SeancePresentation.cleVisee(document))
+        prevoirTemps()
+    }
+
+    /// La couleur du temps (option Analytic, 26/11/2026) : le temps prévu de chaque diapositive,
+    /// d'après les notes (`dureeEstimee`) et la durée visée de la dernière répétition.
+    private func prevoirTemps() {
+        guard achat.acces, let vue = annotations.diaporama else { return }
+        vue.evaluateJavaScript("window.OKIA_PRESENT && window.OKIA_PRESENT.dureeEstimee ? window.OKIA_PRESENT.dureeEstimee() : null") { r, _ in
+            guard let d = r as? [String: Any], let par = d["parDiapo"] as? [NSNumber] else { return }
+            let visee = UserDefaults.standard.double(forKey: SeancePresentation.cleVisee(document))
+            seance.prevoir(estimation: par.map(\.doubleValue), avecNotes: (d["avecNotes"] as? Bool) ?? false,
+                           visee: visee > 0 ? visee : nil)
+            if hote.actif { envoyerTelecommande() }
+        }
     }
 
     private func terminerRepetition() {
@@ -2406,7 +2433,9 @@ struct PresentationView: View {
                             try? donnees?.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("telecommande.jpg"))
                         }
                         #endif
-                        hote.envoyerEtat(index: i, total: total, titre: titre, notes: notes, image: donnees, cadre: cadre)
+                        let s = seance
+                        hote.envoyerEtat(index: i, total: total, titre: titre, notes: notes, image: donnees, cadre: cadre,
+                                         temps: (s.prevu(i), s.prevus.isEmpty ? nil : s.prevuTotal, s.ecoule(), s.ecouleDiapo()))
                     } }
                 }
             }

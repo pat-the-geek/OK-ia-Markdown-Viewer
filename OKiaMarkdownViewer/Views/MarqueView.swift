@@ -39,6 +39,15 @@ struct MarqueView: View {
                     .pickerStyle(.navigationLink)
                 }
                 Section {
+                    Toggle(tr("Numéro de la diapositive"), isOn: $theme.piedNumero)
+                    Toggle(tr("Date du jour"), isOn: $theme.piedDate)
+                    TextField(tr("Texte (un nom, un événement)"), text: $theme.piedTexte)
+                } header: {
+                    Text(tr("Pied de page"))
+                } footer: {
+                    Text(tr("Sur chaque diapositive sauf la première, dans le diaporama, les images, le polycopié et l’export PowerPoint."))
+                }
+                Section {
                     Toggle(tr("Pour tous les diaporamas"), isOn: $theme.defaut)
                 } footer: {
                     Text(tr("Sinon, « Ma marque » est un thème parmi d’autres, dans le menu du diaporama. L’export PowerPoint reprend le logo, les couleurs et la police."))
@@ -108,7 +117,26 @@ struct MarqueView: View {
             if let logo, let image = UIImage(data: logo) {
                 Image(uiImage: image).resizable().scaledToFit().frame(maxWidth: 80, maxHeight: 34).padding(12)
             }
+            if theme.aUnPied {
+                Text(piedApercu)
+                    .font(.custom(theme.police, size: 10))
+                    .foregroundStyle(texte.opacity(0.62))
+                    .lineLimit(1)
+                    .padding(.horizontal, 100)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .aspectRatio(16 / 9, contentMode: .fit)
+    }
+
+    /// Le pied de page de l'aperçu, comme sur la troisième diapositive d'un diaporama de douze.
+    private var piedApercu: String {
+        var morceaux: [String] = []
+        let t = theme.piedTexte.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !t.isEmpty { morceaux.append(t) }
+        if theme.piedDate { morceaux.append(ThemeMarque.dateDuJour) }
+        if theme.piedNumero { morceaux.append("3 / 12") }
+        return morceaux.joined(separator: "  ·  ")
     }
 }

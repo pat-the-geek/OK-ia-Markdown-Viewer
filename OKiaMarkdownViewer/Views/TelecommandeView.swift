@@ -178,12 +178,33 @@ struct TelecommandeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Le chronomètre (celui de l'appareil qui présente, dès qu'il l'envoie), le rang et, avec un
+    /// temps prévu, la couleur du temps de la diapositive : un liseré sous les deux (26/11/2026).
     private var compteurs: some View {
-        HStack(spacing: 10) {
-            TimelineView(.periodic(from: .now, by: 1)) { c in
-                Text(RepetitionDiaporama.duree(c.date.timeIntervalSince(debut))).monospacedDigit().foregroundStyle(orange)
+        TimelineView(.periodic(from: .now, by: 1)) { c in
+            HStack(spacing: 10) {
+                let ecoule = c.date.timeIntervalSince(client.debutTotal ?? debut)
+                let phase = client.prevuTotal.map { JaugeTemps.phase(ecoule, $0) }
+                Text(RepetitionDiaporama.duree(ecoule)).monospacedDigit()
+                    .foregroundStyle(phase == .depasse ? JaugeTemps.couleur(.depasse) : orange)
+                if let p = client.prevu {
+                    let d = c.date.timeIntervalSince(client.debutDiapo)
+                    if d > p {
+                        Text("+" + RepetitionDiaporama.duree(d - p)).monospacedDigit().fontWeight(.semibold)
+                            .foregroundStyle(JaugeTemps.couleur(.depasse))
+                    }
+                }
+                Text("\(client.index + 1) / \(max(client.total, 1))").monospacedDigit().foregroundStyle(.secondary)
             }
-            Text("\(client.index + 1) / \(max(client.total, 1))").monospacedDigit().foregroundStyle(.secondary)
+            // Le liseré prend la largeur des compteurs (une barre seule, sous `fixedSize`, n'en
+            // aurait aucune).
+            .padding(.bottom, client.prevu == nil ? 0 : 7)
+            .overlay(alignment: .bottom) {
+                if let p = client.prevu {
+                    JaugeTemps(libelle: tr("Diapositive"), ecoule: c.date.timeIntervalSince(client.debutDiapo), prevu: p,
+                               fine: true, compacte: true)
+                }
+            }
         }
         .fixedSize()
         .padding(.horizontal, 6)

@@ -16,6 +16,29 @@ struct ThemeMarque: Codable, Equatable {
     var police = "Avenir Next"
     /// Appliqué d'office à tous les diaporamas ; sinon, « Ma marque » est un thème parmi d'autres.
     var defaut = true
+    /// Le pied de page (26/11/2026, repris d'iA Presenter) : le numéro (« 3 / 12 »), la date du
+    /// jour, un texte libre (un nom, un événement). Chacun à part ; jamais sur la diapositive de
+    /// titre (la première).
+    var piedNumero = false
+    var piedDate = false
+    var piedTexte = ""
+
+    init() {}
+
+    /// Les thèmes enregistrés avant le pied de page se relisent sans lui.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = ThemeMarque()
+        fond = try c.decodeIfPresent(String.self, forKey: .fond) ?? d.fond
+        accent = try c.decodeIfPresent(String.self, forKey: .accent) ?? d.accent
+        police = try c.decodeIfPresent(String.self, forKey: .police) ?? d.police
+        defaut = try c.decodeIfPresent(Bool.self, forKey: .defaut) ?? d.defaut
+        piedNumero = try c.decodeIfPresent(Bool.self, forKey: .piedNumero) ?? false
+        piedDate = try c.decodeIfPresent(Bool.self, forKey: .piedDate) ?? false
+        piedTexte = try c.decodeIfPresent(String.self, forKey: .piedTexte) ?? ""
+    }
+
+    var aUnPied: Bool { piedNumero || piedDate || !piedTexte.trimmingCharacters(in: .whitespaces).isEmpty }
 
     /// Des polices présentes sur iPhone, iPad et Mac, et que PowerPoint et Keynote connaissent.
     static let polices = ["Helvetica Neue", "Avenir Next", "Futura", "Gill Sans", "Optima",
@@ -103,6 +126,10 @@ struct ThemeMarque: Codable, Equatable {
     @MainActor static var json: String {
         guard AchatAnalytic.partage.acces, let t = actuel else { return "null" }
         var d: [String: Any] = ["fond": t.fond, "accent": t.accent, "texte": t.texte, "police": t.police, "defaut": t.defaut]
+        if t.aUnPied {
+            d["pied"] = ["numero": t.piedNumero, "date": t.piedDate,
+                         "texte": t.piedTexte.trimmingCharacters(in: .whitespacesAndNewlines)]
+        }
         if let logo { d["logo"] = "data:image/png;base64," + logo.base64EncodedString() }
         guard let data = try? JSONSerialization.data(withJSONObject: d),
               let s = String(data: data, encoding: .utf8) else { return "null" }
@@ -112,8 +139,21 @@ struct ThemeMarque: Codable, Equatable {
     /// Ce que l'export PowerPoint reprend.
     var pptx: MarquePptx {
         func sansDiese(_ s: String) -> String { s.hasPrefix("#") ? String(s.dropFirst()) : s }
+        let texteLibre = piedTexte.trimmingCharacters(in: .whitespacesAndNewlines)
         return MarquePptx(fond: sansDiese(fond), texte: sansDiese(texte), accent: sansDiese(accent),
-                          police: police, logo: Self.logo)
+                          police: police, logo: Self.logo,
+                          piedNumero: piedNumero,
+                          piedDate: piedDate ? Self.dateDuJour : nil,
+                          piedTexte: texteLibre.isEmpty ? nil : texteLibre)
+    }
+
+    /// La date du pied de page, comme la page l'écrit (« 26 novembre 2026 »), dans la langue de l'app.
+    static var dateDuJour: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: Localization.shared.code)
+        f.dateStyle = .long
+        f.timeStyle = .none
+        return f.string(from: Date())
     }
 }
 

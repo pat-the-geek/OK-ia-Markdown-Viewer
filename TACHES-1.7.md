@@ -180,8 +180,23 @@ souhaite toucher le plus grand nombre d'utilisateurs ») :
 - [x] **Les dispositions du polycopié** : notes dessous, notes à côté, lignes, diapositives seules,
       selon le nombre par page (`DispositionPolycopie`) ; harnais `OKIA_POLYCOPIE_DISPO`. Vu au
       simulateur (deux par page avec les notes à côté, une par page avec les lignes).
+- [x] **La couleur du temps** (26/11/2026) : dans la colonne du présentateur, une barre pour la
+      diapositive et une pour le total (`JaugeTemps`) ; bleue, jaune aux trois quarts, vermillon
+      au-delà avec « +0:12 » (bleu, jaune et vermillon d'Okabe et Ito, et la longueur dit la même
+      chose que la couleur). Sur la télécommande, un liseré sous le chronomètre, recalé sur celui
+      de l'appareil qui présente (`PaquetTelecommande.prevu`, `ecoule`), même après une pause. Le
+      temps prévu : la durée visée de la dernière répétition de ce document, répartie selon les
+      notes ; sinon l'estimation tirée des notes ; rien sans notes ni répétition. Vu au simulateur
+      (présentateur : bleu puis vermillon ; télécommande : liseré jaune).
+- [x] **Le pied de page** (26/11/2026) : « Vos couleurs » › Pied de page : numéro (« 3 / 12 »),
+      date du jour, texte libre ; jamais sur la première diapositive. Dans le diaporama avec le
+      thème « Ma marque », donc aussi dans les images et le polycopié ; dans l'export PowerPoint,
+      en espaces réservés `dt`, `ftr` et `sldNum` (le numéro est un champ). Les thèmes enregistrés
+      avant se relisent sans lui. Harnais `OKIA_PIED=numero,date|<texte>`. Vu au simulateur
+      (diaporama, image carrée) ; le PowerPoint est produit et son XML valide, **pas encore ouvert
+      dans PowerPoint ni Keynote**.
 - [ ] Sur Mac : l'enregistrement du dossier d'images (compilé, pas essayé).
-- [ ] La couleur du temps, le pied de page, les formules (point 16) : à suivre.
+- [ ] Le pied de page : ouvrir l'export dans PowerPoint et Keynote.
 - [ ] Plus tard : agrandir le texte des images carrées et portrait (la toile ne grossit jamais
       le contenu ; une diapositive courte y paraît petite).
 
@@ -731,6 +746,20 @@ diapositives.
   Word, PowerPoint et ePub : la formule en image (ou en MathML pour l'ePub), jamais le code brut.
 - Pour VoiceOver (point 15) : la formule lue à partir de sa source.
 - Pour tous.
+
+**Avancement** (26/11/2026) :
+
+- [x] KaTeX 0.16.25 dans `Web/vendor/katex.min.js` (le paquet npm officiel, empreinte vérifiée,
+      licence MIT à côté) : la copie de Mermaid est enfermée dans son paquet, rien n'y est exposé.
+      Rendu en MathML, que WebKit dessine lui-même : ni feuille de style ni polices de plus.
+- [x] `$…$`, `$$…$$` (en bloc, ou au milieu d'une ligne) et ```` ```math ```` dans `render.js`
+      (extensions de marked), donc dans le lecteur et le diaporama. Les prix restent des prix
+      (« 5 $ et 10 $ », « $5 à $10 »), le code reste du code, `\$` reste un dollar. Une formule
+      que KaTeX refuse reste en clair, en rouge, l'erreur au survol. La source est gardée
+      (`data-tex`) ; la traduction et la recherche passent à côté. Vu au simulateur.
+- [ ] Les exports Word, PowerPoint et ePub : la formule y part encore en source (`$…$`) ; en
+      image ou en MathML, à faire.
+- [ ] VoiceOver : lit le MathML ; à écouter sur un appareil.
 
 **Écrire une formule par l'IA** (Patrick, 25/11/2026 : « Pour l'éditeur on pourra générer du ktex
 par ia ») — dans l'éditeur (1), avec l'option Analytic comme le reste de l'écriture par l'IA

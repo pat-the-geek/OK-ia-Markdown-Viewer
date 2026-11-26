@@ -471,6 +471,12 @@ struct MarquePptx {
     var accent: String
     var police: String
     var logo: Data?
+    /// Le pied de page (26/11/2026) : les champs de pied de page de PowerPoint (numéro, date,
+    /// texte), sur chaque diapositive sauf la première, celle du titre.
+    var piedNumero = false
+    var piedDate: String? = nil
+    var piedTexte: String? = nil
+    var aUnPied: Bool { piedNumero || piedDate != nil || piedTexte != nil }
 }
 
 enum PptxBuilder {
@@ -506,6 +512,9 @@ enum PptxBuilder {
             var images: [(name: String, img: OOXMLImage)] = []
             var xml = slideXML(slide, slideIndex: n, images: &images, transition: entree)
             if let marque { xml = teinter(xml, marque) }
+            if let marque, marque.aUnPied, i > 0 {
+                xml = xml.replacingOccurrences(of: "</p:spTree></p:cSld>", with: piedXML(marque, rang: n, total: slides.count) + "</p:spTree></p:cSld>")
+            }
             zip.add("ppt/slides/slide\(n).xml", xml: xml)
 
             var rels = "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout\" Target=\"../slideLayouts/slideLayout1.xml\"/>"
@@ -764,6 +773,46 @@ enum PptxBuilder {
         <a:tbl><a:tblPr firstRow="1"><a:tableStyleId>{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}</a:tableStyleId></a:tblPr>\
         <a:tblGrid>\(grid)</a:tblGrid>\(trs)</a:tbl></a:graphicData></a:graphic></p:graphicFrame>
         """
+    }
+
+    /// La largeur du logo dans le PowerPoint (le pied de page s'arrête avant lui).
+    static func largeurLogo(_ m: MarquePptx) -> Int {
+        guard let logo = m.logo, let image = UIImageTaille.taille(logo) else { return 0 }
+        let hMax = 560_000, wMax = 1_700_000
+        return min(wMax, Int(Double(hMax) * image.width / max(image.height, 1)))
+    }
+
+    /// Les champs de pied de page d'une diapositive : la date à gauche, le texte au milieu, le
+    /// numéro à droite (avant le logo). Des espaces réservés de PowerPoint (`dt`, `ftr`, `sldNum`) :
+    /// PowerPoint et Keynote les reconnaissent, et le numéro y est un champ qui suit l'ordre des
+    /// diapositives.
+    static func piedXML(_ m: MarquePptx, rang: Int, total: Int) -> String {
+        let y = slideH - 380_000, h = 300_000
+        let couleur = "<a:solidFill><a:srgbClr val=\"\(m.texte)\"><a:alpha val=\"62000\"/></a:srgbClr></a:solidFill>"
+        let police = "<a:latin typeface=\"\(XML.esc(m.police))\"/>"
+        func forme(_ id: Int, _ nom: String, _ ph: String, x: Int, w: Int, algn: String, _ contenu: String) -> String {
+            "<p:sp><p:nvSpPr><p:cNvPr id=\"\(id)\" name=\"\(nom)\"/><p:cNvSpPr><a:spLocks noGrp=\"1\"/></p:cNvSpPr>"
+            + "<p:nvPr><p:ph type=\"\(ph)\" sz=\"quarter\" idx=\"\(id)\"/></p:nvPr></p:nvSpPr>"
+            + "<p:spPr><a:xfrm><a:off x=\"\(x)\" y=\"\(y)\"/><a:ext cx=\"\(w)\" cy=\"\(h)\"/></a:xfrm></p:spPr>"
+            + "<p:txBody><a:bodyPr anchor=\"ctr\"/><a:lstStyle/><a:p><a:pPr algn=\"\(algn)\"/>\(contenu)</a:p></p:txBody></p:sp>"
+        }
+        let rPr = "<a:rPr sz=\"1100\" dirty=\"0\">\(couleur)\(police)</a:rPr>"
+        var x = ""
+        if let d = m.piedDate {
+            x += forme(9001, "Date", "dt", x: marginX, w: 2_800_000, algn: "l", "<a:r>\(rPr)<a:t>\(XML.esc(d))</a:t></a:r>")
+        }
+        if let t = m.piedTexte {
+            let w = 4_800_000
+            x += forme(9002, "Footer", "ftr", x: (slideW - w) / 2, w: w, algn: "ctr", "<a:r>\(rPr)<a:t>\(XML.esc(t))</a:t></a:r>")
+        }
+        if m.piedNumero {
+            let logo = largeurLogo(m)
+            let fin = logo > 0 ? slideW - marginX / 2 - logo - 120_000 : slideW - marginX
+            let w = 1_400_000
+            x += forme(9003, "Slide Number", "sldNum", x: fin - w, w: w, algn: "r",
+                       "<a:fld id=\"{B6F15528-21DE-4FAA-801E-634DDDAF4B2B}\" type=\"slidenum\">\(rPr)<a:t>\(rang)</a:t></a:fld><a:r>\(rPr)<a:t> / \(total)</a:t></a:r>")
+        }
+        return x
     }
 
     private static func pictureXML(rid: String, id: Int, x: Int, y: Int, w: Int, h: Int) -> String {

@@ -720,6 +720,7 @@
     el('navPrev').disabled = (current === 0);
     el('navNext').disabled = (current === sections.length - 1);
     syncOverviewCurrent();
+    majPied();
     // Le mode présentateur (1.4) : l'écran du public et l'aperçu de la suivante suivent.
     post('diapositive', { index: current, total: sections.length });
   }
@@ -959,8 +960,36 @@
     } else if (logo) {
       logo.remove();
     }
+    if (police) st.textContent += 'body.present-body.theme-marque .present-pied{font-family:"' + police + '",-apple-system,"Helvetica Neue",sans-serif}';
+    majPied();
     if (marque.defaut && modeAffichage === 'complet') setTheme('marque');
     buildMenu();
+  }
+
+  // Le pied de page du thème « Ma marque » (26/11/2026, repris d'iA Presenter) : un texte libre,
+  // la date du jour, le numéro (« 3 / 12 »), chacun s'il est choisi. Jamais sur la première
+  // diapositive, celle du titre. Il fait partie de la diapositive : le public le voit, les images
+  // et le polycopié le photographient.
+  function majPied() {
+    var pied = el('okiaPied');
+    var p = marque && marque.pied;
+    if (!p) { if (pied) pied.remove(); return; }
+    if (!pied) {
+      pied = document.createElement('div');
+      pied.id = 'okiaPied'; pied.className = 'present-pied'; pied.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(pied);
+    }
+    var morceaux = [];
+    if (p.texte) morceaux.push(p.texte);
+    if (p.date) {
+      var d = '';
+      try { d = new Intl.DateTimeFormat(LANG, { dateStyle: 'long' }).format(new Date()); }
+      catch (e) { d = new Date().toLocaleDateString(); }
+      morceaux.push(d);
+    }
+    if (p.numero) morceaux.push((current + 1) + ' / ' + (sections.length || 1));
+    pied.textContent = morceaux.join('\u2002·\u2002');
+    pied.hidden = current === 0 || !morceaux.length;
   }
 
   // Les titres de toutes les diapositives (la répétition, le polycopié).

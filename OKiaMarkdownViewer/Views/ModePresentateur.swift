@@ -39,6 +39,64 @@ final class SeancePresentation: ObservableObject {
     /// Les annotations du document présenté, pour les poser aussi sur l'écran du public.
     weak var annotations: AnnotationsDocument?
 
+    // La couleur du temps (option Analytic, 26/11/2026, reprise d'iA Presenter) : le temps prévu de
+    // chaque diapositive, et les chronomètres que la colonne du présentateur et la télécommande
+    // comparent à lui.
+    /// Le temps prévu de chaque diapositive, en secondes ; vide quand rien ne permet de le prévoir
+    /// (ni notes de l'orateur, ni répétition de ce document).
+    @Published var prevus: [TimeInterval] = []
+    @Published private(set) var debut = Date()
+    @Published private(set) var debutDiapo = Date()
+    @Published private(set) var pause: Date?
+    private var cumulPause: TimeInterval = 0
+    private var pauseDiapo: TimeInterval = 0
+
+    var prevuTotal: TimeInterval { prevus.reduce(0, +) }
+    func prevu(_ i: Int) -> TimeInterval? { i >= 0 && i < prevus.count ? prevus[i] : nil }
+
+    func ecoule(_ maintenant: Date = Date()) -> TimeInterval {
+        max(0, (pause ?? maintenant).timeIntervalSince(debut) - cumulPause)
+    }
+
+    func ecouleDiapo(_ maintenant: Date = Date()) -> TimeInterval {
+        max(0, (pause ?? maintenant).timeIntervalSince(debutDiapo) - pauseDiapo)
+    }
+
+    func basculerPause() {
+        if let p = pause {
+            let d = Date().timeIntervalSince(p)
+            cumulPause += d; pauseDiapo += d; pause = nil
+        } else { pause = Date() }
+    }
+
+    func remettreAZero() {
+        debut = Date(); debutDiapo = debut; cumulPause = 0; pauseDiapo = 0; pause = nil
+    }
+
+    /// Une autre diapositive : son chronomètre repart.
+    func changerDiapo(_ i: Int) {
+        guard i != index else { return }
+        index = i
+        debutDiapo = pause ?? Date()
+        pauseDiapo = 0
+    }
+
+    /// Le temps prévu : la durée visée de la dernière répétition de ce document, répartie selon les
+    /// notes de chaque diapositive ; sinon l'estimation tirée des notes (130 mots par minute).
+    func prevoir(estimation: [TimeInterval], avecNotes: Bool, visee: TimeInterval?) {
+        let somme = estimation.reduce(0, +)
+        if let v = visee, v > 0, somme > 0 {
+            prevus = estimation.map { $0 * v / somme }
+        } else {
+            prevus = avecNotes ? estimation : []
+        }
+    }
+
+    /// La durée visée de la dernière répétition, par document.
+    static func cleVisee(_ document: MarkdownDocument) -> String {
+        "okia.repetition.visee." + (document.sourceURL?.lastPathComponent ?? document.filename)
+    }
+
     /// La vue du présentateur s'affiche : une présentation, un second écran, et l'option.
     var presentateur: Bool {
         document != nil && (ecranExterne || fenetrePublique) && AchatAnalytic.partage.acces
@@ -54,6 +112,8 @@ final class SeancePresentation: ObservableObject {
         notes = ""
         traduction = [:]
         traductionActive = false
+        prevus = []
+        remettreAZero()
     }
 
     func terminer() {
@@ -138,14 +198,12 @@ struct PanneauPresentateur: View {
     var arreter: () -> Void
     /// Écrire la note de la diapositive en cours (1.5) ; nil sans l'option ou sans fichier Markdown.
     var modifierNotes: (() -> Void)? = nil
-    @State private var debut = Date()
-    @State private var pause: Date?
-    @State private var cumulPause: TimeInterval = 0
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             entete
+            tempsPrevu
             Text(tr("Diapositive suivante")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             suivante
                 .aspectRatio(16 / 10, contentMode: .fit)
@@ -190,12 +248,12 @@ struct PanneauPresentateur: View {
             HStack(alignment: .firstTextBaseline, spacing: 14) {
                 Text(chrono(contexte.date))
                     .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
-                    .foregroundStyle(pause == nil ? orange : .secondary)
-                Button { basculerPause() } label: {
-                    Image(systemName: pause == nil ? "pause.fill" : "play.fill")
+                    .foregroundStyle(seance.pause == nil ? orange : .secondary)
+                Button { seance.basculerPause() } label: {
+                    Image(systemName: seance.pause == nil ? "pause.fill" : "play.fill")
                 }
-                .accessibilityLabel(pause == nil ? tr("Pause") : tr("Reprendre"))
-                Button { debut = Date(); cumulPause = 0; pause = nil } label: {
+                .accessibilityLabel(seance.pause == nil ? tr("Pause") : tr("Reprendre"))
+                Button { seance.remettreAZero() } label: {
                     Image(systemName: "arrow.counterclockwise")
                 }
                 .accessibilityLabel(tr("Remettre à zéro"))
@@ -234,14 +292,95 @@ struct PanneauPresentateur: View {
     }
 
     private func chrono(_ maintenant: Date) -> String {
-        let fin = pause ?? maintenant
-        let s = max(0, Int(fin.timeIntervalSince(debut) - cumulPause))
+        let s = Int(seance.ecoule(maintenant))
         return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
                          : String(format: "%02d:%02d", s / 60, s % 60)
     }
 
-    private func basculerPause() {
-        if let p = pause { cumulPause += Date().timeIntervalSince(p); pause = nil } else { pause = Date() }
+    /// La couleur du temps : la diapositive, puis le total, comparés au temps prévu.
+    @ViewBuilder private var tempsPrevu: some View {
+        if !seance.prevus.isEmpty {
+            TimelineView(.periodic(from: .now, by: 1)) { c in
+                VStack(alignment: .leading, spacing: 8) {
+                    if let p = seance.prevu(seance.index) {
+                        JaugeTemps(libelle: tr("Diapositive"), ecoule: seance.ecouleDiapo(c.date), prevu: p)
+                    }
+                    JaugeTemps(libelle: tr("Total"), ecoule: seance.ecoule(c.date), prevu: seance.prevuTotal, fine: true)
+                }
+            }
+        }
+    }
+}
+
+/// Le temps qui se voit sans lire le chronomètre (option Analytic, 26/11/2026, reprise d'iA
+/// Presenter) : une barre qui se remplit vers le temps prévu, bleue tant qu'on a de la marge, jaune
+/// à l'approche (les trois quarts), vermillon au-delà, avec le dépassement écrit. Bleu, jaune et
+/// vermillon (palette d'Okabe et Ito) se distinguent aussi pour les daltoniens, et la longueur de la
+/// barre dit la même chose que sa couleur. Jamais sur l'écran du public.
+struct JaugeTemps: View {
+    enum Phase { case calme, approche, depasse }
+
+    var libelle: String? = nil
+    let ecoule: TimeInterval
+    let prevu: TimeInterval
+    var fine = false
+    /// Sans texte : le liseré seul (la télécommande, en largeur).
+    var compacte = false
+
+    static func phase(_ ecoule: TimeInterval, _ prevu: TimeInterval) -> Phase {
+        guard prevu > 0 else { return .calme }
+        let f = ecoule / prevu
+        return f > 1 ? .depasse : f >= 0.75 ? .approche : .calme
+    }
+
+    static func couleur(_ p: Phase) -> Color {
+        switch p {
+        case .calme: return Color(red: 0x56/255, green: 0xB4/255, blue: 0xE9/255)
+        case .approche: return Color(red: 0xF0/255, green: 0xE4/255, blue: 0x42/255)
+        case .depasse: return Color(red: 0xD5/255, green: 0x5E/255, blue: 0x00/255)
+        }
+    }
+
+    private func ligne(libelle avecLibelle: Bool, prevu avecPrevu: Bool, phase: Phase, teinte: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            if avecLibelle, let libelle { Text(libelle).foregroundStyle(.secondary) }
+            Spacer(minLength: 0)
+            if phase == .depasse {
+                Text("+" + RepetitionDiaporama.duree(ecoule - prevu)).fontWeight(.semibold).foregroundStyle(teinte)
+            }
+            Text(RepetitionDiaporama.duree(ecoule) + (avecPrevu ? " / " + RepetitionDiaporama.duree(prevu) : ""))
+                .foregroundStyle(.secondary)
+        }
+        .lineLimit(1)
+    }
+
+    var body: some View {
+        let phase = Self.phase(ecoule, prevu)
+        let teinte = Self.couleur(phase)
+        let fraction = prevu > 0 ? min(1, ecoule / prevu) : 0
+        VStack(alignment: .leading, spacing: 4) {
+            if !compacte {
+                // Une seule ligne : dans une colonne étroite, le libellé s'efface, puis le temps
+                // prévu ; le dépassement reste.
+                ViewThatFits(in: .horizontal) {
+                    ligne(libelle: true, prevu: true, phase: phase, teinte: teinte)
+                    ligne(libelle: false, prevu: true, phase: phase, teinte: teinte)
+                    ligne(libelle: false, prevu: false, phase: phase, teinte: teinte)
+                }
+                .font((fine ? Font.caption : Font.callout).monospacedDigit())
+            }
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.14))
+                    Capsule().fill(teinte).frame(width: max(fine ? 3 : 5, g.size.width * fraction))
+                }
+            }
+            .frame(height: fine ? 4 : 7)
+            .animation(.easeInOut(duration: 0.4), value: phase)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(libelle ?? tr("Temps"))
+        .accessibilityValue(tr("%@ sur %@ prévues", RepetitionDiaporama.duree(ecoule), RepetitionDiaporama.duree(prevu)))
     }
 }
 

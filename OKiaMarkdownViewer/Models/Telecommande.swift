@@ -28,6 +28,12 @@ struct PaquetTelecommande: Codable {
     var point: [Double]?
     /// Avec « etat » : les traits déjà posés sur cette diapositive.
     var traits: [TraitTelecommande]?
+    /// Avec « etat », la couleur du temps (26/11/2026) : le temps prévu de la diapositive et du
+    /// total, et le temps déjà passé sur l'un et l'autre, en secondes.
+    var prevu: Double?
+    var prevuTotal: Double?
+    var ecoule: Double?
+    var ecouleDiapo: Double?
 }
 
 struct TraitTelecommande: Codable, Identifiable, Equatable {
@@ -118,12 +124,17 @@ final class TelecommandeHote: NSObject, ObservableObject {
     }
 
     func envoyerEtat(index: Int, total: Int, titre: String, notes: String, image: Data?,
-                     cadre: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)) {
+                     cadre: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1),
+                     temps: (prevu: Double?, prevuTotal: Double?, ecoule: Double, ecouleDiapo: Double)? = nil) {
         if diapositive != index { changerDiapositive(index) }
         pointeur = nil
         self.cadre = cadre
         var p = PaquetTelecommande(type: "etat", index: index, total: total, titre: titre, notes: notes, image: image)
         p.traits = traits
+        if let t = temps {
+            p.prevu = t.prevu; p.prevuTotal = t.prevuTotal
+            p.ecoule = t.ecoule; p.ecouleDiapo = t.ecouleDiapo
+        }
         dernierEtat = p
         envoyer(p)
     }
@@ -268,6 +279,12 @@ final class TelecommandeClient: NSObject, ObservableObject {
     /// aussi sur son écran.
     @Published private(set) var traits: [TraitTelecommande] = []
     @Published private(set) var pointeur: CGPoint?
+    /// La couleur du temps : le temps prévu (nil sans prévision) et les départs des deux
+    /// chronomètres, recalés sur ceux de l'appareil qui présente.
+    @Published private(set) var prevu: Double?
+    @Published private(set) var prevuTotal: Double?
+    @Published private(set) var debutTotal: Date?
+    @Published private(set) var debutDiapo = Date()
 
     private let moi = MCPeerID(displayName: TelecommandeService.nomAppareil)
     private var session: MCSession?
@@ -286,6 +303,8 @@ final class TelecommandeClient: NSObject, ObservableObject {
         titre = "Johny Srouji, le nom que Nvidia cite — présentation"
         index = 0; total = 10
         notes = "Notes de l’orateur : rappeler le contexte, puis passer à la diapositive suivante."
+        prevu = 50; prevuTotal = 600
+        debutTotal = Date().addingTimeInterval(-470); debutDiapo = Date().addingTimeInterval(-41)
         etat = .connecte("iPad")
     }
     #endif
@@ -354,6 +373,10 @@ final class TelecommandeClient: NSObject, ObservableObject {
         titre = p.titre ?? ""
         notes = p.notes ?? ""
         image = p.image.flatMap(UIImage.init(data:))
+        prevu = p.prevu; prevuTotal = p.prevuTotal
+        let maintenant = Date()
+        if let e = p.ecoule { debutTotal = maintenant.addingTimeInterval(-e) }
+        if let e = p.ecouleDiapo { debutDiapo = maintenant.addingTimeInterval(-e) }
     }
 }
 

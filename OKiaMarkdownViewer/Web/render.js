@@ -146,6 +146,61 @@
     window.marked.use({ extensions: [emphaseCJK('grasCJK', '**', 'strong'), emphaseCJK('italiqueCJK', '*', 'em')] });
   }
 
+  /* ---- les formules mathématiques (26/11/2026, pour tous) -----------------
+     La syntaxe de GitHub et d'Obsidian : `$…$` dans la ligne, `$$…$$` en bloc, et les blocs
+     ```math. Rendues par KaTeX (vendor/katex.min.js, embarqué : rien n'est chargé du web), en
+     MathML, que WebKit dessine lui-même : ni feuille de style ni polices de plus, et VoiceOver lit
+     la formule. Un prix n'est pas une formule (« 5 $ et 10 $ », « $5 et $10 ») : comme GitHub, pas
+     d'espace juste après le `$` ouvrant ni juste avant le fermant, et pas de chiffre juste après le
+     fermant. Une formule que KaTeX ne comprend pas reste en clair, signalée, jamais perdue. La
+     source reste sur l'élément (`data-tex`) : la copie, les exports et l'IA la retrouvent. */
+  // `balise` : span pour un `$$…$$` au milieu d'un paragraphe (un div n'a pas sa place dans un p).
+  function formule(tex, bloc, balise) {
+    var b = balise || (bloc ? 'div' : 'span');
+    var source = String(tex).trim();
+    var attrs = ' data-tex="' + escapeHtml(source) + '"';
+    if (!window.katex) {
+      return '<' + b + ' class="okia-math okia-math-brut' + (bloc ? ' okia-math-bloc' : '') + '"' + attrs + '>' +
+             escapeHtml(bloc ? '$$' + source + '$$' : '$' + source + '$') + '</' + b + '>';
+    }
+    var html;
+    try {
+      html = window.katex.renderToString(source, { displayMode: !!bloc, output: 'mathml', throwOnError: true,
+                                                   strict: 'ignore', trust: false, maxExpand: 1000 });
+    } catch (e) {
+      var brut = bloc ? '$$' + source + '$$' : '$' + source + '$';
+      return '<' + b + ' class="okia-math okia-math-erreur' + (bloc ? ' okia-math-bloc' : '') + '"' + attrs +
+             ' title="' + escapeHtml(String(e && e.message || '')) + '">' + escapeHtml(brut) + '</' + b + '>';
+    }
+    return '<' + b + ' class="okia-math' + (bloc ? ' okia-math-bloc' : '') + '"' + attrs + '>' + html + '</' + b + '>';
+  }
+  var FORMULE_BLOC = /^ {0,3}\$\$((?:(?!\$\$)[\s\S])+?)\$\$[ \t]*(?:\n+|$)/;
+  var FORMULE_CLOTUREE = /^ {0,3}(`{3,}|~{3,})[ \t]*math[ \t]*\n([\s\S]*?)\n {0,3}\1[ \t]*(?:\n+|$)/;
+  var FORMULE_LIGNE = /^\$(?!\s)((?:\\\$|[^$\n])*?[^\s\\])\$(?![0-9])/;
+  var FORMULE_LIGNE_DOUBLE = /^\$\$(?!\s)([^$\n]+?)\$\$/;
+  if (window.marked && window.marked.use) {
+    window.marked.use({ extensions: [
+      { name: 'formuleBloc', level: 'block',
+        start: function (src) { var m = src.match(/(^|\n) {0,3}(\$\$|`{3,}[ \t]*math|~{3,}[ \t]*math)/); return m ? m.index + m[1].length : undefined; },
+        tokenizer: function (src) {
+          var m = FORMULE_CLOTUREE.exec(src);
+          if (m) return { type: 'formuleBloc', raw: m[0], tex: m[2] };
+          m = FORMULE_BLOC.exec(src);
+          if (m) return { type: 'formuleBloc', raw: m[0], tex: m[1] };
+        },
+        renderer: function (t) { return formule(t.tex, true) + '\n'; } },
+      { name: 'formuleLigne', level: 'inline',
+        start: function (src) { var i = src.indexOf('$'); return i < 0 ? undefined : i; },
+        tokenizer: function (src) {
+          var m = FORMULE_LIGNE_DOUBLE.exec(src);
+          if (m) return { type: 'formuleLigne', raw: m[0], tex: m[1], bloc: true };
+          m = FORMULE_LIGNE.exec(src);
+          if (m) return { type: 'formuleLigne', raw: m[0], tex: m[1] };
+        },
+        renderer: function (t) { return formule(t.tex, !!t.bloc, 'span'); } }
+    ] });
+  }
+
   /* =========================================================================
      1. FRONTMATTER
      ========================================================================= */
@@ -2274,7 +2329,7 @@
     while (p && p !== document.body) {
       var n = p.nodeName;
       if (n === 'SCRIPT' || n === 'STYLE' || n === 'SVG' || n === 'svg') return false;
-      if (p.classList && p.classList.contains('mermaid')) return false;
+      if (p.classList && (p.classList.contains('mermaid') || p.classList.contains('okia-math'))) return false;
       p = p.parentNode;
     }
     return true;
@@ -2423,6 +2478,15 @@
       if (c.nodeType !== 1) continue;
       var tag = c.tagName;
       if (tag === 'IMG' || tag === 'BR') { if (tag === 'BR') pushRun(out, '\n', fmt); continue; }
+      // Une formule rendue (26/11/2026) : Word, PowerPoint et l'ePub en reçoivent la source
+      // (`$…$`), pas le MathML lu lettre à lettre.
+      if (c.classList && c.classList.contains('katex')) {
+        var formuleEl = c.closest('.okia-math');
+        var tex = formuleEl ? formuleEl.getAttribute('data-tex') || '' : c.textContent;
+        var enBloc = formuleEl && formuleEl.classList.contains('okia-math-bloc');
+        pushRun(out, enBloc ? '$$' + tex + '$$' : '$' + tex + '$', { bold: fmt.bold, italic: fmt.italic, code: true, lien: fmt.lien });
+        continue;
+      }
       if (tag !== 'SUP' && horsExport(c)) continue;
       var bloc = !enLigne(c);
       if (bloc && !c.textContent.trim()) {
@@ -2993,6 +3057,7 @@
       var n = el.nodeName;
       if (n === 'PRE' || n === 'SCRIPT' || n === 'STYLE' || n === 'SVG' || n === 'svg') return true;
       if (el.classList && (el.classList.contains('mermaid') ||
+                           el.classList.contains('okia-math') ||
                            el.classList.contains('okia-map') ||
                            el.classList.contains('ner-legend'))) return true;
       el = el.parentNode;

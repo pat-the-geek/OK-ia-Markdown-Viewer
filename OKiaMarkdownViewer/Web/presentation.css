@@ -255,6 +255,8 @@ body.present-body.theme-ocean .slide-inner pre.mermaid.mermaid-keeplight {
 .slide-inner h3 { font-size: 1.9rem; }
 .slide-inner p,
 .slide-inner li { font-size: 1.5rem; line-height: 1.5; }
+/* Une formule en bloc (26/11/2026) : à la taille du texte de la diapositive, pas du corps de page. */
+.slide-inner div.okia-math-bloc { font-size: 1.5rem; }
 .slide-inner table { font-size: 1.35rem; }
 .slide-inner blockquote { font-size: 1.5rem; }
 
@@ -801,6 +803,18 @@ body.present-chantier { --chantier-fond: #EEEEF1; }
   max-width: 14vmin; max-height: 7vmin; object-fit: contain; z-index: 4; pointer-events: none;
 }
 body:not(.theme-marque) .present-marque-logo { display: none; }
+/* Le pied de page du thème (26/11/2026) : en bas, au milieu, discret ; le logo garde son coin. */
+.present-pied {
+  position: fixed; left: 50%; bottom: 2.6vmin; transform: translateX(-50%); z-index: 4;
+  max-width: 62vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  pointer-events: none; font-size: 1.8vmin; line-height: 1.2; font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--fg) 62%, transparent);
+}
+body:not(.theme-marque) .present-pied, .present-pied[hidden] { display: none; }
+body.okia-capture .present-pied {
+  left: calc(var(--cap-w) / 2); bottom: auto; top: calc(var(--cap-h) - 2.6vmin - 2.2vmin);
+  max-width: calc(var(--cap-w) * 0.62);
+}
 /* Le polycopié photographie la diapositive seule. */
 body.okia-capture button, body.okia-capture .present-progress, body.okia-capture .present-counter,
 body.okia-capture .present-menu { visibility: hidden !important; }
