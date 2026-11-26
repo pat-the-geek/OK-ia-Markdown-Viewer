@@ -59637,6 +59637,196 @@
           }
         }
       }
+    },
+    "Expliquer le coffre aux assistants": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expliquer le coffre aux assistants"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explain the vault to assistants"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ablage für Assistenten erklären"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explicar el archivo a los asistentes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiegare l’archivio agli assistenti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アシスタントに保管庫を説明"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "어시스턴트에게 보관함 설명"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向助手说明资料库"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explicar o cofre aos assistentes"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De kluis uitleggen aan assistenten"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Объяснять хранилище ассистентам"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пояснювати сховище асистентам"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kasayı asistanlara açıkla"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giải thích kho cho trợ lý"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सहायकों को वॉल्ट समझाएँ"
+          }
+        }
+      }
+    },
+    "md Viewer écrit dans le coffre un fichier AGENTS.md et un index des documents (dossier caché .mdviewer). Ouvert dans Claude, Codex, Copilot ou Cursor, le coffre s’y comprend tout de suite. md Viewer n’envoie rien : c’est vous qui choisissez l’assistant.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer écrit dans le coffre un fichier AGENTS.md et un index des documents (dossier caché .mdviewer). Ouvert dans Claude, Codex, Copilot ou Cursor, le coffre s’y comprend tout de suite. md Viewer n’envoie rien : c’est vous qui choisissez l’assistant."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer writes an AGENTS.md file and an index of the documents (hidden .mdviewer folder) into the vault. Opened in Claude, Codex, Copilot or Cursor, the vault makes sense right away. md Viewer sends nothing: you choose the assistant."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer schreibt eine Datei AGENTS.md und ein Verzeichnis der Dokumente (versteckter Ordner .mdviewer) in die Ablage. In Claude, Codex, Copilot oder Cursor geöffnet, ist die Ablage sofort verständlich. md Viewer sendet nichts: Sie wählen den Assistenten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer escribe en el archivo un fichero AGENTS.md y un índice de los documentos (carpeta oculta .mdviewer). Abierto en Claude, Codex, Copilot o Cursor, el archivo se entiende enseguida. md Viewer no envía nada: usted elige el asistente."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer scrive nell’archivio un file AGENTS.md e un indice dei documenti (cartella nascosta .mdviewer). Aperto in Claude, Codex, Copilot o Cursor, l’archivio si capisce subito. md Viewer non invia nulla: l’assistente lo scegli tu."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer は保管庫に AGENTS.md ファイルと書類の索引（非表示フォルダ .mdviewer）を書き込みます。Claude、Codex、Copilot、Cursor で開けば、すぐに保管庫の構成が伝わります。md Viewer は何も送信しません。アシスタントを選ぶのはあなたです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer는 보관함에 AGENTS.md 파일과 문서 색인(숨김 폴더 .mdviewer)을 기록합니다. Claude, Codex, Copilot, Cursor에서 열면 보관함 구성을 바로 이해합니다. md Viewer는 아무것도 보내지 않으며, 어시스턴트는 사용자가 선택합니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer 会在资料库中写入 AGENTS.md 文件和文档索引（隐藏文件夹 .mdviewer）。在 Claude、Codex、Copilot 或 Cursor 中打开，资料库一目了然。md Viewer 不发送任何内容：由您选择助手。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O md Viewer grava no cofre um arquivo AGENTS.md e um índice dos documentos (pasta oculta .mdviewer). Aberto no Claude, Codex, Copilot ou Cursor, o cofre é entendido na hora. O md Viewer não envia nada: você escolhe o assistente."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer schrijft een bestand AGENTS.md en een index van de documenten (verborgen map .mdviewer) in de kluis. Geopend in Claude, Codex, Copilot of Cursor is de kluis meteen duidelijk. md Viewer verstuurt niets: u kiest de assistent."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer записывает в хранилище файл AGENTS.md и указатель документов (скрытая папка .mdviewer). Открытое в Claude, Codex, Copilot или Cursor, хранилище сразу понятно. md Viewer ничего не отправляет: ассистента выбираете вы."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer записує у сховище файл AGENTS.md і покажчик документів (прихована папка .mdviewer). Відкрите в Claude, Codex, Copilot або Cursor, сховище одразу зрозуміле. md Viewer нічого не надсилає: асистента обираєте ви."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer kasaya bir AGENTS.md dosyası ve belgelerin dizinini (gizli .mdviewer klasörü) yazar. Claude, Codex, Copilot veya Cursor’da açıldığında kasa hemen anlaşılır. md Viewer hiçbir şey göndermez: asistanı siz seçersiniz."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer ghi vào kho một tệp AGENTS.md và mục lục tài liệu (thư mục ẩn .mdviewer). Mở trong Claude, Codex, Copilot hoặc Cursor, kho được hiểu ngay. md Viewer không gửi gì cả: bạn chọn trợ lý."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "md Viewer वॉल्ट में एक AGENTS.md फ़ाइल और दस्तावेज़ों की अनुक्रमणिका (छिपा फ़ोल्डर .mdviewer) लिखता है। Claude, Codex, Copilot या Cursor में खोलने पर वॉल्ट तुरंत समझ में आता है। md Viewer कुछ नहीं भेजता: सहायक आप चुनते हैं।"
+          }
+        }
+      }
     }
   }
 }

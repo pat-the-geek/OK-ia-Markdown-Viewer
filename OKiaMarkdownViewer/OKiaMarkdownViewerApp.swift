@@ -763,6 +763,8 @@ struct OKiaMarkdownViewerApp: App {
             t.fond = m[0]; t.accent = m[1]; t.police = m[2]; t.defaut = true
             ThemeMarque.actuel = t
         }
+        // OKIA_COFFRE_EXPLIQUE : active « Expliquer le coffre aux assistants » (1.6).
+        if env["OKIA_COFFRE_EXPLIQUE"] != nil { UserDefaults.standard.set(true, forKey: CoffreExplique.cleReglage) }
         // OKIA_ANALYSE_COFFRE : ouvre l'analyse de tout le coffre au lancement.
         if let dossier = env["OKIA_COFFRE"], !dossier.isEmpty {
             store.vault.setFolder(URL(fileURLWithPath: dossier, isDirectory: true))

@@ -13,6 +13,8 @@ struct VaultSectionView: View {
     @ObservedObject private var loc = Localization.shared
     @ObservedObject private var achat = AchatAnalytic.partage
     @AppStorage(RangementDocuments.cleDansCoffre) private var importsDansCoffre = true
+    /// 1.6 : le coffre expliqué aux assistants (AGENTS.md et un index), coupé par défaut.
+    @AppStorage(CoffreExplique.cleReglage) private var coffreExplique = false
     /// Le coffre choisi sur un autre appareil (1.5).
     @ObservedObject private var partage = CoffrePartage.partage
     @State private var erreurICloud = false
@@ -309,6 +311,18 @@ struct VaultSectionView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // Pour tous (1.6) : le coffre lisible par Claude, Codex, Copilot ou Cursor.
+            Divider()
+            Toggle(isOn: $coffreExplique) {
+                Text(tr("Expliquer le coffre aux assistants"))
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .onChange(of: coffreExplique) { _, actif in if actif { CoffreExplique.mettreAJour(vault) } }
+            Text(tr("md Viewer écrit dans le coffre un fichier AGENTS.md et un index des documents (dossier caché .mdviewer). Ouvert dans Claude, Codex, Copilot ou Cursor, le coffre s’y comprend tout de suite. md Viewer n’envoie rien : c’est vous qui choisissez l’assistant."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .tint(orange)
         .padding(16)

@@ -415,7 +415,11 @@ final class VaultStore: ObservableObject {
         // Injoignable : la dernière liste reste affichée, avec la mention — un partage qui ne répond
         // pas un instant ne vide plus l'accueil.
         guard l.lu else { return }
-        if l.rapports != reports { reports = l.rapports }
+        if l.rapports != reports {
+            reports = l.rapports
+            // Le coffre expliqué aux assistants (1.6), s'il est demandé.
+            CoffreExplique.mettreAJour(self)
+        }
         if l.coupe != tronque { tronque = l.coupe }
         garderListe()
     }
@@ -508,6 +512,9 @@ final class VaultStore: ObservableObject {
                         suivant.append((enfant, relatif, dossier.profondeur + 1))
                         continue
                     }
+                    // AGENTS.md et CLAUDE.md, à la racine, s'adressent aux assistants (1.6) : pas des
+                    // documents.
+                    if dossier.profondeur == 0 && CoffreExplique.fichiersRacine.contains(nom) { continue }
                     let fichier: String, telecharge: Bool
                     if !nom.hasPrefix("."), extensions.contains((nom as NSString).pathExtension.lowercased()) {
                         fichier = nom; telecharge = true

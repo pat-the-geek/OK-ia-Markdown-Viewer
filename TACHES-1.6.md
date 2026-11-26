@@ -67,6 +67,23 @@ Private Cloud Compute), pas de compte, pas de pistage.
         principal.
       - Ouvrir ce dossier dans Claude Code, Codex, VS Code (Copilot) ou Cursor suffit alors.
 
+      **Avancement de A** (commencé le 26/11/2026, Patrick : « Continue le code ») :
+      - [x] `CoffreExplique` : réglage « Expliquer le coffre aux assistants » (réglages du coffre,
+            pour tous, coupé par défaut). Écrit `AGENTS.md` (français si l'app est en français,
+            sinon anglais), `CLAUDE.md` (`@AGENTS.md`), `.mdviewer/index.md` et `index.json`
+            (chemin, titre, date, source, étiquettes, lien relatif), et `.mdviewer/entites.md` et
+            `.json` quand l'analyse du coffre a été faite, réduites aux documents de ce coffre.
+            Un `AGENTS.md` ou `CLAUDE.md` sans la marque `<!-- md-viewer:agents -->` (celui de
+            l'utilisateur) n'est jamais remplacé. Seuls les documents modifiés sont relus (16 Ko
+            chacun, 90 s au plus), un fichier n'est réécrit que s'il change, par écriture
+            coordonnée. Mis à jour quand la liste du coffre change, après une analyse, et à
+            l'activation. Les deux fichiers de la racine ne sont pas montrés comme documents.
+            Harnais `OKIA_COFFRE_EXPLIQUE`. Vu au simulateur sur un coffre d'essai.
+      - [ ] `annotations.md` : les annotations vivent dans le bloc de chaque fichier, qu'`AGENTS.md`
+            explique ; la liste à part reste à faire.
+      - [ ] Essayer le dossier ouvert dans Claude Code, Codex et VS Code ; le réglage n'a pas été vu
+            à l'écran (popover des réglages du coffre).
+
       **B. Le serveur MCP du coffre (Mac, option Analytic).**
       - **Le modèle** : celui de fornews.ai, en reprenant le cœur MCP de l'édition Agence
         (`FornewsServeurAgence/…/ProtocoleMCP.swift`, `ServeurMCPAgence`, ses tests). Il comprend :

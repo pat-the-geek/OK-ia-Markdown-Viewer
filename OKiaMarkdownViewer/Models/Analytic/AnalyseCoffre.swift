@@ -123,7 +123,11 @@ final class AnalyseCoffre: ObservableObject {
             let ids = Set(toutes.map(\.id))
             self.index = self.index.filter { ids.contains($0.key) }
             let aLire = toutes.filter { s in self.index[s.id].map { $0.modifie < s.modifie } ?? true }
-            guard !aLire.isEmpty else { self.enregistrer(); self.rassembler(); self.etat = .fini; return }
+            guard !aLire.isEmpty else {
+                self.enregistrer(); self.rassembler(); self.etat = .fini
+                CoffreExplique.mettreAJour(vault)
+                return
+            }
             self.etat = .lecture(fait: 0, total: aLire.count)
             let scoped = racine?.startAccessingSecurityScopedResource() ?? false
             defer { if scoped { racine?.stopAccessingSecurityScopedResource() } }
@@ -140,6 +144,8 @@ final class AnalyseCoffre: ObservableObject {
             self.enregistrer()
             self.rassembler()
             self.etat = .fini
+            // Les entités rejoignent le coffre expliqué aux assistants (1.6), s'il est demandé.
+            CoffreExplique.mettreAJour(vault)
         }
     }
 
