@@ -66,11 +66,12 @@ enum CoffreExplique {
         enCours = true
         let rapports = vault.reports
         let entites = indexEntites(AnalyseCoffre.partage, documents: Set(rapports.map(\.id)))
-        let francais = Localization.shared.code.hasPrefix("fr")
+        // La langue de l'app : AGENTS.md, CLAUDE.md et les index sont écrits dans celle de l'utilisateur.
+        let langue = Localization.shared.code
         Task {
             if let racine = await vault.racineHorsFil() {
                 await Task.detached(priority: .utility) {
-                    ecrire(racine: racine, rapports: rapports, entites: entites, francais: francais)
+                    ecrire(racine: racine, rapports: rapports, entites: entites, langue: langue)
                 }.value
             }
             enCours = false
@@ -107,13 +108,13 @@ enum CoffreExplique {
 
     // MARK: - Écriture (hors du fil principal)
 
-    nonisolated static func ecrire(racine: URL, rapports: [VaultReport], entites: [EntiteIndex], francais: Bool) {
+    nonisolated static func ecrire(racine: URL, rapports: [VaultReport], entites: [EntiteIndex], langue: String) {
         let acces = racine.startAccessingSecurityScopedResource()
         defer { if acces { racine.stopAccessingSecurityScopedResource() } }
         let fm = FileManager.default
 
-        ecrireSiNotre(agents(francais: francais), a: racine.appendingPathComponent("AGENTS.md"))
-        ecrireSiNotre(claude(francais: francais), a: racine.appendingPathComponent("CLAUDE.md"))
+        ecrireSiNotre(agents(langue: langue), a: racine.appendingPathComponent("AGENTS.md"))
+        ecrireSiNotre(claude(langue: langue), a: racine.appendingPathComponent("CLAUDE.md"))
 
         let cache = racine.appendingPathComponent(dossier, isDirectory: true)
         try? fm.createDirectory(at: cache, withIntermediateDirectories: true)
@@ -143,7 +144,7 @@ enum CoffreExplique {
         if fiches != anciennes, let d = try? JSONEncoder.lisible.encode(fiches) {
             ecrireSiChange(d, a: urlJSON)
         }
-        ecrireSiChange(Data(index(fiches, francais: francais).utf8), a: cache.appendingPathComponent("index.md"))
+        ecrireSiChange(Data(index(fiches, langue: langue).utf8), a: cache.appendingPathComponent("index.md"))
 
         if entites.isEmpty {
             // Plus d'entités pour ce coffre : les anciens fichiers ne disent plus rien de juste.
@@ -158,7 +159,7 @@ enum CoffreExplique {
             if let d = try? JSONEncoder.lisible.encode(entites) {
                 ecrireSiChange(d, a: cache.appendingPathComponent("entites.json"))
             }
-            ecrireSiChange(Data(pageEntites(entites, francais: francais).utf8), a: cache.appendingPathComponent("entites.md"))
+            ecrireSiChange(Data(pageEntites(entites, langue: langue).utf8), a: cache.appendingPathComponent("entites.md"))
         }
     }
 
@@ -229,11 +230,11 @@ enum CoffreExplique {
         s.replacingOccurrences(of: "|", with: "\\|").replacingOccurrences(of: "\n", with: " ")
     }
 
-    nonisolated static func index(_ fiches: [Fiche], francais: Bool) -> String {
+    nonisolated static func index(_ fiches: [Fiche], langue: String) -> String {
+        let l = Textes.pour(langue)
         var t = marque + "\n"
-        t += francais
-            ? "# Index du coffre\n\n\(fiches.count) documents, du plus récent au plus ancien. Écrit par md Viewer ; ne pas modifier.\n\n| Document | Titre | Date | Source | Étiquettes |\n|---|---|---|---|---|\n"
-            : "# Vault index\n\n\(fiches.count) documents, newest first. Written by md Viewer; do not edit.\n\n| Document | Title | Date | Source | Tags |\n|---|---|---|---|---|\n"
+        t += "# \(l.indexTitre)\n\n" + l.indexIntro.replacingOccurrences(of: "%d", with: String(fiches.count)) + "\n\n"
+        t += "| " + l.indexColonnes.joined(separator: " | ") + " |\n|---|---|---|---|---|\n"
         for f in fiches {
             let lien = "[\(cellule(f.chemin))](<../\(f.chemin)>)"
             t += "| \(lien) | \(cellule(f.titre)) | \(f.date ?? "") | \(cellule(f.source ?? "")) | \(cellule(f.etiquettes.joined(separator: ", "))) |\n"
@@ -241,118 +242,24 @@ enum CoffreExplique {
         return t
     }
 
-    nonisolated static func pageEntites(_ entites: [EntiteIndex], francais: Bool) -> String {
+    nonisolated static func pageEntites(_ entites: [EntiteIndex], langue: String) -> String {
+        let l = Textes.pour(langue)
         var t = marque + "\n"
-        t += francais
-            ? "# Les entités du coffre\n\nTrouvées par l'analyse du coffre de md Viewer, les plus présentes d'abord. Le détail, avec les documents, est dans `entites.json`.\n\n| Nom | Genre | Wikidata | Documents | Première | Dernière | Souvent avec |\n|---|---|---|---|---|---|---|\n"
-            : "# Entities in the vault\n\nFound by md Viewer's vault analysis, most frequent first. The details, with the documents, are in `entites.json`.\n\n| Name | Kind | Wikidata | Documents | First | Last | Often with |\n|---|---|---|---|---|---|---|\n"
+        t += "# \(l.entitesTitre)\n\n\(l.entitesIntro)\n\n"
+        t += "| " + l.entitesColonnes.joined(separator: " | ") + " |\n|---|---|---|---|---|---|---|\n"
         for e in entites {
             t += "| \(cellule(e.nom)) | \(e.genre) | \(e.qid ?? "") | \(e.documents.count) | \(e.premiere) | \(e.derniere) | \(cellule(e.voisins.joined(separator: ", "))) |\n"
         }
         return t
     }
 
-    nonisolated static func claude(francais: Bool) -> String {
-        marque + "\n" + (francais
-            ? "Les consignes pour ce coffre sont dans AGENTS.md :\n\n@AGENTS.md\n"
-            : "The instructions for this vault are in AGENTS.md:\n\n@AGENTS.md\n")
+    nonisolated static func claude(langue: String) -> String {
+        marque + "\n" + Textes.pour(langue).claude + "\n\n@AGENTS.md\n"
     }
 
-    nonisolated static func agents(francais: Bool) -> String {
-        marque + "\n" + (francais ? agentsFR : agentsEN)
+    nonisolated static func agents(langue: String) -> String {
+        marque + "\n" + Textes.pour(langue).agents
     }
-
-    private static let agentsFR = """
-        # Ce coffre, pour les assistants
-
-        Ce dossier est un coffre de **md Viewer** (ok-ia.ch) : des documents Markdown. md Viewer a écrit ce
-        fichier et le tient à jour. Pour y mettre vos propres consignes, retirez la première ligne : md Viewer
-        ne le touchera plus.
-
-        ## Où trouver quoi
-
-        - `.mdviewer/index.md` : tous les documents, un par ligne, avec leur titre, leur date et leur source.
-          Commencez par lui ; `index.json` en est la version pour les programmes.
-        - `.mdviewer/entites.md` (après l'analyse du coffre) : les personnes, organisations, lieux… et les
-          documents où ils apparaissent ; `entites.json` donne la liste des documents de chacun.
-        - `coffre md viewer/AAAA/MM/` : les documents importés dans md Viewer (Word, PDF, PowerPoint, pages
-          web…), rangés par année et par mois.
-        - Les dossiers `rapports-…` : des rapports de fornews.ai. Les autres dossiers sont ceux de
-          l'utilisateur.
-
-        ## Lire un document
-
-        - Un en-tête YAML facultatif entre deux lignes `---` : `titre` ou `title`, `date`, `source` ou `url`,
-          `auteur`, `tags`.
-        - Un diaporama : les diapositives sont séparées par une ligne `---` ; les commentaires HTML
-          `<!-- … -->` d'une diapositive sont les notes de l'orateur.
-        - Les blocs ```` ```mermaid ```` sont des diagrammes, ```` ```leaflet ```` des cartes ; `$…$` et
-          `$$…$$` des formules en LaTeX.
-        - Les rapports de fornews.ai ont une section « Entités » : des noms classés par genre, souvent
-          reliés à Wikidata.
-        - Un bloc `<!-- md-viewer-annotations … -->` à la fin d'un fichier garde les surlignages et les notes
-          de l'utilisateur : ne le modifiez jamais et ne le recopiez pas.
-        - Des images sont parfois intégrées en `data:` (base64) : vous pouvez les ignorer.
-
-        ## Citer
-
-        Citez chaque document par son chemin depuis la racine du coffre et son titre, par exemple :
-        `coffre md viewer/2026/11/budget.md` — « Le budget 2027 ». N'avancez aucun fait, chiffre ou date
-        qui ne soit dans un document.
-
-        ## Écrire
-
-        - Ne supprimez, ne déplacez et ne renommez aucun fichier sans que l'utilisateur le demande.
-        - Un nouveau document va de préférence dans `coffre md viewer/AAAA/MM/`, avec un en-tête YAML
-          (`titre`, `date`).
-        - Ne modifiez pas le dossier `.mdviewer/` : md Viewer le réécrit.
-
-        """
-
-    private static let agentsEN = """
-        # This vault, for assistants
-
-        This folder is an **md Viewer** vault (ok-ia.ch): Markdown documents. md Viewer wrote this file and
-        keeps it up to date. To put your own instructions here, remove the first line: md Viewer will not
-        touch it again.
-
-        ## Where to find what
-
-        - `.mdviewer/index.md`: every document, one per line, with its title, date and source. Start there;
-          `index.json` is the version for programs.
-        - `.mdviewer/entites.md` (after the vault analysis): people, organizations, places… and the documents
-          they appear in; `entites.json` lists each one's documents.
-        - `coffre md viewer/YYYY/MM/`: documents imported into md Viewer (Word, PDF, PowerPoint, web
-          pages…), filed by year and month.
-        - `rapports-…` folders: reports from fornews.ai. Other folders are the user's own.
-
-        ## Reading a document
-
-        - An optional YAML header between two `---` lines: `titre` or `title`, `date`, `source` or `url`,
-          `auteur` (author), `tags`.
-        - A slideshow: slides are separated by a `---` line; the HTML comments `<!-- … -->` of a slide are
-          the speaker notes.
-        - ```` ```mermaid ```` blocks are diagrams, ```` ```leaflet ```` blocks are maps; `$…$` and `$$…$$`
-          are LaTeX formulas.
-        - fornews.ai reports have an "Entités" section: names grouped by kind, often linked to Wikidata.
-        - A `<!-- md-viewer-annotations … -->` block at the end of a file holds the user's highlights and
-          notes: never edit it and do not copy it.
-        - Images are sometimes embedded as `data:` (base64): you can ignore them.
-
-        ## Citing
-
-        Cite each document by its path from the vault root and its title, for example:
-        `coffre md viewer/2026/11/budget.md` — "Le budget 2027". State no fact, figure or date that is not
-        in a document.
-
-        ## Writing
-
-        - Do not delete, move or rename any file unless the user asks.
-        - A new document preferably goes in `coffre md viewer/YYYY/MM/`, with a YAML header (`titre`,
-          `date`).
-        - Do not edit the `.mdviewer/` folder: md Viewer rewrites it.
-
-        """
 }
 
 private extension JSONEncoder {
