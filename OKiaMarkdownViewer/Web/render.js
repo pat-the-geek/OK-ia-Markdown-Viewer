@@ -172,7 +172,26 @@
       return '<' + b + ' class="okia-math okia-math-erreur' + (bloc ? ' okia-math-bloc' : '') + '"' + attrs +
              ' title="' + escapeHtml(String(e && e.message || '')) + '">' + escapeHtml(brut) + '</' + b + '>';
     }
-    return '<' + b + ' class="okia-math' + (bloc ? ' okia-math-bloc' : '') + '"' + attrs + '>' + html + '</' + b + '>';
+    return '<' + b + ' class="okia-math' + (bloc ? ' okia-math-bloc' : '') + '"' + attrs + '>' + lettresAccentuees(html) + '</' + b + '>';
+  }
+
+  // KaTeX décompose une lettre accentuée — « é » de \text{médiane}, mais aussi « ç », « ü », « î » —
+  // en une lettre surmontée d'un accent (`<mover>`). WebKit place mal cet accent, décalé à l'écran
+  // comme dans le PDF, et la cédille de « ç » monte au-dessus du c (fornews, 27/11/2026). On rend
+  // la lettre entière : base et accent recomposés (NFC), puis les morceaux de texte recollés.
+  var ACCENTS_KATEX = { 'ˋ': '̀', 'ˊ': '́', 'ˆ': '̂', '˜': '̃',
+                        'ˉ': '̄', '˘': '̆', '˙': '̇', '¨': '̈',
+                        '˚': '̊', '˝': '̋', 'ˇ': '̌', '¸': '̧' };
+  function lettresAccentuees(html) {
+    if (html.indexOf('<mover accent="true">') < 0) return html;
+    var r = html.replace(/<mover accent="true"><(mtext|mi)>([A-Za-zıȷ])<\/\1><mo>([^<])<\/mo><\/mover>/g,
+      function (tout, balise, lettre, accent) {
+        var comb = ACCENTS_KATEX[accent];
+        if (!comb) return tout;   // \hat, \vec… : de vrais accents mathématiques, gardés
+        var base = lettre === 'ı' ? 'i' : lettre === 'ȷ' ? 'j' : lettre;
+        return '<' + balise + '>' + (base + comb).normalize('NFC') + '</' + balise + '>';
+      });
+    return r.replace(/<\/mtext><mtext>/g, '');
   }
   var FORMULE_BLOC = /^ {0,3}\$\$((?:(?!\$\$)[\s\S])+?)\$\$[ \t]*(?:\n+|$)/;
   var FORMULE_CLOTUREE = /^ {0,3}(`{3,}|~{3,})[ \t]*math[ \t]*\n([\s\S]*?)\n {0,3}\1[ \t]*(?:\n+|$)/;
