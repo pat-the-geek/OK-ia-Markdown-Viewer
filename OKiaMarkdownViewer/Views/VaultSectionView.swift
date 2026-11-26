@@ -21,6 +21,7 @@ struct VaultSectionView: View {
     @Environment(\.accueilEnGrille) private var enGrille
     @Environment(\.scenePhase) private var phase
     @Environment(\.openURL) private var ouvrirURL
+    @Environment(\.horizontalSizeClass) private var classeH
 
     /// L'app Fichiers (iPhone, iPad).
     static let appFichiers = URL(string: "shareddocuments://")!
@@ -148,7 +149,23 @@ struct VaultSectionView: View {
                 }
                 .accessibilityLabel(tr("Réglages du coffre"))
                 .popover(isPresented: $showSettings) {
-                    settingsControls.presentationCompactAdaptation(.popover)
+                    // Sur un écran étroit (iPhone, Duo plié), une feuille qui défile : en popover,
+                    // les 320 points du contenu dépassaient l'écran et le texte était coupé des deux
+                    // côtés, sans pouvoir défiler (Patrick, Duo, 26/11/2026).
+                    if classeH == .compact {
+                        ScrollView {
+                            settingsControls.frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .presentationDetents([.medium, .large])
+                        .presentationDragIndicator(.visible)
+                        .presentationCompactAdaptation(.sheet)
+                    } else {
+                        settingsControls
+                            // Une largeur fixe : le popover s'ajuste à son contenu, et ses textes
+                            // passent à la ligne au lieu d'être coupés.
+                            .frame(width: 320)
+                            .presentationCompactAdaptation(.popover)
+                    }
                 }
                 Menu {
                     Button { mettreDansICloud() } label: {
@@ -289,7 +306,6 @@ struct VaultSectionView: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .textFieldStyle(.roundedBorder)
-                .frame(minWidth: 220)
                 .onSubmit { apply() }
             HStack {
                 Button(tr("Par défaut")) { patternDraft = VaultStore.defaultPattern }
@@ -326,9 +342,6 @@ struct VaultSectionView: View {
         }
         .tint(orange)
         .padding(16)
-        // Une largeur fixe : le popover s'ajuste à son contenu, et ses textes passent à la ligne au
-        // lieu d'être coupés.
-        .frame(width: 320)
     }
 
     private func apply() {
