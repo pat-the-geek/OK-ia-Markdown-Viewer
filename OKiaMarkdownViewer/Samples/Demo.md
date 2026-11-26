@@ -18,7 +18,7 @@ et plusieurs types de diagrammes.
 > glissez pour vous déplacer, double-tapez pour (dé)zoomer.
 
 > [!warning] À savoir
-> L'application fonctionne **100 % hors-ligne**. Les bibliothèques `marked` et `mermaid`
+> L'application fonctionne **100 % hors-ligne**. Les bibliothèques `marked`, `mermaid` et `katex`
 > sont embarquées dans l'app.
 
 ## Flowchart
@@ -111,6 +111,26 @@ marker: 7.862, 29.694, [[Soudan du Sud]]
 marker: -4.322, 15.307, [[Kinshasa]]
 ```
 
+## Formules mathématiques
+
+Les formules s'écrivent comme sur GitHub ou dans Obsidian, rendues par KaTeX. Dans la ligne,
+entre deux `$` : l'identité d'Euler $e^{i\pi} + 1 = 0$, ou l'intérêt composé
+$C_n = C_0\,(1 + t)^n$. Un prix reste un prix : 5 $ et 10 $.
+
+En bloc, entre deux `$$` :
+
+$$
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+Ou dans un bloc `math` :
+
+```math
+\int_0^{1} x^2 \, dx = \frac{1}{3}
+\qquad
+\sum_{k=1}^{n} k = \frac{n(n+1)}{2}
+```
+
 ## Tableau
 
 | Fonction        | État    |
@@ -118,6 +138,7 @@ marker: -4.322, 15.307, [[Kinshasa]]
 | Ouverture .md   | ✅      |
 | Mermaid         | ✅      |
 | Zoom diagramme  | ✅      |
+| Formules KaTeX  | ✅      |
 | Hors-ligne      | ✅      |
 
 ## Entités
