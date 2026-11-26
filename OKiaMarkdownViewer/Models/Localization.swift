@@ -253,6 +253,21 @@ struct SettingsView: View {
                     Text(tr("Lisez plus loin que le texte."))
                 }
 
+                // 1.6 : le coffre ouvert aux assistants par MCP (Mac, option Analytic).
+                if ServeurMCPCoffre.possible && achat.acces {
+                    Section {
+                        NavigationLink { ServeurMCPView() } label: {
+                            LabeledContent {
+                                Text(UserDefaults.standard.bool(forKey: ServeurMCPCoffre.cleReglage) ? tr("Ouvert") : tr("Fermé"))
+                            } label: {
+                                Label(tr("Assistants (MCP)"), systemImage: "point.3.connected.trianglepath.dotted")
+                            }
+                        }
+                    } footer: {
+                        Text(tr("Claude, Codex ou Copilot lisent votre coffre, en lecture seule, sur ce Mac."))
+                    }
+                }
+
                 Section {
                     Toggle(tr("Traduire les documents"), isOn: $autoTranslate)
                 } header: {

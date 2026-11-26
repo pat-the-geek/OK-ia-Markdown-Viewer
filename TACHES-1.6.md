@@ -128,6 +128,36 @@ Private Cloud Compute), pas de compte, pas de pistage.
       - iPhone et iPad : pas de serveur (iOS ne garde pas une app à l'écoute). À la place, des
         intentions (App Intents) — chercher, lire, entités — pour Raccourcis et Siri.
 
+      **Avancement de B** (26/11/2026, Patrick : « Oui enchaîne ») :
+      - [x] `ServeurMCPCoffre` (`Models/MCP/`) : repris de fornews Agence (`ProtocoleMCP`,
+            `RequeteHTTP`, même transport « Streamable HTTP »), sans rôles. Coupé par défaut ;
+            `127.0.0.1:5287` seulement (fornews : 5174, Agence : 5275) ; jeton `mdv_…` dans le
+            trousseau (cet appareil, jamais synchronisé), comparé à temps constant, renouvelable ;
+            `initialize` sans jeton, `tools/list` sans jeton = liste vide, jeton faux refusé ;
+            en-tête `Origin` refusé (403). Suit le réglage et l'achat de l'option (`brancher`).
+      - [x] `OutilsMCPCoffre`, lot 1 en lecture seule : `mdviewer_vault_info`,
+            `mdviewer_list_documents`, `mdviewer_search` (index de `RechercheCoffre`, attendu au
+            premier appel), `mdviewer_get_outline`, `mdviewer_get_document` (section, notes,
+            `max_chars`, `cursor`, images `data:` remplacées, bloc des annotations retiré),
+            `mdviewer_list_entities`, `mdviewer_get_entity`. Annotations MCP `readOnlyHint`.
+            Seuls les documents de la liste du coffre se lisent (`..`, `AGENTS.md`, `.mdviewer/`
+            refusés).
+      - [x] Réglages › Assistants (MCP), Mac et option : interrupteur, état, adresse, jeton
+            (masqué, copiable, renouvelable), commandes pour Claude Code, Codex
+            (`--bearer-token-env-var`, vérifié dans son aide) et JSON pour Claude Desktop et
+            VS Code ; journal « Ce que les assistants ont lu » (outil et document, jamais la
+            recherche ; documents refusés exclus ; effacé à la fermeture).
+      - [x] Essayé au simulateur (même boucle locale que le Mac ; harnais `OKIA_MCP`,
+            `OKIA_MCP_JETON`) avec curl et le **client MCP officiel** (SDK Python) : initialize,
+            7 outils en lecture seule, recherche, fiche d'entité, refus hors du coffre.
+      - [ ] Pas essayé dans l'app Mac (elle partagerait le conteneur de l'app de Patrick) : à
+            faire avec un build TestFlight. Ni dans Claude Code (session du terminal expirée, et
+            le serveur de projet demande une approbation) ni dans Codex.
+      - [ ] Lot 1, reste : `mdviewer_get_slides`, `mdviewer_list_places`,
+            `mdviewer_list_annotations`, `mdviewer_week_review`, `mdviewer_vault_stats` ; les
+            ressources `mdviewer://coffre/…` et les invites ; la portée Tailscale ; un mode dans
+            la barre des menus (le serveur vit tant que md Viewer est ouvert).
+
       **B bis. Les outils MCP du coffre** (proposition du 13/11/2026 ; Patrick : « tu peux déjà
       réfléchir à la liste des commandes disponibles par MCP »).
 
