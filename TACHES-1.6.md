@@ -129,6 +129,10 @@ Private Cloud Compute), pas de compte, pas de pistage.
         intentions (App Intents) — chercher, lire, entités — pour Raccourcis et Siri.
 
       **Avancement de B** (26/11/2026, Patrick : « Oui enchaîne ») :
+      - [ ] **Caché dans la 1.5.1** (26/11/2026, Patrick : « Ok on fait 1.5.1 sans mcp ») :
+            `ServeurMCPCoffre.publie = false` ; les builds Release n'en montrent rien et ne
+            l'ouvrent jamais, le DEBUG le garde (Mac, simulateur avec OKIA_MCP). Pour la 1.6 :
+            passer `publie` à `true`. Le coffre expliqué (partie A) part, lui, avec la 1.5.1.
       - [x] `ServeurMCPCoffre` (`Models/MCP/`) : repris de fornews Agence (`ProtocoleMCP`,
             `RequeteHTTP`, même transport « Streamable HTTP »), sans rôles. Coupé par défaut ;
             `127.0.0.1:5287` seulement (fornews : 5174, Agence : 5275) ; jeton `mdv_…` dans le

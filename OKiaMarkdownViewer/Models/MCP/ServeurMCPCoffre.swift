@@ -43,14 +43,24 @@ final class ServeurMCPCoffre: ObservableObject {
 
     var url: String { "http://127.0.0.1:\(Self.port)/mcp" }
 
-    /// Le serveur existe sur Mac ; au simulateur, pour l'essayer (DEBUG).
+    /// Le serveur sort avec la 1.6 : tant que `publie` est faux, les builds Release (TestFlight, App
+    /// Store) n'en montrent rien et ne l'ouvrent jamais. En DEBUG, il reste là pour le développer :
+    /// sur Mac, et au simulateur avec OKIA_MCP.
+    static let publie = false
+
     static var possible: Bool {
+        #if DEBUG
         #if targetEnvironment(macCatalyst)
         return true
-        #elseif DEBUG
+        #else
         return ProcessInfo.processInfo.environment["OKIA_MCP"] != nil
+        #endif
+        #else
+        #if targetEnvironment(macCatalyst)
+        return publie
         #else
         return false
+        #endif
         #endif
     }
 
