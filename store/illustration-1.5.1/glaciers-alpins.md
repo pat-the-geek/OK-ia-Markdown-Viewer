@@ -10,22 +10,14 @@ tags: [glaciologie, climat, Alpes]
 
 # Le recul des glaciers alpins
 
-Depuis le maximum du Petit Âge glaciaire, vers 1850, les glaciers des Alpes reculent. Ce
-rapport rappelle les trois lois physiques qui gouvernent ce recul : le **bilan de masse**, qui
-dit ce que le glacier gagne et perd, la **fonte**, qui suit la température de l'air, et
-l'**écoulement** de la glace, qui ramène vers le bas ce qui s'accumule en haut. Les calculs
-sont des ordres de grandeur, faits avec des valeurs de manuel.
+Depuis le maximum du Petit Âge glaciaire, vers 1850, les glaciers des Alpes reculent. Ce rapport rappelle les trois lois physiques qui gouvernent ce recul : le **bilan de masse**, qui dit ce que le glacier gagne et perd, la **fonte**, qui suit la température de l'air, et l'**écoulement** de la glace, qui ramène vers le bas ce qui s'accumule en haut. Les calculs sont des ordres de grandeur, faits avec des valeurs de manuel.
 
 > [!info] À retenir
-> Un glacier n'est pas un bloc immobile : c'est un fleuve de glace très lent. Il grandit
-> quand il reçoit plus de neige qu'il ne perd de glace, et recule dans le cas contraire.
+> Un glacier n'est pas un bloc immobile : c'est un fleuve de glace très lent. Il grandit quand il reçoit plus de neige qu'il ne perd de glace, et recule dans le cas contraire.
 
 ## Six glaciers des Alpes
 
-Les plus connus, de la France à l'Autriche : le [[Glacier d'Aletsch]], le plus grand des
-Alpes, le [[Glacier du Rhône]], source du fleuve, le [[Glacier du Gorner]] au pied du Mont
-Rose, le [[Glacier de Morteratsch]] dans les Grisons, la [[Mer de Glace]], le plus grand de
-France, et la [[Pasterze]], le plus grand d'Autriche.
+Les plus connus, de la France à l'Autriche : le [[Glacier d'Aletsch]], le plus grand des Alpes, le [[Glacier du Rhône]], source du fleuve, le [[Glacier du Gorner]] au pied du Mont Rose, le [[Glacier de Morteratsch]] dans les Grisons, la [[Mer de Glace]], le plus grand de France, et la [[Pasterze]], le plus grand d'Autriche.
 
 ```leaflet
 id: glaciers-alpins
@@ -41,14 +33,11 @@ marker: 47.100, 12.700, [[Pasterze]]
 ```
 
 > [!tip] Sur place
-> Le long du sentier du [[Glacier de Morteratsch]], des panneaux marquent la position du front
-> année après année : on marche dans le recul du glacier.
+> Le long du sentier du [[Glacier de Morteratsch]], des panneaux marquent la position du front année après année : on marche dans le recul du glacier.
 
 ## Le bilan de masse
 
-En chaque point de la surface, le bilan local $\dot b$ est la somme de l'accumulation $c$
-(la neige qui tombe et reste) et de l'ablation $a$ (la fonte et la sublimation, comptée
-négativement) :
+En chaque point de la surface, le bilan local $\dot b$ est la somme de l'accumulation $c$ (la neige qui tombe et reste) et de l'ablation $a$ (la fonte et la sublimation, comptée négativement) :
 
 $$
 \dot b = c + a
@@ -60,9 +49,7 @@ $$
 B = \int_{S} \dot b \; dS
 $$
 
-En haut, l'accumulation l'emporte ; en bas, l'ablation. La **ligne d'équilibre** sépare les
-deux zones : là, $\dot b = 0$. Quand le climat se réchauffe, elle monte, la zone
-d'accumulation rétrécit, et $B$ devient négatif.
+En haut, l'accumulation l'emporte ; en bas, l'ablation. La **ligne d'équilibre** sépare les deux zones : là, $\dot b = 0$. Quand le climat se réchauffe, elle monte, la zone d'accumulation rétrécit, et $B$ devient négatif.
 
 ![Coupe d'un glacier de vallée : la zone d'accumulation en haut, la ligne d'équilibre, la zone d'ablation, l'écoulement vers le front, la moraine et le torrent][svg-coupe]
 
@@ -82,28 +69,23 @@ flowchart TD
 
 ### La température baisse avec l'altitude
 
-Dans l'atmosphère libre, la température diminue d'environ $\gamma \approx 6{,}5$ °C par
-kilomètre. Connaissant la température $T(z_0)$ à une station d'altitude $z_0$ :
+Dans l'atmosphère libre, la température diminue d'environ $\gamma \approx 6{,}5$ °C par kilomètre. Connaissant la température $T(z_0)$ à une station d'altitude $z_0$ :
 
 $$
 T(z) = T(z_0) - \gamma \, (z - z_0)
 $$
 
-Une station à 1500 m mesure 15 °C : à 2500 m, sur la langue du glacier, il fait environ
-$15 - 6{,}5 = 8{,}5$ °C.
+Une station à 1500 m mesure 15 °C : à 2500 m, sur la langue du glacier, il fait environ $15 - 6{,}5 = 8{,}5$ °C.
 
 ### Le modèle degré-jour
 
-La fonte $M$ (en millimètres d'eau) est proportionnelle à la somme des températures
-positives, au-dessus d'un seuil $T_0$ voisin de 0 °C :
+La fonte $M$ (en millimètres d'eau) est proportionnelle à la somme des températures positives, au-dessus d'un seuil $T_0$ voisin de 0 °C :
 
 $$
 M = f_{DD} \sum_{t=1}^{N} \max\left(T_t - T_0,\ 0\right)
 $$
 
-Le facteur $f_{DD}$ vaut quelques millimètres par degré et par jour, plus pour la glace,
-sombre, que pour la neige, qui réfléchit davantage la lumière. Avec $f_{DD} = 7$ mm/(°C·j),
-trente jours à 8 °C de moyenne font fondre :
+Le facteur $f_{DD}$ vaut quelques millimètres par degré et par jour, plus pour la glace, sombre, que pour la neige, qui réfléchit davantage la lumière. Avec $f_{DD} = 7$ mm/(°C·j), trente jours à 8 °C de moyenne font fondre :
 
 $$
 M = 7 \times 8 \times 30 = 1680 \ \text{mm d'eau} \approx 1{,}7 \ \text{m}
@@ -134,45 +116,36 @@ $$
 | Constante de Stefan-Boltzmann | $\sigma$ | $5{,}67 \times 10^{-8}$ W/(m²·K⁴) |
 | Exposant de la loi de Glen | $n$ | environ 3 |
 
-Pour un mètre de glace : $Q = 917 \times 334\,000 \times 1 \approx 3{,}1 \times 10^{8}$ J/m²,
-soit 306 mégajoules par mètre carré.
+Pour un mètre de glace : $Q = 917 \times 334\,000 \times 1 \approx 3{,}1 \times 10^{8}$ J/m², soit 306 mégajoules par mètre carré.
 
 > [!warning] Un effet qui s'emballe
-> Quand la neige fond, la glace apparaît : plus sombre, elle absorbe davantage de soleil et
-> fond plus vite. C'est pourquoi une année sans neige d'été coûte si cher à un glacier.
+> Quand la neige fond, la glace apparaît : plus sombre, elle absorbe davantage de soleil et fond plus vite. C'est pourquoi une année sans neige d'été coûte si cher à un glacier.
 
 ![Le soleil chauffe la surface : la neige fraîche renvoie la plupart du rayonnement, la glace nue en absorbe bien davantage ; l'air chaud et le vent apportent aussi de la chaleur][svg-energie]
 
 ## L'écoulement de la glace
 
-La glace se déforme comme un fluide très visqueux. La **loi de Glen** relie la vitesse de
-déformation $\dot\varepsilon$ à la contrainte $\tau$ :
+La glace se déforme comme un fluide très visqueux. La **loi de Glen** relie la vitesse de déformation $\dot\varepsilon$ à la contrainte $\tau$ :
 
 $$
 \dot\varepsilon = A \, \tau^{\,n}
 $$
 
-où $A$ dépend de la température de la glace. Sous un glacier d'épaisseur $H$, sur une pente
-$\alpha$, la contrainte au fond vaut :
+où $A$ dépend de la température de la glace. Sous un glacier d'épaisseur $H$, sur une pente $\alpha$, la contrainte au fond vaut :
 
 $$
 \tau_b = \rho_i \, g \, H \sin\alpha
 $$
 
-Pour $H = 300$ m et $\alpha = 3°$ :
-$\tau_b = 917 \times 9{,}81 \times 300 \times \sin 3° \approx 1{,}4 \times 10^{5}$ Pa,
-soit environ 140 kPa, dans la fourchette habituelle des glaciers de vallée.
+Pour $H = 300$ m et $\alpha = 3°$ : $\tau_b = 917 \times 9{,}81 \times 300 \times \sin 3° \approx 1{,}4 \times 10^{5}$ Pa, soit environ 140 kPa, dans la fourchette habituelle des glaciers de vallée.
 
-En intégrant la loi de Glen sur l'épaisseur, on obtient la vitesse due à la déformation, entre
-le fond et la surface :
+En intégrant la loi de Glen sur l'épaisseur, on obtient la vitesse due à la déformation, entre le fond et la surface :
 
 $$
 u_s - u_b = \frac{2A}{n+1} \left( \rho_i \, g \sin\alpha \right)^{n} H^{\,n+1}
 $$
 
-Avec $n = 3$, la vitesse croît comme $H^{4}$ : un glacier qui perd la moitié de son
-épaisseur coule seize fois moins vite par déformation. Il ne ramène plus assez de glace vers
-le bas, et son front recule.
+Avec $n = 3$, la vitesse croît comme $H^{4}$ : un glacier qui perd la moitié de son épaisseur coule seize fois moins vite par déformation. Il ne ramène plus assez de glace vers le bas, et son front recule.
 
 ![Profil de vitesse dans l'épaisseur d'un glacier : lente près du fond, où la glace glisse et se déforme, la plus rapide en surface][svg-vitesse]
 
@@ -209,14 +182,10 @@ timeline
 
 ## Conclusion
 
-Trois lois suffisent à comprendre le recul : un bilan de masse qui devient négatif quand la
-ligne d'équilibre monte, une fonte qui croît avec chaque degré, et un écoulement qui ralentit
-fortement quand la glace s'amincit. Chacune aggrave l'autre.
+Trois lois suffisent à comprendre le recul : un bilan de masse qui devient négatif quand la ligne d'équilibre monte, une fonte qui croît avec chaque degré, et un écoulement qui ralentit fortement quand la glace s'amincit. Chacune aggrave l'autre.
 
 > [!note] Méthode
-> Les formules sont celles des manuels de glaciologie ; les valeurs numériques sont des ordres
-> de grandeur, choisis pour l'illustration. Ce document montre ce que md Viewer affiche :
-> formules, diagrammes Mermaid, carte et encadrés, dans un seul fichier Markdown.
+> Les formules sont celles des manuels de glaciologie ; les valeurs numériques sont des ordres de grandeur, choisis pour l'illustration. Ce document montre ce que md Viewer affiche : formules, diagrammes Mermaid, carte et encadrés, dans un seul fichier Markdown.
 
 <!-- images -->
 [svg-coupe]: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDEyMDAgNjAwIj48ZGVmcz48bWFya2VyIGlkPSJmIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlcldpZHRoPSI3IiBtYXJrZXJIZWlnaHQ9IjciIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMCB6IiBmaWxsPSIjRTg5NzJFIi8+PC9tYXJrZXI+PG1hcmtlciBpZD0iZm4iIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjciIG1hcmtlckhlaWdodD0iNyIgb3JpZW50PSJhdXRvIj48cGF0aCBkPSJNMCwwIEwxMCw1IEwwLDEwIHoiIGZpbGw9IiMxMTExMTEiLz48L21hcmtlcj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjdGNUYwIi8+PHRleHQgeD0iNDAiIHk9IjUyIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzMCIgZm9udC13ZWlnaHQ9IjgwMCIgZmlsbD0iIzExMTExMSIgdGV4dC1hbmNob3I9InN0YXJ0Ij5Db3VwZSBkJ3VuIGdsYWNpZXIgZGUgdmFsbMOpZTwvdGV4dD48cGF0aCBkPSJNNDAsMTcwIEMzMDAsMjMwIDUyMCwzMzAgNzYwLDQyMCBDOTAwLDQ3MCAxMDQwLDUwMCAxMTYwLDUyMCBMMTE2MCw2MDAgTDQwLDYwMCBaIiBmaWxsPSIjQzlDMUI0Ii8+PHBhdGggZD0iTTQwLDEyMCBDMzAwLDE1MCA1MjAsMjMwIDc2MCwzMzAgQzg2MCwzNzIgOTMwLDQwMCA5ODAsNDQwIEM5MDAsNDcwIDgzMCw0NTAgNzYwLDQyMCBDNTIwLDMzMCAzMDAsMjMwIDQwLDE3MCBaIiBmaWxsPSIjRDdFQ0Y3IiBzdHJva2U9IiM5Q0M5RTMiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik00MCwxMjAgQzIwMCwxMzUgMzMwLDE2MCA0MjAsMTkwIEw0MjAsMjA1IEMzMzAsMTc4IDIwMCwxNTAgNDAsMTQwIFoiIGZpbGw9IiNGRkZGRkYiIG9wYWNpdHk9IjAuOSIvPjx0ZXh0IHg9IjkwIiB5PSI5NSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjYiIGZpbGw9IiM5Q0M5RTMiPuKcuzwvdGV4dD48dGV4dCB4PSIxNzAiIHk9IjgwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzlDQzlFMyI+4py7PC90ZXh0Pjx0ZXh0IHg9IjI1MCIgeT0iMTAwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzlDQzlFMyI+4py7PC90ZXh0Pjx0ZXh0IHg9IjMzMCIgeT0iMTIwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzlDQzlFMyI+4py7PC90ZXh0Pjx0ZXh0IHg9IjE1MCIgeT0iMjIwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzExMTExMSIgdGV4dC1hbmNob3I9InN0YXJ0Ij5ab25lIGQnYWNjdW11bGF0aW9uPC90ZXh0Pjx0ZXh0IHg9IjE1MCIgeT0iMjQ4IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjQwMCIgZmlsbD0iIzZCNkI2MyIgdGV4dC1hbmNob3I9InN0YXJ0Ij5sYSBuZWlnZSBzJ2Fqb3V0ZTwvdGV4dD48bGluZSB4MT0iNTYwIiB5MT0iMTUwIiB4Mj0iNTYwIiB5Mj0iMzMwIiBzdHJva2U9IiNFODk3MkUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWRhc2hhcnJheT0iMTAgOCIvPjx0ZXh0IHg9IjU3MCIgeT0iMTcwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI0U4OTcyRSIgdGV4dC1hbmNob3I9InN0YXJ0Ij5MaWduZSBkJ8OpcXVpbGlicmU8L3RleHQ+PHRleHQgeD0iNTcwIiB5PSIxOTYiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLCBIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iNDAwIiBmaWxsPSIjRTg5NzJFIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPmJpbGFuIGxvY2FsIG51bDwvdGV4dD48dGV4dCB4PSI3MjAiIHk9IjMwMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxMTExMTEiIHRleHQtYW5jaG9yPSJzdGFydCI+Wm9uZSBkJ2FibGF0aW9uPC90ZXh0Pjx0ZXh0IHg9IjcyMCIgeT0iMzI2IiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjQwMCIgZmlsbD0iIzZCNkI2MyIgdGV4dC1hbmNob3I9InN0YXJ0Ij5sYSBnbGFjZSBmb25kPC90ZXh0PjxwYXRoIGQ9Ik04MjAsMzYwIHE2LDEwIDAsMTYgcS02LC02IDAsLTE2IHoiIGZpbGw9IiM5Q0M5RTMiLz48cGF0aCBkPSJNODYwLDM4MCBxNiwxMCAwLDE2IHEtNiwtNiAwLC0xNiB6IiBmaWxsPSIjOUNDOUUzIi8+PHBhdGggZD0iTTkwMCw0MDAgcTYsMTAgMCwxNiBxLTYsLTYgMCwtMTYgeiIgZmlsbD0iIzlDQzlFMyIvPjxwYXRoIGQ9Ik0xNjAsMTY1IEMzMDAsMTkwIDQyMCwyMzUgNTIwLDI3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMTExMTExIiBzdHJva2Utd2lkdGg9IjMiIG1hcmtlci1lbmQ9InVybCgjZm4pIi8+PHBhdGggZD0iTTU2MCwzMDAgQzY1MCwzMzUgNzMwLDM2NSA4MDAsMzk1IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMyIgbWFya2VyLWVuZD0idXJsKCNmbikiLz48dGV4dCB4PSIzMzAiIHk9IjMwMCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSI2MDAiIGZpbGw9IiMxMTExMTEiIHRleHQtYW5jaG9yPSJzdGFydCI+w6ljb3VsZW1lbnQ8L3RleHQ+PHBhdGggZD0iTTk5MCw0NDUgcTMwLC0zMCA2MCwwIHEyMCwxNSA0MCwxMCIgZmlsbD0iI0E4OUY5MCIgc3Ryb2tlPSIjNkI2QjYzIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIxMDAwIiB5PSI0MjAiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLCBIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTExMTExIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPkZyb250PC90ZXh0Pjx0ZXh0IHg9IjEwNDAiIHk9IjQ4MCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSI0MDAiIGZpbGw9IiM2QjZCNjMiIHRleHQtYW5jaG9yPSJzdGFydCI+TW9yYWluZTwvdGV4dD48cGF0aCBkPSJNOTg1LDQ1NSBDMTA0MCw0OTAgMTEwMCw1MDUgMTE2MCw1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVGQThEMyIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48dGV4dCB4PSIxMDgwIiB5PSI1NDUiIGZvbnQtZmFtaWx5PSItYXBwbGUtc3lzdGVtLCBIZWx2ZXRpY2EsIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iNDAwIiBmaWxsPSIjMkY3RkIwIiB0ZXh0LWFuY2hvcj0ic3RhcnQiPlRvcnJlbnQ8L3RleHQ+PC9zdmc+
