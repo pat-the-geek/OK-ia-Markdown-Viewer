@@ -88,8 +88,14 @@ struct RootView: View {
             case .success(let urls):
                 guard let url = urls.first else { return }
                 if choisirSurveille { choisirSurveille = false; surveille.choisir(url) }
-                else if importFolder, !store.vault.setFolder(url) {
-                    store.errorMessage = tr("Ce dossier ne peut pas devenir le coffre : le système refuse d’en garder l’accès. Pour un dossier partagé, connectez le partage, puis choisissez-le de nouveau.")
+                else if importFolder {
+                    // ⚠️ Le coffre choisi s'arrête ici. La condition `importFolder, !setFolder(url)`
+                    // laissait un choix RÉUSSI glisser jusqu'à `store.open(url:)`, qui lisait le
+                    // dossier comme un fichier : « Impossible de lire le fichier « md-viewers » »
+                    // après chaque changement de coffre (Patrick, 26/11/2026).
+                    if !store.vault.setFolder(url) {
+                        store.errorMessage = tr("Ce dossier ne peut pas devenir le coffre : le système refuse d’en garder l’accès. Pour un dossier partagé, connectez le partage, puis choisissez-le de nouveau.")
+                    }
                 }
                 else if importOffice { store.importerLot(urls) }
                 else if ImportEnCours.estImportable(url) { store.handleIncoming(url) }   // l'import, avec l'option

@@ -282,6 +282,8 @@ final class DocumentStore: ObservableObject {
 
     /// Opens a user-selected file (importer / open-in / cold launch) and remembers it.
     func open(url: URL) {
+        // Un dossier n'est pas un document : rien à lire, et pas d'erreur à montrer.
+        guard !url.hasDirectoryPath else { return }
         // Un document du coffre (un import rangé dans « coffre md viewer ») : l'accès est celui du coffre.
         let coffre = vault.portee(de: url)
         let dansCoffre = coffre?.startAccessingSecurityScopedResource() ?? false
@@ -627,6 +629,7 @@ final class DocumentStore: ObservableObject {
 
     /// Un fichier choisi dans une liste (les documents analysés), lu hors du fil principal.
     func ouvrirHorsFil(url: URL) {
+        guard !url.hasDirectoryPath else { return }
         ouvrirHorsFil(nom: url.lastPathComponent) { (url, nil) }
     }
 
