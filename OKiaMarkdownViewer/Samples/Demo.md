@@ -56,6 +56,8 @@ sequenceDiagram
 gantt
     title Itération TestFlight
     dateFormat YYYY-MM-DD
+    axisFormat %d.%m
+    tickInterval 1day
     section Build
     Scaffold        :done,    s1, 2026-06-01, 1d
     Pipeline rendu  :done,    s2, after s1, 2d

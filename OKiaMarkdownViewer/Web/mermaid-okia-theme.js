@@ -34,7 +34,17 @@
       cScale4: GRIS_CLAIR, cScaleLabel4: NOIR, cScale5: '#5A5A52', cScaleLabel5: BLANC_CASSE,
       cScale6: ORANGE, cScaleLabel6: NOIR, cScale7: NOIR, cScaleLabel7: BLANC_CASSE,
       pie1: ORANGE, pie2: NOIR, pie3: GRIS, pie4: ORANGE_CLAIR, pie5: GRIS_CLAIR, pie6: '#5A5A52',
-      pieTitleTextColor: NOIR, pieSectionTextColor: NOIR, pieStrokeColor: BLANC_CASSE, pieOuterStrokeColor: GRIS
+      pieTitleTextColor: NOIR, pieSectionTextColor: NOIR, pieStrokeColor: BLANC_CASSE, pieOuterStrokeColor: GRIS,
+      // Le Gantt (26/11/2026) : la tâche en cours héritait d'un fond et d'un contour blancs,
+      // invisible sur le fond clair. À faire : blanc bordé d'orange ; en cours : orange pâle ;
+      // terminée : gris ; critique : rouge.
+      taskBkgColor: BLANC, taskBorderColor: ORANGE, taskTextColor: NOIR, taskTextDarkColor: NOIR,
+      taskTextLightColor: NOIR, taskTextOutsideColor: NOIR, taskTextClickableColor: NOIR,
+      activeTaskBkgColor: ORANGE_PALE, activeTaskBorderColor: ORANGE,
+      doneTaskBkgColor: GRIS_CLAIR, doneTaskBorderColor: GRIS,
+      critBkgColor: '#F6D6D1', critBorderColor: '#A52A1A',
+      gridColor: GRIS_CLAIR, todayLineColor: ORANGE,
+      sectionBkgColor: BLANC_CASSE, altSectionBkgColor: BLANC, sectionBkgColor2: BLANC_CASSE
     }
   };
 

@@ -1108,6 +1108,34 @@
     } catch (e) {}
   }
 
+  /* Le Gantt et sa ligne « aujourd'hui » (26/11/2026, Patrick : « le diagramme de gantt de démo
+     est vide »). Mermaid la trace même quand aujourd'hui tombe loin des tâches : un planning de
+     juin, lu en novembre, s'étirait sur 21 742 px pour une semaine de barres, et le dessin,
+     réduit pour tout tenir, n'était plus qu'un trait. Hors de la période des tâches, la ligne
+     ne dit rien : on la retire et le cadre revient aux barres. Dans la période, elle reste. */
+  function ganttSansAujourdhuiLointain(svg) {
+    try {
+      if (svg.getAttribute('aria-roledescription') !== 'gantt') return;
+      var ligne = svg.querySelector('line.today');
+      if (!ligne) return;
+      var x = parseFloat(ligne.getAttribute('x1'));
+      var debut = Infinity, fin = -Infinity;
+      svg.querySelectorAll('rect.task, rect[class*="task"]').forEach(function (r) {
+        var rx = parseFloat(r.getAttribute('x')), rw = parseFloat(r.getAttribute('width'));
+        if (isFinite(rx) && isFinite(rw)) { debut = Math.min(debut, rx); fin = Math.max(fin, rx + rw); }
+      });
+      if (!isFinite(x) || !isFinite(debut) || (x >= debut - 1 && x <= fin + 1)) return;
+      var g = ligne.closest('g.today') || ligne;
+      g.parentNode.removeChild(g);
+      var vb = svg.viewBox && svg.viewBox.baseVal;
+      var bb = svg.getBBox();
+      if (vb && bb && bb.width > 0) {
+        svg.setAttribute('viewBox', (bb.x - 6) + ' ' + vb.y + ' ' + (bb.width + 12) + ' ' + vb.height);
+        svg.style.maxWidth = Math.round(Math.min(bb.width + 12, 1000)) + 'px';
+      }
+    } catch (e) {}
+  }
+
   /* Charts (xychart/pie/quadrant/gantt) use filled areas that turn invisible
      under the dark-theme invert filter; flag them so the slideshow puts them on
      a light card instead of inverting. */
@@ -1190,7 +1218,7 @@
         pre.classList.toggle('mermaid-keeplight', mermaidKeepsLight(src));
         try { enforceMermaidContrast(pre); } catch (e) {}
         var svgEl = pre.querySelector('svg');
-        if (svgEl) { recolorXychart(svgEl); unclipMermaidSvg(svgEl); attachZoom(pre, title); }
+        if (svgEl) { recolorXychart(svgEl); ganttSansAujourdhuiLointain(svgEl); unclipMermaidSvg(svgEl); attachZoom(pre, title); }
       });
     }).catch(function (err) {
       blocks.forEach(function (pre) {
