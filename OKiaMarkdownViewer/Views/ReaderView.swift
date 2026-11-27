@@ -136,6 +136,18 @@ struct ReaderView: View {
 
     private let orange = Color(red: 0xE8/255, green: 0x97/255, blue: 0x2E/255)
 
+    /// La demande de note, juste après une réussite (`DemandeAvis`) : une seconde après la
+    /// fermeture du diaporama ou de la feuille, et seulement si rien d'autre ne s'est ouvert.
+    private func proposerAvis() {
+        guard DemandeAvis.momentVenu() else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            guard !presenting, sharePayload == nil, presentationConvertie == nil, !showConverter,
+                  !showEntites, !annotationsDoc.actif else { return }
+            DemandeAvis.noteDemandee()
+            demanderNote()
+        }
+    }
+
     /// True when the document is made of at least two slides — i.e. it contains a
     /// top-level "---" separator after any YAML frontmatter and outside code fences.
     private var hasSlides: Bool { Self.slideCount(in: document.text) >= 2 }
@@ -580,15 +592,15 @@ struct ReaderView: View {
         }
         .onChange(of: analyseEntites.entites) { _, _ in montrerEntiteAttendue() }
         .onChange(of: analyseEntites.etat) { _, _ in montrerEntiteAttendue() }
-        // Un vrai document (pas l'exemple) compte pour la demande de note ; elle vient une fois le
-        // document affiché, et jamais par-dessus une feuille ou le diaporama.
+        // Un vrai document (pas l'exemple) compte pour la demande de note. Depuis la 1.5.1, elle ne
+        // vient plus à l'ouverture, en pleine lecture : elle attend une réussite (diaporama mené au
+        // bout, export enregistré ou partagé) et la fermeture de ce qui la portait.
         .task(id: document.id) {
-            guard document.sourceURL != nil, DemandeAvis.documentOuvert() else { return }
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, !presenting, !showConverter, !showEntites, !annotationsDoc.actif else { return }
-            DemandeAvis.noteDemandee()
-            demanderNote()
+            if document.sourceURL != nil { DemandeAvis.documentOuvert() }
         }
+        .onChange(of: presenting) { _, ouvert in if !ouvert { proposerAvis() } }
+        .onChange(of: sharePayload == nil) { _, ferme in if ferme { proposerAvis() } }
+        .onChange(of: presentationConvertie == nil) { _, ferme in if ferme { proposerAvis() } }
         .onChange(of: annotationsDoc.actif) { _, actif in basculerAnnotation(actif) }
         .onChange(of: annotationsDoc.outil) { _, _ in calques.forEach { $0.outilChange() } }
         .onChange(of: annotationsDoc.couleur) { _, _ in calques.forEach { $0.outilChange() } }
@@ -2315,6 +2327,9 @@ struct PresentationView: View {
                                 // Le polycopié parcourt les diapositives : ni le public ni la
                                 // répétition ne le suivent.
                                 guard polycopie == nil else { return }
+                                // Arrivé à la dernière diapositive : une réussite, pour la
+                                // demande de note qui viendra à la fermeture (`DemandeAvis`).
+                                if total >= 2 && i == total - 1 { DemandeAvis.succes() }
                                 seance.changerDiapo(i)
                                 if seance.total != total { seance.total = total; prevoirTemps() }
                                 repetition.changer(i)

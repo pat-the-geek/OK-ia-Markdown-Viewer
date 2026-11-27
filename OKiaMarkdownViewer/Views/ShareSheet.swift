@@ -22,7 +22,12 @@ struct ShareSheet: UIViewControllerRepresentable {
             return p
         }
         #endif
-        return UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let partage = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        // Un partage mené au bout est une réussite, pour la demande de note (`DemandeAvis`).
+        partage.completionWithItemsHandler = { _, fait, _, _ in
+            if fait { MainActor.assumeIsolated { DemandeAvis.succes() } }
+        }
+        return partage
     }
     func updateUIViewController(_ controller: UIViewController, context: Context) {}
 
@@ -31,7 +36,10 @@ struct ShareSheet: UIViewControllerRepresentable {
     final class Coordinateur: NSObject, UIDocumentPickerDelegate {
         let fini: () -> Void
         init(fini: @escaping () -> Void) { self.fini = fini }
-        func documentPicker(_ c: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { fini() }
+        func documentPicker(_ c: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            MainActor.assumeIsolated { DemandeAvis.succes() }
+            fini()
+        }
         func documentPickerWasCancelled(_ c: UIDocumentPickerViewController) { fini() }
     }
 }

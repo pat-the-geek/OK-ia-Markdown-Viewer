@@ -5,6 +5,12 @@ import Foundation
 /// ouverts, sur trois jours différents au moins. Après une demande, tout repart de zéro et rien
 /// n'est redemandé dans la même version. Le système décide ensuite s'il affiche la fenêtre (trois
 /// fois par an au plus) ; TestFlight ne l'affiche jamais.
+///
+/// 1.5.1 (27/11/2026) — au moment opportun : la demande ne tombe plus à l'ouverture d'un document,
+/// en pleine lecture, mais juste après une réussite (`succes()`) : un diaporama mené jusqu'à sa
+/// dernière diapositive, un export enregistré ou partagé. La fenêtre vient une fois la feuille ou
+/// le diaporama refermé (`momentVenu()`), jamais par-dessus. Une réussite qui ne tombe pas au
+/// bon moment (trop tôt, déjà demandé) est oubliée : elle ne ressort pas plus tard, hors de propos.
 enum DemandeAvis {
     static let documentsMinimum = 5
     static let joursMinimum = 3
@@ -15,9 +21,25 @@ enum DemandeAvis {
     private static let cleJours = "avis.jours"
     private static let cleVersion = "avis.version"
 
-    /// Compte un document ouvert ; vrai si c'est le moment de demander une note. Rien n'est
-    /// consommé ici : si le moment ne s'y prête pas (une feuille ouverte), le document suivant
-    /// redemandera.
+    /// Une réussite vient d'avoir lieu ; la demande attend que la feuille ou le diaporama se referme.
+    @MainActor private(set) static var succesEnAttente = false
+
+    @MainActor static func succes() { succesEnAttente = true }
+
+    /// Vrai si une réussite attend et que md Viewer sert vraiment (assez de documents, assez de
+    /// jours, pas déjà demandé dans cette version). La réussite est consommée dans tous les cas.
+    @MainActor static func momentVenu(version: String = versionCourante) -> Bool {
+        guard succesEnAttente else { return false }
+        succesEnAttente = false
+        let documents = reglages.integer(forKey: cleDocuments)
+        let jours = reglages.stringArray(forKey: cleJours) ?? []
+        return documents >= documentsMinimum && jours.count >= joursMinimum
+            && reglages.string(forKey: cleVersion) != version
+    }
+
+    /// Compte un document ouvert ; vrai si md Viewer sert assez pour demander une note. Depuis la
+    /// 1.5.1, la demande elle-même attend une réussite (`momentVenu()`).
+    @discardableResult
     static func documentOuvert(le date: Date = .now, version: String = versionCourante) -> Bool {
         let documents = reglages.integer(forKey: cleDocuments) + 1
         reglages.set(documents, forKey: cleDocuments)
@@ -32,7 +54,8 @@ enum DemandeAvis {
     }
 
     /// La note vient d'être demandée : plus rien dans cette version, et les compteurs repartent.
-    static func noteDemandee(version: String = versionCourante) {
+    @MainActor static func noteDemandee(version: String = versionCourante) {
+        succesEnAttente = false
         reglages.set(version, forKey: cleVersion)
         reglages.set(0, forKey: cleDocuments)
         reglages.set([String](), forKey: cleJours)
