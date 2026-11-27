@@ -1,4 +1,8 @@
 import Foundation
+import os
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// A Markdown report found in the vault: at its root, or at any depth of a matching subfolder.
 struct VaultReport: Identifiable, Equatable, Sendable, Codable {
@@ -61,6 +65,17 @@ final class VaultStore: ObservableObject {
     nonisolated static let lecturesSimultanees = 8
     nonisolated static let extensions: Set<String> = ["md", "markdown"]
 
+    /// L'app est en arrière-plan : une lecture en cours s'arrête, et aucune ne commence.
+    ///
+    /// Build 188 (26/11/2026, Duo) : iOS a tué l'app en arrière-plan (0x8BADF00D, « scene-update
+    /// watchdog »). La lecture du coffre parcourait un partage sur huit fils, et ses requêtes au
+    /// système retenaient les fils qui livrent la mise à jour de la scène. Interrompue, la lecture
+    /// est refaite au retour au premier plan ; la liste affichée reste celle de la dernière.
+    nonisolated static let suspendue = OSAllocatedUnfairLock(initialState: false)
+    nonisolated static var estSuspendue: Bool { suspendue.withLock { $0 } }
+    /// Une lecture a été interrompue par le passage en arrière-plan : elle est refaite au retour.
+    private var relireAuRetour = false
+
     private var bookmark: Data?
     /// La racine résolue, gardée : chaque carte du coffre la demandait deux fois, sur le fil
     /// principal, et un partage réseau lent figeait l'accueil (Patrick, 12/11/2026). Oubliée quand
@@ -81,6 +96,24 @@ final class VaultStore: ObservableObject {
         // principal, faisait attendre l'app.
         folderName = UserDefaults.standard.string(forKey: nameKey) ?? resolveFolder().map(Self.nomLisible)
         chargerListe()
+        #if canImport(UIKit)
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification,
+                                               object: nil, queue: .main) { _ in
+            VaultStore.suspendue.withLock { $0 = true }
+        }
+        NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification,
+                                               object: nil, queue: .main) { _ in
+            VaultStore.suspendue.withLock { $0 = false }
+            MainActor.assumeIsolated { VaultStore.partage.reprendre() }
+        }
+        #endif
+    }
+
+    /// De retour au premier plan : la lecture interrompue en arrière-plan est refaite.
+    private func reprendre() {
+        guard relireAuRetour else { return }
+        relireAuRetour = false
+        Task { await rafraichirEnArrierePlan() }
     }
 
     // MARK: La dernière liste, gardée
@@ -375,8 +408,10 @@ final class VaultStore: ObservableObject {
         guard let marque = bookmark else { return }
         enLecture = true
         var monter = forcee
+        var refaire = false
         repeat {
             relireEnsuite = false
+            refaire = false
             // Forcée, la racine gardée est oubliée et résolue de nouveau, hors du fil principal.
             if monter { racine = nil }
             let rapide = racine
@@ -385,9 +420,18 @@ final class VaultStore: ObservableObject {
                 Self.lire(rapide: rapide, marque: marque, motif: motif, monter: monter)
             }.value
             if let lue, racine == nil { racine = lue }
-            if let lecture { publier(lecture) } else { publierInjoignable() }
-            monter = true
-        } while relireEnsuite
+            if let lecture, lecture.interrompue {
+                // Interrompue en arrière-plan. iOS gèle l'app, puis la réveille au retour : la lecture
+                // finit alors, après l'avis du retour au premier plan. Elle est donc refaite tout de
+                // suite si l'app est déjà revenue, sinon au retour.
+                if Self.estSuspendue { relireAuRetour = true } else { refaire = true }
+            } else if let lecture {
+                publier(lecture)
+            } else {
+                publierInjoignable()
+            }
+            if relireEnsuite { monter = true }
+        } while relireEnsuite || refaire
         enLecture = false
     }
 
@@ -402,13 +446,15 @@ final class VaultStore: ObservableObject {
                                              relativeTo: nil, bookmarkDataIsStale: &perime))
         var lecture: Lecture?
         if let sansMonter { lecture = lire(racine: sansMonter, motif: motif) }
-        guard monter, lecture?.lu != true else { return (lecture, sansMonter) }
+        guard monter, lecture?.lu != true, lecture?.interrompue != true else { return (lecture, sansMonter) }
         guard let monte = try? URL(resolvingBookmarkData: marque, options: [], relativeTo: nil,
                                    bookmarkDataIsStale: &perime) else { return (lecture, sansMonter) }
         return (lire(racine: monte, motif: motif), monte)
     }
 
     private func publier(_ l: Lecture) {
+        // Interrompue en arrière-plan : la liste affichée reste, et la lecture sera refaite.
+        guard !l.interrompue else { relireAuRetour = true; return }
         derniereLecture = Date()
         if l.reseau != reseau { reseau = l.reseau }
         if l.lu == injoignable { injoignable = !l.lu }
@@ -436,6 +482,8 @@ final class VaultStore: ObservableObject {
         var coupe = false
         var lu = true
         var reseau = false
+        /// Arrêtée par le passage en arrière-plan : rien à publier, elle sera refaite.
+        var interrompue = false
     }
 
     /// Le dossier est-il sur un volume réseau ? Un partage monté (SMB, AFP) sur Mac, un serveur
@@ -458,8 +506,12 @@ final class VaultStore: ObservableObject {
         defer { if scoped { root.stopAccessingSecurityScopedResource() } }
         let fm = FileManager.default
         let predicate = NSPredicate(format: "SELF LIKE[c] %@", motif)
-        let cles: [URLResourceKey] = [.isDirectoryKey, .isPackageKey, .contentModificationDateKey]
+        // « Est-ce un paquet ? » n'est plus demandé d'avance pour chaque fichier : la question passe
+        // par LaunchServices, lourde, et huit fils qui la posaient ensemble retenaient le système
+        // (build 188). Elle n'est posée que pour les dossiers, plus bas.
+        let cles: [URLResourceKey] = [.isDirectoryKey, .contentModificationDateKey]
         var lecture = Lecture(reseau: estReseau(root))
+        if estSuspendue { return Lecture(lu: false, reseau: lecture.reseau, interrompue: true) }
         let fin = Date().addingTimeInterval(lecture.reseau ? dureeMaxReseau : dureeMax)
         #if DEBUG
         // OKIA_LATENCE_COFFRE=<ms> : chaque dossier répond avec ce retard, comme un partage lointain.
@@ -484,12 +536,13 @@ final class VaultStore: ObservableObject {
             DispatchQueue.concurrentPerform(iterations: min(lot.count, lecturesSimultanees)) { voie in
                 var k = voie
                 while k < lot.count {
-                    if Date() > fin { break }
+                    if Date() > fin || estSuspendue { break }
                     let enfants = lister(lot[k].url, cles)
                     verrou.lock(); contenus[k] = enfants; verrou.unlock()
                     k += lecturesSimultanees
                 }
             }
+            if estSuspendue { return Lecture(lu: false, reseau: lecture.reseau, interrompue: true) }
             var suivant: [Dossier] = []
             for (k, dossier) in lot.enumerated() {
                 guard let enfants = contenus[k] else {
@@ -501,12 +554,14 @@ final class VaultStore: ObservableObject {
                     let nom = enfant.lastPathComponent
                     let valeurs = try? enfant.resourceValues(forKeys: Set(cles))
                     if valeurs?.isDirectory == true {
-                        // Dossier caché ou paquet (une app, une bibliothèque Photos) : jamais lu.
-                        if nom.hasPrefix(".") || valeurs?.isPackage == true { continue }
+                        // Dossier caché : jamais lu.
+                        if nom.hasPrefix(".") { continue }
                         // Le motif choisit les sous-dossiers de premier niveau ; plus bas, tout est lu.
                         // Sauf « coffre md viewer », où vont les imports (1.5.1) : toujours lu.
                         if dossier.profondeur == 0 && !predicate.evaluate(with: nom)
                             && nom != RangementDocuments.dossierDuCoffre { continue }
+                        // Paquet (une app, une bibliothèque Photos) : jamais lu.
+                        if (try? enfant.resourceValues(forKeys: [.isPackageKey]))?.isPackage == true { continue }
                         if dossier.profondeur + 1 > profondeurMax { lecture.coupe = true; continue }
                         let relatif = dossier.relatif.isEmpty ? nom : dossier.relatif + "/" + nom
                         suivant.append((enfant, relatif, dossier.profondeur + 1))
