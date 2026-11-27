@@ -4,6 +4,10 @@ import WebKit
 /// Controls the zoom web view (fit-to-screen, double-tap toggle).
 final class ZoomController: ObservableObject {
     weak var scrollView: UIScrollView?
+    /// Le contenu tiré vers le bas (points) : la vue le suit, puis se ferme au-delà d'un seuil.
+    @Published var tirage: CGFloat = 0
+    /// Ferme la vue de zoom (le `dismiss` de la vue SwiftUI qui l'affiche).
+    var fermer: (() -> Void)?
 
     /// L'échelle d'ouverture : la page de zoom est mise en page pour tenir à l'échelle 1 (le zoom
     /// lui-même est celui de WebKit, dont le minimum, 0,5, rapetisserait l'objet dans un coin).
@@ -49,19 +53,23 @@ struct DiagramZoomView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.black.opacity(1 - min(Double(dragOffset) / 400, 0.6))
+            Color.black.opacity(1 - min(Double(decalage) / 400, 0.6))
                 .ignoresSafeArea()
 
             ZoomWebView(bodyHTML: diagram.svg, controller: controller)
                 .ignoresSafeArea()
-                .offset(y: dragOffset)
+                .offset(y: decalage)
 
             chrome
         }
         .overlay(alignment: .bottom) { zoomBar }
         .statusBarHidden(true)
         .defersSystemGestures(on: .vertical)
+        .onAppear { controller.fermer = { dismiss() } }
     }
+
+    /// Tiré par le bandeau du haut ou par le contenu lui-même (Patrick, 27/11/2026).
+    private var decalage: CGFloat { max(dragOffset, controller.tirage) }
 
     private var zoomBar: some View {
         HStack(spacing: 0) {
@@ -85,7 +93,7 @@ struct DiagramZoomView: View {
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(0.15)))
         .padding(.bottom, 28)
-        .offset(y: dragOffset)
+        .offset(y: decalage)
     }
 
     private var chrome: some View {
@@ -178,6 +186,17 @@ private struct ZoomWebView: UIViewRepresentable {
                                          action: #selector(Coordinator.handleDoubleTap(_:)))
         dbl.numberOfTapsRequired = 2
         webView.scrollView.addGestureRecognizer(dbl)
+
+        // Tirer le contenu vers le bas ferme la vue, comme le bandeau du haut (Patrick,
+        // 27/11/2026). Un doigt seulement : le pincement reste au zoom. Sur Mac, la souris ne tire
+        // rien : le bouton Fermer suffit.
+        #if !targetEnvironment(macCatalyst)
+        let tirer = UIPanGestureRecognizer(target: context.coordinator,
+                                           action: #selector(Coordinator.handleTirage(_:)))
+        tirer.maximumNumberOfTouches = 1
+        tirer.delegate = context.coordinator
+        webView.addGestureRecognizer(tirer)
+        #endif
 
         let baseURL = Bundle.main.url(forResource: "renderer", withExtension: "html", subdirectory: "Web")?
             .deletingLastPathComponent()
@@ -287,7 +306,7 @@ private struct ZoomWebView: UIViewRepresentable {
         """
     }
 
-    final class Coordinator: NSObject, UIScrollViewDelegate {
+    final class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
         let controller: ZoomController
         init(_ controller: ZoomController) { self.controller = controller }
 
@@ -295,6 +314,45 @@ private struct ZoomWebView: UIViewRepresentable {
             let point = gr.location(in: gr.view)
             controller.toggleZoom(at: point)
         }
+
+        /// Le contenu suit le doigt vers le bas ; lâché assez bas, ou lancé, la vue se ferme.
+        @objc func handleTirage(_ gr: UIPanGestureRecognizer) {
+            guard let vue = gr.view else { return }
+            let dy = max(0, gr.translation(in: vue).y)
+            switch gr.state {
+            case .began, .changed:
+                controller.tirage = dy
+            case .ended:
+                let vitesse = gr.velocity(in: vue).y
+                if dy > 120 || (dy > 40 && vitesse > 900) {
+                    controller.fermer?()
+                } else {
+                    withAnimation(.spring()) { controller.tirage = 0 }
+                }
+                controller.scrollView?.panGestureRecognizer.isEnabled = true
+            default:
+                withAnimation(.spring()) { controller.tirage = 0 }
+                controller.scrollView?.panGestureRecognizer.isEnabled = true
+            }
+        }
+
+        /// Le tirage ne commence que vers le bas, le contenu à sa taille d'ouverture (ou plus
+        /// petit) et en haut de son défilement : un diagramme agrandi se déplace, un long tableau
+        /// défile, comme avant.
+        func gestureRecognizerShouldBegin(_ gr: UIGestureRecognizer) -> Bool {
+            guard let pan = gr as? UIPanGestureRecognizer, let sv = controller.scrollView else { return true }
+            let v = pan.velocity(in: pan.view)
+            guard v.y > 0, v.y > abs(v.x) * 1.5 else { return false }
+            guard sv.zoomScale <= 1.01 else { return false }
+            guard sv.contentOffset.y <= -sv.adjustedContentInset.top + 1 else { return false }
+            // Le défilement s'arrête pendant le tirage : le contenu descend d'un seul bloc, sans
+            // rebond par-dessus. Il revient à la fin du geste.
+            sv.panGestureRecognizer.isEnabled = false
+            return true
+        }
+
+        func gestureRecognizer(_ gr: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith autre: UIGestureRecognizer) -> Bool { true }
     }
 }
 
@@ -318,19 +376,23 @@ struct ImageZoomView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.black.opacity(1 - min(Double(dragOffset) / 400, 0.6))
+            Color.black.opacity(1 - min(Double(decalage) / 400, 0.6))
                 .ignoresSafeArea()
 
             ZoomWebView(bodyHTML: Self.imgTag(image.src), controller: controller)
                 .ignoresSafeArea()
-                .offset(y: dragOffset)
+                .offset(y: decalage)
 
             chrome
         }
         .overlay(alignment: .bottom) { zoomBar }
         .statusBarHidden(true)
         .defersSystemGestures(on: .vertical)
+        .onAppear { controller.fermer = { dismiss() } }
     }
+
+    /// Tiré par le bandeau du haut ou par le contenu lui-même (Patrick, 27/11/2026).
+    private var decalage: CGFloat { max(dragOffset, controller.tirage) }
 
     private static func imgTag(_ src: String) -> String {
         let escaped = src
@@ -361,7 +423,7 @@ struct ImageZoomView: View {
         .background(.ultraThinMaterial, in: Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(0.15)))
         .padding(.bottom, 28)
-        .offset(y: dragOffset)
+        .offset(y: decalage)
     }
 
     private var chrome: some View {
